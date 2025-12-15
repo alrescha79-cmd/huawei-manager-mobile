@@ -1,7 +1,7 @@
 # 📱 Huawei Manager Mobile
 
 <p align="center">
-  <img src="assets/icon.png" alt="App Icon" width="120" />
+  <img src="assets/logo.jpeg" alt="App Icon" width="120" />
 </p>
 
 <p align="center">
@@ -29,7 +29,17 @@
 ## 📸 Screenshots
 
 <p align="center">
-  <em>Screenshots akan ditambahkan</em>
+  <em>Dark Mode</em>
+</p>
+
+
+
+| Dashboard | WiFi | SMS | Settings |
+|:---------:|:----:|:---:|:--------:|
+| ![Dashboard](docs/screenshots/home.png) | ![WiFi](docs/screenshots/wifi.png) | ![SMS](docs/screenshots/sms.png) | ![Settings](docs/screenshots/settings.png) |
+
+<p align="center">
+  <em>Light Mode</em>
 </p>
 
 
