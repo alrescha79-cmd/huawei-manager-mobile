@@ -4,7 +4,9 @@ import {
   SignalInfo,
   NetworkInfo,
   TrafficStats,
-  ModemStatus
+  ModemStatus,
+  WanInfo,
+  MobileDataStatus
 } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
 
@@ -68,6 +70,8 @@ export class ModemService {
         pci: parseXMLValue(response, 'pci'),
         cellId: parseXMLValue(response, 'cell_id'),
         band: parseXMLValue(response, 'band'),
+        dlbandwidth: parseXMLValue(response, 'dlbandwidth'),
+        ulbandwidth: parseXMLValue(response, 'ulbandwidth'),
       };
 
       console.log('[Service] Signal Info:', signalInfo);
@@ -201,6 +205,107 @@ export class ModemService {
       return true;
     } catch (error) {
       console.error('Error rebooting modem:', error);
+      throw error;
+    }
+  }
+
+  async getWanInfo(): Promise<WanInfo> {
+    try {
+      // Use /api/device/information endpoint for WAN IP
+      const response = await this.apiClient.get('/api/device/information');
+      console.log('[RAW XML] Device Info (for WAN):', response.substring(0, 500));
+
+      const safeParseInt = (value: string): number => {
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
+      return {
+        wanIPAddress: parseXMLValue(response, 'WanIPAddress') || parseXMLValue(response, 'WanIpAddress') || '',
+        uptime: safeParseInt(parseXMLValue(response, 'Uptime')),
+        primaryDns: parseXMLValue(response, 'PrimaryDNS') || '',
+        secondaryDns: parseXMLValue(response, 'SecondaryDNS') || '',
+      };
+    } catch (error) {
+      console.error('Error getting WAN info:', error);
+      throw error;
+    }
+  }
+
+  async getMobileDataStatus(): Promise<MobileDataStatus> {
+    try {
+      const response = await this.apiClient.get('/api/dialup/mobile-dataswitch');
+      console.log('[RAW XML] Mobile Data Switch:', response.substring(0, 500));
+
+      const dataswitch = parseXMLValue(response, 'dataswitch');
+      return {
+        dataswitch: dataswitch === '1',
+      };
+    } catch (error) {
+      console.error('Error getting mobile data status:', error);
+      throw error;
+    }
+  }
+
+  async toggleMobileData(enable: boolean): Promise<boolean> {
+    try {
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <dataswitch>${enable ? '1' : '0'}</dataswitch>
+        </request>`;
+
+      await this.apiClient.post('/api/dialup/mobile-dataswitch', data);
+      console.log('[Service] Mobile data toggled:', enable);
+      return true;
+    } catch (error) {
+      console.error('Error toggling mobile data:', error);
+      throw error;
+    }
+  }
+
+  async triggerPlmnScan(): Promise<boolean> {
+    try {
+      // Triggering PLMN list scan will cause the modem to re-register
+      // on the network, which typically results in a new IP address
+      const response = await this.apiClient.get('/api/net/plmn-list');
+      console.log('[Service] PLMN scan triggered:', response.substring(0, 200));
+      return true;
+    } catch (error) {
+      console.error('Error triggering PLMN scan:', error);
+      throw error;
+    }
+  }
+
+  async getAntennaMode(): Promise<string> {
+    try {
+      const response = await this.apiClient.get('/api/device/antenna_type');
+      console.log('[RAW XML] Antenna Type:', response.substring(0, 300));
+      return parseXMLValue(response, 'antenna_type') || 'auto';
+    } catch (error) {
+      console.error('Error getting antenna mode:', error);
+      return 'auto'; // Default to auto if endpoint not available
+    }
+  }
+
+  async setAntennaMode(mode: 'auto' | 'internal' | 'external'): Promise<boolean> {
+    try {
+      // Map mode to API values: 0=auto, 1=internal, 2=external
+      const modeMap: Record<string, string> = {
+        'auto': '0',
+        'internal': '1',
+        'external': '2',
+      };
+
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <antenna_type>${modeMap[mode]}</antenna_type>
+        </request>`;
+
+      await this.apiClient.post('/api/device/antenna_type', data);
+      console.log('[Service] Antenna mode set to:', mode);
+      return true;
+    } catch (error) {
+      console.error('Error setting antenna mode:', error);
       throw error;
     }
   }

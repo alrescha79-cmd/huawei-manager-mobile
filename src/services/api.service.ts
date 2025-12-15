@@ -41,7 +41,10 @@ export class ModemAPIClient {
   }
 
   private async getToken(forceRefresh: boolean = false): Promise<{ token: string; session: string }> {
-    if (!forceRefresh && this.sessionToken && Date.now() < this.tokenExpiry) {
+    // Refresh token if expired or about to expire (within 10 seconds)
+    const shouldRefresh = forceRefresh || !this.sessionToken || Date.now() > (this.tokenExpiry - 10000);
+
+    if (!shouldRefresh) {
       return { token: this.sessionToken, session: this.sessionCookie };
     }
 
@@ -51,7 +54,8 @@ export class ModemAPIClient {
       // Parse token from XML
       this.sessionToken = parseXMLValue(response.data, 'TokInfo');
       const sesInfo = parseXMLValue(response.data, 'SesInfo').trim();
-      this.tokenExpiry = Date.now() + 30000;
+      // Increase token validity to 2 minutes (modem sessions typically last longer)
+      this.tokenExpiry = Date.now() + 120000;
 
       // IMPORTANT: Prioritize Set-Cookie header first (matches working bot-hmonn)
       let session = '';
@@ -339,6 +343,9 @@ export class ModemAPIClient {
 
   async get(endpoint: string): Promise<string> {
     try {
+      // Always refresh session before GET requests to keep session alive
+      await this.getToken();
+
       const response = await this.client.get(endpoint, {
         headers: {
           'Cookie': this.sessionCookie || '',

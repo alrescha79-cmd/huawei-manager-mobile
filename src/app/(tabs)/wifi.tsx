@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,9 @@ import {
   Switch,
   StatusBar,
   Platform,
+  TextInput,
+  TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { Card, InfoRow, Button } from '@/components';
@@ -16,6 +19,13 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
 import { WiFiService } from '@/services/wifi.service';
 import { formatMacAddress } from '@/utils/helpers';
+
+const SECURITY_MODES = [
+  { value: 'OPEN', label: 'Open (No Password)' },
+  { value: 'WPA2PSK', label: 'WPA2-PSK' },
+  { value: 'WPAPSKWPA2PSK', label: 'WPA/WPA2-PSK' },
+  { value: 'WPA3SAE', label: 'WPA3-SAE' },
+];
 
 export default function WiFiScreen() {
   const { colors, typography, spacing } = useTheme();
@@ -30,6 +40,36 @@ export default function WiFiScreen() {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [wifiService, setWiFiService] = useState<WiFiService | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
+  // Form state
+  const [formSsid, setFormSsid] = useState('');
+  const [formPassword, setFormPassword] = useState('');
+  const [formSecurityMode, setFormSecurityMode] = useState('WPA2PSK');
+  const [showSecurityDropdown, setShowSecurityDropdown] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Guest WiFi state
+  const [guestWifiEnabled, setGuestWifiEnabled] = useState(false);
+  const [isTogglingGuest, setIsTogglingGuest] = useState(false);
+
+  // Initialize form when settings load
+  useEffect(() => {
+    if (wifiSettings) {
+      setFormSsid(wifiSettings.ssid || '');
+      setFormPassword(wifiSettings.password || '');
+      setFormSecurityMode(wifiSettings.securityMode || 'WPA2PSK');
+    }
+  }, [wifiSettings]);
+
+  // Check if form has changes
+  const hasChanges = useMemo(() => {
+    if (!wifiSettings) return false;
+    return (
+      formSsid !== (wifiSettings.ssid || '') ||
+      formPassword !== (wifiSettings.password || '') ||
+      formSecurityMode !== (wifiSettings.securityMode || 'WPA2PSK')
+    );
+  }, [formSsid, formPassword, formSecurityMode, wifiSettings]);
 
   // Auto-refresh connected devices every 5 seconds
   useEffect(() => {
@@ -53,13 +93,15 @@ export default function WiFiScreen() {
     try {
       setIsRefreshing(true);
 
-      const [devices, settings] = await Promise.all([
+      const [devices, settings, guestSettings] = await Promise.all([
         service.getConnectedDevices(),
         service.getWiFiSettings(),
+        service.getGuestWiFiSettings(),
       ]);
 
       setConnectedDevices(devices);
       setWiFiSettings(settings);
+      setGuestWifiEnabled(guestSettings.enabled);
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Error loading WiFi data:', error);
@@ -103,6 +145,40 @@ export default function WiFiScreen() {
     }
   };
 
+  const handleToggleGuestWiFi = async (enabled: boolean) => {
+    if (!wifiService || isTogglingGuest) return;
+
+    setIsTogglingGuest(true);
+    try {
+      await wifiService.toggleGuestWiFi(enabled);
+      setGuestWifiEnabled(enabled);
+      Alert.alert('Success', `Guest WiFi ${enabled ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to toggle Guest WiFi');
+    } finally {
+      setIsTogglingGuest(false);
+    }
+  };
+
+  const handleSaveSettings = async () => {
+    if (!wifiService || !hasChanges || isSaving) return;
+
+    setIsSaving(true);
+    try {
+      await wifiService.setWiFiSettings({
+        ssid: formSsid,
+        password: formPassword,
+        securityMode: formSecurityMode,
+      });
+      Alert.alert('Success', 'WiFi settings saved successfully');
+      handleRefresh();
+    } catch (error) {
+      Alert.alert('Error', 'Failed to save WiFi settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handleKickDevice = async (macAddress: string, hostName: string) => {
     if (!wifiService) return;
 
@@ -126,6 +202,10 @@ export default function WiFiScreen() {
         },
       ]
     );
+  };
+
+  const getSecurityModeLabel = (value: string) => {
+    return SECURITY_MODES.find(m => m.value === value)?.label || value;
   };
 
   return (
@@ -155,23 +235,149 @@ export default function WiFiScreen() {
             WiFi Settings
           </Text>
 
+          {/* WiFi Enable Toggle */}
           <View style={styles.toggleRow}>
-            <Text style={[typography.body, { color: colors.text }]}>
-              WiFi Enabled
-            </Text>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text }]}>WiFi</Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {wifiSettings.wifiEnable ? 'Enabled' : 'Disabled'}
+              </Text>
+            </View>
             <Switch
               value={wifiSettings.wifiEnable}
               onValueChange={handleToggleWiFi}
-              trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor={colors.card}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={wifiSettings.wifiEnable ? colors.primary : colors.textSecondary}
             />
           </View>
 
-          <InfoRow label="SSID" value={wifiSettings.ssid} />
-          <InfoRow label="Channel" value={wifiSettings.channel} />
-          <InfoRow label="Band" value={wifiSettings.band === '1' ? '2.4 GHz' : '5 GHz'} />
-          <InfoRow label="Security" value={wifiSettings.securityMode} />
-          <InfoRow label="Max Devices" value={wifiSettings.maxAssoc} />
+          {/* Guest WiFi Toggle */}
+          <View style={styles.toggleRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text }]}>Guest WiFi</Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {guestWifiEnabled ? 'Enabled' : 'Disabled'}
+              </Text>
+            </View>
+            {isTogglingGuest ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : (
+              <Switch
+                value={guestWifiEnabled}
+                onValueChange={handleToggleGuestWiFi}
+                trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                thumbColor={guestWifiEnabled ? colors.primary : colors.textSecondary}
+              />
+            )}
+          </View>
+
+          {/* Separator */}
+          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+          {/* SSID Input */}
+          <View style={styles.formGroup}>
+            <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
+              WiFi Name (SSID)
+            </Text>
+            <TextInput
+              style={[styles.input, {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                color: colors.text
+              }]}
+              value={formSsid}
+              onChangeText={setFormSsid}
+              placeholder="Enter WiFi name"
+              placeholderTextColor={colors.textSecondary}
+            />
+          </View>
+
+          {/* Security Mode Dropdown */}
+          <View style={styles.formGroup}>
+            <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
+              Security Mode
+            </Text>
+            <TouchableOpacity
+              style={[styles.dropdown, {
+                backgroundColor: colors.card,
+                borderColor: colors.border
+              }]}
+              onPress={() => setShowSecurityDropdown(!showSecurityDropdown)}
+            >
+              <Text style={[typography.body, { color: colors.text }]}>
+                {getSecurityModeLabel(formSecurityMode)}
+              </Text>
+              <Text style={{ color: colors.textSecondary }}>▼</Text>
+            </TouchableOpacity>
+
+            {showSecurityDropdown && (
+              <View style={[styles.dropdownMenu, {
+                backgroundColor: colors.card,
+                borderColor: colors.border
+              }]}>
+                {SECURITY_MODES.map((mode) => (
+                  <TouchableOpacity
+                    key={mode.value}
+                    style={[styles.dropdownItem, {
+                      backgroundColor: formSecurityMode === mode.value ? colors.primary + '20' : 'transparent'
+                    }]}
+                    onPress={() => {
+                      setFormSecurityMode(mode.value);
+                      setShowSecurityDropdown(false);
+                    }}
+                  >
+                    <Text style={[typography.body, {
+                      color: formSecurityMode === mode.value ? colors.primary : colors.text
+                    }]}>
+                      {mode.label}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+          </View>
+
+          {/* Password Input */}
+          {formSecurityMode !== 'OPEN' && (
+            <View style={styles.formGroup}>
+              <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
+                WiFi Password
+              </Text>
+              <TextInput
+                style={[styles.input, {
+                  backgroundColor: colors.card,
+                  borderColor: colors.border,
+                  color: colors.text
+                }]}
+                value={formPassword}
+                onChangeText={setFormPassword}
+                placeholder="Enter password (min 8 characters)"
+                placeholderTextColor={colors.textSecondary}
+                secureTextEntry
+              />
+            </View>
+          )}
+
+          {/* Save Button */}
+          <TouchableOpacity
+            style={[
+              styles.saveButton,
+              {
+                backgroundColor: hasChanges ? colors.primary : colors.border,
+                opacity: hasChanges && !isSaving ? 1 : 0.6
+              }
+            ]}
+            onPress={handleSaveSettings}
+            disabled={!hasChanges || isSaving}
+          >
+            {isSaving ? (
+              <ActivityIndicator color="#FFFFFF" />
+            ) : (
+              <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                Save Changes
+              </Text>
+            )}
+          </TouchableOpacity>
         </Card>
       )}
 
@@ -243,6 +449,39 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
+  },
+  formGroup: {
+    marginBottom: 16,
+  },
+  input: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    fontSize: 16,
+  },
+  dropdown: {
+    borderWidth: 1,
+    borderRadius: 10,
+    padding: 14,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  dropdownMenu: {
+    borderWidth: 1,
+    borderRadius: 10,
+    marginTop: 4,
+    overflow: 'hidden',
+  },
+  dropdownItem: {
+    padding: 14,
+  },
+  saveButton: {
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
   },
   deviceItem: {
     flexDirection: 'row',

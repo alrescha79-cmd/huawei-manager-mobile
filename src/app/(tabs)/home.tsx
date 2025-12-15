@@ -9,8 +9,11 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
+  Switch,
+  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
@@ -24,8 +27,7 @@ import {
   getSignalStrength,
   getConnectionStatusText,
   getNetworkTypeText,
-  getSimStatusText,
-  getRoamingStatusText,
+  getLteBandInfo,
 } from '@/utils/helpers';
 
 export default function HomeScreen() {
@@ -37,17 +39,23 @@ export default function HomeScreen() {
     networkInfo,
     trafficStats,
     modemStatus,
+    wanInfo,
+    mobileDataStatus,
     setSignalInfo,
     setNetworkInfo,
     setTrafficStats,
     setModemStatus,
+    setWanInfo,
+    setMobileDataStatus,
   } = useModemStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modemService, setModemService] = useState<ModemService | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [isTogglingData, setIsTogglingData] = useState(false);
+  const [isChangingIp, setIsChangingIp] = useState(false);
 
-  // Auto-refresh interval (every 3 seconds for realtime updates)
+  // Auto-refresh interval (every 2 seconds for realtime updates)
   useEffect(() => {
     if (credentials?.modemIp) {
       const service = new ModemService(credentials.modemIp);
@@ -59,7 +67,7 @@ export default function HomeScreen() {
       // Setup auto-refresh interval
       const intervalId = setInterval(() => {
         loadDataSilent(service);
-      }, 3000); // Update every 3 seconds
+      }, 2000); // Update every 2 seconds
 
       return () => clearInterval(intervalId);
     }
@@ -69,25 +77,31 @@ export default function HomeScreen() {
     try {
       setIsRefreshing(true);
 
-      const [signal, network, traffic, status] = await Promise.all([
+      const [signal, network, traffic, status, wan, dataStatus] = await Promise.all([
         service.getSignalInfo(),
         service.getNetworkInfo(),
         service.getTrafficStats(),
         service.getModemStatus(),
+        service.getWanInfo().catch(() => null),
+        service.getMobileDataStatus().catch(() => null),
       ]);
 
       // Log all data for debugging
-      console.log('=== Modem Data Update ===');
-      console.log('Signal Info:', JSON.stringify(signal, null, 2));
-      console.log('Network Info:', JSON.stringify(network, null, 2));
-      console.log('Traffic Stats:', JSON.stringify(traffic, null, 2));
-      console.log('Modem Status:', JSON.stringify(status, null, 2));
-      console.log('========================');
+      // console.log('=== Modem Data Update ===');
+      // console.log('Signal Info:', JSON.stringify(signal, null, 2));
+      // console.log('Network Info:', JSON.stringify(network, null, 2));
+      // console.log('Traffic Stats:', JSON.stringify(traffic, null, 2));
+      // console.log('Modem Status:', JSON.stringify(status, null, 2));
+      // console.log('WAN Info:', JSON.stringify(wan, null, 2));
+      // console.log('Mobile Data Status:', JSON.stringify(dataStatus, null, 2));
+      // console.log('========================');
 
       setSignalInfo(signal);
       setNetworkInfo(network);
       setTrafficStats(traffic);
       setModemStatus(status);
+      if (wan) setWanInfo(wan);
+      if (dataStatus) setMobileDataStatus(dataStatus);
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Error loading data:', error);
@@ -100,11 +114,13 @@ export default function HomeScreen() {
   // Silent background refresh without showing loading indicator
   const loadDataSilent = async (service: ModemService) => {
     try {
-      const [signal, network, traffic, status] = await Promise.all([
+      const [signal, network, traffic, status, wan, dataStatus] = await Promise.all([
         service.getSignalInfo(),
         service.getNetworkInfo(),
         service.getTrafficStats(),
         service.getModemStatus(),
+        service.getWanInfo().catch(() => null),
+        service.getMobileDataStatus().catch(() => null),
       ]);
 
       // Log background updates (lighter logging)
@@ -114,12 +130,15 @@ export default function HomeScreen() {
         operator: network?.networkName,
         downloadSpeed: traffic?.currentDownloadRate,
         uploadSpeed: traffic?.currentUploadRate,
+        wanIp: wan?.wanIPAddress,
       });
 
       setSignalInfo(signal);
       setNetworkInfo(network);
       setTrafficStats(traffic);
       setModemStatus(status);
+      if (wan) setWanInfo(wan);
+      if (dataStatus) setMobileDataStatus(dataStatus);
       setLastUpdate(new Date());
     } catch (error) {
       // Silent fail for background updates
@@ -131,6 +150,56 @@ export default function HomeScreen() {
     if (modemService) {
       loadData(modemService);
     }
+  };
+
+  const handleToggleMobileData = async () => {
+    if (!modemService || isTogglingData) return;
+
+    const newState = !mobileDataStatus?.dataswitch;
+    setIsTogglingData(true);
+    try {
+      await modemService.toggleMobileData(newState);
+      // Refresh data after toggle
+      const dataStatus = await modemService.getMobileDataStatus();
+      setMobileDataStatus(dataStatus);
+      Alert.alert('Success', `Mobile data ${newState ? 'enabled' : 'disabled'}`);
+    } catch (error) {
+      console.error('Error toggling mobile data:', error);
+      Alert.alert('Error', 'Failed to toggle mobile data');
+    } finally {
+      setIsTogglingData(false);
+    }
+  };
+
+  const handleChangeIp = async () => {
+    if (!modemService || isChangingIp) return;
+
+    Alert.alert(
+      'Change IP Address',
+      'This will trigger a PLMN network scan to get a new IP address. Continue?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Continue',
+          onPress: async () => {
+            setIsChangingIp(true);
+            try {
+              await modemService.triggerPlmnScan();
+              Alert.alert('Success', 'PLMN scan triggered. New IP will be assigned shortly.');
+              // Wait a bit and refresh to get new IP
+              setTimeout(() => {
+                if (modemService) loadData(modemService);
+              }, 5000);
+            } catch (error) {
+              console.error('Error triggering PLMN scan:', error);
+              Alert.alert('Error', 'Failed to trigger PLMN scan');
+            } finally {
+              setIsChangingIp(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleReLogin = () => {
@@ -232,7 +301,7 @@ export default function HomeScreen() {
               )}
             />
             <InfoRow
-              label="Operator"
+              label="ISP"
               value={
                 networkInfo?.fullName ||
                 networkInfo?.networkName ||
@@ -241,15 +310,35 @@ export default function HomeScreen() {
               }
             />
             <InfoRow
-              label="SIM Status"
-              value={getSimStatusText(modemStatus?.simStatus)}
+              label="IP WAN"
+              value={wanInfo?.wanIPAddress || 'Fetching...'}
             />
-            {modemStatus?.roamingStatus && (
-              <InfoRow
-                label="Roaming"
-                value={getRoamingStatusText(modemStatus.roamingStatus)}
-              />
-            )}
+            <InfoRow
+              label="BAND"
+              value={getLteBandInfo(signalInfo?.band)}
+            />
+            {/* WIDTH with icons */}
+            <View style={[styles.infoRowCustom, { marginBottom: spacing.sm }]}>
+              <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
+                WIDTH
+              </Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
+                  <>
+                    <MaterialIcons name="arrow-downward" size={14} color={colors.success} />
+                    <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginRight: 8 }]}>
+                      {signalInfo.dlbandwidth || '-'}
+                    </Text>
+                    <MaterialIcons name="arrow-upward" size={14} color={colors.primary} />
+                    <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                      {signalInfo.ulbandwidth || '-'}
+                    </Text>
+                  </>
+                ) : (
+                  <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>-</Text>
+                )}
+              </View>
+            </View>
           </View>
 
           {signalInfo && (
@@ -261,6 +350,54 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
+      </Card>
+
+      {/* Control Buttons Card */}
+      <Card style={{ marginBottom: spacing.md }}>
+        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
+          Quick Controls
+        </Text>
+
+        {/* Mobile Data Toggle */}
+        <View style={styles.controlRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>Mobile Data</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {mobileDataStatus?.dataswitch ? 'Enabled' : 'Disabled'}
+            </Text>
+          </View>
+          {isTogglingData ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <Switch
+              value={mobileDataStatus?.dataswitch ?? false}
+              onValueChange={handleToggleMobileData}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={mobileDataStatus?.dataswitch ? colors.primary : colors.textSecondary}
+            />
+          )}
+        </View>
+
+        {/* Separator */}
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.sm }} />
+
+        {/* Change IP Button */}
+        <TouchableOpacity
+          style={[styles.controlButton, { backgroundColor: colors.primary }]}
+          onPress={handleChangeIp}
+          disabled={isChangingIp}
+        >
+          {isChangingIp ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+              Force Change IP WAN
+            </Text>
+          )}
+        </TouchableOpacity>
+        <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
+          Triggers PLMN scan to get a new IP address
+        </Text>
       </Card>
 
       {/* Signal Strength Card */}
@@ -457,5 +594,23 @@ const styles = StyleSheet.create({
   totalUsageContainer: {
     alignItems: 'center',
     marginTop: 16,
+  },
+  controlRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 8,
+  },
+  controlButton: {
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  infoRowCustom: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 });

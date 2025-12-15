@@ -28,6 +28,9 @@ export const API_ENDPOINTS = {
   SMS_DELETE: '/api/sms/delete-sms',
   SMS_READ: '/api/sms/set-read',
   DEVICE_CONTROL: '/api/device/control',
+  DIALUP_CONNECTION: '/api/dialup/connection',
+  MOBILE_DATASWITCH: '/api/dialup/mobile-dataswitch',
+  PLMN_LIST: '/api/net/plmn-list',
 };
 
 export const APP_CONFIG = {
