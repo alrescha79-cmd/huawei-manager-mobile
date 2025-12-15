@@ -1,5 +1,5 @@
 export const formatBytes = (bytes: number, decimals: number = 2): string => {
-  if (bytes === 0) return '0 Bytes';
+  if (!bytes || isNaN(bytes) || bytes === 0) return '0 Bytes';
 
   const k = 1024;
   const dm = decimals < 0 ? 0 : decimals;
@@ -37,7 +37,7 @@ export const formatDuration = (seconds: number): string => {
 
 export const getSignalStrength = (rssi: string | number): string => {
   const rssiNum = typeof rssi === 'string' ? parseInt(rssi) : rssi;
-  
+
   if (rssiNum >= -65) return 'Excellent';
   if (rssiNum >= -75) return 'Good';
   if (rssiNum >= -85) return 'Fair';
@@ -47,7 +47,7 @@ export const getSignalStrength = (rssi: string | number): string => {
 
 export const getSignalIcon = (rssi: string | number): number => {
   const rssiNum = typeof rssi === 'string' ? parseInt(rssi) : rssi;
-  
+
   if (rssiNum >= -65) return 5;
   if (rssiNum >= -75) return 4;
   if (rssiNum >= -85) return 3;
@@ -69,7 +69,7 @@ export const formatMacAddress = (mac: string): string => {
 export const isValidIP = (ip: string): boolean => {
   const ipRegex = /^(\d{1,3}\.){3}\d{1,3}$/;
   if (!ipRegex.test(ip)) return false;
-  
+
   const parts = ip.split('.');
   return parts.every(part => {
     const num = parseInt(part);
@@ -80,21 +80,21 @@ export const isValidIP = (ip: string): boolean => {
 // Decode Huawei modem status codes
 export const getConnectionStatusText = (code: string | undefined): string => {
   if (!code) return 'Unknown';
-  
+
   const statusMap: Record<string, string> = {
     '901': 'Connected',
-    '902': 'Disconnected', 
+    '902': 'Disconnected',
     '903': 'Connecting',
     '904': 'Disconnecting',
     '905': 'Connection Failed',
   };
-  
+
   return statusMap[code] || `Status ${code}`;
 };
 
 export const getNetworkTypeText = (code: string | undefined): string => {
   if (!code) return 'Unknown';
-  
+
   const typeMap: Record<string, string> = {
     '0': 'No Service',
     '1': 'GSM',
@@ -124,13 +124,13 @@ export const getNetworkTypeText = (code: string | undefined): string => {
     '65': 'HSPA+',
     '101': 'LTE',
   };
-  
+
   return typeMap[code] || code;
 };
 
 export const getSimStatusText = (code: string | undefined): string => {
   if (!code) return 'Unknown';
-  
+
   const simMap: Record<string, string> = {
     '0': 'Invalid SIM',
     '1': 'Valid SIM',
@@ -141,17 +141,17 @@ export const getSimStatusText = (code: string | undefined): string => {
     '240': 'No SIM',
     '255': 'No SIM',
   };
-  
+
   return simMap[code] || `SIM ${code}`;
 };
 
 export const getRoamingStatusText = (code: string | undefined): string => {
   if (!code) return 'Unknown';
-  
+
   const roamingMap: Record<string, string> = {
     '0': 'Home Network',
     '1': 'Roaming',
   };
-  
+
   return roamingMap[code] || code;
 };

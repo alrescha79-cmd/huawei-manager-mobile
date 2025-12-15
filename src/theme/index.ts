@@ -1,4 +1,5 @@
 import { useColorScheme } from 'react-native';
+import { useThemeStore } from '@/stores/theme.store';
 
 export const Colors = {
   light: {
@@ -109,8 +110,16 @@ export const Typography = {
 };
 
 export const useTheme = () => {
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const systemColorScheme = useColorScheme();
+  const { themeMode } = useThemeStore();
+
+  // Determine if dark mode should be used
+  let isDark: boolean;
+  if (themeMode === 'system') {
+    isDark = systemColorScheme === 'dark';
+  } else {
+    isDark = themeMode === 'dark';
+  }
 
   return {
     colors: isDark ? Colors.dark : Colors.light,
@@ -118,6 +127,7 @@ export const useTheme = () => {
     borderRadius: BorderRadius,
     typography: Typography,
     isDark,
+    themeMode,
   };
 };
 

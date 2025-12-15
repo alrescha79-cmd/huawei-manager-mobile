@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -11,10 +11,9 @@ import {
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useTheme } from '@/theme';
-import { Card, Input, Button } from '@/components';
+import { Card, Input, Button, WebViewLogin } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { networkService } from '@/services/network.service';
-import { ModemService } from '@/services/modem.service';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -25,18 +24,13 @@ export default function LoginScreen() {
   const [username, setUsername] = useState('admin');
   const [password, setPassword] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
-
-  // Disable auto-detect on mount to prevent hanging
-  // User can manually click "Detect IP" button instead
-  // useEffect(() => {
-  //   detectModemIP();
-  // }, []);
+  const [showWebViewLogin, setShowWebViewLogin] = useState(false);
 
   const detectModemIP = async () => {
     setIsDetecting(true);
     try {
       const isWiFi = await networkService.isConnectedToWiFi();
-      
+
       if (!isWiFi) {
         Alert.alert(
           'WiFi Required',
@@ -55,45 +49,43 @@ export default function LoginScreen() {
     }
   };
 
-  const handleLogin = async () => {
+  // Open WebView for login
+  const handleLoginPress = () => {
     setError(null);
 
-    if (!modemIp || !username || !password) {
-      Alert.alert('Error', 'Please fill in all fields');
+    if (!modemIp) {
+      Alert.alert('Error', 'Please enter modem IP address');
       return;
     }
 
+    console.log('[Login] Opening WebView login for:', modemIp);
+    setShowWebViewLogin(true);
+  };
+
+  // Handle successful login from WebView
+  const handleWebViewLoginSuccess = async () => {
+    console.log('[Login] WebView login successful!');
+    setShowWebViewLogin(false);
+
     try {
-      console.log('[Login] Attempting login to:', modemIp);
-      const modemService = new ModemService(modemIp);
-      const loginSuccess = await modemService.login(username, password);
+      // Save credentials
+      await login({
+        modemIp,
+        username,
+        password,
+      });
 
-      console.log('[Login] Login result:', loginSuccess);
-
-      if (loginSuccess) {
-        console.log('[Login] Saving credentials...');
-        await login({
-          modemIp,
-          username,
-          password,
-        });
-
-        console.log('[Login] Success! Redirecting to home...');
-        Alert.alert('Success', 'Login successful!', [
-          {
-            text: 'OK',
-            onPress: () => router.replace('/(tabs)/home'),
-          },
-        ]);
-      } else {
-        console.error('[Login] Login failed - invalid credentials');
-        Alert.alert('Login Failed', 'Invalid username or password');
-        setError('Invalid credentials');
-      }
+      console.log('[Login] Credentials saved, redirecting to home...');
+      Alert.alert('Success', 'Login successful!', [
+        {
+          text: 'OK',
+          onPress: () => router.replace('/(tabs)/home'),
+        },
+      ]);
     } catch (err) {
-      console.error('[Login] Error:', err);
+      console.error('[Login] Error saving credentials:', err);
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
-      Alert.alert('Login Error', errorMessage);
+      Alert.alert('Error', errorMessage);
       setError(errorMessage);
     }
   };
@@ -129,7 +121,7 @@ export default function LoginScreen() {
           />
 
           <Input
-            label="Username"
+            label="Username (optional)"
             value={username}
             onChangeText={setUsername}
             placeholder="admin"
@@ -138,7 +130,7 @@ export default function LoginScreen() {
           />
 
           <Input
-            label="Password"
+            label="Password (optional)"
             value={password}
             onChangeText={setPassword}
             placeholder="Enter password"
@@ -155,8 +147,8 @@ export default function LoginScreen() {
           )}
 
           <Button
-            title="Login"
-            onPress={handleLogin}
+            title="Login via Web Interface"
+            onPress={handleLoginPress}
             loading={isLoading}
             disabled={isLoading}
             style={{ marginBottom: spacing.sm }}
@@ -173,10 +165,18 @@ export default function LoginScreen() {
 
         <View style={styles.footer}>
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
-            Make sure you are connected to your{'\n'}Huawei modem WiFi network
+            Login will open in a web browser.{'\n'}Make sure you are connected to modem WiFi.
           </Text>
         </View>
       </ScrollView>
+
+      {/* WebView Login Modal */}
+      <WebViewLogin
+        modemIp={modemIp}
+        visible={showWebViewLogin}
+        onClose={() => setShowWebViewLogin(false)}
+        onLoginSuccess={handleWebViewLoginSuccess}
+      />
     </KeyboardAvoidingView>
   );
 }

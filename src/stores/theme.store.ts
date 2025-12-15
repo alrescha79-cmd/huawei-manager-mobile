@@ -1,5 +1,6 @@
 import { create } from 'zustand';
-import { useColorScheme } from 'react-native';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 type ThemeMode = 'light' | 'dark' | 'system';
 
@@ -13,12 +14,23 @@ interface ThemeState {
   setLanguage: (language: string) => void;
 }
 
-export const useThemeStore = create<ThemeState>((set) => ({
-  themeMode: 'system',
-  refreshInterval: 5000, // 5 seconds
-  language: 'en',
+export const useThemeStore = create<ThemeState>()(
+  persist(
+    (set) => ({
+      themeMode: 'system',
+      refreshInterval: 5000, // 5 seconds
+      language: 'en',
 
-  setThemeMode: (mode) => set({ themeMode: mode }),
-  setRefreshInterval: (interval) => set({ refreshInterval: interval }),
-  setLanguage: (language) => set({ language }),
-}));
+      setThemeMode: (mode) => {
+        console.log('[Theme] Setting theme mode to:', mode);
+        set({ themeMode: mode });
+      },
+      setRefreshInterval: (interval) => set({ refreshInterval: interval }),
+      setLanguage: (language) => set({ language }),
+    }),
+    {
+      name: 'theme-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+    }
+  )
+);

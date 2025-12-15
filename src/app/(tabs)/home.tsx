@@ -7,16 +7,19 @@ import {
   RefreshControl,
   Alert,
   TouchableOpacity,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/theme';
-import { Card, InfoRow, SignalBar } from '@/components';
+import { Card, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
-import { 
-  formatBytes, 
-  formatBitsPerSecond, 
+import {
+  formatBytes,
+  formatBitsPerSecond,
+  formatDuration,
   getSignalIcon,
   getSignalStrength,
   getConnectionStatusText,
@@ -29,10 +32,10 @@ export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { credentials, logout } = useAuthStore();
-  const { 
-    signalInfo, 
-    networkInfo, 
-    trafficStats, 
+  const {
+    signalInfo,
+    networkInfo,
+    trafficStats,
     modemStatus,
     setSignalInfo,
     setNetworkInfo,
@@ -49,7 +52,7 @@ export default function HomeScreen() {
     if (credentials?.modemIp) {
       const service = new ModemService(credentials.modemIp);
       setModemService(service);
-      
+
       // Initial load
       loadData(service);
 
@@ -156,7 +159,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -167,9 +170,6 @@ export default function HomeScreen() {
     >
       <View style={styles.header}>
         <View>
-          <Text style={[typography.largeTitle, { color: colors.text }]}>
-            Dashboard
-          </Text>
           {lastUpdate && (
             <Text style={[typography.caption1, { color: colors.textSecondary }]}>
               Updated: {lastUpdate.toLocaleTimeString()}
@@ -218,7 +218,7 @@ export default function HomeScreen() {
         <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
           Connection Status
         </Text>
-        
+
         <View style={styles.statusRow}>
           <View style={{ flex: 1 }}>
             <InfoRow
@@ -234,9 +234,9 @@ export default function HomeScreen() {
             <InfoRow
               label="Operator"
               value={
-                networkInfo?.fullName || 
-                networkInfo?.networkName || 
-                networkInfo?.spnName || 
+                networkInfo?.fullName ||
+                networkInfo?.networkName ||
+                networkInfo?.spnName ||
                 'Unknown'
               }
             />
@@ -251,11 +251,11 @@ export default function HomeScreen() {
               />
             )}
           </View>
-          
+
           {signalInfo && (
             <View style={styles.signalContainer}>
-              <SignalBar 
-                strength={getSignalIcon(signalInfo.rssi)} 
+              <SignalBar
+                strength={getSignalIcon(signalInfo.rssi)}
                 label={getSignalStrength(signalInfo.rssi)}
               />
             </View>
@@ -269,21 +269,59 @@ export default function HomeScreen() {
           <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
             Signal Strength
           </Text>
-          
+
           {signalInfo.rssi && (
-            <InfoRow label="RSSI" value={`${signalInfo.rssi} dBm`} />
+            <SignalMeter
+              label="RSSI"
+              value={signalInfo.rssi}
+              unit="dBm"
+              min={-110}
+              max={-50}
+              thresholds={{ excellent: -65, good: -75, fair: -85, poor: -95 }}
+              reverseScale={true}
+            />
           )}
           {signalInfo.rsrp && (
-            <InfoRow label="RSRP" value={`${signalInfo.rsrp} dBm`} />
+            <SignalMeter
+              label="RSRP"
+              value={signalInfo.rsrp}
+              unit="dBm"
+              min={-140}
+              max={-70}
+              thresholds={{ excellent: -80, good: -90, fair: -100, poor: -110 }}
+              reverseScale={true}
+            />
           )}
           {signalInfo.rsrq && (
-            <InfoRow label="RSRQ" value={`${signalInfo.rsrq} dB`} />
+            <SignalMeter
+              label="RSRQ"
+              value={signalInfo.rsrq}
+              unit="dB"
+              min={-20}
+              max={-3}
+              thresholds={{ excellent: -5, good: -9, fair: -12, poor: -15 }}
+              reverseScale={true}
+            />
           )}
           {signalInfo.sinr && (
-            <InfoRow label="SINR" value={`${signalInfo.sinr} dB`} />
+            <SignalMeter
+              label="SINR"
+              value={signalInfo.sinr}
+              unit="dB"
+              min={-5}
+              max={30}
+              thresholds={{ excellent: 20, good: 13, fair: 6, poor: 0 }}
+              reverseScale={false}
+            />
           )}
-          {signalInfo.band && <InfoRow label="Band" value={signalInfo.band} />}
-          {signalInfo.cellId && <InfoRow label="Cell ID" value={signalInfo.cellId} />}
+
+          {/* Additional Info */}
+          {(signalInfo.band || signalInfo.cellId) && (
+            <View style={{ marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
+              {signalInfo.band && <InfoRow label="Band" value={signalInfo.band} />}
+              {signalInfo.cellId && <InfoRow label="Cell ID" value={signalInfo.cellId} />}
+            </View>
+          )}
         </Card>
       ) : (
         <Card style={{ marginBottom: spacing.md }}>
@@ -303,31 +341,53 @@ export default function HomeScreen() {
           <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
             Traffic Statistics
           </Text>
-          
-          <InfoRow 
-            label="Download Speed" 
-            value={formatBitsPerSecond(trafficStats.currentDownloadRate)} 
+
+          {/* Speed Gauge */}
+          <SpeedGauge
+            downloadSpeed={trafficStats.currentDownloadRate}
+            uploadSpeed={trafficStats.currentUploadRate}
           />
-          <InfoRow 
-            label="Upload Speed" 
-            value={formatBitsPerSecond(trafficStats.currentUploadRate)} 
-          />
-          <InfoRow 
-            label="Total Download" 
-            value={formatBytes(trafficStats.totalDownload)} 
-          />
-          <InfoRow 
-            label="Total Upload" 
-            value={formatBytes(trafficStats.totalUpload)} 
-          />
-          <InfoRow 
-            label="Monthly Download" 
-            value={formatBytes(trafficStats.monthDownload)} 
-          />
-          <InfoRow 
-            label="Monthly Upload" 
-            value={formatBytes(trafficStats.monthUpload)} 
-          />
+
+          {/* Divider */}
+          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+          {/* Data Usage Grid - 2 columns */}
+          <View style={styles.dataUsageGrid}>
+            {/* Current Session */}
+            <View style={styles.dataUsageItem}>
+              <DataPieChart
+                title="Session"
+                subtitle={formatDuration(trafficStats.currentConnectTime)}
+                download={trafficStats.currentDownload}
+                upload={trafficStats.currentUpload}
+                formatValue={formatBytes}
+                compact
+              />
+            </View>
+
+            {/* Monthly */}
+            <View style={styles.dataUsageItem}>
+              <DataPieChart
+                title="Monthly"
+                subtitle="This month"
+                download={trafficStats.monthDownload}
+                upload={trafficStats.monthUpload}
+                formatValue={formatBytes}
+                compact
+              />
+            </View>
+          </View>
+
+          {/* Total Usage - centered below */}
+          <View style={styles.totalUsageContainer}>
+            <DataPieChart
+              title="Total Usage"
+              subtitle={`Duration: ${formatDuration(trafficStats.totalConnectTime)}`}
+              download={trafficStats.totalDownload}
+              upload={trafficStats.totalUpload}
+              formatValue={formatBytes}
+            />
+          </View>
         </Card>
       )}
     </ScrollView>
@@ -365,5 +425,37 @@ const styles = StyleSheet.create({
   },
   signalContainer: {
     marginLeft: 16,
+  },
+  trafficSection: {
+    backgroundColor: 'rgba(0,0,0,0.02)',
+    borderRadius: 8,
+    padding: 12,
+  },
+  trafficHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  trafficRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  trafficItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  dataUsageGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  dataUsageItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  totalUsageContainer: {
+    alignItems: 'center',
+    marginTop: 16,
   },
 });

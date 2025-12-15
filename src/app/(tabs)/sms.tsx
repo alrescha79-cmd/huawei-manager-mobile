@@ -8,6 +8,8 @@ import {
   Alert,
   Modal,
   TouchableOpacity,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import dayjs from 'dayjs';
 import { useTheme } from '@/theme';
@@ -19,8 +21,8 @@ import { SMSService } from '@/services/sms.service';
 export default function SMSScreen() {
   const { colors, typography, spacing } = useTheme();
   const { credentials } = useAuthStore();
-  const { 
-    messages, 
+  const {
+    messages,
     smsCount,
     setMessages,
     setSMSCount,
@@ -40,7 +42,7 @@ export default function SMSScreen() {
     if (credentials?.modemIp) {
       const service = new SMSService(credentials.modemIp);
       setSMSService(service);
-      
+
       // Initial load
       loadData(service);
 
@@ -146,7 +148,7 @@ export default function SMSScreen() {
     <>
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -157,9 +159,6 @@ export default function SMSScreen() {
       >
         <View style={styles.headerRow}>
           <View>
-            <Text style={[typography.largeTitle, { color: colors.text }]}>
-              Messages
-            </Text>
             {lastUpdate && (
               <Text style={[typography.caption1, { color: colors.textSecondary }]}>
                 Updated: {lastUpdate.toLocaleTimeString()}

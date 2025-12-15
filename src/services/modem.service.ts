@@ -1,10 +1,10 @@
 import { ModemAPIClient } from './api.service';
-import { 
-  ModemInfo, 
-  SignalInfo, 
-  NetworkInfo, 
+import {
+  ModemInfo,
+  SignalInfo,
+  NetworkInfo,
   TrafficStats,
-  ModemStatus 
+  ModemStatus
 } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
 
@@ -26,7 +26,7 @@ export class ModemService {
   async getModemInfo(): Promise<ModemInfo> {
     try {
       const response = await this.apiClient.get('/api/device/information');
-      
+
       return {
         deviceName: parseXMLValue(response, 'DeviceName'),
         serialNumber: parseXMLValue(response, 'SerialNumber'),
@@ -53,10 +53,10 @@ export class ModemService {
   async getSignalInfo(): Promise<SignalInfo> {
     try {
       const response = await this.apiClient.get('/api/device/signal');
-      
+
       // Log raw XML response for debugging
       console.log('[RAW XML] Signal:', response.substring(0, 500));
-      
+
       const signalInfo = {
         rssi: parseXMLValue(response, 'rssi'),
         rsrp: parseXMLValue(response, 'rsrp'),
@@ -69,7 +69,7 @@ export class ModemService {
         cellId: parseXMLValue(response, 'cell_id'),
         band: parseXMLValue(response, 'band'),
       };
-      
+
       console.log('[Service] Signal Info:', signalInfo);
       return signalInfo;
     } catch (error) {
@@ -81,7 +81,7 @@ export class ModemService {
   async getNetworkInfo(): Promise<NetworkInfo> {
     try {
       const response = await this.apiClient.get('/api/net/current-plmn');
-      
+
       const networkInfo = {
         state: parseXMLValue(response, 'State'),
         registerState: parseXMLValue(response, 'RegisterState'),
@@ -95,7 +95,7 @@ export class ModemService {
         spnName: parseXMLValue(response, 'SpnName'),
         fullName: parseXMLValue(response, 'FullName'),
       };
-      
+
       console.log('[Service] Network Info:', networkInfo);
       return networkInfo;
     } catch (error) {
@@ -106,19 +106,54 @@ export class ModemService {
 
   async getTrafficStats(): Promise<TrafficStats> {
     try {
+      // Helper to safely parse int with fallback
+      const safeParseInt = (value: string): number => {
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
+      // Fetch traffic stats from main endpoint
       const response = await this.apiClient.get('/api/monitoring/traffic-statistics');
-      
+      console.log('[RAW XML] Traffic Stats:', response.substring(0, 500));
+
+      // Also fetch monthly stats from separate endpoint
+      let monthDownload = 0;
+      let monthUpload = 0;
+      let monthDuration = 0;
+      try {
+        const monthResponse = await this.apiClient.get('/api/monitoring/month_statistics');
+        console.log('[RAW XML] Month Stats:', monthResponse.substring(0, 500));
+
+        // Try different possible tag names
+        monthDownload = safeParseInt(
+          parseXMLValue(monthResponse, 'CurrentMonthDownload') ||
+          parseXMLValue(monthResponse, 'monthDownload') ||
+          parseXMLValue(monthResponse, 'MonthDownload')
+        );
+        monthUpload = safeParseInt(
+          parseXMLValue(monthResponse, 'CurrentMonthUpload') ||
+          parseXMLValue(monthResponse, 'monthUpload') ||
+          parseXMLValue(monthResponse, 'MonthUpload')
+        );
+        monthDuration = safeParseInt(
+          parseXMLValue(monthResponse, 'CurrentMonthDuration') ||
+          parseXMLValue(monthResponse, 'MonthDuration')
+        );
+      } catch (monthError) {
+        console.log('[API] Month statistics not available:', monthError);
+      }
+
       return {
-        currentConnectTime: parseInt(parseXMLValue(response, 'CurrentConnectTime')),
-        currentUpload: parseInt(parseXMLValue(response, 'CurrentUpload')),
-        currentDownload: parseInt(parseXMLValue(response, 'CurrentDownload')),
-        currentDownloadRate: parseInt(parseXMLValue(response, 'CurrentDownloadRate')),
-        currentUploadRate: parseInt(parseXMLValue(response, 'CurrentUploadRate')),
-        totalUpload: parseInt(parseXMLValue(response, 'TotalUpload')),
-        totalDownload: parseInt(parseXMLValue(response, 'TotalDownload')),
-        totalConnectTime: parseInt(parseXMLValue(response, 'TotalConnectTime')),
-        monthDownload: parseInt(parseXMLValue(response, 'MonthDownload')),
-        monthUpload: parseInt(parseXMLValue(response, 'MonthUpload')),
+        currentConnectTime: safeParseInt(parseXMLValue(response, 'CurrentConnectTime')),
+        currentUpload: safeParseInt(parseXMLValue(response, 'CurrentUpload')),
+        currentDownload: safeParseInt(parseXMLValue(response, 'CurrentDownload')),
+        currentDownloadRate: safeParseInt(parseXMLValue(response, 'CurrentDownloadRate')),
+        currentUploadRate: safeParseInt(parseXMLValue(response, 'CurrentUploadRate')),
+        totalUpload: safeParseInt(parseXMLValue(response, 'TotalUpload')),
+        totalDownload: safeParseInt(parseXMLValue(response, 'TotalDownload')),
+        totalConnectTime: safeParseInt(parseXMLValue(response, 'TotalConnectTime')),
+        monthDownload,
+        monthUpload,
       };
     } catch (error) {
       console.error('Error getting traffic stats:', error);
@@ -129,10 +164,10 @@ export class ModemService {
   async getModemStatus(): Promise<ModemStatus> {
     try {
       const response = await this.apiClient.get('/api/monitoring/status');
-      
+
       // Log raw XML response for debugging
       console.log('[RAW XML] Status:', response.substring(0, 500));
-      
+
       const modemStatus = {
         connectionStatus: parseXMLValue(response, 'ConnectionStatus'),
         signalIcon: parseXMLValue(response, 'SignalIcon'),
@@ -146,7 +181,7 @@ export class ModemService {
         wifiConnectionStatus: parseXMLValue(response, 'WifiConnectionStatus'),
         signalStrength: parseXMLValue(response, 'SignalStrength'),
       };
-      
+
       console.log('[Service] Modem Status:', modemStatus);
       return modemStatus;
     } catch (error) {
@@ -161,7 +196,7 @@ export class ModemService {
         <request>
           <Control>1</Control>
         </request>`;
-      
+
       await this.apiClient.post('/api/device/control', rebootData);
       return true;
     } catch (error) {

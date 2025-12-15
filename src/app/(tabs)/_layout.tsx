@@ -1,6 +1,7 @@
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { Text } from 'react-native';
+import { View, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 
@@ -26,25 +27,28 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.tabBarInactive,
+        tabBarInactiveTintColor: colors.textSecondary,
         tabBarStyle: {
           backgroundColor: colors.tabBar,
           borderTopColor: colors.border,
           borderTopWidth: 1,
+          height: 60,
+          paddingBottom: 8,
+          paddingTop: 8,
         },
-        headerStyle: {
-          backgroundColor: colors.background,
+        headerShown: false, // Hide headers for fullscreen
+        tabBarLabelStyle: {
+          fontSize: 11,
+          fontWeight: '500',
         },
-        headerTintColor: colors.text,
-        headerShadowVisible: false,
       }}
     >
       <Tabs.Screen
         name="home"
         options={{
           title: 'Home',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="home" color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="home" color={color} focused={focused} />
           ),
         }}
       />
@@ -52,8 +56,8 @@ export default function TabLayout() {
         name="wifi"
         options={{
           title: 'WiFi',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="wifi" color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="wifi" color={color} focused={focused} />
           ),
         }}
       />
@@ -61,8 +65,8 @@ export default function TabLayout() {
         name="sms"
         options={{
           title: 'SMS',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="sms" color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="sms" color={color} focused={focused} />
           ),
         }}
       />
@@ -70,8 +74,8 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <TabIcon name="settings" color={color} size={size} />
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="settings" color={color} focused={focused} />
           ),
         }}
       />
@@ -79,18 +83,38 @@ export default function TabLayout() {
   );
 }
 
-// Simple icon component using emoji
-const TabIcon = ({ name, color, size }: { name: string; color: string; size: number }) => {
-  const icons: { [key: string]: string } = {
-    home: '🏠',
-    wifi: '📶',
-    sms: '💬',
-    settings: '⚙️',
+// Tab icon component using Material Icons
+const TabIcon = ({ name, color, focused }: { name: string; color: string; focused: boolean }) => {
+  // Material Icons mapping
+  const iconNames: { [key: string]: keyof typeof MaterialIcons.glyphMap } = {
+    home: 'home',
+    wifi: 'wifi',
+    sms: 'message',
+    settings: 'settings',
   };
 
+  const iconName = iconNames[name] || 'circle';
+
   return (
-    <Text style={{ fontSize: size, opacity: color === '#8E8E93' ? 0.5 : 1 }}>
-      {icons[name]}
-    </Text>
+    <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+      <MaterialIcons
+        name={iconName}
+        size={focused ? 26 : 24}
+        color={color}
+      />
+    </View>
   );
 };
+
+const styles = StyleSheet.create({
+  iconContainer: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 16,
+  },
+  iconContainerActive: {
+    backgroundColor: 'rgba(0, 122, 255, 0.1)',
+  },
+});
