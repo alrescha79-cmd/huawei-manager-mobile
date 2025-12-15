@@ -20,6 +20,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
+import { useTranslation } from '@/i18n';
 
 const ANTENNA_MODES = [
   { value: 'auto', label: 'Auto', icon: 'settings-input-antenna' as const },
@@ -54,7 +55,8 @@ export default function SettingsScreen() {
   const { colors, typography, spacing } = useTheme();
   const { credentials, logout } = useAuthStore();
   const { modemInfo, setModemInfo } = useModemStore();
-  const { themeMode, setThemeMode } = useThemeStore();
+  const { themeMode, setThemeMode, language, setLanguage } = useThemeStore();
+  const { t } = useTranslation();
 
   const [modemService, setModemService] = useState<ModemService | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -114,9 +116,9 @@ export default function SettingsScreen() {
     try {
       await modemService.setAntennaMode(mode);
       setAntennaMode(mode);
-      ThemedAlertHelper.alert('Success', `Antenna mode changed to ${mode}`);
+      ThemedAlertHelper.alert(t('common.success'), t('settings.antennaModeChanged'));
     } catch (error) {
-      ThemedAlertHelper.alert('Error', 'Failed to change antenna mode');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeAntenna'));
     } finally {
       setIsChangingAntenna(false);
     }
@@ -145,9 +147,9 @@ export default function SettingsScreen() {
     try {
       await modemService.setNetworkMode(mode);
       setNetworkMode(mode);
-      ThemedAlertHelper.alert('Success', `Network mode changed`);
+      ThemedAlertHelper.alert(t('common.success'), t('settings.networkModeChanged'));
     } catch (error) {
-      ThemedAlertHelper.alert('Error', 'Failed to change network mode');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeNetwork'));
     } finally {
       setIsChangingNetwork(false);
     }
@@ -188,7 +190,7 @@ export default function SettingsScreen() {
     if (!modemService || isSavingBands) return;
 
     if (selectedBands.length === 0) {
-      ThemedAlertHelper.alert('Error', 'Please select at least one band');
+      ThemedAlertHelper.alert(t('common.error'), t('settings.selectAtLeastOneBand'));
       return;
     }
 
@@ -197,9 +199,9 @@ export default function SettingsScreen() {
       const lteBandHex = bandBitsToHex(selectedBands);
       await modemService.setBandSettings('3FFFFFFF', lteBandHex);
       setShowBandModal(false);
-      ThemedAlertHelper.alert('Success', 'Band settings saved');
+      ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
     } catch (error) {
-      ThemedAlertHelper.alert('Error', 'Failed to save band settings');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveBands'));
     } finally {
       setIsSavingBands(false);
     }
@@ -207,12 +209,12 @@ export default function SettingsScreen() {
 
   const handleLogout = async () => {
     ThemedAlertHelper.alert(
-      'Logout',
-      'Are you sure you want to logout?',
+      t('settings.logout'),
+      t('settings.logoutConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Logout',
+          text: t('settings.logout'),
           style: 'destructive',
           onPress: async () => {
             try {
@@ -235,12 +237,12 @@ export default function SettingsScreen() {
 
   const handleReboot = async () => {
     ThemedAlertHelper.alert(
-      'Reboot Modem',
-      'Are you sure you want to reboot the modem? This will disconnect all devices.',
+      t('settings.rebootModem'),
+      t('settings.rebootConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Reboot',
+          text: t('settings.rebootModem'),
           style: 'destructive',
           onPress: async () => {
             if (!modemService) return;
@@ -248,9 +250,9 @@ export default function SettingsScreen() {
             setIsLoading(true);
             try {
               await modemService.reboot();
-              ThemedAlertHelper.alert('Success', 'Modem is rebooting. This may take a few minutes.');
+              ThemedAlertHelper.alert(t('common.success'), t('settings.rebootSuccess'));
             } catch (error) {
-              ThemedAlertHelper.alert('Error', 'Failed to reboot modem');
+              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedReboot'));
             } finally {
               setIsLoading(false);
             }
@@ -287,22 +289,22 @@ export default function SettingsScreen() {
       {/* Modem Info Card */}
       {modemInfo && (
         <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title="Modem Information" />
+          <CardHeader title={t('settings.modemInfo')} />
 
-          <InfoRow label="Device" value={modemInfo.deviceName} />
-          <InfoRow label="Serial Number" value={modemInfo.serialNumber} />
-          <InfoRow label="IMEI" value={modemInfo.imei} />
-          <InfoRow label="Hardware Version" value={modemInfo.hardwareVersion} />
-          <InfoRow label="Software Version" value={modemInfo.softwareVersion} />
+          <InfoRow label={t('settings.device')} value={modemInfo.deviceName} />
+          <InfoRow label={t('settings.serialNumber')} value={modemInfo.serialNumber} />
+          <InfoRow label={t('settings.imei')} value={modemInfo.imei} />
+          <InfoRow label={t('settings.hardwareVersion')} value={modemInfo.hardwareVersion} />
+          <InfoRow label={t('settings.softwareVersion')} value={modemInfo.softwareVersion} />
           {modemInfo.macAddress1 && (
-            <InfoRow label="MAC Address" value={modemInfo.macAddress1} />
+            <InfoRow label={t('settings.macAddress')} value={modemInfo.macAddress1} />
           )}
         </Card>
       )}
 
       {/* System Settings Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title="System Settings" />
+        <CardHeader title={t('settings.systemSettings')} />
 
         {/* Antenna Settings */}
         <View style={styles.settingRow}>
@@ -431,15 +433,15 @@ export default function SettingsScreen() {
 
       {/* App Settings Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title="App Settings" />
+        <CardHeader title={t('settings.appSettings')} />
 
         <View style={styles.settingRow}>
           <View style={{ flex: 1 }}>
             <Text style={[typography.body, { color: colors.text }]}>
-              Theme
+              {t('settings.theme')}
             </Text>
             <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {themeMode === 'system' ? 'Follow System' : themeMode === 'dark' ? 'Dark Mode' : 'Light Mode'}
+              {themeMode === 'system' ? t('settings.themeSystem') : themeMode === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
             </Text>
           </View>
           <View style={styles.themeButtons}>
@@ -493,25 +495,79 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+
+        {/* Language Setting */}
+        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>
+              {t('settings.language')}
+            </Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {language === 'id' ? t('settings.languageId') : t('settings.languageEn')}
+            </Text>
+          </View>
+          <View style={styles.themeButtons}>
+            <TouchableOpacity
+              onPress={() => setLanguage('en')}
+              style={[
+                styles.langButton,
+                {
+                  backgroundColor: language === 'en' ? colors.primary : colors.card,
+                  borderColor: colors.border
+                }
+              ]}
+            >
+              <Text style={[
+                typography.caption1,
+                {
+                  color: language === 'en' ? '#FFFFFF' : colors.textSecondary,
+                  fontWeight: '600'
+                }
+              ]}>
+                EN
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setLanguage('id')}
+              style={[
+                styles.langButton,
+                {
+                  backgroundColor: language === 'id' ? colors.primary : colors.card,
+                  borderColor: colors.border
+                }
+              ]}
+            >
+              <Text style={[
+                typography.caption1,
+                {
+                  color: language === 'id' ? '#FFFFFF' : colors.textSecondary,
+                  fontWeight: '600'
+                }
+              ]}>
+                ID
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </Card>
 
       {/* Modem Control & Connection Card - Merged */}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title="Modem Control" />
+        <CardHeader title={t('settings.modemControl')} />
 
-        <InfoRow label="Modem IP" value={credentials?.modemIp || 'Unknown'} />
-        <InfoRow label="Username" value={credentials?.username || 'Unknown'} />
+        <InfoRow label={t('settings.modemIp')} value={credentials?.modemIp || t('common.unknown')} />
+        <InfoRow label={t('login.username')} value={credentials?.username || t('common.unknown')} />
 
         <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
           <Button
-            title="Reboot Modem"
+            title={t('settings.rebootModem')}
             onPress={handleReboot}
             variant="danger"
             loading={isLoading}
             disabled={isLoading}
           />
           <Button
-            title="Logout"
+            title={t('settings.logout')}
             onPress={handleLogout}
             variant="secondary"
           />
@@ -520,14 +576,14 @@ export default function SettingsScreen() {
 
       {/* About Card */}
       <Card>
-        <CardHeader title="About" />
+        <CardHeader title={t('settings.about')} />
 
-        <InfoRow label="App Version" value={Constants.expoConfig?.version || '1.0.0'} />
+        <InfoRow label={t('settings.appVersion')} value={Constants.expoConfig?.version || '1.0.0'} />
 
         {/* Developer with GitHub link */}
         <View style={[styles.settingRow, { marginBottom: spacing.sm }]}>
           <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-            Developer
+            {t('settings.developer')}
           </Text>
           <TouchableOpacity
             style={{ flexDirection: 'row', alignItems: 'center' }}
@@ -640,6 +696,14 @@ const styles = StyleSheet.create({
   themeIconButton: {
     width: 40,
     height: 40,
+    borderRadius: 10,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  langButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
     borderRadius: 10,
     borderWidth: 1,
     alignItems: 'center',

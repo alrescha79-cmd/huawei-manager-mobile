@@ -183,8 +183,40 @@ export class ModemAPIClient {
     });
   }
 
+  // Check if already logged in by testing a protected endpoint
+  async isLoggedIn(): Promise<boolean> {
+    try {
+      // Try to access device info - this requires authentication
+      const response = await this.client.get('/api/device/information', {
+        timeout: 5000,
+        headers: {
+          'Cookie': this.sessionCookie || '',
+        },
+      });
+
+      const data = typeof response.data === 'string' ? response.data : '';
+
+      // If we get device info without error, we're logged in
+      if (data.includes('<DeviceName>') || data.includes('<response>')) {
+        if (!data.includes('<error>')) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
+  }
+
   async login(username: string, password: string): Promise<boolean> {
     try {
+      // First, check if we're already logged in (from WebView or previous session)
+      const alreadyLoggedIn = await this.isLoggedIn();
+      if (alreadyLoggedIn) {
+        return true;
+      }
+
       // Step 1: Get fresh token and session using axios
       const tokenResponse = await this.client.get('/api/webserver/SesTokInfo');
 
@@ -195,23 +227,10 @@ export class ModemAPIClient {
         return false;
       }
 
-      // Extract session from response
+      // Extract session from response - use SesInfo directly
+      // Note: In React Native, Set-Cookie headers may not be accessible
       let session = '';
-      const setCookie = tokenResponse.headers['set-cookie'];
-      if (setCookie && (Array.isArray(setCookie) ? setCookie.length > 0 : true)) {
-        const sessionCookie = Array.isArray(setCookie)
-          ? setCookie.find((c: string) => c.includes('SessionID'))
-          : setCookie;
-        if (sessionCookie) {
-          const match = sessionCookie.match(/SessionID=([^;]+)/);
-          if (match) {
-            session = `SessionID=${match[1]}`;
-          }
-        }
-      }
-
-      // Fallback to SesInfo if Set-Cookie was empty
-      if (!session && sesInfo) {
+      if (sesInfo) {
         session = sesInfo.includes('SessionID=') ? sesInfo : `SessionID=${sesInfo}`;
       }
 
@@ -246,7 +265,6 @@ export class ModemAPIClient {
 
         // 108002: User already logged in - treat as success
         if (errorCode === '108002') {
-          // Save session info for future requests
           this.sessionToken = token;
           this.sessionCookie = session;
           this.tokenExpiry = Date.now() + 120000;
@@ -261,7 +279,6 @@ export class ModemAPIClient {
         responseData.includes('<response/>') ||
         responseData.includes('<?xml version="1.0" encoding="UTF-8"?><response>OK</response>') ||
         responseData.trim() === 'OK') {
-        // Save session info for future requests
         this.sessionToken = token;
         this.sessionCookie = session;
         this.tokenExpiry = Date.now() + 120000;
