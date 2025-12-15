@@ -14,6 +14,7 @@ import { useTheme } from '@/theme';
 import { Card, Input, Button, WebViewLogin, ThemedAlertHelper } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { networkService } from '@/services/network.service';
+import { ModemAPIClient } from '@/services/api.service';
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -25,6 +26,8 @@ export default function LoginScreen() {
   const [password, setPassword] = useState('');
   const [isDetecting, setIsDetecting] = useState(false);
   const [showWebViewLogin, setShowWebViewLogin] = useState(false);
+  const [isDirectLogging, setIsDirectLogging] = useState(false);
+  const [showWebViewOption, setShowWebViewOption] = useState(false);
 
   const detectModemIP = async () => {
     setIsDetecting(true);
@@ -49,22 +52,52 @@ export default function LoginScreen() {
     }
   };
 
-  // Open WebView for login
-  const handleLoginPress = () => {
+  // Try direct API login first, fallback to WebView
+  const handleLoginPress = async () => {
     setError(null);
+    setShowWebViewOption(false);
 
     if (!modemIp) {
       ThemedAlertHelper.alert('Error', 'Please enter modem IP address');
       return;
     }
 
-    console.log('[Login] Opening WebView login for:', modemIp);
-    setShowWebViewLogin(true);
+    // Try direct API login first
+    setIsDirectLogging(true);
+
+    try {
+      const apiClient = new ModemAPIClient(modemIp);
+      const success = await apiClient.login(username, password);
+
+      if (success) {
+        await login({
+          modemIp,
+          username,
+          password,
+        });
+        router.replace('/(tabs)/home');
+        return;
+      }
+    } catch (err) {
+      // Direct login failed - continue to show WebView option
+    } finally {
+      setIsDirectLogging(false);
+    }
+
+    // If direct login fails, show WebView option
+    setShowWebViewOption(true);
+    ThemedAlertHelper.alert(
+      'Direct Login Failed',
+      'Unable to login directly. Would you like to try via Web Interface?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Open Web Login', onPress: () => setShowWebViewLogin(true) }
+      ]
+    );
   };
 
   // Handle successful login from WebView
   const handleWebViewLoginSuccess = async () => {
-    console.log('[Login] WebView login successful!');
     setShowWebViewLogin(false);
 
     try {
@@ -75,7 +108,7 @@ export default function LoginScreen() {
         password,
       });
 
-      console.log('[Login] Credentials saved, redirecting to home...');
+      // Credentials saved, redirecting to home
       ThemedAlertHelper.alert('Success', 'Login successful!', [
         {
           text: 'OK',
@@ -147,25 +180,34 @@ export default function LoginScreen() {
           )}
 
           <Button
-            title="Login via Web Interface"
+            title={isDirectLogging ? "Logging in..." : "Login"}
             onPress={handleLoginPress}
-            loading={isLoading}
-            disabled={isLoading}
+            loading={isDirectLogging || isLoading}
+            disabled={isDirectLogging || isLoading}
             style={{ marginBottom: spacing.sm }}
           />
+
+          {showWebViewOption && (
+            <Button
+              title="Use Web Interface Instead"
+              onPress={() => setShowWebViewLogin(true)}
+              variant="secondary"
+              style={{ marginBottom: spacing.sm }}
+            />
+          )}
 
           <Button
             title={isDetecting ? "Detecting..." : "Detect Modem IP"}
             onPress={detectModemIP}
             loading={isDetecting}
-            disabled={isDetecting || isLoading}
+            disabled={isDetecting || isLoading || isDirectLogging}
             variant="secondary"
           />
         </Card>
 
         <View style={styles.footer}>
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
-            Login will open in a web browser.{'\n'}Make sure you are connected to modem WiFi.
+            Will try direct login first.{'\n'}If it fails, web interface will be available.
           </Text>
           {/* app version */}
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>

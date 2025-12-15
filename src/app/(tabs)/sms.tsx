@@ -16,9 +16,11 @@ import { Card, CardHeader, Input, Button, ThemedAlertHelper } from '@/components
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
+import { useTranslation } from '@/i18n';
 
 export default function SMSScreen() {
   const { colors, typography, spacing } = useTheme();
+  const { t } = useTranslation();
   const { credentials } = useAuthStore();
   const {
     messages,
@@ -34,7 +36,7 @@ export default function SMSScreen() {
   const [newPhone, setNewPhone] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
 
   // Auto-refresh SMS every 10 seconds
   useEffect(() => {
@@ -65,7 +67,7 @@ export default function SMSScreen() {
 
       setMessages(messagesList);
       setSMSCount(count);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error loading SMS data:', error);
       // SMS might not be supported on all modems
@@ -85,7 +87,7 @@ export default function SMSScreen() {
 
       setMessages(messagesList);
       setSMSCount(count);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error in background SMS update:', error);
     }
@@ -101,20 +103,20 @@ export default function SMSScreen() {
     if (!smsService) return;
 
     ThemedAlertHelper.alert(
-      'Delete SMS',
-      'Are you sure you want to delete this message?',
+      t('sms.deleteSms'),
+      t('sms.deleteConfirm'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Delete',
+          text: t('common.delete'),
           style: 'destructive',
           onPress: async () => {
             try {
               await smsService.deleteSMS(index);
               removeMessage(index);
-              ThemedAlertHelper.alert('Success', 'Message deleted');
+              ThemedAlertHelper.alert(t('common.success'), t('sms.messageDeleted'));
             } catch (error) {
-              ThemedAlertHelper.alert('Error', 'Failed to delete message');
+              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedDeleteSms'));
             }
           },
         },
@@ -124,20 +126,20 @@ export default function SMSScreen() {
 
   const handleSend = async () => {
     if (!smsService || !newPhone || !newMessage) {
-      ThemedAlertHelper.alert('Error', 'Please fill in all fields');
+      ThemedAlertHelper.alert(t('common.error'), t('sms.fillAllFields'));
       return;
     }
 
     setIsSending(true);
     try {
       await smsService.sendSMS(newPhone, newMessage);
-      ThemedAlertHelper.alert('Success', 'Message sent');
+      ThemedAlertHelper.alert(t('common.success'), t('sms.messageSent'));
       setShowCompose(false);
       setNewPhone('');
       setNewMessage('');
       handleRefresh();
     } catch (error) {
-      ThemedAlertHelper.alert('Error', 'Failed to send message');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSendSms'));
     } finally {
       setIsSending(false);
     }
@@ -147,7 +149,7 @@ export default function SMSScreen() {
     <>
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 8 }]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -157,15 +159,9 @@ export default function SMSScreen() {
         }
       >
         <View style={styles.headerRow}>
-          <View>
-            {lastUpdate && (
-              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                Updated: {lastUpdate.toLocaleTimeString()}
-              </Text>
-            )}
-          </View>
+          <View />
           <Button
-            title="+ New"
+            title={`+ ${t('sms.newMessage')}`}
             onPress={() => setShowCompose(true)}
             style={styles.newButton}
           />
@@ -174,11 +170,11 @@ export default function SMSScreen() {
         {/* SMS Count Card */}
         {smsCount && (
           <Card style={{ marginBottom: spacing.md }}>
-            <CardHeader title="SMS Count" />
+            <CardHeader title={t('sms.smsCount')} />
             <View style={styles.countRow}>
               <View style={styles.countItem}>
                 <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  Unread
+                  {t('sms.unread')}
                 </Text>
                 <Text style={[typography.title2, { color: colors.primary }]}>
                   {smsCount.localUnread}
@@ -186,7 +182,7 @@ export default function SMSScreen() {
               </View>
               <View style={styles.countItem}>
                 <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  Inbox
+                  {t('sms.inbox')}
                 </Text>
                 <Text style={[typography.title2, { color: colors.text }]}>
                   {smsCount.localInbox}
@@ -194,7 +190,7 @@ export default function SMSScreen() {
               </View>
               <View style={styles.countItem}>
                 <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  Sent
+                  {t('sms.sent')}
                 </Text>
                 <Text style={[typography.title2, { color: colors.text }]}>
                   {smsCount.localOutbox}
@@ -208,7 +204,7 @@ export default function SMSScreen() {
         {messages.length === 0 ? (
           <Card>
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.xl }]}>
-              {isRefreshing ? 'Loading messages...' : 'No messages\nSMS might not be supported on this modem'}
+              {isRefreshing ? t('sms.loadingMessages') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
             </Text>
           </Card>
         ) : (

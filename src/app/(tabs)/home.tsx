@@ -28,11 +28,13 @@ import {
   getNetworkTypeText,
   getLteBandInfo,
 } from '@/utils/helpers';
+import { useTranslation } from '@/i18n';
 
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { credentials, logout } = useAuthStore();
+  const { t } = useTranslation();
   const {
     signalInfo,
     networkInfo,
@@ -50,7 +52,7 @@ export default function HomeScreen() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modemService, setModemService] = useState<ModemService | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
   const [isTogglingData, setIsTogglingData] = useState(false);
   const [isChangingIp, setIsChangingIp] = useState(false);
 
@@ -93,26 +95,16 @@ export default function HomeScreen() {
         service.getMobileDataStatus().catch(() => null),
       ]);
 
-      // Log all data for debugging
-      // console.log('=== Modem Data Update ===');
-      // console.log('Signal Info:', JSON.stringify(signal, null, 2));
-      // console.log('Network Info:', JSON.stringify(network, null, 2));
-      // console.log('Traffic Stats:', JSON.stringify(traffic, null, 2));
-      // console.log('Modem Status:', JSON.stringify(status, null, 2));
-      // console.log('WAN Info:', JSON.stringify(wan, null, 2));
-      // console.log('Mobile Data Status:', JSON.stringify(dataStatus, null, 2));
-      // console.log('========================');
-
       setSignalInfo(signal);
       setNetworkInfo(network);
       setTrafficStats(traffic);
       setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error loading data:', error);
-      ThemedAlertHelper.alert('Error', 'Failed to load modem data');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedLoadModemData'));
     } finally {
       setIsRefreshing(false);
     }
@@ -131,14 +123,7 @@ export default function HomeScreen() {
       ]);
 
       // Log background updates (lighter logging)
-      console.log('[Background Update]', new Date().toLocaleTimeString(), {
-        connectionStatus: status?.connectionStatus,
-        networkType: network?.currentNetworkType,
-        operator: network?.networkName,
-        downloadSpeed: traffic?.currentDownloadRate,
-        uploadSpeed: traffic?.currentUploadRate,
-        wanIp: wan?.wanIPAddress,
-      });
+      // Background update successful
 
       setSignalInfo(signal);
       setNetworkInfo(network);
@@ -146,7 +131,7 @@ export default function HomeScreen() {
       setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
-      setLastUpdate(new Date());
+
     } catch (error) {
       // Silent fail for background updates
       console.error('Error in background update:', error);
@@ -179,10 +164,10 @@ export default function HomeScreen() {
       // Refresh data after toggle
       const dataStatus = await modemService.getMobileDataStatus();
       setMobileDataStatus(dataStatus);
-      ThemedAlertHelper.alert('Success', `Mobile data ${newState ? 'enabled' : 'disabled'}`);
+      ThemedAlertHelper.alert(t('common.success'), newState ? t('home.dataEnabled') : t('home.dataDisabled'));
     } catch (error) {
       console.error('Error toggling mobile data:', error);
-      ThemedAlertHelper.alert('Error', 'Failed to toggle mobile data');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
     } finally {
       setIsTogglingData(false);
     }
@@ -192,26 +177,26 @@ export default function HomeScreen() {
     if (!modemService || isChangingIp) return;
 
     ThemedAlertHelper.alert(
-      'Change IP Address',
-      'This will trigger a PLMN network scan to get a new IP address. The process takes 30-60 seconds. Continue?',
+      t('alerts.changeIpTitle'),
+      t('alerts.changeIpMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Continue',
+          text: t('common.continue'),
           onPress: async () => {
             setIsChangingIp(true);
 
             // Show immediate feedback - the scan is being triggered
             ThemedAlertHelper.alert(
-              'IP Change Started',
-              'PLMN scan triggered. The modem will reconnect to the network. Please wait 30-60 seconds for the new IP.',
-              [{ text: 'OK' }]
+              t('alerts.ipChangeStartedTitle'),
+              t('alerts.ipChangeStartedMessage'),
+              [{ text: t('common.ok') }]
             );
 
             // Fire and forget - don't wait for response as PLMN scan takes 30-60s
             modemService.triggerPlmnScan().catch((error) => {
               // This error is expected due to timeout during reconnection
-              console.log('[IP Change] Expected timeout during PLMN scan:', error);
+              // Expected timeout during PLMN scan
             });
 
             // Keep loading state for 10 seconds then allow retry
@@ -222,7 +207,7 @@ export default function HomeScreen() {
             // Refresh data after 45 seconds to get new IP
             setTimeout(() => {
               if (modemService) {
-                console.log('[IP Change] Refreshing data to get new IP...');
+                // Refresh data to get new IP
                 loadData(modemService);
               }
             }, 45000);
@@ -234,12 +219,12 @@ export default function HomeScreen() {
 
   const handleReLogin = () => {
     ThemedAlertHelper.alert(
-      'Re-Login Required',
-      'Signal data is not available. You may need to log in again to the modem.',
+      t('home.reLogin'),
+      t('home.checkLogin'),
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Re-Login',
+          text: t('home.reLogin'),
           onPress: async () => {
             await logout();
             router.replace('/login');
@@ -258,7 +243,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
+      contentContainerStyle={[styles.content, { paddingTop: 8 }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -268,20 +253,13 @@ export default function HomeScreen() {
       }
     >
       <View style={styles.header}>
-        <View>
-          {lastUpdate && (
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              Updated: {lastUpdate.toLocaleTimeString()}
-            </Text>
-          )}
-        </View>
         {!hasValidData && (
           <TouchableOpacity
             onPress={handleReLogin}
             style={[styles.reLoginButton, { backgroundColor: colors.error }]}
           >
             <Text style={[typography.caption1, { color: '#FFFFFF' }]}>
-              Re-Login
+              {t('home.reLogin')}
             </Text>
           </TouchableOpacity>
         )}
@@ -291,22 +269,21 @@ export default function HomeScreen() {
       {!hasValidData && (
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.error + '10', borderColor: colors.error, borderWidth: 1 }}>
           <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm }]}>
-            ⚠️ No Signal Data
+            ⚠️ {t('alerts.noSignalData')}
           </Text>
           <Text style={[typography.body, { color: colors.text }]}>
-            Unable to retrieve signal and status information from the modem.{'\n\n'}
-            <Text style={{ fontWeight: 'bold' }}>Possible causes:</Text>{'\n'}
-            • Not logged in to modem{'\n'}
-            • Session expired{'\n'}
-            • Modem not responding{'\n\n'}
-            <Text style={{ fontWeight: 'bold' }}>Check logs for:</Text> [RAW XML] messages
+            {t('alerts.noSignalMessage')}{'\n\n'}
+            <Text style={{ fontWeight: 'bold' }}>{t('alerts.possibleCauses')}</Text>{'\n'}
+            • {t('alerts.notLoggedIn')}{'\n'}
+            • {t('alerts.sessionExpired')}{'\n'}
+            • {t('alerts.modemNotResponding')}
           </Text>
           <TouchableOpacity
             onPress={handleReLogin}
             style={[styles.reLoginButtonLarge, { backgroundColor: colors.error }]}
           >
             <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-              Go to Login
+              {t('common.goToLogin')}
             </Text>
           </TouchableOpacity>
         </Card>
@@ -314,31 +291,31 @@ export default function HomeScreen() {
 
       {/* Connection Status Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title="Connection Status" />
+        <CardHeader title={t('home.connectionStatus')} />
 
         <View style={styles.statusRow}>
           <View style={{ flex: 1 }}>
             <InfoRow
-              label="Status"
+              label={t('home.connectionStatus')}
               value={getConnectionStatusText(modemStatus?.connectionStatus)}
             />
             <InfoRow
-              label="Network Type"
+              label={t('home.networkType')}
               value={getNetworkTypeText(
                 networkInfo?.currentNetworkType || modemStatus?.currentNetworkType
               )}
             />
             <InfoRow
-              label="ISP"
+              label={t('home.operator')}
               value={
                 networkInfo?.fullName ||
                 networkInfo?.networkName ||
                 networkInfo?.spnName ||
-                'Unknown'
+                t('common.unknown')
               }
             />
             <InfoRow
-              label="IP WAN"
+              label={t('home.ipAddress')}
               value={wanInfo?.wanIPAddress || 'Fetching...'}
             />
             <InfoRow
@@ -382,14 +359,14 @@ export default function HomeScreen() {
 
       {/* Control Buttons Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title="Quick Controls" />
+        <CardHeader title={t('home.actions')} />
 
         {/* Mobile Data Toggle */}
         <View style={styles.controlRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>Mobile Data</Text>
+            <Text style={[typography.body, { color: colors.text }]}>{t('home.mobileData')}</Text>
             <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {mobileDataStatus?.dataswitch ? 'Enabled' : 'Disabled'}
+              {mobileDataStatus?.dataswitch ? t('wifi.enabled') : t('wifi.disabled')}
             </Text>
           </View>
           {isTogglingData ? (
@@ -414,7 +391,7 @@ export default function HomeScreen() {
             <ActivityIndicator color="#FFFFFF" />
           ) : (
             <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-              Force Change IP WAN
+              {t('home.changeIp')}
             </Text>
           )}
         </TouchableOpacity>
@@ -426,7 +403,7 @@ export default function HomeScreen() {
       {/* Signal Strength Card */}
       {signalInfo && (signalInfo.rssi || signalInfo.rsrp) ? (
         <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title="Signal Strength" />
+          <CardHeader title={t('home.signalInfo')} />
 
           {signalInfo.rssi && (
             <SignalMeter
@@ -476,17 +453,17 @@ export default function HomeScreen() {
           {/* Additional Info */}
           {(signalInfo.band || signalInfo.cellId) && (
             <View style={{ marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
-              {signalInfo.band && <InfoRow label="Band" value={signalInfo.band} />}
-              {signalInfo.cellId && <InfoRow label="Cell ID" value={signalInfo.cellId} />}
+              {signalInfo.band && <InfoRow label={t('home.band')} value={signalInfo.band} />}
+              {signalInfo.cellId && <InfoRow label={t('home.cellId')} value={signalInfo.cellId} />}
             </View>
           )}
         </Card>
       ) : (
         <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title="Signal Strength" />
+          <CardHeader title={t('home.signalInfo')} />
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>
-            ⚠️ No signal data available{'\n'}
-            Please check if you're logged in to the modem
+            ⚠️ {t('home.noSignalAvailable')}{'\n'}
+            {t('home.checkLogin')}
           </Text>
         </Card>
       )}
@@ -494,7 +471,7 @@ export default function HomeScreen() {
       {/* Traffic Statistics Card */}
       {trafficStats && (
         <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title="Traffic Statistics" />
+          <CardHeader title={t('home.trafficStats')} />
 
           {/* Speed Gauge */}
           <SpeedGauge
@@ -510,7 +487,7 @@ export default function HomeScreen() {
             {/* Current Session */}
             <View style={styles.dataUsageItem}>
               <DataPieChart
-                title="Session"
+                title={t('home.currentSession')}
                 subtitle={formatDuration(trafficStats.currentConnectTime)}
                 download={trafficStats.currentDownload}
                 upload={trafficStats.currentUpload}
@@ -522,8 +499,7 @@ export default function HomeScreen() {
             {/* Monthly */}
             <View style={styles.dataUsageItem}>
               <DataPieChart
-                title="Monthly"
-                subtitle="This month"
+                title={t('home.monthlyUsage')}
                 download={trafficStats.monthDownload}
                 upload={trafficStats.monthUpload}
                 formatValue={formatBytes}
@@ -535,8 +511,8 @@ export default function HomeScreen() {
           {/* Total Usage - centered below */}
           <View style={styles.totalUsageContainer}>
             <DataPieChart
-              title="Total Usage"
-              subtitle={`Duration: ${formatDuration(trafficStats.totalConnectTime)}`}
+              title={t('home.trafficStats')}
+              subtitle={formatDuration(trafficStats.totalConnectTime)}
               download={trafficStats.totalDownload}
               upload={trafficStats.totalUpload}
               formatValue={formatBytes}

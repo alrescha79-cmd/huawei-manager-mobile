@@ -18,16 +18,18 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
 import { WiFiService } from '@/services/wifi.service';
 import { formatMacAddress } from '@/utils/helpers';
+import { useTranslation } from '@/i18n';
 
 const SECURITY_MODES = [
-  { value: 'OPEN', label: 'Open (No Password)' },
-  { value: 'WPA2PSK', label: 'WPA2-PSK' },
-  { value: 'WPAPSKWPA2PSK', label: 'WPA/WPA2-PSK' },
-  { value: 'WPA3SAE', label: 'WPA3-SAE' },
+  { value: 'OPEN', labelKey: 'wifi.securityOpen' },
+  { value: 'WPA2PSK', labelKey: 'wifi.securityWpa2' },
+  { value: 'WPAPSKWPA2PSK', labelKey: 'wifi.securityWpaMixed' },
+  { value: 'WPA3SAE', labelKey: 'wifi.securityWpa3' },
 ];
 
 export default function WiFiScreen() {
   const { colors, typography, spacing } = useTheme();
+  const { t } = useTranslation();
   const { credentials } = useAuthStore();
   const {
     connectedDevices,
@@ -38,7 +40,7 @@ export default function WiFiScreen() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [wifiService, setWiFiService] = useState<WiFiService | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
 
   // Form state
   const [formSsid, setFormSsid] = useState('');
@@ -101,7 +103,7 @@ export default function WiFiScreen() {
       setConnectedDevices(devices);
       setWiFiSettings(settings);
       setGuestWifiEnabled(guestSettings.enabled);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error loading WiFi data:', error);
       ThemedAlertHelper.alert('Error', 'Failed to load WiFi data');
@@ -120,7 +122,7 @@ export default function WiFiScreen() {
 
       setConnectedDevices(devices);
       setWiFiSettings(settings);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error in background update:', error);
     }
@@ -137,10 +139,10 @@ export default function WiFiScreen() {
 
     try {
       await wifiService.toggleWiFi(enabled);
-      ThemedAlertHelper.alert('Success', `WiFi ${enabled ? 'enabled' : 'disabled'}`);
+      ThemedAlertHelper.alert(t('common.success'), enabled ? t('wifi.wifiEnabled') : t('wifi.wifiDisabled'));
       handleRefresh();
     } catch (error) {
-      ThemedAlertHelper.alert('Error', 'Failed to toggle WiFi');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleWifi'));
     }
   };
 
@@ -151,9 +153,9 @@ export default function WiFiScreen() {
     try {
       await wifiService.toggleGuestWiFi(enabled);
       setGuestWifiEnabled(enabled);
-      ThemedAlertHelper.alert('Success', `Guest WiFi ${enabled ? 'enabled' : 'disabled'}`);
+      ThemedAlertHelper.alert(t('common.success'), enabled ? t('wifi.guestWifiEnabled') : t('wifi.guestWifiDisabled'));
     } catch (error) {
-      ThemedAlertHelper.alert('Error', 'Failed to toggle Guest WiFi');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleGuestWifi'));
     } finally {
       setIsTogglingGuest(false);
     }
@@ -169,10 +171,10 @@ export default function WiFiScreen() {
         password: formPassword,
         securityMode: formSecurityMode,
       });
-      ThemedAlertHelper.alert('Success', 'WiFi settings saved successfully');
+      ThemedAlertHelper.alert(t('common.success'), t('wifi.settingsSaved'));
       handleRefresh();
     } catch (error) {
-      ThemedAlertHelper.alert('Error', 'Failed to save WiFi settings');
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveWifi'));
     } finally {
       setIsSaving(false);
     }
@@ -182,20 +184,20 @@ export default function WiFiScreen() {
     if (!wifiService) return;
 
     ThemedAlertHelper.alert(
-      'Kick Device',
-      `Are you sure you want to disconnect ${hostName || macAddress}?`,
+      t('wifi.kickDevice'),
+      `${t('wifi.kickConfirm')} ${hostName || macAddress}?`,
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: t('common.cancel'), style: 'cancel' },
         {
-          text: 'Kick',
+          text: t('common.kick'),
           style: 'destructive',
           onPress: async () => {
             try {
               await wifiService.kickDevice(macAddress);
-              ThemedAlertHelper.alert('Success', 'Device disconnected');
+              ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceDisconnected'));
               handleRefresh();
             } catch (error) {
-              ThemedAlertHelper.alert('Error', 'Failed to kick device');
+              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedKickDevice'));
             }
           },
         },
@@ -204,13 +206,14 @@ export default function WiFiScreen() {
   };
 
   const getSecurityModeLabel = (value: string) => {
-    return SECURITY_MODES.find(m => m.value === value)?.label || value;
+    const mode = SECURITY_MODES.find(m => m.value === value);
+    return mode ? t(mode.labelKey) : value;
   };
 
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
+      contentContainerStyle={[styles.content, { paddingTop: 8 }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -219,25 +222,19 @@ export default function WiFiScreen() {
         />
       }
     >
-      <View style={styles.header}>
-        {lastUpdate && (
-          <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-            Updated: {lastUpdate.toLocaleTimeString()}
-          </Text>
-        )}
-      </View>
+      <View style={styles.header} />
 
       {/* WiFi Settings Card */}
       {wifiSettings && (
         <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title="WiFi Settings" />
+          <CardHeader title={t('wifi.wifiSettings')} />
 
           {/* WiFi Enable Toggle */}
           <View style={styles.toggleRow}>
             <View style={{ flex: 1 }}>
               <Text style={[typography.body, { color: colors.text }]}>WiFi</Text>
               <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                {wifiSettings.wifiEnable ? 'Enabled' : 'Disabled'}
+                {wifiSettings.wifiEnable ? t('wifi.enabled') : t('wifi.disabled')}
               </Text>
             </View>
             <Switch
@@ -251,9 +248,9 @@ export default function WiFiScreen() {
           {/* Guest WiFi Toggle */}
           <View style={styles.toggleRow}>
             <View style={{ flex: 1 }}>
-              <Text style={[typography.body, { color: colors.text }]}>Guest WiFi</Text>
+              <Text style={[typography.body, { color: colors.text }]}>{t('wifi.guestWifi')}</Text>
               <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                {guestWifiEnabled ? 'Enabled' : 'Disabled'}
+                {guestWifiEnabled ? t('wifi.enabled') : t('wifi.disabled')}
               </Text>
             </View>
             {isTogglingGuest ? (
@@ -326,7 +323,7 @@ export default function WiFiScreen() {
                     <Text style={[typography.body, {
                       color: formSecurityMode === mode.value ? colors.primary : colors.text
                     }]}>
-                      {mode.label}
+                      {t(mode.labelKey)}
                     </Text>
                   </TouchableOpacity>
                 ))}
