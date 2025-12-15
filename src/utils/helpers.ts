@@ -155,3 +155,48 @@ export const getRoamingStatusText = (code: string | undefined): string => {
 
   return roamingMap[code] || code;
 };
+
+// LTE Band mapping with frequency information
+export const getLteBandInfo = (band: string | undefined): string => {
+  if (!band) return '-';
+
+  // Common LTE Band mapping (Indonesia focused)
+  const bandMap: Record<string, string> = {
+    // FDD Bands
+    'B1': 'B1 - 2100 MHz',
+    'B3': 'B3 - 1800 MHz',
+    'B5': 'B5 - 850 MHz',
+    'B7': 'B7 - 2600 MHz',
+    'B8': 'B8 - 900 MHz',
+    'B20': 'B20 - 800 MHz',
+    'B28': 'B28 - 700 MHz',
+    // TDD Bands
+    'B38': 'B38 - 2600 MHz',
+    'B40': 'B40 - 2300 MHz',
+    'B41': 'B41 - 2500 MHz',
+    // Numeric format
+    '1': 'B1 - 2100 MHz',
+    '3': 'B3 - 1800 MHz',
+    '5': 'B5 - 850 MHz',
+    '7': 'B7 - 2600 MHz',
+    '8': 'B8 - 900 MHz',
+    '20': 'B20 - 800 MHz',
+    '28': 'B28 - 700 MHz',
+    '38': 'B38 - 2600 MHz',
+    '40': 'B40 - 2300 MHz',
+    '41': 'B41 - 2500 MHz',
+  };
+
+  // Try direct match first
+  if (bandMap[band]) return bandMap[band];
+
+  // Try extracting band number from string like "LTE B1" or "LTE B3"
+  const match = band.match(/B?(\d+)/i);
+  if (match) {
+    const bandNum = match[1];
+    if (bandMap[bandNum]) return bandMap[bandNum];
+    return `B${bandNum}`;
+  }
+
+  return band;
+};

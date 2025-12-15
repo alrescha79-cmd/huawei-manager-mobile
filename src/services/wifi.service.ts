@@ -12,10 +12,10 @@ export class WiFiService {
   async getConnectedDevices(): Promise<ConnectedDevice[]> {
     try {
       const response = await this.apiClient.get('/api/wlan/host-list');
-      
+
       const devices: ConnectedDevice[] = [];
       const hostsXML = response.match(/<Host>(.*?)<\/Host>/gs);
-      
+
       if (hostsXML) {
         hostsXML.forEach((hostXML) => {
           devices.push({
@@ -28,7 +28,7 @@ export class WiFiService {
           });
         });
       }
-      
+
       return devices;
     } catch (error) {
       console.error('Error getting connected devices:', error);
@@ -39,7 +39,7 @@ export class WiFiService {
   async getWiFiSettings(): Promise<WiFiSettings> {
     try {
       const response = await this.apiClient.get('/api/wlan/basic-settings');
-      
+
       return {
         ssid: parseXMLValue(response, 'WifiSsid'),
         password: parseXMLValue(response, 'WifiWepKey1') || parseXMLValue(response, 'WifiWpaPreSharedKey'),
@@ -66,12 +66,45 @@ export class WiFiService {
           ${settings.channel ? `<WifiChannel>${settings.channel}</WifiChannel>` : ''}
           ${settings.band ? `<WifiBand>${settings.band}</WifiBand>` : ''}
           ${settings.maxAssoc ? `<WifiMaxassoc>${settings.maxAssoc}</WifiMaxassoc>` : ''}
+          ${settings.securityMode ? `<WifiAuthmode>${settings.securityMode}</WifiAuthmode>` : ''}
         </request>`;
-      
+
       await this.apiClient.post('/api/wlan/basic-settings', settingsData);
       return true;
     } catch (error) {
       console.error('Error setting WiFi settings:', error);
+      throw error;
+    }
+  }
+
+  async getGuestWiFiSettings(): Promise<{ enabled: boolean, ssid: string, password: string, securityMode: string }> {
+    try {
+      const response = await this.apiClient.get('/api/wlan/guest-basic-settings');
+
+      return {
+        enabled: parseXMLValue(response, 'WifiGuestEnable') === '1',
+        ssid: parseXMLValue(response, 'WifiGuestSsid'),
+        password: parseXMLValue(response, 'WifiGuestWpaPreSharedKey'),
+        securityMode: parseXMLValue(response, 'WifiGuestAuthmode'),
+      };
+    } catch (error) {
+      console.error('Error getting guest WiFi settings:', error);
+      // Return default values if endpoint doesn't exist
+      return { enabled: false, ssid: '', password: '', securityMode: '' };
+    }
+  }
+
+  async toggleGuestWiFi(enable: boolean): Promise<boolean> {
+    try {
+      const toggleData = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <WifiGuestEnable>${enable ? '1' : '0'}</WifiGuestEnable>
+        </request>`;
+
+      await this.apiClient.post('/api/wlan/guest-basic-settings', toggleData);
+      return true;
+    } catch (error) {
+      console.error('Error toggling guest WiFi:', error);
       throw error;
     }
   }
@@ -82,7 +115,7 @@ export class WiFiService {
         <request>
           <MacAddress>${macAddress}</MacAddress>
         </request>`;
-      
+
       await this.apiClient.post('/api/wlan/kick-device', kickData);
       return true;
     } catch (error) {
@@ -97,7 +130,7 @@ export class WiFiService {
         <request>
           <WifiEnable>${enable ? '1' : '0'}</WifiEnable>
         </request>`;
-      
+
       await this.apiClient.post('/api/wlan/wifi-switch', toggleData);
       return true;
     } catch (error) {

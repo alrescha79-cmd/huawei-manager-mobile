@@ -34,6 +34,8 @@ export interface SignalInfo {
   pci: string;
   cellId: string;
   band: string;
+  dlbandwidth: string;
+  ulbandwidth: string;
 }
 
 export interface NetworkInfo {
@@ -125,4 +127,15 @@ export interface ModemStatus {
   simStatus: string;
   wifiConnectionStatus: string;
   signalStrength: string;
+}
+
+export interface WanInfo {
+  wanIPAddress: string;
+  uptime: number;
+  primaryDns: string;
+  secondaryDns: string;
+}
+
+export interface MobileDataStatus {
+  dataswitch: boolean;
 }
