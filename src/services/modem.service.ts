@@ -309,4 +309,84 @@ export class ModemService {
       throw error;
     }
   }
+
+  // Network Mode Settings
+  async getNetworkMode(): Promise<string> {
+    try {
+      const response = await this.apiClient.get('/api/net/net-mode');
+      console.log('[RAW XML] Network Mode:', response.substring(0, 300));
+
+      // NetworkMode values: 00=Auto, 01=GSM only, 02=WCDMA only, 03=LTE only, etc.
+      return parseXMLValue(response, 'NetworkMode') || '00';
+    } catch (error) {
+      console.error('Error getting network mode:', error);
+      return '00'; // Default to auto
+    }
+  }
+
+  async setNetworkMode(mode: string): Promise<boolean> {
+    try {
+      // NetworkMode values:
+      // 00 = Auto
+      // 01 = GSM only (2G)
+      // 02 = WCDMA only (3G)
+      // 03 = LTE only (4G)
+      // 0302 = LTE/WCDMA (4G/3G)
+      // 030201 = LTE/WCDMA/GSM (Auto without 5G)
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <NetworkMode>${mode}</NetworkMode>
+          <NetworkBand>3FFFFFFF</NetworkBand>
+          <LTEBand>7FFFFFFFFFFFFFFF</LTEBand>
+        </request>`;
+
+      await this.apiClient.post('/api/net/net-mode', data);
+      console.log('[Service] Network mode set to:', mode);
+      return true;
+    } catch (error) {
+      console.error('Error setting network mode:', error);
+      throw error;
+    }
+  }
+
+  // Band Settings
+  async getBandSettings(): Promise<{ networkBand: string; lteBand: string }> {
+    try {
+      const response = await this.apiClient.get('/api/net/net-mode');
+      console.log('[RAW XML] Band Settings:', response.substring(0, 500));
+
+      return {
+        networkBand: parseXMLValue(response, 'NetworkBand') || '3FFFFFFF',
+        lteBand: parseXMLValue(response, 'LTEBand') || '7FFFFFFFFFFFFFFF',
+      };
+    } catch (error) {
+      console.error('Error getting band settings:', error);
+      return {
+        networkBand: '3FFFFFFF',
+        lteBand: '7FFFFFFFFFFFFFFF',
+      };
+    }
+  }
+
+  async setBandSettings(networkBand: string, lteBand: string): Promise<boolean> {
+    try {
+      // First get current network mode
+      const currentModeResponse = await this.apiClient.get('/api/net/net-mode');
+      const currentMode = parseXMLValue(currentModeResponse, 'NetworkMode') || '00';
+
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <NetworkMode>${currentMode}</NetworkMode>
+          <NetworkBand>${networkBand}</NetworkBand>
+          <LTEBand>${lteBand}</LTEBand>
+        </request>`;
+
+      await this.apiClient.post('/api/net/net-mode', data);
+      console.log('[Service] Band settings updated - NetworkBand:', networkBand, 'LTEBand:', lteBand);
+      return true;
+    } catch (error) {
+      console.error('Error setting band settings:', error);
+      throw error;
+    }
+  }
 }

@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Alert,
   Modal,
   TouchableOpacity,
   StatusBar,
@@ -13,7 +12,7 @@ import {
 } from 'react-native';
 import dayjs from 'dayjs';
 import { useTheme } from '@/theme';
-import { Card, Input, Button } from '@/components';
+import { Card, CardHeader, Input, Button, ThemedAlertHelper } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
@@ -101,7 +100,7 @@ export default function SMSScreen() {
   const handleDelete = async (index: string) => {
     if (!smsService) return;
 
-    Alert.alert(
+    ThemedAlertHelper.alert(
       'Delete SMS',
       'Are you sure you want to delete this message?',
       [
@@ -113,9 +112,9 @@ export default function SMSScreen() {
             try {
               await smsService.deleteSMS(index);
               removeMessage(index);
-              Alert.alert('Success', 'Message deleted');
+              ThemedAlertHelper.alert('Success', 'Message deleted');
             } catch (error) {
-              Alert.alert('Error', 'Failed to delete message');
+              ThemedAlertHelper.alert('Error', 'Failed to delete message');
             }
           },
         },
@@ -125,20 +124,20 @@ export default function SMSScreen() {
 
   const handleSend = async () => {
     if (!smsService || !newPhone || !newMessage) {
-      Alert.alert('Error', 'Please fill in all fields');
+      ThemedAlertHelper.alert('Error', 'Please fill in all fields');
       return;
     }
 
     setIsSending(true);
     try {
       await smsService.sendSMS(newPhone, newMessage);
-      Alert.alert('Success', 'Message sent');
+      ThemedAlertHelper.alert('Success', 'Message sent');
       setShowCompose(false);
       setNewPhone('');
       setNewMessage('');
       handleRefresh();
     } catch (error) {
-      Alert.alert('Error', 'Failed to send message');
+      ThemedAlertHelper.alert('Error', 'Failed to send message');
     } finally {
       setIsSending(false);
     }
@@ -175,9 +174,7 @@ export default function SMSScreen() {
         {/* SMS Count Card */}
         {smsCount && (
           <Card style={{ marginBottom: spacing.md }}>
-            <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.sm }]}>
-              SMS Count
-            </Text>
+            <CardHeader title="SMS Count" />
             <View style={styles.countRow}>
               <View style={styles.countItem}>
                 <Text style={[typography.caption1, { color: colors.textSecondary }]}>

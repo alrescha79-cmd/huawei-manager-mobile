@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Alert,
   Switch,
   StatusBar,
   Platform,
@@ -14,7 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@/theme';
-import { Card, InfoRow, Button } from '@/components';
+import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
 import { WiFiService } from '@/services/wifi.service';
@@ -105,7 +104,7 @@ export default function WiFiScreen() {
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Error loading WiFi data:', error);
-      Alert.alert('Error', 'Failed to load WiFi data');
+      ThemedAlertHelper.alert('Error', 'Failed to load WiFi data');
     } finally {
       setIsRefreshing(false);
     }
@@ -138,10 +137,10 @@ export default function WiFiScreen() {
 
     try {
       await wifiService.toggleWiFi(enabled);
-      Alert.alert('Success', `WiFi ${enabled ? 'enabled' : 'disabled'}`);
+      ThemedAlertHelper.alert('Success', `WiFi ${enabled ? 'enabled' : 'disabled'}`);
       handleRefresh();
     } catch (error) {
-      Alert.alert('Error', 'Failed to toggle WiFi');
+      ThemedAlertHelper.alert('Error', 'Failed to toggle WiFi');
     }
   };
 
@@ -152,9 +151,9 @@ export default function WiFiScreen() {
     try {
       await wifiService.toggleGuestWiFi(enabled);
       setGuestWifiEnabled(enabled);
-      Alert.alert('Success', `Guest WiFi ${enabled ? 'enabled' : 'disabled'}`);
+      ThemedAlertHelper.alert('Success', `Guest WiFi ${enabled ? 'enabled' : 'disabled'}`);
     } catch (error) {
-      Alert.alert('Error', 'Failed to toggle Guest WiFi');
+      ThemedAlertHelper.alert('Error', 'Failed to toggle Guest WiFi');
     } finally {
       setIsTogglingGuest(false);
     }
@@ -170,10 +169,10 @@ export default function WiFiScreen() {
         password: formPassword,
         securityMode: formSecurityMode,
       });
-      Alert.alert('Success', 'WiFi settings saved successfully');
+      ThemedAlertHelper.alert('Success', 'WiFi settings saved successfully');
       handleRefresh();
     } catch (error) {
-      Alert.alert('Error', 'Failed to save WiFi settings');
+      ThemedAlertHelper.alert('Error', 'Failed to save WiFi settings');
     } finally {
       setIsSaving(false);
     }
@@ -182,7 +181,7 @@ export default function WiFiScreen() {
   const handleKickDevice = async (macAddress: string, hostName: string) => {
     if (!wifiService) return;
 
-    Alert.alert(
+    ThemedAlertHelper.alert(
       'Kick Device',
       `Are you sure you want to disconnect ${hostName || macAddress}?`,
       [
@@ -193,10 +192,10 @@ export default function WiFiScreen() {
           onPress: async () => {
             try {
               await wifiService.kickDevice(macAddress);
-              Alert.alert('Success', 'Device disconnected');
+              ThemedAlertHelper.alert('Success', 'Device disconnected');
               handleRefresh();
             } catch (error) {
-              Alert.alert('Error', 'Failed to kick device');
+              ThemedAlertHelper.alert('Error', 'Failed to kick device');
             }
           },
         },
@@ -231,9 +230,7 @@ export default function WiFiScreen() {
       {/* WiFi Settings Card */}
       {wifiSettings && (
         <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-            WiFi Settings
-          </Text>
+          <CardHeader title="WiFi Settings" />
 
           {/* WiFi Enable Toggle */}
           <View style={styles.toggleRow}>
@@ -383,9 +380,7 @@ export default function WiFiScreen() {
 
       {/* Connected Devices Card */}
       <Card>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          Connected Devices ({connectedDevices.length})
-        </Text>
+        <CardHeader title={`Connected Devices (${connectedDevices.length})`} />
 
         {connectedDevices.length === 0 ? (
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.lg }]}>

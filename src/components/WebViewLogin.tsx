@@ -3,13 +3,13 @@ import {
     View,
     StyleSheet,
     Modal,
-    Alert,
     Text,
     TouchableOpacity,
     ActivityIndicator,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useTheme } from '@/theme';
+import { ThemedAlertHelper } from './ThemedAlert';
 
 interface WebViewLoginProps {
     modemIp: string;
@@ -104,7 +104,7 @@ export function WebViewLogin({
                 }, 500);
             } else if (message.type === 'LOGIN_ERROR') {
                 console.log('[WebViewLogin] Login error:', message.message);
-                Alert.alert('Login Failed', message.message || 'Please check your credentials');
+                ThemedAlertHelper.alert('Login Failed', message.message || 'Please check your credentials');
             }
         } catch (error) {
             console.log('[WebViewLogin] Non-JSON message:', event.nativeEvent.data);
@@ -130,7 +130,7 @@ export function WebViewLogin({
 
     const handleClose = () => {
         if (!loginDetected) {
-            Alert.alert(
+            ThemedAlertHelper.alert(
                 'Cancel Login',
                 'Are you sure you want to cancel?',
                 [
@@ -204,7 +204,7 @@ export function WebViewLogin({
                     onError={(syntheticEvent) => {
                         const { nativeEvent } = syntheticEvent;
                         console.error('[WebViewLogin] WebView error:', nativeEvent);
-                        Alert.alert(
+                        ThemedAlertHelper.alert(
                             'Connection Error',
                             'Could not connect to modem. Please check your WiFi connection.',
                             [{ text: 'OK', onPress: onClose }]

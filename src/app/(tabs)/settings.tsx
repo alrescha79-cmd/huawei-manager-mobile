@@ -4,17 +4,18 @@ import {
   Text,
   StyleSheet,
   ScrollView,
-  Alert,
   TouchableOpacity,
   StatusBar,
   Platform,
   Linking,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useTheme } from '@/theme';
-import { Card, Button, InfoRow } from '@/components';
+import { Card, CardHeader, Button, InfoRow, ThemedAlertHelper } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -24,6 +25,28 @@ const ANTENNA_MODES = [
   { value: 'auto', label: 'Auto', icon: 'settings-input-antenna' as const },
   { value: 'internal', label: 'Internal', icon: 'wifi' as const },
   { value: 'external', label: 'External', icon: 'router' as const },
+];
+
+const NETWORK_MODES = [
+  { value: '00', label: 'Auto (All)' },
+  { value: '03', label: '4G Only' },
+  { value: '02', label: '3G Only' },
+  { value: '01', label: '2G Only' },
+  { value: '0302', label: '4G/3G' },
+];
+
+// LTE Band definitions (common bands)
+const LTE_BANDS = [
+  { bit: 0, name: 'B1', freq: '2100 MHz' },
+  { bit: 2, name: 'B3', freq: '1800 MHz' },
+  { bit: 4, name: 'B5', freq: '850 MHz' },
+  { bit: 6, name: 'B7', freq: '2600 MHz' },
+  { bit: 7, name: 'B8', freq: '900 MHz' },
+  { bit: 19, name: 'B20', freq: '800 MHz' },
+  { bit: 27, name: 'B28', freq: '700 MHz' },
+  { bit: 37, name: 'B38', freq: '2600 MHz TDD' },
+  { bit: 39, name: 'B40', freq: '2300 MHz TDD' },
+  { bit: 40, name: 'B41', freq: '2500 MHz TDD' },
 ];
 
 export default function SettingsScreen() {
@@ -39,12 +62,23 @@ export default function SettingsScreen() {
   const [showAntennaDropdown, setShowAntennaDropdown] = useState(false);
   const [isChangingAntenna, setIsChangingAntenna] = useState(false);
 
+  // Network mode state
+  const [networkMode, setNetworkMode] = useState('00');
+  const [showNetworkDropdown, setShowNetworkDropdown] = useState(false);
+  const [isChangingNetwork, setIsChangingNetwork] = useState(false);
+
+  // Band selection state
+  const [showBandModal, setShowBandModal] = useState(false);
+  const [selectedBands, setSelectedBands] = useState<number[]>([]);
+  const [isSavingBands, setIsSavingBands] = useState(false);
+
   useEffect(() => {
     if (credentials?.modemIp) {
       const service = new ModemService(credentials.modemIp);
       setModemService(service);
       loadModemInfo(service);
       loadAntennaMode(service);
+      loadNetworkMode(service);
     }
   }, [credentials]);
 
@@ -80,16 +114,99 @@ export default function SettingsScreen() {
     try {
       await modemService.setAntennaMode(mode);
       setAntennaMode(mode);
-      Alert.alert('Success', `Antenna mode changed to ${mode}`);
+      ThemedAlertHelper.alert('Success', `Antenna mode changed to ${mode}`);
     } catch (error) {
-      Alert.alert('Error', 'Failed to change antenna mode');
+      ThemedAlertHelper.alert('Error', 'Failed to change antenna mode');
     } finally {
       setIsChangingAntenna(false);
     }
   };
 
+  const loadNetworkMode = async (service: ModemService) => {
+    try {
+      const mode = await service.getNetworkMode();
+      setNetworkMode(mode);
+
+      // Also load band settings
+      const bandSettings = await service.getBandSettings();
+      const lteBandHex = bandSettings.lteBand;
+      const selectedBits = hexToBandBits(lteBandHex);
+      setSelectedBands(selectedBits);
+    } catch (error) {
+      console.error('Error loading network mode:', error);
+    }
+  };
+
+  const handleNetworkModeChange = async (mode: string) => {
+    if (!modemService || isChangingNetwork) return;
+
+    setIsChangingNetwork(true);
+    setShowNetworkDropdown(false);
+    try {
+      await modemService.setNetworkMode(mode);
+      setNetworkMode(mode);
+      ThemedAlertHelper.alert('Success', `Network mode changed`);
+    } catch (error) {
+      ThemedAlertHelper.alert('Error', 'Failed to change network mode');
+    } finally {
+      setIsChangingNetwork(false);
+    }
+  };
+
+  const hexToBandBits = (hex: string): number[] => {
+    try {
+      const bigInt = BigInt('0x' + hex);
+      const bits: number[] = [];
+      LTE_BANDS.forEach(band => {
+        if ((bigInt >> BigInt(band.bit)) & BigInt(1)) {
+          bits.push(band.bit);
+        }
+      });
+      return bits;
+    } catch {
+      return LTE_BANDS.map(b => b.bit); // All bands if parse fails
+    }
+  };
+
+  const bandBitsToHex = (bits: number[]): string => {
+    let value = BigInt(0);
+    bits.forEach(bit => {
+      value |= BigInt(1) << BigInt(bit);
+    });
+    return value.toString(16).toUpperCase().padStart(16, '0');
+  };
+
+  const toggleBand = (bit: number) => {
+    setSelectedBands(prev =>
+      prev.includes(bit)
+        ? prev.filter(b => b !== bit)
+        : [...prev, bit]
+    );
+  };
+
+  const saveBandSettings = async () => {
+    if (!modemService || isSavingBands) return;
+
+    if (selectedBands.length === 0) {
+      ThemedAlertHelper.alert('Error', 'Please select at least one band');
+      return;
+    }
+
+    setIsSavingBands(true);
+    try {
+      const lteBandHex = bandBitsToHex(selectedBands);
+      await modemService.setBandSettings('3FFFFFFF', lteBandHex);
+      setShowBandModal(false);
+      ThemedAlertHelper.alert('Success', 'Band settings saved');
+    } catch (error) {
+      ThemedAlertHelper.alert('Error', 'Failed to save band settings');
+    } finally {
+      setIsSavingBands(false);
+    }
+  };
+
   const handleLogout = async () => {
-    Alert.alert(
+    ThemedAlertHelper.alert(
       'Logout',
       'Are you sure you want to logout?',
       [
@@ -117,7 +234,7 @@ export default function SettingsScreen() {
   };
 
   const handleReboot = async () => {
-    Alert.alert(
+    ThemedAlertHelper.alert(
       'Reboot Modem',
       'Are you sure you want to reboot the modem? This will disconnect all devices.',
       [
@@ -131,9 +248,9 @@ export default function SettingsScreen() {
             setIsLoading(true);
             try {
               await modemService.reboot();
-              Alert.alert('Success', 'Modem is rebooting. This may take a few minutes.');
+              ThemedAlertHelper.alert('Success', 'Modem is rebooting. This may take a few minutes.');
             } catch (error) {
-              Alert.alert('Error', 'Failed to reboot modem');
+              ThemedAlertHelper.alert('Error', 'Failed to reboot modem');
             } finally {
               setIsLoading(false);
             }
@@ -168,9 +285,7 @@ export default function SettingsScreen() {
       {/* Modem Info Card */}
       {modemInfo && (
         <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-            Modem Information
-          </Text>
+          <CardHeader title="Modem Information" />
 
           <InfoRow label="Device" value={modemInfo.deviceName} />
           <InfoRow label="Serial Number" value={modemInfo.serialNumber} />
@@ -185,9 +300,7 @@ export default function SettingsScreen() {
 
       {/* System Settings Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          System Settings
-        </Text>
+        <CardHeader title="System Settings" />
 
         {/* Antenna Settings */}
         <View style={styles.settingRow}>
@@ -242,13 +355,81 @@ export default function SettingsScreen() {
             ))}
           </View>
         )}
+
+        {/* Network Mode Settings */}
+        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>Network Type</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              Select preferred network
+            </Text>
+          </View>
+          {isChangingNetwork ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <TouchableOpacity
+              style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setShowNetworkDropdown(!showNetworkDropdown)}
+            >
+              <MaterialIcons name="signal-cellular-alt" size={18} color={colors.primary} />
+              <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
+                {NETWORK_MODES.find(m => m.value === networkMode)?.label || 'Auto'}
+              </Text>
+              <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {showNetworkDropdown && (
+          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {NETWORK_MODES.map((mode) => (
+              <TouchableOpacity
+                key={mode.value}
+                style={[styles.dropdownItem, {
+                  backgroundColor: networkMode === mode.value ? colors.primary + '20' : 'transparent'
+                }]}
+                onPress={() => handleNetworkModeChange(mode.value)}
+              >
+                <MaterialIcons
+                  name="signal-cellular-alt"
+                  size={20}
+                  color={networkMode === mode.value ? colors.primary : colors.text}
+                />
+                <Text style={[typography.body, {
+                  color: networkMode === mode.value ? colors.primary : colors.text,
+                  marginLeft: 10
+                }]}>
+                  {mode.label}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* LTE Band Selection */}
+        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>LTE Bands</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {selectedBands.length === LTE_BANDS.length ? 'All bands' : `${selectedBands.length} bands selected`}
+            </Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowBandModal(true)}
+          >
+            <MaterialIcons name="tune" size={18} color={colors.primary} />
+            <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
+              Configure
+            </Text>
+            <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
       </Card>
 
       {/* App Settings Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          App Settings
-        </Text>
+        <CardHeader title="App Settings" />
 
         <View style={styles.settingRow}>
           <View style={{ flex: 1 }}>
@@ -312,31 +493,21 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
-      {/* Modem Control Card */}
+      {/* Modem Control & Connection Card - Merged */}
       <Card style={{ marginBottom: spacing.md }}>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          Modem Control
-        </Text>
-
-        <Button
-          title="Reboot Modem"
-          onPress={handleReboot}
-          variant="danger"
-          loading={isLoading}
-          disabled={isLoading}
-        />
-      </Card>
-
-      {/* Connection Card */}
-      <Card style={{ marginBottom: spacing.md }}>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          Connection
-        </Text>
+        <CardHeader title="Modem Control" />
 
         <InfoRow label="Modem IP" value={credentials?.modemIp || 'Unknown'} />
         <InfoRow label="Username" value={credentials?.username || 'Unknown'} />
 
-        <View style={{ marginTop: spacing.md }}>
+        <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+          <Button
+            title="Reboot Modem"
+            onPress={handleReboot}
+            variant="danger"
+            loading={isLoading}
+            disabled={isLoading}
+          />
           <Button
             title="Logout"
             onPress={handleLogout}
@@ -347,11 +518,9 @@ export default function SettingsScreen() {
 
       {/* About Card */}
       <Card>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          About
-        </Text>
+        <CardHeader title="About" />
 
-        <InfoRow label="App Version" value="1.0.0" />
+        <InfoRow label="App Version" value={Constants.expoConfig?.version || '1.0.0'} />
 
         {/* Developer with GitHub link */}
         <View style={[styles.settingRow, { marginBottom: spacing.sm }]}>
@@ -373,6 +542,78 @@ export default function SettingsScreen() {
           © 2025 Anggun Caksono
         </Text>
       </Card>
+
+      {/* Band Selection Modal */}
+      <Modal
+        visible={showBandModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowBandModal(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+            <TouchableOpacity onPress={() => setShowBandModal(false)}>
+              <Text style={[typography.body, { color: colors.primary }]}>Cancel</Text>
+            </TouchableOpacity>
+            <Text style={[typography.headline, { color: colors.text }]}>LTE Bands</Text>
+            <TouchableOpacity onPress={saveBandSettings} disabled={isSavingBands}>
+              {isSavingBands ? (
+                <ActivityIndicator color={colors.primary} size="small" />
+              ) : (
+                <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Save</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.md, textAlign: 'center' }]}>
+              Select the LTE bands to use. Deselecting bands may improve signal on specific bands.
+            </Text>
+
+            {/* Select All / Deselect All */}
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: spacing.md, gap: spacing.sm }}>
+              <TouchableOpacity
+                style={[styles.selectAllButton, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}
+                onPress={() => setSelectedBands(LTE_BANDS.map(b => b.bit))}
+              >
+                <Text style={[typography.caption1, { color: colors.primary }]}>Select All</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.selectAllButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => setSelectedBands([])}
+              >
+                <Text style={[typography.caption1, { color: colors.textSecondary }]}>Deselect All</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Band List */}
+            {LTE_BANDS.map((band) => (
+              <TouchableOpacity
+                key={band.bit}
+                style={[styles.bandItem, {
+                  backgroundColor: selectedBands.includes(band.bit) ? colors.primary + '15' : colors.card,
+                  borderColor: selectedBands.includes(band.bit) ? colors.primary : colors.border
+                }]}
+                onPress={() => toggleBand(band.bit)}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                    {band.name}
+                  </Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {band.freq}
+                  </Text>
+                </View>
+                <MaterialIcons
+                  name={selectedBands.includes(band.bit) ? 'check-circle' : 'radio-button-unchecked'}
+                  size={24}
+                  color={selectedBands.includes(band.bit) ? colors.primary : colors.textSecondary}
+                />
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -421,5 +662,33 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 14,
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  modalContent: {
+    flex: 1,
+    padding: 16,
+  },
+  selectAllButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+  },
+  bandItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginBottom: 8,
   },
 });
