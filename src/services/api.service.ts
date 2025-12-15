@@ -351,6 +351,7 @@ export class ModemAPIClient {
           'Cookie': this.sessionCookie || '',
         },
       });
+
       return response.data;
     } catch (error) {
       console.error(`Error getting ${endpoint}:`, error);

@@ -6,12 +6,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import Constants from 'expo-constants';
 import { useTheme } from '@/theme';
-import { Card, Input, Button, WebViewLogin } from '@/components';
+import { Card, Input, Button, WebViewLogin, ThemedAlertHelper } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { networkService } from '@/services/network.service';
 
@@ -32,7 +32,7 @@ export default function LoginScreen() {
       const isWiFi = await networkService.isConnectedToWiFi();
 
       if (!isWiFi) {
-        Alert.alert(
+        ThemedAlertHelper.alert(
           'WiFi Required',
           'Please connect to your Huawei modem WiFi network to continue.'
         );
@@ -54,7 +54,7 @@ export default function LoginScreen() {
     setError(null);
 
     if (!modemIp) {
-      Alert.alert('Error', 'Please enter modem IP address');
+      ThemedAlertHelper.alert('Error', 'Please enter modem IP address');
       return;
     }
 
@@ -76,7 +76,7 @@ export default function LoginScreen() {
       });
 
       console.log('[Login] Credentials saved, redirecting to home...');
-      Alert.alert('Success', 'Login successful!', [
+      ThemedAlertHelper.alert('Success', 'Login successful!', [
         {
           text: 'OK',
           onPress: () => router.replace('/(tabs)/home'),
@@ -85,7 +85,7 @@ export default function LoginScreen() {
     } catch (err) {
       console.error('[Login] Error saving credentials:', err);
       const errorMessage = err instanceof Error ? err.message : 'Login failed';
-      Alert.alert('Error', errorMessage);
+      ThemedAlertHelper.alert('Error', errorMessage);
       setError(errorMessage);
     }
   };
@@ -166,6 +166,10 @@ export default function LoginScreen() {
         <View style={styles.footer}>
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
             Login will open in a web browser.{'\n'}Make sure you are connected to modem WiFi.
+          </Text>
+          {/* app version */}
+          <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
+            App Version: {Constants.expoConfig?.version || '1.0.0'}
           </Text>
         </View>
       </ScrollView>

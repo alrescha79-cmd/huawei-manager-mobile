@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Alert,
   TouchableOpacity,
   StatusBar,
   Platform,
@@ -15,7 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge } from '@/components';
+import { Card, CardHeader, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge, ThemedAlertHelper } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
@@ -55,7 +54,7 @@ export default function HomeScreen() {
   const [isTogglingData, setIsTogglingData] = useState(false);
   const [isChangingIp, setIsChangingIp] = useState(false);
 
-  // Auto-refresh interval (every 2 seconds for realtime updates)
+  // Auto-refresh interval (fast for speed, slower for other data)
   useEffect(() => {
     if (credentials?.modemIp) {
       const service = new ModemService(credentials.modemIp);
@@ -64,12 +63,20 @@ export default function HomeScreen() {
       // Initial load
       loadData(service);
 
-      // Setup auto-refresh interval
-      const intervalId = setInterval(() => {
-        loadDataSilent(service);
-      }, 2000); // Update every 2 seconds
+      // Fast refresh for traffic/speed data only (every 1 second)
+      const fastIntervalId = setInterval(() => {
+        loadTrafficOnly(service);
+      }, 1000); // Speed updates every 1 second
 
-      return () => clearInterval(intervalId);
+      // Slower refresh for all other data (every 5 seconds)
+      const slowIntervalId = setInterval(() => {
+        loadDataSilent(service);
+      }, 5000); // Full data every 5 seconds
+
+      return () => {
+        clearInterval(fastIntervalId);
+        clearInterval(slowIntervalId);
+      };
     }
   }, [credentials]);
 
@@ -105,7 +112,7 @@ export default function HomeScreen() {
       setLastUpdate(new Date());
     } catch (error) {
       console.error('Error loading data:', error);
-      Alert.alert('Error', 'Failed to load modem data');
+      ThemedAlertHelper.alert('Error', 'Failed to load modem data');
     } finally {
       setIsRefreshing(false);
     }
@@ -146,6 +153,16 @@ export default function HomeScreen() {
     }
   };
 
+  // Fast traffic-only refresh for realtime speed display
+  const loadTrafficOnly = async (service: ModemService) => {
+    try {
+      const traffic = await service.getTrafficStats();
+      setTrafficStats(traffic);
+    } catch (error) {
+      // Silent fail
+    }
+  };
+
   const handleRefresh = () => {
     if (modemService) {
       loadData(modemService);
@@ -162,10 +179,10 @@ export default function HomeScreen() {
       // Refresh data after toggle
       const dataStatus = await modemService.getMobileDataStatus();
       setMobileDataStatus(dataStatus);
-      Alert.alert('Success', `Mobile data ${newState ? 'enabled' : 'disabled'}`);
+      ThemedAlertHelper.alert('Success', `Mobile data ${newState ? 'enabled' : 'disabled'}`);
     } catch (error) {
       console.error('Error toggling mobile data:', error);
-      Alert.alert('Error', 'Failed to toggle mobile data');
+      ThemedAlertHelper.alert('Error', 'Failed to toggle mobile data');
     } finally {
       setIsTogglingData(false);
     }
@@ -174,28 +191,41 @@ export default function HomeScreen() {
   const handleChangeIp = async () => {
     if (!modemService || isChangingIp) return;
 
-    Alert.alert(
+    ThemedAlertHelper.alert(
       'Change IP Address',
-      'This will trigger a PLMN network scan to get a new IP address. Continue?',
+      'This will trigger a PLMN network scan to get a new IP address. The process takes 30-60 seconds. Continue?',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Continue',
           onPress: async () => {
             setIsChangingIp(true);
-            try {
-              await modemService.triggerPlmnScan();
-              Alert.alert('Success', 'PLMN scan triggered. New IP will be assigned shortly.');
-              // Wait a bit and refresh to get new IP
-              setTimeout(() => {
-                if (modemService) loadData(modemService);
-              }, 5000);
-            } catch (error) {
-              console.error('Error triggering PLMN scan:', error);
-              Alert.alert('Error', 'Failed to trigger PLMN scan');
-            } finally {
+
+            // Show immediate feedback - the scan is being triggered
+            ThemedAlertHelper.alert(
+              'IP Change Started',
+              'PLMN scan triggered. The modem will reconnect to the network. Please wait 30-60 seconds for the new IP.',
+              [{ text: 'OK' }]
+            );
+
+            // Fire and forget - don't wait for response as PLMN scan takes 30-60s
+            modemService.triggerPlmnScan().catch((error) => {
+              // This error is expected due to timeout during reconnection
+              console.log('[IP Change] Expected timeout during PLMN scan:', error);
+            });
+
+            // Keep loading state for 10 seconds then allow retry
+            setTimeout(() => {
               setIsChangingIp(false);
-            }
+            }, 10000);
+
+            // Refresh data after 45 seconds to get new IP
+            setTimeout(() => {
+              if (modemService) {
+                console.log('[IP Change] Refreshing data to get new IP...');
+                loadData(modemService);
+              }
+            }, 45000);
           },
         },
       ]
@@ -203,7 +233,7 @@ export default function HomeScreen() {
   };
 
   const handleReLogin = () => {
-    Alert.alert(
+    ThemedAlertHelper.alert(
       'Re-Login Required',
       'Signal data is not available. You may need to log in again to the modem.',
       [
@@ -284,9 +314,7 @@ export default function HomeScreen() {
 
       {/* Connection Status Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          Connection Status
-        </Text>
+        <CardHeader title="Connection Status" />
 
         <View style={styles.statusRow}>
           <View style={{ flex: 1 }}>
@@ -314,13 +342,13 @@ export default function HomeScreen() {
               value={wanInfo?.wanIPAddress || 'Fetching...'}
             />
             <InfoRow
-              label="BAND"
+              label="Band"
               value={getLteBandInfo(signalInfo?.band)}
             />
             {/* WIDTH with icons */}
             <View style={[styles.infoRowCustom, { marginBottom: spacing.sm }]}>
               <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-                WIDTH
+                Width
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
@@ -354,9 +382,7 @@ export default function HomeScreen() {
 
       {/* Control Buttons Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          Quick Controls
-        </Text>
+        <CardHeader title="Quick Controls" />
 
         {/* Mobile Data Toggle */}
         <View style={styles.controlRow}>
@@ -377,9 +403,6 @@ export default function HomeScreen() {
             />
           )}
         </View>
-
-        {/* Separator */}
-        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.sm }} />
 
         {/* Change IP Button */}
         <TouchableOpacity
@@ -403,9 +426,7 @@ export default function HomeScreen() {
       {/* Signal Strength Card */}
       {signalInfo && (signalInfo.rssi || signalInfo.rsrp) ? (
         <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-            Signal Strength
-          </Text>
+          <CardHeader title="Signal Strength" />
 
           {signalInfo.rssi && (
             <SignalMeter
@@ -462,9 +483,7 @@ export default function HomeScreen() {
         </Card>
       ) : (
         <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-            Signal Strength
-          </Text>
+          <CardHeader title="Signal Strength" />
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>
             ⚠️ No signal data available{'\n'}
             Please check if you're logged in to the modem
@@ -475,9 +494,7 @@ export default function HomeScreen() {
       {/* Traffic Statistics Card */}
       {trafficStats && (
         <Card style={{ marginBottom: spacing.md }}>
-          <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-            Traffic Statistics
-          </Text>
+          <CardHeader title="Traffic Statistics" />
 
           {/* Speed Gauge */}
           <SpeedGauge
