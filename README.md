@@ -259,7 +259,7 @@ Mengikuti SF Pro style Apple:
 ## 📝 TODO / Roadmap
 
 ### Phase 2 (Coming Soon)
-- [ ] Grafik traffic realtime
+- [x] Grafik traffic realtime
 - [ ] Push notifications untuk SMS
 - [ ] Export data/logs
 - [ ] Multi-language support
@@ -282,10 +282,6 @@ Contributions welcome! Please:
 ## 📄 License
 
 MIT License - see LICENSE file
-
-## 👨‍💻 Developer
-
-Huawei Manager Team
 
 ---
 

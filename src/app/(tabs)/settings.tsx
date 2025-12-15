@@ -7,6 +7,8 @@ import {
   Alert,
   Switch,
   TouchableOpacity,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/theme';
@@ -101,11 +103,8 @@ export default function SettingsScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
     >
-      <Text style={[typography.largeTitle, { color: colors.text, marginBottom: spacing.lg }]}>
-        Settings
-      </Text>
 
       {/* Modem Info Card */}
       {modemInfo && (
@@ -124,39 +123,6 @@ export default function SettingsScreen() {
           )}
         </Card>
       )}
-
-      {/* Connection Card */}
-      <Card style={{ marginBottom: spacing.md }}>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          Connection
-        </Text>
-
-        <InfoRow label="Modem IP" value={credentials?.modemIp || 'Unknown'} />
-        <InfoRow label="Username" value={credentials?.username || 'Unknown'} />
-        
-        <View style={{ marginTop: spacing.md }}>
-          <Button
-            title="Logout"
-            onPress={handleLogout}
-            variant="secondary"
-          />
-        </View>
-      </Card>
-
-      {/* Modem Control Card */}
-      <Card style={{ marginBottom: spacing.md }}>
-        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
-          Modem Control
-        </Text>
-
-        <Button
-          title="Reboot Modem"
-          onPress={handleReboot}
-          variant="danger"
-          loading={isLoading}
-          disabled={isLoading}
-        />
-      </Card>
 
       {/* App Settings Card */}
       <Card style={{ marginBottom: spacing.md }}>
@@ -189,6 +155,39 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
+      {/* Modem Control Card */}
+      <Card style={{ marginBottom: spacing.md }}>
+        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
+          Modem Control
+        </Text>
+
+        <Button
+          title="Reboot Modem"
+          onPress={handleReboot}
+          variant="danger"
+          loading={isLoading}
+          disabled={isLoading}
+        />
+      </Card>
+
+      {/* Connection Card */}
+      <Card style={{ marginBottom: spacing.md }}>
+        <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
+          Connection
+        </Text>
+
+        <InfoRow label="Modem IP" value={credentials?.modemIp || 'Unknown'} />
+        <InfoRow label="Username" value={credentials?.username || 'Unknown'} />
+
+        <View style={{ marginTop: spacing.md }}>
+          <Button
+            title="Logout"
+            onPress={handleLogout}
+            variant="secondary"
+          />
+        </View>
+      </Card>
+
       {/* About Card */}
       <Card>
         <Text style={[typography.headline, { color: colors.text, marginBottom: spacing.md }]}>
@@ -196,10 +195,10 @@ export default function SettingsScreen() {
         </Text>
 
         <InfoRow label="App Version" value="1.0.0" />
-        <InfoRow label="Developer" value="Huawei Manager Team" />
-        
+        <InfoRow label="Developer" value="Anggun Caksono" />
+
         <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
-          © 2024 Huawei Manager
+          © 2025 Anggun Caksono
         </Text>
       </Card>
     </ScrollView>

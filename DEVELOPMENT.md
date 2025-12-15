@@ -84,8 +84,8 @@ npm run start:tunnel
 
 1. **Clone & Install**
 ```bash
-git clone <repo-url>
-cd hm-mobile
+git clone https://github.com/alrescha79-cmd/huawei-manager-mobile.git
+cd huawei-manager-mobile
 npm install
 ```
 
@@ -307,19 +307,19 @@ npm test
 ```
 
 ### Manual Testing Checklist
-- [ ] Login with correct credentials
-- [ ] Login with wrong credentials
-- [ ] Auto-detect modem IP
-- [ ] View signal strength
-- [ ] View traffic stats
-- [ ] View connected devices
-- [ ] Kick device
+- [x] Login with correct credentials
+- [x] Login with wrong credentials
+- [x] Auto-detect modem IP
+- [x] View signal strength
+- [x] View traffic stats
+- [x] View connected devices
+- [x] Kick device
 - [ ] Toggle WiFi
 - [ ] Read SMS
 - [ ] Send SMS
 - [ ] Logout
 - [ ] Reboot modem
-- [ ] Toggle dark mode
+- [x] Toggle dark mode
 
 ## Common Issues
 

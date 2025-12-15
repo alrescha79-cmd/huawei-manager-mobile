@@ -7,6 +7,8 @@ import {
   RefreshControl,
   Alert,
   Switch,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { Card, InfoRow, Button } from '@/components';
@@ -18,8 +20,8 @@ import { formatMacAddress } from '@/utils/helpers';
 export default function WiFiScreen() {
   const { colors, typography, spacing } = useTheme();
   const { credentials } = useAuthStore();
-  const { 
-    connectedDevices, 
+  const {
+    connectedDevices,
     wifiSettings,
     setConnectedDevices,
     setWiFiSettings,
@@ -34,7 +36,7 @@ export default function WiFiScreen() {
     if (credentials?.modemIp) {
       const service = new WiFiService(credentials.modemIp);
       setWiFiService(service);
-      
+
       // Initial load
       loadData(service);
 
@@ -129,7 +131,7 @@ export default function WiFiScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={styles.content}
+      contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -139,9 +141,6 @@ export default function WiFiScreen() {
       }
     >
       <View style={styles.header}>
-        <Text style={[typography.largeTitle, { color: colors.text }]}>
-          WiFi
-        </Text>
         {lastUpdate && (
           <Text style={[typography.caption1, { color: colors.textSecondary }]}>
             Updated: {lastUpdate.toLocaleTimeString()}
