@@ -56,10 +56,7 @@ export class ModemService {
     try {
       const response = await this.apiClient.get('/api/device/signal');
 
-      // Log raw XML response for debugging
-      console.log('[RAW XML] Signal:', response.substring(0, 500));
-
-      const signalInfo = {
+      return {
         rssi: parseXMLValue(response, 'rssi'),
         rsrp: parseXMLValue(response, 'rsrp'),
         rsrq: parseXMLValue(response, 'rsrq'),
@@ -73,9 +70,6 @@ export class ModemService {
         dlbandwidth: parseXMLValue(response, 'dlbandwidth'),
         ulbandwidth: parseXMLValue(response, 'ulbandwidth'),
       };
-
-      console.log('[Service] Signal Info:', signalInfo);
-      return signalInfo;
     } catch (error) {
       console.error('Error getting signal info:', error);
       throw error;
@@ -86,7 +80,7 @@ export class ModemService {
     try {
       const response = await this.apiClient.get('/api/net/current-plmn');
 
-      const networkInfo = {
+      return {
         state: parseXMLValue(response, 'State'),
         registerState: parseXMLValue(response, 'RegisterState'),
         roamingState: parseXMLValue(response, 'RoamingState'),
@@ -99,9 +93,6 @@ export class ModemService {
         spnName: parseXMLValue(response, 'SpnName'),
         fullName: parseXMLValue(response, 'FullName'),
       };
-
-      console.log('[Service] Network Info:', networkInfo);
-      return networkInfo;
     } catch (error) {
       console.error('Error getting network info:', error);
       throw error;
@@ -118,15 +109,12 @@ export class ModemService {
 
       // Fetch traffic stats from main endpoint
       const response = await this.apiClient.get('/api/monitoring/traffic-statistics');
-      console.log('[RAW XML] Traffic Stats:', response.substring(0, 500));
 
       // Also fetch monthly stats from separate endpoint
       let monthDownload = 0;
       let monthUpload = 0;
-      let monthDuration = 0;
       try {
         const monthResponse = await this.apiClient.get('/api/monitoring/month_statistics');
-        console.log('[RAW XML] Month Stats:', monthResponse.substring(0, 500));
 
         // Try different possible tag names
         monthDownload = safeParseInt(
@@ -139,12 +127,8 @@ export class ModemService {
           parseXMLValue(monthResponse, 'monthUpload') ||
           parseXMLValue(monthResponse, 'MonthUpload')
         );
-        monthDuration = safeParseInt(
-          parseXMLValue(monthResponse, 'CurrentMonthDuration') ||
-          parseXMLValue(monthResponse, 'MonthDuration')
-        );
-      } catch (monthError) {
-        console.log('[API] Month statistics not available:', monthError);
+      } catch {
+        // Month statistics not available - continue without them
       }
 
       return {
@@ -169,10 +153,7 @@ export class ModemService {
     try {
       const response = await this.apiClient.get('/api/monitoring/status');
 
-      // Log raw XML response for debugging
-      console.log('[RAW XML] Status:', response.substring(0, 500));
-
-      const modemStatus = {
+      return {
         connectionStatus: parseXMLValue(response, 'ConnectionStatus'),
         signalIcon: parseXMLValue(response, 'SignalIcon'),
         currentNetworkType: parseXMLValue(response, 'CurrentNetworkType'),
@@ -185,9 +166,6 @@ export class ModemService {
         wifiConnectionStatus: parseXMLValue(response, 'WifiConnectionStatus'),
         signalStrength: parseXMLValue(response, 'SignalStrength'),
       };
-
-      console.log('[Service] Modem Status:', modemStatus);
-      return modemStatus;
     } catch (error) {
       console.error('Error getting modem status:', error);
       throw error;
@@ -213,7 +191,6 @@ export class ModemService {
     try {
       // Use /api/device/information endpoint for WAN IP
       const response = await this.apiClient.get('/api/device/information');
-      console.log('[RAW XML] Device Info (for WAN):', response.substring(0, 500));
 
       const safeParseInt = (value: string): number => {
         const parsed = parseInt(value);
@@ -235,7 +212,6 @@ export class ModemService {
   async getMobileDataStatus(): Promise<MobileDataStatus> {
     try {
       const response = await this.apiClient.get('/api/dialup/mobile-dataswitch');
-      console.log('[RAW XML] Mobile Data Switch:', response.substring(0, 500));
 
       const dataswitch = parseXMLValue(response, 'dataswitch');
       return {
@@ -255,7 +231,6 @@ export class ModemService {
         </request>`;
 
       await this.apiClient.post('/api/dialup/mobile-dataswitch', data);
-      console.log('[Service] Mobile data toggled:', enable);
       return true;
     } catch (error) {
       console.error('Error toggling mobile data:', error);
@@ -267,8 +242,7 @@ export class ModemService {
     try {
       // Triggering PLMN list scan will cause the modem to re-register
       // on the network, which typically results in a new IP address
-      const response = await this.apiClient.get('/api/net/plmn-list');
-      console.log('[Service] PLMN scan triggered:', response.substring(0, 200));
+      await this.apiClient.get('/api/net/plmn-list');
       return true;
     } catch (error) {
       console.error('Error triggering PLMN scan:', error);
@@ -279,7 +253,6 @@ export class ModemService {
   async getAntennaMode(): Promise<string> {
     try {
       const response = await this.apiClient.get('/api/device/antenna_type');
-      console.log('[RAW XML] Antenna Type:', response.substring(0, 300));
       return parseXMLValue(response, 'antenna_type') || 'auto';
     } catch (error) {
       console.error('Error getting antenna mode:', error);
@@ -302,7 +275,6 @@ export class ModemService {
         </request>`;
 
       await this.apiClient.post('/api/device/antenna_type', data);
-      console.log('[Service] Antenna mode set to:', mode);
       return true;
     } catch (error) {
       console.error('Error setting antenna mode:', error);
@@ -314,7 +286,6 @@ export class ModemService {
   async getNetworkMode(): Promise<string> {
     try {
       const response = await this.apiClient.get('/api/net/net-mode');
-      console.log('[RAW XML] Network Mode:', response.substring(0, 300));
 
       // NetworkMode values: 00=Auto, 01=GSM only, 02=WCDMA only, 03=LTE only, etc.
       return parseXMLValue(response, 'NetworkMode') || '00';
@@ -341,7 +312,6 @@ export class ModemService {
         </request>`;
 
       await this.apiClient.post('/api/net/net-mode', data);
-      console.log('[Service] Network mode set to:', mode);
       return true;
     } catch (error) {
       console.error('Error setting network mode:', error);
@@ -353,7 +323,6 @@ export class ModemService {
   async getBandSettings(): Promise<{ networkBand: string; lteBand: string }> {
     try {
       const response = await this.apiClient.get('/api/net/net-mode');
-      console.log('[RAW XML] Band Settings:', response.substring(0, 500));
 
       return {
         networkBand: parseXMLValue(response, 'NetworkBand') || '3FFFFFFF',
@@ -382,7 +351,6 @@ export class ModemService {
         </request>`;
 
       await this.apiClient.post('/api/net/net-mode', data);
-      console.log('[Service] Band settings updated - NetworkBand:', networkBand, 'LTEBand:', lteBand);
       return true;
     } catch (error) {
       console.error('Error setting band settings:', error);

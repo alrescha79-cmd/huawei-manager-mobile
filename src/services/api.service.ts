@@ -81,8 +81,6 @@ export class ModemAPIClient {
 
       this.sessionCookie = session;
 
-      console.log('[API] Got fresh token:', this.sessionToken.substring(0, 20) + '...');
-      console.log('[API] Got session:', this.sessionCookie.substring(0, 50) + '...');
       return { token: this.sessionToken, session: this.sessionCookie };
     } catch (error) {
       console.error('[API] Error getting token:', error);
@@ -98,15 +96,12 @@ export class ModemAPIClient {
       password,
       { encoding: Crypto.CryptoEncoding.HEX }
     );
-    console.log('[API] Password hash (hex):', passwordHashHex);
 
     // Step 2: Base64 encode the HEX string (not the raw bytes!)
     const base64PasswordHash = this.hexToBase64(passwordHashHex);
-    console.log('[API] Password hash base64(hex):', base64PasswordHash);
 
     // Step 3: Combine username + base64(hexHash) + token
     const combined = username + base64PasswordHash + token;
-    console.log('[API] Combined string:', combined.substring(0, 50) + '...');
 
     // Step 4: SHA256 hash of combined -> HEX string
     const finalHashHex = await Crypto.digestStringAsync(
@@ -114,11 +109,9 @@ export class ModemAPIClient {
       combined,
       { encoding: Crypto.CryptoEncoding.HEX }
     );
-    console.log('[API] Final hash (hex):', finalHashHex);
 
     // Step 5: Base64 encode the final HEX string
     const finalBase64 = this.hexToBase64(finalHashHex);
-    console.log('[API] Final base64:', finalBase64);
 
     return finalBase64;
   }
@@ -192,47 +185,41 @@ export class ModemAPIClient {
 
   async login(username: string, password: string): Promise<boolean> {
     try {
-      console.log('[API] ========== LOGIN START (Browser Headers) ==========');
-      const baseUrl = `http://${this.baseURL}`;
+      // Step 1: Get fresh token and session using axios
+      const tokenResponse = await this.client.get('/api/webserver/SesTokInfo');
 
-      // Browser-like headers matching actual working request
-      const browserHeaders = {
-        'Accept': '*/*',
-        'Accept-Language': 'en,en-US;q=0.9,id;q=0.8',
-        'DNT': '1',
-        'Host': this.baseURL,
-        'Referer': `http://${this.baseURL}/html/content.html`,
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36',
-        'X-Requested-With': 'XMLHttpRequest',
-        '_ResponseSource': 'Broswer',
-      };
-
-      // Step 1: Get token and session
-      console.log('[API] Step 1: Getting token/session from SesTokInfo...');
-      const tokenXml = await this.xmlHttpRequest('GET', `${baseUrl}/api/webserver/SesTokInfo`, null, browserHeaders);
-      console.log('[API] SesTokInfo response:', tokenXml);
-
-      const token = parseXMLValue(tokenXml, 'TokInfo');
-      const sesInfo = parseXMLValue(tokenXml, 'SesInfo');
+      const token = parseXMLValue(tokenResponse.data, 'TokInfo');
+      const sesInfo = parseXMLValue(tokenResponse.data, 'SesInfo');
 
       if (!token) {
-        console.error('[API] Failed to get token from modem');
         return false;
       }
 
-      // Use SesInfo directly as SessionID
-      const session = sesInfo.includes('SessionID=') ? sesInfo : `SessionID=${sesInfo}`;
+      // Extract session from response
+      let session = '';
+      const setCookie = tokenResponse.headers['set-cookie'];
+      if (setCookie && (Array.isArray(setCookie) ? setCookie.length > 0 : true)) {
+        const sessionCookie = Array.isArray(setCookie)
+          ? setCookie.find((c: string) => c.includes('SessionID'))
+          : setCookie;
+        if (sessionCookie) {
+          const match = sessionCookie.match(/SessionID=([^;]+)/);
+          if (match) {
+            session = `SessionID=${match[1]}`;
+          }
+        }
+      }
 
-      console.log('[API] Token:', token);
-      console.log('[API] Session:', session);
+      // Fallback to SesInfo if Set-Cookie was empty
+      if (!session && sesInfo) {
+        session = sesInfo.includes('SessionID=') ? sesInfo : `SessionID=${sesInfo}`;
+      }
 
       // Step 2: Encode password
       const passwordType = '4';
-      console.log('[API] Step 2: Encoding password (password_type:', passwordType, ')...');
       const encodedPassword = await this.encodePassword(password, username, token);
-      console.log('[API] Encoded password:', encodedPassword);
 
-      // Step 3: Build and send login request with ALL browser headers
+      // Step 3: Build login XML
       const loginXML = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
   <Username>${username}</Username>
@@ -240,76 +227,60 @@ export class ModemAPIClient {
   <password_type>${passwordType}</password_type>
 </request>`;
 
-      console.log('[API] Step 3: Sending login request with browser headers...');
-      console.log('[API] Login XML:', loginXML);
+      // Step 4: Send login request using axios
+      const loginResponse = await this.client.post('/api/user/login', loginXML, {
+        headers: {
+          '__RequestVerificationToken': token,
+          'Content-Type': 'application/xml',
+          'Cookie': session,
+        },
+      });
 
-      // Combine browser headers with login-specific headers
-      const loginHeaders = {
-        ...browserHeaders,
-        '__RequestVerificationToken': token,
-        'Content-Type': 'application/xml',
-        'Cookie': session,
-      };
-
-      console.log('[API] Request headers:', JSON.stringify(loginHeaders, null, 2));
-
-      const responseData = await this.xmlHttpRequest('POST', `${baseUrl}/api/user/login`, loginXML, loginHeaders);
-
-      console.log('[API] Login response:', responseData);
-
-      // Huawei modem returns 200 even on failed login
-      // Check the XML response for error or success
+      const responseData = typeof loginResponse.data === 'string'
+        ? loginResponse.data
+        : JSON.stringify(loginResponse.data);
 
       // Check for error response
       if (responseData.includes('<error>')) {
         const errorCode = parseXMLValue(responseData, 'code');
-        const errorMessage = parseXMLValue(responseData, 'message');
-        console.error('[API] Login failed with error code:', errorCode, 'message:', errorMessage);
 
-        // Common error codes:
-        // 108001: Username or password error
-        // 108002: User already logged in
-        // 108003: User not exist
-        // 108006: User has been locked
-        // 108007: Login timeout
-        // 125003: Token verification failed
-
+        // 108002: User already logged in - treat as success
         if (errorCode === '108002') {
-          // Already logged in - treat as success
-          console.log('[API] User already logged in, treating as success');
+          // Save session info for future requests
+          this.sessionToken = token;
+          this.sessionCookie = session;
+          this.tokenExpiry = Date.now() + 120000;
           return true;
         }
 
         return false;
       }
 
-      // Check for success response (usually contains "OK" or empty response)
+      // Check for success response
       if (responseData.includes('<response>OK</response>') ||
         responseData.includes('<response/>') ||
         responseData.includes('<?xml version="1.0" encoding="UTF-8"?><response>OK</response>') ||
         responseData.trim() === 'OK') {
-
-        // Note: Cookie and token are captured in xmlHttpRequest helper automatically
-        console.log('[API] Login successful!');
+        // Save session info for future requests
+        this.sessionToken = token;
+        this.sessionCookie = session;
+        this.tokenExpiry = Date.now() + 120000;
         return true;
       }
 
-      console.error('[API] Unknown login response format:', responseData);
       return false;
     } catch (error: any) {
-      console.error('[API] Login error:', error);
-
       // Check if error response contains XML with error code
       if (error.response?.data) {
-        const errorData = error.response.data;
-        console.log('[API] Error response data:', errorData);
+        const errorData = typeof error.response.data === 'string'
+          ? error.response.data
+          : JSON.stringify(error.response.data);
 
-        if (typeof errorData === 'string' && errorData.includes('<error>')) {
+        if (errorData.includes('<error>')) {
           const errorCode = parseXMLValue(errorData, 'code');
-          console.error('[API] Login failed with error code:', errorCode);
 
           if (errorCode === '108002') {
-            // Already logged in
+            // Already logged in - treat as success
             return true;
           }
         }

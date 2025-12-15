@@ -38,7 +38,7 @@ export default function WiFiScreen() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [wifiService, setWiFiService] = useState<WiFiService | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
 
   // Form state
   const [formSsid, setFormSsid] = useState('');
@@ -101,7 +101,7 @@ export default function WiFiScreen() {
       setConnectedDevices(devices);
       setWiFiSettings(settings);
       setGuestWifiEnabled(guestSettings.enabled);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error loading WiFi data:', error);
       ThemedAlertHelper.alert('Error', 'Failed to load WiFi data');
@@ -120,7 +120,7 @@ export default function WiFiScreen() {
 
       setConnectedDevices(devices);
       setWiFiSettings(settings);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error in background update:', error);
     }
@@ -210,7 +210,7 @@ export default function WiFiScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
+      contentContainerStyle={[styles.content, { paddingTop: 8 }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -219,13 +219,7 @@ export default function WiFiScreen() {
         />
       }
     >
-      <View style={styles.header}>
-        {lastUpdate && (
-          <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-            Updated: {lastUpdate.toLocaleTimeString()}
-          </Text>
-        )}
-      </View>
+      <View style={styles.header} />
 
       {/* WiFi Settings Card */}
       {wifiSettings && (

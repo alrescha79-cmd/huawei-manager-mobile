@@ -22,7 +22,6 @@ export const useThemeStore = create<ThemeState>()(
       language: 'en',
 
       setThemeMode: (mode) => {
-        console.log('[Theme] Setting theme mode to:', mode);
         set({ themeMode: mode });
       },
       setRefreshInterval: (interval) => set({ refreshInterval: interval }),

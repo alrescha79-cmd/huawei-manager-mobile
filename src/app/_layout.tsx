@@ -21,7 +21,7 @@ interface AlertState {
 
 export default function RootLayout() {
   const { colors } = useTheme();
-  const { isAuthenticated, loadCredentials } = useAuthStore();
+  const { isAuthenticated, loadCredentials, autoLogin } = useAuthStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -34,7 +34,15 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    loadCredentials();
+    const initializeAuth = async () => {
+      await loadCredentials();
+      // Auto-login if credentials exist
+      const credentials = useAuthStore.getState().credentials;
+      if (credentials) {
+        await autoLogin();
+      }
+    };
+    initializeAuth();
   }, []);
 
   // Set up global alert listener

@@ -34,7 +34,7 @@ export default function SMSScreen() {
   const [newPhone, setNewPhone] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
 
   // Auto-refresh SMS every 10 seconds
   useEffect(() => {
@@ -65,7 +65,7 @@ export default function SMSScreen() {
 
       setMessages(messagesList);
       setSMSCount(count);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error loading SMS data:', error);
       // SMS might not be supported on all modems
@@ -85,7 +85,7 @@ export default function SMSScreen() {
 
       setMessages(messagesList);
       setSMSCount(count);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error in background SMS update:', error);
     }
@@ -147,7 +147,7 @@ export default function SMSScreen() {
     <>
       <ScrollView
         style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
+        contentContainerStyle={[styles.content, { paddingTop: 8 }]}
         refreshControl={
           <RefreshControl
             refreshing={isRefreshing}
@@ -157,13 +157,7 @@ export default function SMSScreen() {
         }
       >
         <View style={styles.headerRow}>
-          <View>
-            {lastUpdate && (
-              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                Updated: {lastUpdate.toLocaleTimeString()}
-              </Text>
-            )}
-          </View>
+          <View />
           <Button
             title="+ New"
             onPress={() => setShowCompose(true)}

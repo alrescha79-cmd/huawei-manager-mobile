@@ -50,7 +50,7 @@ export default function HomeScreen() {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modemService, setModemService] = useState<ModemService | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+
   const [isTogglingData, setIsTogglingData] = useState(false);
   const [isChangingIp, setIsChangingIp] = useState(false);
 
@@ -109,7 +109,7 @@ export default function HomeScreen() {
       setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
-      setLastUpdate(new Date());
+
     } catch (error) {
       console.error('Error loading data:', error);
       ThemedAlertHelper.alert('Error', 'Failed to load modem data');
@@ -131,14 +131,7 @@ export default function HomeScreen() {
       ]);
 
       // Log background updates (lighter logging)
-      console.log('[Background Update]', new Date().toLocaleTimeString(), {
-        connectionStatus: status?.connectionStatus,
-        networkType: network?.currentNetworkType,
-        operator: network?.networkName,
-        downloadSpeed: traffic?.currentDownloadRate,
-        uploadSpeed: traffic?.currentUploadRate,
-        wanIp: wan?.wanIPAddress,
-      });
+      // Background update successful
 
       setSignalInfo(signal);
       setNetworkInfo(network);
@@ -146,7 +139,7 @@ export default function HomeScreen() {
       setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
-      setLastUpdate(new Date());
+
     } catch (error) {
       // Silent fail for background updates
       console.error('Error in background update:', error);
@@ -211,7 +204,7 @@ export default function HomeScreen() {
             // Fire and forget - don't wait for response as PLMN scan takes 30-60s
             modemService.triggerPlmnScan().catch((error) => {
               // This error is expected due to timeout during reconnection
-              console.log('[IP Change] Expected timeout during PLMN scan:', error);
+              // Expected timeout during PLMN scan
             });
 
             // Keep loading state for 10 seconds then allow retry
@@ -222,7 +215,7 @@ export default function HomeScreen() {
             // Refresh data after 45 seconds to get new IP
             setTimeout(() => {
               if (modemService) {
-                console.log('[IP Change] Refreshing data to get new IP...');
+                // Refresh data to get new IP
                 loadData(modemService);
               }
             }, 45000);
@@ -258,7 +251,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[styles.content, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}
+      contentContainerStyle={[styles.content, { paddingTop: 8 }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -268,13 +261,6 @@ export default function HomeScreen() {
       }
     >
       <View style={styles.header}>
-        <View>
-          {lastUpdate && (
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              Updated: {lastUpdate.toLocaleTimeString()}
-            </Text>
-          )}
-        </View>
         {!hasValidData && (
           <TouchableOpacity
             onPress={handleReLogin}
