@@ -4,6 +4,7 @@ import { View, StyleSheet, StatusBar, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
+import { useTranslation } from '@/i18n';
 
 // Status bar header component for Android
 const StatusBarHeader = () => {
@@ -45,6 +46,7 @@ export default function TabLayout() {
   const { colors, isDark } = useTheme();
   const router = useRouter();
   const { isAuthenticated, credentials } = useAuthStore();
+  const { t } = useTranslation();
 
   // Protect tabs - redirect to login if not authenticated
   useEffect(() => {
@@ -84,7 +86,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="home"
           options={{
-            title: 'Home',
+            title: t('tabs.home'),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="home" color={color} focused={focused} />
             ),
@@ -93,7 +95,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="wifi"
           options={{
-            title: 'WiFi',
+            title: t('tabs.wifi'),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="wifi" color={color} focused={focused} />
             ),
@@ -102,7 +104,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="sms"
           options={{
-            title: 'SMS',
+            title: t('tabs.sms'),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="sms" color={color} focused={focused} />
             ),
@@ -111,7 +113,7 @@ export default function TabLayout() {
         <Tabs.Screen
           name="settings"
           options={{
-            title: 'Settings',
+            title: t('tabs.settings'),
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="settings" color={color} focused={focused} />
             ),

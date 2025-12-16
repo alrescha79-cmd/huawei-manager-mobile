@@ -1,0 +1,163 @@
+name: Build and Release Android APK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: false
+        default: ''
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Get version from app.json
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./app.json').expo.version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "App version: $VERSION"
+
+      - name: Prebuild Android
+        run: npx expo prebuild --platform android --clean
+
+      - name: Build APK (arm64-v8a)
+        run: |
+          cd android
+          ./gradlew assembleRelease \
+            -PreactNativeArchitectures=arm64-v8a \
+            --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+
+      - name: Rename arm64-v8a APK
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          mv android/app/build/outputs/apk/release/app-release.apk \
+             android/app/build/outputs/apk/release/huawei-manager-v${VERSION}-arm64-v8a.apk
+
+      - name: Build APK (armeabi-v7a)
+        run: |
+          cd android
+          ./gradlew clean
+          ./gradlew assembleRelease \
+            -PreactNativeArchitectures=armeabi-v7a \
+            --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+
+      - name: Rename armeabi-v7a APK
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          mv android/app/build/outputs/apk/release/app-release.apk \
+             android/app/build/outputs/apk/release/huawei-manager-v${VERSION}-armeabi-v7a.apk
+
+      - name: Build Universal APK
+        run: |
+          cd android
+          ./gradlew clean
+          ./gradlew assembleRelease --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+
+      - name: Rename Universal APK
+        run: |
+          VERSION=${{ steps.get_version.outputs.version }}
+          mv android/app/build/outputs/apk/release/app-release.apk \
+             android/app/build/outputs/apk/release/huawei-manager-v${VERSION}-universal.apk
+
+      - name: Upload APK Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-apks
+          path: android/app/build/outputs/apk/release/*.apk
+          retention-days: 7
+
+      - name: Create GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          name: Huawei Manager v${{ steps.get_version.outputs.version }}
+          body: |
+            ## Huawei Manager v${{ steps.get_version.outputs.version }}
+            
+            ### Downloads
+            - **arm64-v8a** - For modern 64-bit devices (recommended)
+            - **armeabi-v7a** - For older 32-bit devices
+            - **universal** - Works on all devices (larger size)
+            
+            ### Installation
+            1. Download the appropriate APK for your device
+            2. Enable "Install from unknown sources" in Settings
+            3. Open the APK file to install
+            
+            ### What's New
+            - See commit history for changes
+          files: |
+            android/app/build/outputs/apk/release/huawei-manager-v${{ steps.get_version.outputs.version }}-arm64-v8a.apk
+            android/app/build/outputs/apk/release/huawei-manager-v${{ steps.get_version.outputs.version }}-armeabi-v7a.apk
+            android/app/build/outputs/apk/release/huawei-manager-v${{ steps.get_version.outputs.version }}-universal.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Release (Manual Trigger)
+        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: Huawei Manager ${{ github.event.inputs.version }}
+          body: |
+            ## Huawei Manager ${{ github.event.inputs.version }}
+            
+            ### Downloads
+            - **arm64-v8a** - For modern 64-bit devices (recommended)
+            - **armeabi-v7a** - For older 32-bit devices
+            - **universal** - Works on all devices (larger size)
+            
+            ### Installation
+            1. Download the appropriate APK for your device
+            2. Enable "Install from unknown sources" in Settings
+            3. Open the APK file to install
+          files: |
+            android/app/build/outputs/apk/release/huawei-manager-v${{ steps.get_version.outputs.version }}-arm64-v8a.apk
+            android/app/build/outputs/apk/release/huawei-manager-v${{ steps.get_version.outputs.version }}-armeabi-v7a.apk
+            android/app/build/outputs/apk/release/huawei-manager-v${{ steps.get_version.outputs.version }}-universal.apk
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

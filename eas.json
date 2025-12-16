@@ -10,10 +10,8 @@
     },
     "preview": {
       "distribution": "internal",
-      "requireNativeBuild": true,
       "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleReleaseArm64"
+        "buildType": "apk"
       }
     },
     "production": {
