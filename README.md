@@ -31,7 +31,10 @@
 
 > **📡 Tested on Huawei B312-929**
 
-> **📲 Download on [Release](https://reales.app/app/alrescha79-cmd/huawei-manager-mobile)**
+> **📲 Download on [Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
+ - arm64-v8a: Untuk Android 64-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-arm64-v8a.apk)
+ - armeabi-v7a: Untuk Android 32-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-armeabi-v7a.apk)
+ - universal: Untuk semua perangkat [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-universal.apk)
 
 ---
 
