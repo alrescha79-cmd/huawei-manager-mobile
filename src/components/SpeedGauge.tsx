@@ -51,7 +51,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
 
     return (
         <View style={styles.container}>
-            <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600', marginBottom: spacing.md }]}>
+            <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600', marginBottom: spacing.md, textAlign: 'center' }]}>
                 Current Speed
             </Text>
 

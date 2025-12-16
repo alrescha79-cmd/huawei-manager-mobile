@@ -41,7 +41,8 @@
     "possibleCauses": "Possible causes:",
     "notLoggedIn": "Not logged in to modem",
     "sessionExpired": "Session expired",
-    "modemNotResponding": "Modem not responding"
+    "modemNotResponding": "Modem not responding",
+    "failedSaveModemSettings": "Failed to save modem settings"
   },
   "tabs": {
     "home": "Home",
@@ -204,7 +205,7 @@
     "languageEn": "English",
     "languageId": "Bahasa Indonesia",
     "modemControl": "Modem Control",
-    "modemIp": "Modem IP",
+    "modemIp": "Current Modem IP",
     "rebootModem": "Reboot Modem",
     "rebootConfirm": "Are you sure you want to reboot the modem? This will disconnect all devices.",
     "rebootSuccess": "Modem is rebooting. This may take a few minutes.",
@@ -214,7 +215,19 @@
     "appVersion": "App Version",
     "developer": "Developer",
     "antennaModeChanged": "Antenna mode changed",
-    "networkModeChanged": "Network mode changed"
+    "networkModeChanged": "Network mode changed",
+    "modemSettings": "Modem Settings",
+    "currentModemIp": "Current Modem IP",
+    "editCredentials": "Edit Connection Settings",
+    "modemIpLabel": "Modem IP Address",
+    "usernameLabel": "Username",
+    "passwordLabel": "Password",
+    "notSet": "Not set",
+    "credentialsHint": "These settings are used for auto-login when the app opens",
+    "enterModemIp": "Please enter modem IP address",
+    "enterPassword": "Enter password",
+    "saveCredentials": "Save Connection Settings",
+    "modemSettingsSaved": "Modem settings saved successfully"
   },
   "webViewLogin": {
     "title": "Modem Login",

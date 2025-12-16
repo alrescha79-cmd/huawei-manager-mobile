@@ -41,7 +41,8 @@
     "possibleCauses": "Kemungkinan penyebab:",
     "notLoggedIn": "Belum login ke modem",
     "sessionExpired": "Sesi kedaluwarsa",
-    "modemNotResponding": "Modem tidak merespons"
+    "modemNotResponding": "Modem tidak merespons",
+    "failedSaveModemSettings": "Gagal menyimpan pengaturan modem"
   },
   "tabs": {
     "home": "Beranda",
@@ -204,7 +205,7 @@
     "languageEn": "English",
     "languageId": "Bahasa Indonesia",
     "modemControl": "Kontrol Modem",
-    "modemIp": "IP Modem",
+    "modemIp": "IP Modem Sekarang",
     "rebootModem": "Restart Modem",
     "rebootConfirm": "Yakin ingin merestart modem? Semua perangkat akan terputus.",
     "rebootSuccess": "Modem sedang restart. Ini mungkin memerlukan beberapa menit.",
@@ -214,7 +215,19 @@
     "appVersion": "Versi Aplikasi",
     "developer": "Pengembang",
     "antennaModeChanged": "Mode antena diubah",
-    "networkModeChanged": "Mode jaringan diubah"
+    "networkModeChanged": "Mode jaringan diubah",
+    "modemSettings": "Pengaturan Modem",
+    "currentModemIp": "IP Modem Saat Ini",
+    "editCredentials": "Edit Pengaturan Koneksi",
+    "modemIpLabel": "Alamat IP Modem",
+    "usernameLabel": "Nama Pengguna",
+    "passwordLabel": "Kata Sandi",
+    "notSet": "Belum diatur",
+    "credentialsHint": "Pengaturan ini digunakan untuk auto-login saat aplikasi dibuka",
+    "enterModemIp": "Masukkan alamat IP modem",
+    "enterPassword": "Masukkan kata sandi",
+    "saveCredentials": "Simpan Pengaturan Koneksi",
+    "modemSettingsSaved": "Pengaturan modem berhasil disimpan"
   },
   "webViewLogin": {
     "title": "Login Modem",

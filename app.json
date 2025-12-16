@@ -3,7 +3,6 @@
     "name": "Huawei Manager",
     "slug": "hm-mobile",
     "version": "1.0.0",
-    "jsEngine": "hermes",
     "orientation": "portrait",
     "icon": "./assets/logo.png",
     "userInterfaceStyle": "automatic",
@@ -21,7 +20,7 @@
     ],
     "splash": {
       "image": "./assets/logo.png",
-      "resizeMode": "cover",
+      "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
     "ios": {

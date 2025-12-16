@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -20,7 +20,7 @@ import { useTranslation } from '@/i18n';
 export default function LoginScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { login, isLoading, error, setError } = useAuthStore();
+  const { login, isLoading, error, setError, credentials, loadCredentials, isAutoLogging } = useAuthStore();
   const { t } = useTranslation();
 
   const [modemIp, setModemIp] = useState('192.168.8.1');
@@ -30,6 +30,30 @@ export default function LoginScreen() {
   const [showWebViewLogin, setShowWebViewLogin] = useState(false);
   const [isDirectLogging, setIsDirectLogging] = useState(false);
   const [showWebViewOption, setShowWebViewOption] = useState(false);
+  const [isAutoLoginReady, setIsAutoLoginReady] = useState(false);
+
+  // Load saved credentials on mount
+  useEffect(() => {
+    const initCredentials = async () => {
+      await loadCredentials();
+      setIsAutoLoginReady(true);
+    };
+    initCredentials();
+  }, []);
+
+  // Auto-fill form and trigger auto-login with WebView if credentials exist
+  useEffect(() => {
+    if (isAutoLoginReady && credentials) {
+      setModemIp(credentials.modemIp || '192.168.8.1');
+      setUsername(credentials.username || 'admin');
+      setPassword(credentials.password || '');
+
+      // Auto-trigger WebView login if we have saved credentials
+      if (credentials.modemIp && credentials.password) {
+        setShowWebViewLogin(true);
+      }
+    }
+  }, [isAutoLoginReady, credentials]);
 
   const detectModemIP = async () => {
     setIsDetecting(true);
@@ -221,6 +245,8 @@ export default function LoginScreen() {
       {/* WebView Login Modal */}
       <WebViewLogin
         modemIp={modemIp}
+        username={username}
+        password={password}
         visible={showWebViewLogin}
         onClose={() => setShowWebViewLogin(false)}
         onLoginSuccess={handleWebViewLoginSuccess}

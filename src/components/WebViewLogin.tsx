@@ -13,6 +13,8 @@ import { ThemedAlertHelper } from './ThemedAlert';
 
 interface WebViewLoginProps {
     modemIp: string;
+    username?: string;
+    password?: string;
     visible: boolean;
     onClose: () => void;
     onLoginSuccess: () => void;
@@ -24,6 +26,8 @@ interface WebViewLoginProps {
  */
 export function WebViewLogin({
     modemIp,
+    username,
+    password,
     visible,
     onClose,
     onLoginSuccess,
@@ -32,9 +36,56 @@ export function WebViewLogin({
     const webViewRef = useRef<WebView>(null);
     const [loading, setLoading] = useState(true);
     const [loginDetected, setLoginDetected] = useState(false);
+    const [autoFillAttempted, setAutoFillAttempted] = useState(false);
 
     // Huawei modem login page URL
     const loginUrl = `http://${modemIp}/html/index.html`;
+
+    // JavaScript to inject for auto-filling credentials
+    const autoFillJs = username && password ? `
+    (function() {
+      // Wait for page to load
+      setTimeout(function() {
+        // Find username field
+        var usernameInput = document.querySelector('input[name="Username"]') ||
+                           document.querySelector('input[name="username"]') ||
+                           document.querySelector('#username') ||
+                           document.querySelector('input[type="text"]');
+        
+        // Find password field
+        var passwordInput = document.querySelector('input[name="Password"]') ||
+                           document.querySelector('input[name="password"]') ||
+                           document.querySelector('#password') ||
+                           document.querySelector('input[type="password"]');
+        
+        if (usernameInput && passwordInput) {
+          usernameInput.value = '${username}';
+          passwordInput.value = '${password}';
+          
+          // Trigger input events
+          usernameInput.dispatchEvent(new Event('input', { bubbles: true }));
+          passwordInput.dispatchEvent(new Event('input', { bubbles: true }));
+          
+          // Find and click login button after a short delay
+          setTimeout(function() {
+            var loginBtn = document.querySelector('input[type="submit"]') ||
+                          document.querySelector('button[type="submit"]') ||
+                          document.querySelector('#login_btn') ||
+                          document.querySelector('.login-btn') ||
+                          document.querySelector('button');
+            
+            if (loginBtn) {
+              loginBtn.click();
+              window.ReactNativeWebView.postMessage(JSON.stringify({
+                type: 'AUTO_LOGIN_ATTEMPTED'
+              }));
+            }
+          }, 500);
+        }
+      }, 1500);
+      return true;
+    })();
+    ` : '';
 
     // JavaScript to inject for detecting login state
     const injectedJs = `
@@ -184,6 +235,11 @@ export function WebViewLogin({
                         // Inject detection script
                         if (webViewRef.current) {
                             webViewRef.current.injectJavaScript(injectedJs);
+                            // Inject auto-fill script if credentials provided
+                            if (autoFillJs && !autoFillAttempted) {
+                                webViewRef.current.injectJavaScript(autoFillJs);
+                                setAutoFillAttempted(true);
+                            }
                         }
                     }}
                     javaScriptEnabled={true}

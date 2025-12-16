@@ -4,13 +4,34 @@
   <img src="assets/logo.png" alt="App Icon" width="120" />
 </p>
 
+<div align="center">
+
+![Expo](https://img.shields.io/badge/Expo-54.0.29-000020?logo=expo&logoColor=white)
+![React](https://img.shields.io/badge/React-19.1.0-61DAFB?logo=react&logoColor=black)
+![React Native](https://img.shields.io/badge/React_Native-0.81.5-20232A?logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?logo=typescript&logoColor=white)
+
+![Android](https://img.shields.io/badge/Android-Supported-3DDC84?logo=android&logoColor=white)
+![iOS](https://img.shields.io/badge/iOS-Supported-000000?logo=apple&logoColor=white)
+![Web](https://img.shields.io/badge/Web-Supported-4285F4?logo=googlechrome&logoColor=white)
+
+</div>
+
 <p align="center">
-  <strong>Mobile app untuk mengontrol dan monitoring modem Huawei LTE</strong>
+  <strong>Mobile app cross-platform untuk mengontrol dan monitoring modem Huawei LTE</strong>
 </p>
 
 <p align="center">
   Mendukung seri B310, B311, B312, E5573, E5577, dan modem Huawei LTE lainnya
 </p>
+
+---
+
+> **⚡ Built with Expo SDK 54**
+
+> **📡 Tested on Huawei B312-929**
+
+> **📲 Download on [Reales](https://reales.app/app/alrescha79-cmd/huawei-manager-mobile)**
 
 ---
 
@@ -20,9 +41,10 @@
 |---------|-------------|
 | 📊 **Dashboard** | Realtime monitoring signal, traffic, dan status koneksi |
 | 📶 **WiFi Management** | Kelola connected devices dan WiFi settings |
-| 💬 **SMS** | Baca, kirim, dan hapus SMS |
+| 💬 **SMS** | Baca, kirim, dan hapus SMS (Jika fitur ini tersedia di modem) |
 | ⚙️ **Settings** | Antenna mode, network type, band lock, reboot modem |
 | 🌙 **Dark Mode** | Support light dan dark theme |
+| 🔤 **Language** | Pilih bahasa (Bahasa Indonesia dan Bahasa Inggris) |
 
 ---
 

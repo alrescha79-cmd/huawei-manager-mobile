@@ -10,6 +10,7 @@ import {
   Linking,
   ActivityIndicator,
   Modal,
+  TextInput,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -53,7 +54,7 @@ const LTE_BANDS = [
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { credentials, logout } = useAuthStore();
+  const { credentials, logout, login } = useAuthStore();
   const { modemInfo, setModemInfo } = useModemStore();
   const { themeMode, setThemeMode, language, setLanguage } = useThemeStore();
   const { t } = useTranslation();
@@ -73,6 +74,20 @@ export default function SettingsScreen() {
   const [showBandModal, setShowBandModal] = useState(false);
   const [selectedBands, setSelectedBands] = useState<number[]>([]);
   const [isSavingBands, setIsSavingBands] = useState(false);
+
+  // Modem settings form state
+  const [modemIp, setModemIp] = useState(credentials?.modemIp || '192.168.8.1');
+  const [modemUsername, setModemUsername] = useState(credentials?.username || 'admin');
+  const [modemPassword, setModemPassword] = useState(credentials?.password || '');
+  const [isModemSettingsExpanded, setIsModemSettingsExpanded] = useState(false);
+  const [isSavingModem, setIsSavingModem] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
+  // Check if credentials have changed
+  const hasCredentialsChanges =
+    modemIp !== (credentials?.modemIp || '192.168.8.1') ||
+    modemUsername !== (credentials?.username || 'admin') ||
+    modemPassword !== (credentials?.password || '');
 
   useEffect(() => {
     if (credentials?.modemIp) {
@@ -277,6 +292,28 @@ export default function SettingsScreen() {
   const getAntennaModeLabel = () => {
     const mode = ANTENNA_MODES.find(m => m.value === antennaMode);
     return mode ? t(mode.labelKey) : antennaMode;
+  };
+
+  const handleSaveModemSettings = async () => {
+    if (!modemIp) {
+      ThemedAlertHelper.alert(t('common.error'), t('settings.enterModemIp'));
+      return;
+    }
+
+    setIsSavingModem(true);
+    try {
+      await login({
+        modemIp,
+        username: modemUsername,
+        password: modemPassword,
+      });
+      ThemedAlertHelper.alert(t('common.success'), t('settings.modemSettingsSaved'));
+      setIsModemSettingsExpanded(false);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveModemSettings'));
+    } finally {
+      setIsSavingModem(false);
+    }
   };
 
   return (
@@ -552,14 +589,110 @@ export default function SettingsScreen() {
         </View>
       </Card>
 
-      {/* Modem Control & Connection Card - Merged */}
+      {/* Modem Control*/}
       <Card style={{ marginBottom: spacing.md }}>
         <CardHeader title={t('settings.modemControl')} />
 
         <InfoRow label={t('settings.modemIp')} value={credentials?.modemIp || t('common.unknown')} />
-        <InfoRow label={t('login.username')} value={credentials?.username || t('common.unknown')} />
 
-        <View style={{ marginTop: spacing.md, gap: spacing.sm }}>
+        {/* Collapsible Edit Credentials Section */}
+        <TouchableOpacity
+          style={[styles.collapseHeader, { marginTop: spacing.sm }]}
+          onPress={() => setIsModemSettingsExpanded(!isModemSettingsExpanded)}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>
+              {t('settings.editCredentials')}
+            </Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {t('settings.credentialsHint')}
+            </Text>
+          </View>
+          <MaterialIcons
+            name={isModemSettingsExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        {isModemSettingsExpanded && (
+          <View style={{ marginTop: spacing.md }}>
+            {/* Modem IP Input */}
+            <View style={styles.formGroup}>
+              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+                {t('settings.modemIpLabel')}
+              </Text>
+              <View style={[styles.textInput, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <MaterialIcons name="router" size={18} color={colors.textSecondary} />
+                <TextInput
+                  style={[typography.body, { color: colors.text, flex: 1, marginLeft: 8, padding: 0 }]}
+                  value={modemIp}
+                  onChangeText={setModemIp}
+                  placeholder="192.168.8.1"
+                  placeholderTextColor={colors.textSecondary}
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            {/* Username Input */}
+            <View style={styles.formGroup}>
+              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+                {t('settings.usernameLabel')}
+              </Text>
+              <View style={[styles.textInput, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <MaterialIcons name="person" size={18} color={colors.textSecondary} />
+                <TextInput
+                  style={[typography.body, { color: colors.text, flex: 1, marginLeft: 8, padding: 0 }]}
+                  value={modemUsername}
+                  onChangeText={setModemUsername}
+                  placeholder="admin"
+                  placeholderTextColor={colors.textSecondary}
+                  autoCapitalize="none"
+                />
+              </View>
+            </View>
+
+            {/* Password Input */}
+            <View style={styles.formGroup}>
+              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+                {t('settings.passwordLabel')}
+              </Text>
+              <View style={[styles.textInput, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <MaterialIcons name="lock" size={18} color={colors.textSecondary} />
+                <TextInput
+                  style={[typography.body, { color: colors.text, flex: 1, marginLeft: 8, padding: 0 }]}
+                  value={modemPassword}
+                  onChangeText={setModemPassword}
+                  placeholder={t('settings.enterPassword')}
+                  placeholderTextColor={colors.textSecondary}
+                  secureTextEntry={!showPassword}
+                  autoCapitalize="none"
+                />
+                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                  <MaterialIcons
+                    name={showPassword ? 'visibility-off' : 'visibility'}
+                    size={20}
+                    color={colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              </View>
+            </View>
+
+            {/* Save Button */}
+            <Button
+              title={t('settings.saveCredentials')}
+              onPress={handleSaveModemSettings}
+              variant="primary"
+              loading={isSavingModem}
+              disabled={!hasCredentialsChanges || isSavingModem}
+            />
+          </View>
+        )}
+
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+        <View style={{ gap: spacing.sm }}>
           <Button
             title={t('settings.rebootModem')}
             onPress={handleReboot}
@@ -757,5 +890,22 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     borderWidth: 1,
     marginBottom: 8,
+  },
+  collapseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  formGroup: {
+    marginBottom: 12,
+  },
+  textInput: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    borderWidth: 1,
   },
 });
