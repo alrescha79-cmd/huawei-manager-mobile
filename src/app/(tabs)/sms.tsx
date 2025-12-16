@@ -70,8 +70,6 @@ export default function SMSScreen() {
 
     } catch (error) {
       console.error('Error loading SMS data:', error);
-      // SMS might not be supported on all modems
-      console.log('SMS feature might not be supported on this modem');
     } finally {
       setIsRefreshing(false);
     }

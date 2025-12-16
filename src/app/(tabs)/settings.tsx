@@ -743,7 +743,10 @@ export default function SettingsScreen() {
         onRequestClose={() => setShowBandModal(false)}
       >
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+          <View style={[styles.modalHeader, {
+            borderBottomColor: colors.border,
+            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
+          }]}>
             <TouchableOpacity onPress={() => setShowBandModal(false)}>
               <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
             </TouchableOpacity>

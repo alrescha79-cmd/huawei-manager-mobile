@@ -6,6 +6,8 @@ import {
     Text,
     TouchableOpacity,
     ActivityIndicator,
+    StatusBar,
+    Platform,
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useTheme } from '@/theme';
@@ -16,6 +18,7 @@ interface WebViewLoginProps {
     username?: string;
     password?: string;
     visible: boolean;
+    hidden?: boolean; // If true, runs in background showing only loading overlay
     onClose: () => void;
     onLoginSuccess: () => void;
 }
@@ -29,6 +32,7 @@ export function WebViewLogin({
     username,
     password,
     visible,
+    hidden = false,
     onClose,
     onLoginSuccess,
 }: WebViewLoginProps) {
@@ -143,10 +147,8 @@ export function WebViewLogin({
     const handleMessage = useCallback((event: { nativeEvent: { data: string } }) => {
         try {
             const message = JSON.parse(event.nativeEvent.data);
-            console.log('[WebViewLogin] Message from WebView:', message);
 
             if (message.type === 'LOGIN_SUCCESS') {
-                console.log('[WebViewLogin] Login success detected!');
                 setLoginDetected(true);
 
                 // Wait a bit to ensure cookies are set, then notify parent
@@ -154,23 +156,19 @@ export function WebViewLogin({
                     onLoginSuccess();
                 }, 500);
             } else if (message.type === 'LOGIN_ERROR') {
-                console.log('[WebViewLogin] Login error:', message.message);
                 ThemedAlertHelper.alert('Login Failed', message.message || 'Please check your credentials');
             }
         } catch (error) {
-            console.log('[WebViewLogin] Non-JSON message:', event.nativeEvent.data);
         }
     }, [onLoginSuccess]);
 
     // Handle navigation state changes
     const handleNavigationChange = useCallback((navState: WebViewNavigation) => {
-        console.log('[WebViewLogin] Navigation:', navState.url);
 
         // Check if navigated to a logged-in page
         if (navState.url.includes('home.html') ||
             navState.url.includes('content.html') ||
             navState.url.includes('index.html#home')) {
-            console.log('[WebViewLogin] Detected navigation to logged-in page');
 
             // Inject JS to verify login
             if (webViewRef.current) {
@@ -197,96 +195,144 @@ export function WebViewLogin({
     return (
         <Modal
             visible={visible}
-            animationType="slide"
-            presentationStyle="fullScreen"
+            animationType={hidden ? "fade" : "slide"}
+            presentationStyle={hidden ? "overFullScreen" : "fullScreen"}
+            transparent={hidden}
             onRequestClose={handleClose}
         >
-            <View style={[styles.container, { backgroundColor: colors.background }]}>
-                {/* Header */}
-                <View style={[styles.header, { backgroundColor: colors.card, borderBottomColor: colors.border }]}>
-                    <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                        <Text style={[typography.body, { color: colors.primary }]}>Cancel</Text>
-                    </TouchableOpacity>
+            {hidden ? (
+                // Hidden mode - show only loading overlay
+                <View style={[styles.hiddenContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                    <View style={[styles.hiddenContent, { backgroundColor: colors.card }]}>
+                        <ActivityIndicator size="large" color={colors.primary} />
+                        <Text style={[typography.body, { color: colors.text, marginTop: spacing.md, textAlign: 'center' }]}>
+                            Logging in...
+                        </Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
+                            Please wait
+                        </Text>
+                    </View>
 
-                    <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>
-                        Modem Login
-                    </Text>
-
-                    <View style={styles.closeButton} />
+                    {/* WebView runs hidden but functional */}
+                    <View style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}>
+                        <WebView
+                            ref={webViewRef}
+                            source={{ uri: loginUrl }}
+                            onMessage={handleMessage}
+                            onNavigationStateChange={handleNavigationChange}
+                            onLoadStart={() => setLoading(true)}
+                            onLoadEnd={() => {
+                                setLoading(false);
+                                if (webViewRef.current) {
+                                    webViewRef.current.injectJavaScript(injectedJs);
+                                    if (autoFillJs && !autoFillAttempted) {
+                                        webViewRef.current.injectJavaScript(autoFillJs);
+                                        setAutoFillAttempted(true);
+                                    }
+                                }
+                            }}
+                            javaScriptEnabled={true}
+                            domStorageEnabled={true}
+                            sharedCookiesEnabled={true}
+                            thirdPartyCookiesEnabled={true}
+                            cacheEnabled={true}
+                            incognito={false}
+                        />
+                    </View>
                 </View>
+            ) : (
+                // Normal mode - show full WebView UI
+                <View style={[styles.container, { backgroundColor: colors.background }]}>
+                    {/* Header */}
+                    <View style={[styles.header, {
+                        backgroundColor: colors.card,
+                        borderBottomColor: colors.border,
+                        paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 12 : 12
+                    }]}>
+                        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+                            <Text style={[typography.body, { color: colors.primary }]}>Cancel</Text>
+                        </TouchableOpacity>
 
-                {/* Instructions */}
-                <View style={[styles.instructions, { backgroundColor: colors.card }]}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
-                        Please login to your modem. The app will detect when login is complete.
-                    </Text>
-                </View>
+                        <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>
+                            Modem Login
+                        </Text>
 
-                {/* WebView */}
-                <WebView
-                    ref={webViewRef}
-                    source={{ uri: loginUrl }}
-                    style={styles.webview}
-                    onMessage={handleMessage}
-                    onNavigationStateChange={handleNavigationChange}
-                    onLoadStart={() => setLoading(true)}
-                    onLoadEnd={() => {
-                        setLoading(false);
-                        // Inject detection script
-                        if (webViewRef.current) {
-                            webViewRef.current.injectJavaScript(injectedJs);
-                            // Inject auto-fill script if credentials provided
-                            if (autoFillJs && !autoFillAttempted) {
-                                webViewRef.current.injectJavaScript(autoFillJs);
-                                setAutoFillAttempted(true);
+                        <View style={styles.closeButton} />
+                    </View>
+
+                    {/* Instructions */}
+                    <View style={[styles.instructions, { backgroundColor: colors.card }]}>
+                        <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
+                            Please login to your modem. The app will detect when login is complete.
+                        </Text>
+                    </View>
+
+                    {/* WebView */}
+                    <WebView
+                        ref={webViewRef}
+                        source={{ uri: loginUrl }}
+                        style={styles.webview}
+                        onMessage={handleMessage}
+                        onNavigationStateChange={handleNavigationChange}
+                        onLoadStart={() => setLoading(true)}
+                        onLoadEnd={() => {
+                            setLoading(false);
+                            // Inject detection script
+                            if (webViewRef.current) {
+                                webViewRef.current.injectJavaScript(injectedJs);
+                                // Inject auto-fill script if credentials provided
+                                if (autoFillJs && !autoFillAttempted) {
+                                    webViewRef.current.injectJavaScript(autoFillJs);
+                                    setAutoFillAttempted(true);
+                                }
                             }
-                        }
-                    }}
-                    javaScriptEnabled={true}
-                    domStorageEnabled={true}
-                    sharedCookiesEnabled={true}
-                    thirdPartyCookiesEnabled={true}
-                    cacheEnabled={true}
-                    incognito={false}
-                    startInLoadingState={true}
-                    renderLoading={() => (
-                        <View style={styles.loadingContainer}>
+                        }}
+                        javaScriptEnabled={true}
+                        domStorageEnabled={true}
+                        sharedCookiesEnabled={true}
+                        thirdPartyCookiesEnabled={true}
+                        cacheEnabled={true}
+                        incognito={false}
+                        startInLoadingState={true}
+                        renderLoading={() => (
+                            <View style={styles.loadingContainer}>
+                                <ActivityIndicator size="large" color={colors.primary} />
+                                <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.md }]}>
+                                    Loading modem interface...
+                                </Text>
+                            </View>
+                        )}
+                        onError={(syntheticEvent) => {
+                            const { nativeEvent } = syntheticEvent;
+                            console.error('[WebViewLogin] WebView error:', nativeEvent);
+                            ThemedAlertHelper.alert(
+                                'Connection Error',
+                                'Could not connect to modem. Please check your WiFi connection.',
+                                [{ text: 'OK', onPress: onClose }]
+                            );
+                        }}
+                    />
+
+                    {/* Loading overlay */}
+                    {loading && (
+                        <View style={styles.loadingOverlay}>
                             <ActivityIndicator size="large" color={colors.primary} />
-                            <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.md }]}>
-                                Loading modem interface...
+                        </View>
+                    )}
+
+                    {/* Success overlay */}
+                    {loginDetected && (
+                        <View style={[styles.successOverlay, { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
+                            <Text style={[typography.title2, { color: '#fff', marginBottom: spacing.md }]}>
+                                ✓ Login Successful!
+                            </Text>
+                            <Text style={[typography.body, { color: '#fff' }]}>
+                                Redirecting...
                             </Text>
                         </View>
                     )}
-                    onError={(syntheticEvent) => {
-                        const { nativeEvent } = syntheticEvent;
-                        console.error('[WebViewLogin] WebView error:', nativeEvent);
-                        ThemedAlertHelper.alert(
-                            'Connection Error',
-                            'Could not connect to modem. Please check your WiFi connection.',
-                            [{ text: 'OK', onPress: onClose }]
-                        );
-                    }}
-                />
-
-                {/* Loading overlay */}
-                {loading && (
-                    <View style={styles.loadingOverlay}>
-                        <ActivityIndicator size="large" color={colors.primary} />
-                    </View>
-                )}
-
-                {/* Success overlay */}
-                {loginDetected && (
-                    <View style={[styles.successOverlay, { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
-                        <Text style={[typography.title2, { color: '#fff', marginBottom: spacing.md }]}>
-                            ✓ Login Successful!
-                        </Text>
-                        <Text style={[typography.body, { color: '#fff' }]}>
-                            Redirecting...
-                        </Text>
-                    </View>
-                )}
-            </View>
+                </View>
+            )}
         </Modal>
     );
 }
@@ -340,6 +386,17 @@ const styles = StyleSheet.create({
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    hiddenContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    hiddenContent: {
+        padding: 32,
+        borderRadius: 16,
+        alignItems: 'center',
+        minWidth: 200,
     },
 });
 

@@ -77,7 +77,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         />
                         {/* Center content */}
                         <View style={[styles.circleCenter, { backgroundColor: colors.card }]}>
-                            <Text style={[styles.speedValue, { color: getDownloadColor(downloadPercent) }]}>
+                            <Text style={[styles.speedValue, { color: colors.text }]}>
                                 {dlSpeed.value}
                             </Text>
                             <Text style={[typography.caption2, { color: colors.textSecondary }]}>
@@ -86,7 +86,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         </View>
                     </View>
                     <View style={styles.labelContainer}>
-                        <Text style={[typography.caption1, { color: getDownloadColor(downloadPercent), fontWeight: '600' }]}>
+                        <Text style={[typography.caption1, { color: colors.text, fontWeight: '600' }]}>
                             ↓ Download
                         </Text>
                     </View>
@@ -113,7 +113,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         />
                         {/* Center content */}
                         <View style={[styles.circleCenter, { backgroundColor: colors.card }]}>
-                            <Text style={[styles.speedValue, { color: getUploadColor(uploadPercent) }]}>
+                            <Text style={[styles.speedValue, { color: colors.text }]}>
                                 {ulSpeed.value}
                             </Text>
                             <Text style={[typography.caption2, { color: colors.textSecondary }]}>
@@ -122,7 +122,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         </View>
                     </View>
                     <View style={styles.labelContainer}>
-                        <Text style={[typography.caption1, { color: getUploadColor(uploadPercent), fontWeight: '600' }]}>
+                        <Text style={[typography.caption1, { color: colors.text, fontWeight: '600' }]}>
                             ↑ Upload
                         </Text>
                     </View>

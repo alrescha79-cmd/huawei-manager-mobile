@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge, ThemedAlertHelper } from '@/components';
+import { Card, CardHeader, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge, ThemedAlertHelper, WebViewLogin } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
@@ -33,7 +33,7 @@ import { useTranslation } from '@/i18n';
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { credentials, logout } = useAuthStore();
+  const { credentials, logout, login } = useAuthStore();
   const { t } = useTranslation();
   const {
     signalInfo,
@@ -55,6 +55,9 @@ export default function HomeScreen() {
 
   const [isTogglingData, setIsTogglingData] = useState(false);
   const [isChangingIp, setIsChangingIp] = useState(false);
+  const [showReloginWebView, setShowReloginWebView] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
+  const [reloginAttempts, setReloginAttempts] = useState(0);
 
   // Auto-refresh interval (fast for speed, slower for other data)
   useEffect(() => {
@@ -102,9 +105,37 @@ export default function HomeScreen() {
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
 
-    } catch (error) {
+      // Check if data is empty (session expired returns empty values)
+      const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
+
+      if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
+        setSessionExpired(true);
+        setShowReloginWebView(true);
+        setReloginAttempts(prev => prev + 1);
+      } else if (!isDataEmpty) {
+        // Session is valid, reset expired state
+        setSessionExpired(false);
+        setReloginAttempts(0);
+      }
+
+    } catch (error: any) {
       console.error('Error loading data:', error);
-      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedLoadModemData'));
+
+      // Check if this is a session/auth error (no valid data means session expired)
+      const errorMessage = error?.message || '';
+      const isSessionError = errorMessage.includes('125003') ||
+        errorMessage.includes('session') ||
+        errorMessage.includes('login') ||
+        !signalInfo; // No signal data might indicate session issue
+
+      if (isSessionError && credentials && reloginAttempts < 3) {
+        // Session expired, trigger silent re-login via WebView
+        setSessionExpired(true);
+        setShowReloginWebView(true);
+        setReloginAttempts(prev => prev + 1);
+      } else {
+        ThemedAlertHelper.alert(t('common.error'), t('alerts.failedLoadModemData'));
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -132,9 +163,31 @@ export default function HomeScreen() {
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
 
-    } catch (error) {
-      // Silent fail for background updates
-      console.error('Error in background update:', error);
+      // Check if data is empty (session expired returns empty values)
+      const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
+
+      if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
+        setSessionExpired(true);
+        setShowReloginWebView(true);
+        setReloginAttempts(prev => prev + 1);
+      } else if (!isDataEmpty) {
+        // Session is valid
+        setSessionExpired(false);
+        setReloginAttempts(0);
+      }
+
+    } catch (error: any) {
+      // Check if session expired in background
+      const errorMessage = error?.message || '';
+      const isSessionError = errorMessage.includes('125003') ||
+        errorMessage.includes('session') ||
+        !signalInfo;
+
+      if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
+        setSessionExpired(true);
+        setShowReloginWebView(true);
+        setReloginAttempts(prev => prev + 1);
+      }
     }
   };
 
@@ -149,6 +202,26 @@ export default function HomeScreen() {
   };
 
   const handleRefresh = () => {
+    if (modemService) {
+      loadData(modemService);
+    }
+  };
+
+  // Handle successful re-login from WebView
+  const handleReloginSuccess = async () => {
+    setShowReloginWebView(false);
+    setSessionExpired(false);
+
+    // Re-save credentials with new timestamp
+    if (credentials) {
+      await login({
+        modemIp: credentials.modemIp,
+        username: credentials.username,
+        password: credentials.password,
+      });
+    }
+
+    // Reload data after successful re-login
     if (modemService) {
       loadData(modemService);
     }
@@ -268,9 +341,10 @@ export default function HomeScreen() {
       {/* Warning if no valid data */}
       {!hasValidData && (
         <Card style={{ marginBottom: spacing.md, backgroundColor: colors.error + '10', borderColor: colors.error, borderWidth: 1 }}>
-          <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm }]}>
-            ⚠️ {t('alerts.noSignalData')}
+          <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm, textAlign: 'center' }]}>
+            <MaterialIcons name="warning" size={24} color={colors.error} /> {t('alerts.noSignalData')}
           </Text>
+          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
           <Text style={[typography.body, { color: colors.text }]}>
             {t('alerts.noSignalMessage')}{'\n\n'}
             <Text style={{ fontWeight: 'bold' }}>{t('alerts.possibleCauses')}</Text>{'\n'}
@@ -519,6 +593,23 @@ export default function HomeScreen() {
           </View>
         </Card>
       )}
+
+      {/* Hidden WebView for auto re-login when session expires */}
+      <WebViewLogin
+        modemIp={credentials?.modemIp || '192.168.8.1'}
+        username={credentials?.username || 'admin'}
+        password={credentials?.password || ''}
+        visible={showReloginWebView}
+        hidden={true}
+        onClose={() => {
+          setShowReloginWebView(false);
+          // If user cancels re-login, show error
+          if (sessionExpired) {
+            ThemedAlertHelper.alert(t('common.error'), t('alerts.sessionExpired'));
+          }
+        }}
+        onLoginSuccess={handleReloginSuccess}
+      />
     </ScrollView>
   );
 }
