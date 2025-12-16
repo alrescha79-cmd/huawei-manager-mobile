@@ -33,12 +33,20 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
     const dlSpeed = formatSpeed(downloadSpeed);
     const ulSpeed = formatSpeed(uploadSpeed);
 
-    // Get color based on speed
-    const getSpeedColor = (percent: number): string => {
-        if (percent >= 60) return '#34C759'; // Green - fast
-        if (percent >= 30) return '#007AFF'; // Blue - good
-        if (percent >= 10) return '#FF9500'; // Orange - moderate
-        return '#8E8E93'; // Gray - slow
+    // Get color based on download speed (green/teal tones)
+    const getDownloadColor = (percent: number): string => {
+        if (percent >= 60) return '#00C853'; // Bright Green - very fast
+        if (percent >= 30) return '#00BFA5'; // Teal - good
+        if (percent >= 10) return '#26A69A'; // Light Teal - moderate
+        return '#78909C'; // Blue Gray - slow
+    };
+
+    // Get color based on upload speed (orange/purple tones)
+    const getUploadColor = (percent: number): string => {
+        if (percent >= 60) return '#FF6D00'; // Bright Orange - very fast
+        if (percent >= 30) return '#FF9100'; // Orange - good
+        if (percent >= 10) return '#FFA726'; // Light Orange - moderate
+        return '#BDBDBD'; // Gray - slow
     };
 
     return (
@@ -58,18 +66,18 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                             style={[
                                 styles.circleProgress,
                                 {
-                                    borderColor: getSpeedColor(downloadPercent),
+                                    borderColor: getDownloadColor(downloadPercent),
                                     borderRightColor: 'transparent',
-                                    borderBottomColor: downloadPercent > 25 ? getSpeedColor(downloadPercent) : 'transparent',
-                                    borderLeftColor: downloadPercent > 50 ? getSpeedColor(downloadPercent) : 'transparent',
-                                    borderTopColor: downloadPercent > 75 ? getSpeedColor(downloadPercent) : 'transparent',
+                                    borderBottomColor: downloadPercent > 25 ? getDownloadColor(downloadPercent) : 'transparent',
+                                    borderLeftColor: downloadPercent > 50 ? getDownloadColor(downloadPercent) : 'transparent',
+                                    borderTopColor: downloadPercent > 75 ? getDownloadColor(downloadPercent) : 'transparent',
                                     transform: [{ rotate: '-45deg' }],
                                 }
                             ]}
                         />
                         {/* Center content */}
                         <View style={[styles.circleCenter, { backgroundColor: colors.card }]}>
-                            <Text style={[styles.speedValue, { color: getSpeedColor(downloadPercent) }]}>
+                            <Text style={[styles.speedValue, { color: getDownloadColor(downloadPercent) }]}>
                                 {dlSpeed.value}
                             </Text>
                             <Text style={[typography.caption2, { color: colors.textSecondary }]}>
@@ -78,7 +86,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         </View>
                     </View>
                     <View style={styles.labelContainer}>
-                        <Text style={[typography.caption1, { color: '#007AFF', fontWeight: '600' }]}>
+                        <Text style={[typography.caption1, { color: getDownloadColor(downloadPercent), fontWeight: '600' }]}>
                             ↓ Download
                         </Text>
                     </View>
@@ -94,18 +102,18 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                             style={[
                                 styles.circleProgress,
                                 {
-                                    borderColor: getSpeedColor(uploadPercent),
+                                    borderColor: getUploadColor(uploadPercent),
                                     borderRightColor: 'transparent',
-                                    borderBottomColor: uploadPercent > 25 ? getSpeedColor(uploadPercent) : 'transparent',
-                                    borderLeftColor: uploadPercent > 50 ? getSpeedColor(uploadPercent) : 'transparent',
-                                    borderTopColor: uploadPercent > 75 ? getSpeedColor(uploadPercent) : 'transparent',
+                                    borderBottomColor: uploadPercent > 25 ? getUploadColor(uploadPercent) : 'transparent',
+                                    borderLeftColor: uploadPercent > 50 ? getUploadColor(uploadPercent) : 'transparent',
+                                    borderTopColor: uploadPercent > 75 ? getUploadColor(uploadPercent) : 'transparent',
                                     transform: [{ rotate: '-45deg' }],
                                 }
                             ]}
                         />
                         {/* Center content */}
                         <View style={[styles.circleCenter, { backgroundColor: colors.card }]}>
-                            <Text style={[styles.speedValue, { color: getSpeedColor(uploadPercent) }]}>
+                            <Text style={[styles.speedValue, { color: getUploadColor(uploadPercent) }]}>
                                 {ulSpeed.value}
                             </Text>
                             <Text style={[typography.caption2, { color: colors.textSecondary }]}>
@@ -114,7 +122,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         </View>
                     </View>
                     <View style={styles.labelContainer}>
-                        <Text style={[typography.caption1, { color: '#FF9500', fontWeight: '600' }]}>
+                        <Text style={[typography.caption1, { color: getUploadColor(uploadPercent), fontWeight: '600' }]}>
                             ↑ Upload
                         </Text>
                     </View>

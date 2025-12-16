@@ -23,17 +23,17 @@ import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
 
 const ANTENNA_MODES = [
-  { value: 'auto', label: 'Auto', icon: 'settings-input-antenna' as const },
-  { value: 'internal', label: 'Internal', icon: 'wifi' as const },
-  { value: 'external', label: 'External', icon: 'router' as const },
+  { value: 'auto', labelKey: 'settings.antennaAuto', icon: 'settings-input-antenna' as const },
+  { value: 'internal', labelKey: 'settings.antennaInternal', icon: 'wifi' as const },
+  { value: 'external', labelKey: 'settings.antennaExternal', icon: 'router' as const },
 ];
 
 const NETWORK_MODES = [
-  { value: '00', label: 'Auto (All)' },
-  { value: '03', label: '4G Only' },
-  { value: '02', label: '3G Only' },
-  { value: '01', label: '2G Only' },
-  { value: '0302', label: '4G/3G' },
+  { value: '00', labelKey: 'settings.networkAuto' },
+  { value: '03', labelKey: 'settings.network4gOnly' },
+  { value: '02', labelKey: 'settings.network3gOnly' },
+  { value: '01', labelKey: 'settings.network2gOnly' },
+  { value: '0302', labelKey: 'settings.network4g3g' },
 ];
 
 // LTE Band definitions (common bands)
@@ -275,7 +275,8 @@ export default function SettingsScreen() {
   };
 
   const getAntennaModeLabel = () => {
-    return ANTENNA_MODES.find(m => m.value === antennaMode)?.label || antennaMode;
+    const mode = ANTENNA_MODES.find(m => m.value === antennaMode);
+    return mode ? t(mode.labelKey) : antennaMode;
   };
 
   return (
@@ -309,9 +310,9 @@ export default function SettingsScreen() {
         {/* Antenna Settings */}
         <View style={styles.settingRow}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>Antenna Mode</Text>
+            <Text style={[typography.body, { color: colors.text }]}>{t('settings.antennaMode')}</Text>
             <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              Select antenna type
+              {t('settings.selectAntenna')}
             </Text>
           </View>
           {isChangingAntenna ? (
@@ -353,7 +354,7 @@ export default function SettingsScreen() {
                   color: antennaMode === mode.value ? colors.primary : colors.text,
                   marginLeft: 10
                 }]}>
-                  {mode.label}
+                  {t(mode.labelKey)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -363,9 +364,9 @@ export default function SettingsScreen() {
         {/* Network Mode Settings */}
         <View style={[styles.settingRow, { marginTop: spacing.md }]}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>Network Type</Text>
+            <Text style={[typography.body, { color: colors.text }]}>{t('settings.networkType')}</Text>
             <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              Select preferred network
+              {t('settings.selectNetwork')}
             </Text>
           </View>
           {isChangingNetwork ? (
@@ -377,7 +378,7 @@ export default function SettingsScreen() {
             >
               <MaterialIcons name="signal-cellular-alt" size={18} color={colors.primary} />
               <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
-                {NETWORK_MODES.find(m => m.value === networkMode)?.label || 'Auto'}
+                {(() => { const mode = NETWORK_MODES.find(m => m.value === networkMode); return mode ? t(mode.labelKey) : t('settings.networkAuto'); })()}
               </Text>
               <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
             </TouchableOpacity>
@@ -403,7 +404,7 @@ export default function SettingsScreen() {
                   color: networkMode === mode.value ? colors.primary : colors.text,
                   marginLeft: 10
                 }]}>
-                  {mode.label}
+                  {t(mode.labelKey)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -413,9 +414,9 @@ export default function SettingsScreen() {
         {/* LTE Band Selection */}
         <View style={[styles.settingRow, { marginTop: spacing.md }]}>
           <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>LTE Bands</Text>
+            <Text style={[typography.body, { color: colors.text }]}>{t('settings.lteBands')}</Text>
             <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {selectedBands.length === LTE_BANDS.length ? 'All bands' : `${selectedBands.length} bands selected`}
+              {selectedBands.length === LTE_BANDS.length ? t('settings.allBands') : `${selectedBands.length} ${t('settings.bandsSelected')}`}
             </Text>
           </View>
           <TouchableOpacity
@@ -424,7 +425,7 @@ export default function SettingsScreen() {
           >
             <MaterialIcons name="tune" size={18} color={colors.primary} />
             <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
-              Configure
+              {t('settings.configureBands')}
             </Text>
             <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -611,21 +612,21 @@ export default function SettingsScreen() {
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
             <TouchableOpacity onPress={() => setShowBandModal(false)}>
-              <Text style={[typography.body, { color: colors.primary }]}>Cancel</Text>
+              <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={[typography.headline, { color: colors.text }]}>LTE Bands</Text>
+            <Text style={[typography.headline, { color: colors.text }]}>{t('settings.lteBands')}</Text>
             <TouchableOpacity onPress={saveBandSettings} disabled={isSavingBands}>
               {isSavingBands ? (
                 <ActivityIndicator color={colors.primary} size="small" />
               ) : (
-                <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>Save</Text>
+                <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('common.save')}</Text>
               )}
             </TouchableOpacity>
           </View>
 
           <ScrollView style={styles.modalContent}>
             <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.md, textAlign: 'center' }]}>
-              Select the LTE bands to use. Deselecting bands may improve signal on specific bands.
+              {t('settings.selectBands')}
             </Text>
 
             {/* Select All / Deselect All */}
@@ -634,13 +635,13 @@ export default function SettingsScreen() {
                 style={[styles.selectAllButton, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}
                 onPress={() => setSelectedBands(LTE_BANDS.map(b => b.bit))}
               >
-                <Text style={[typography.caption1, { color: colors.primary }]}>Select All</Text>
+                <Text style={[typography.caption1, { color: colors.primary }]}>{t('settings.selectAll')}</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={[styles.selectAllButton, { backgroundColor: colors.card, borderColor: colors.border }]}
                 onPress={() => setSelectedBands([])}
               >
-                <Text style={[typography.caption1, { color: colors.textSecondary }]}>Deselect All</Text>
+                <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('settings.deselectAll')}</Text>
               </TouchableOpacity>
             </View>
 

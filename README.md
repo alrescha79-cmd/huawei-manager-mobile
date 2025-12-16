@@ -71,9 +71,8 @@ npm install
 npm run dev
 ```
 
-### Build APK
+### Build APK Using EAS Build
 ```bash
-# Using EAS Build
 eas build --profile preview --platform android
 ```
 

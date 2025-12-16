@@ -319,13 +319,12 @@ export default function HomeScreen() {
               value={wanInfo?.wanIPAddress || 'Fetching...'}
             />
             <InfoRow
-              label="Band"
+              label={t('home.band')}
               value={getLteBandInfo(signalInfo?.band)}
             />
-            {/* WIDTH with icons */}
             <View style={[styles.infoRowCustom, { marginBottom: spacing.sm }]}>
               <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-                Width
+                {t('home.width')}
               </Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
@@ -396,7 +395,7 @@ export default function HomeScreen() {
           )}
         </TouchableOpacity>
         <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
-          Triggers PLMN scan to get a new IP address
+          {t('home.plmnScanHint')}
         </Text>
       </Card>
 

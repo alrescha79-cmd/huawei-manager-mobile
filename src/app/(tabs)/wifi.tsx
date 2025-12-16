@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
@@ -52,6 +53,9 @@ export default function WiFiScreen() {
   // Guest WiFi state
   const [guestWifiEnabled, setGuestWifiEnabled] = useState(false);
   const [isTogglingGuest, setIsTogglingGuest] = useState(false);
+
+  // Collapse state for edit form
+  const [isEditExpanded, setIsEditExpanded] = useState(false);
 
   // Initialize form when settings load
   useEffect(() => {
@@ -268,120 +272,146 @@ export default function WiFiScreen() {
           {/* Separator */}
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-          {/* SSID Input */}
-          <View style={styles.formGroup}>
-            <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
-              WiFi Name (SSID)
-            </Text>
-            <TextInput
-              style={[styles.input, {
-                backgroundColor: colors.card,
-                borderColor: colors.border,
-                color: colors.text
-              }]}
-              value={formSsid}
-              onChangeText={setFormSsid}
-              placeholder="Enter WiFi name"
-              placeholderTextColor={colors.textSecondary}
+          {/* Edit WiFi Settings - Collapsible Header */}
+          <TouchableOpacity
+            style={[styles.collapseHeader, { borderColor: colors.border }]}
+            onPress={() => setIsEditExpanded(!isEditExpanded)}
+          >
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                {t('wifi.editSettings')}
+              </Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {t('wifi.editSettingsHint')}
+              </Text>
+            </View>
+            <MaterialIcons
+              name={isEditExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+              size={24}
+              color={colors.textSecondary}
             />
-          </View>
+          </TouchableOpacity>
 
-          {/* Security Mode Dropdown */}
-          <View style={styles.formGroup}>
-            <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
-              Security Mode
-            </Text>
-            <TouchableOpacity
-              style={[styles.dropdown, {
-                backgroundColor: colors.card,
-                borderColor: colors.border
-              }]}
-              onPress={() => setShowSecurityDropdown(!showSecurityDropdown)}
-            >
-              <Text style={[typography.body, { color: colors.text }]}>
-                {getSecurityModeLabel(formSecurityMode)}
-              </Text>
-              <Text style={{ color: colors.textSecondary }}>▼</Text>
-            </TouchableOpacity>
+          {/* Collapsible Content */}
+          {isEditExpanded && (
+            <View style={{ marginTop: spacing.md }}>
 
-            {showSecurityDropdown && (
-              <View style={[styles.dropdownMenu, {
-                backgroundColor: colors.card,
-                borderColor: colors.border
-              }]}>
-                {SECURITY_MODES.map((mode) => (
-                  <TouchableOpacity
-                    key={mode.value}
-                    style={[styles.dropdownItem, {
-                      backgroundColor: formSecurityMode === mode.value ? colors.primary + '20' : 'transparent'
-                    }]}
-                    onPress={() => {
-                      setFormSecurityMode(mode.value);
-                      setShowSecurityDropdown(false);
-                    }}
-                  >
-                    <Text style={[typography.body, {
-                      color: formSecurityMode === mode.value ? colors.primary : colors.text
-                    }]}>
-                      {t(mode.labelKey)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
+              {/* SSID Input */}
+              <View style={styles.formGroup}>
+                <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
+                  {t('wifi.wifiName')}
+                </Text>
+                <TextInput
+                  style={[styles.input, {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border,
+                    color: colors.text
+                  }]}
+                  value={formSsid}
+                  onChangeText={setFormSsid}
+                  placeholder={t('wifi.wifiNamePlaceholder')}
+                  placeholderTextColor={colors.textSecondary}
+                />
               </View>
-            )}
-          </View>
 
-          {/* Password Input */}
-          {formSecurityMode !== 'OPEN' && (
-            <View style={styles.formGroup}>
-              <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
-                WiFi Password
-              </Text>
-              <TextInput
-                style={[styles.input, {
-                  backgroundColor: colors.card,
-                  borderColor: colors.border,
-                  color: colors.text
-                }]}
-                value={formPassword}
-                onChangeText={setFormPassword}
-                placeholder="Enter password (min 8 characters)"
-                placeholderTextColor={colors.textSecondary}
-                secureTextEntry
-              />
+              {/* Security Mode Dropdown */}
+              <View style={styles.formGroup}>
+                <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
+                  {t('wifi.securityMode')}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.dropdown, {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border
+                  }]}
+                  onPress={() => setShowSecurityDropdown(!showSecurityDropdown)}
+                >
+                  <Text style={[typography.body, { color: colors.text }]}>
+                    {getSecurityModeLabel(formSecurityMode)}
+                  </Text>
+                  <Text style={{ color: colors.textSecondary }}>▼</Text>
+                </TouchableOpacity>
+
+                {showSecurityDropdown && (
+                  <View style={[styles.dropdownMenu, {
+                    backgroundColor: colors.card,
+                    borderColor: colors.border
+                  }]}>
+                    {SECURITY_MODES.map((mode) => (
+                      <TouchableOpacity
+                        key={mode.value}
+                        style={[styles.dropdownItem, {
+                          backgroundColor: formSecurityMode === mode.value ? colors.primary + '20' : 'transparent'
+                        }]}
+                        onPress={() => {
+                          setFormSecurityMode(mode.value);
+                          setShowSecurityDropdown(false);
+                        }}
+                      >
+                        <Text style={[typography.body, {
+                          color: formSecurityMode === mode.value ? colors.primary : colors.text
+                        }]}>
+                          {t(mode.labelKey)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Password Input */}
+              {formSecurityMode !== 'OPEN' && (
+                <View style={styles.formGroup}>
+                  <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
+                    {t('wifi.password')}
+                  </Text>
+                  <TextInput
+                    style={[styles.input, {
+                      backgroundColor: colors.card,
+                      borderColor: colors.border,
+                      color: colors.text
+                    }]}
+                    value={formPassword}
+                    onChangeText={setFormPassword}
+                    placeholder={t('wifi.passwordPlaceholder')}
+                    placeholderTextColor={colors.textSecondary}
+                    secureTextEntry
+                  />
+                </View>
+              )}
+
+              {/* Save Button */}
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  {
+                    backgroundColor: hasChanges ? colors.primary : colors.border,
+                    opacity: hasChanges && !isSaving ? 1 : 0.6
+                  }
+                ]}
+                onPress={handleSaveSettings}
+                disabled={!hasChanges || isSaving}
+              >
+                {isSaving ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                    {t('wifi.saveChanges')}
+                  </Text>
+                )}
+              </TouchableOpacity>
             </View>
           )}
-
-          {/* Save Button */}
-          <TouchableOpacity
-            style={[
-              styles.saveButton,
-              {
-                backgroundColor: hasChanges ? colors.primary : colors.border,
-                opacity: hasChanges && !isSaving ? 1 : 0.6
-              }
-            ]}
-            onPress={handleSaveSettings}
-            disabled={!hasChanges || isSaving}
-          >
-            {isSaving ? (
-              <ActivityIndicator color="#FFFFFF" />
-            ) : (
-              <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-                Save Changes
-              </Text>
-            )}
-          </TouchableOpacity>
         </Card>
       )}
 
       {/* Connected Devices Card */}
       <Card>
-        <CardHeader title={`Connected Devices (${connectedDevices.length})`} />
+        <CardHeader title={`${t('wifi.connectedDevices')} (${connectedDevices.length})`} />
 
         {connectedDevices.length === 0 ? (
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.lg }]}>
-            No devices connected
+            {t('wifi.noDevices')}
           </Text>
         ) : (
           connectedDevices.map((device, index) => (
@@ -410,7 +440,7 @@ export default function WiFiScreen() {
               </View>
 
               <Button
-                title="Kick"
+                title={t('common.kick')}
                 variant="danger"
                 onPress={() => handleKickDevice(device.macAddress, device.hostName)}
                 style={styles.kickButton}
@@ -484,5 +514,12 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 16,
     minHeight: 36,
+  },
+  collapseHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 4,
   },
 });

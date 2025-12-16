@@ -15,11 +15,13 @@ import { Card, Input, Button, WebViewLogin, ThemedAlertHelper } from '@/componen
 import { useAuthStore } from '@/stores/auth.store';
 import { networkService } from '@/services/network.service';
 import { ModemAPIClient } from '@/services/api.service';
+import { useTranslation } from '@/i18n';
 
 export default function LoginScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { login, isLoading, error, setError } = useAuthStore();
+  const { t } = useTranslation();
 
   const [modemIp, setModemIp] = useState('192.168.8.1');
   const [username, setUsername] = useState('admin');
@@ -36,8 +38,8 @@ export default function LoginScreen() {
 
       if (!isWiFi) {
         ThemedAlertHelper.alert(
-          'WiFi Required',
-          'Please connect to your Huawei modem WiFi network to continue.'
+          t('login.wifiRequired'),
+          t('login.wifiRequiredMessage')
         );
         setIsDetecting(false);
         return;
@@ -58,7 +60,7 @@ export default function LoginScreen() {
     setShowWebViewOption(false);
 
     if (!modemIp) {
-      ThemedAlertHelper.alert('Error', 'Please enter modem IP address');
+      ThemedAlertHelper.alert(t('common.error'), t('login.enterModemIp'));
       return;
     }
 
@@ -87,11 +89,11 @@ export default function LoginScreen() {
     // If direct login fails, show WebView option
     setShowWebViewOption(true);
     ThemedAlertHelper.alert(
-      'Direct Login Failed',
-      'Unable to login directly. Would you like to try via Web Interface?',
+      t('login.directLoginFailed'),
+      t('login.directLoginFailedMessage'),
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Open Web Login', onPress: () => setShowWebViewLogin(true) }
+        { text: t('common.cancel'), style: 'cancel' },
+        { text: t('login.openWebLogin'), onPress: () => setShowWebViewLogin(true) }
       ]
     );
   };
@@ -109,16 +111,16 @@ export default function LoginScreen() {
       });
 
       // Credentials saved, redirecting to home
-      ThemedAlertHelper.alert('Success', 'Login successful!', [
+      ThemedAlertHelper.alert(t('common.success'), t('login.loginSuccess'), [
         {
-          text: 'OK',
+          text: t('common.ok'),
           onPress: () => router.replace('/(tabs)/home'),
         },
       ]);
     } catch (err) {
       console.error('[Login] Error saving credentials:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Login failed';
-      ThemedAlertHelper.alert('Error', errorMessage);
+      const errorMessage = err instanceof Error ? err.message : t('login.loginFailed');
+      ThemedAlertHelper.alert(t('common.error'), errorMessage);
       setError(errorMessage);
     }
   };
@@ -135,38 +137,38 @@ export default function LoginScreen() {
       >
         <View style={[styles.header, { marginBottom: spacing.xl }]}>
           <Text style={[typography.largeTitle, { color: colors.text, marginBottom: spacing.sm }]}>
-            Huawei Manager
+            {t('login.title')}
           </Text>
           <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-            Connect to your modem
+            {t('login.subtitle')}
           </Text>
         </View>
 
         <Card style={{ marginBottom: spacing.lg }}>
           <Input
-            label="Modem IP Address"
+            label={t('login.modemIp')}
             value={modemIp}
             onChangeText={setModemIp}
-            placeholder="192.168.8.1"
+            placeholder={t('login.modemIpPlaceholder')}
             keyboardType="numeric"
             autoCapitalize="none"
             editable={!isDetecting}
           />
 
           <Input
-            label="Username (optional)"
+            label={t('login.usernameOptional')}
             value={username}
             onChangeText={setUsername}
-            placeholder="admin"
+            placeholder={t('login.usernamePlaceholder')}
             autoCapitalize="none"
             autoComplete="username"
           />
 
           <Input
-            label="Password (optional)"
+            label={t('login.passwordOptional')}
             value={password}
             onChangeText={setPassword}
-            placeholder="Enter password"
+            placeholder={t('login.passwordPlaceholder')}
             secureTextEntry
             showPasswordToggle
             autoCapitalize="none"
@@ -180,7 +182,7 @@ export default function LoginScreen() {
           )}
 
           <Button
-            title={isDirectLogging ? "Logging in..." : "Login"}
+            title={isDirectLogging ? t('login.loggingIn') : t('login.loginButton')}
             onPress={handleLoginPress}
             loading={isDirectLogging || isLoading}
             disabled={isDirectLogging || isLoading}
@@ -189,7 +191,7 @@ export default function LoginScreen() {
 
           {showWebViewOption && (
             <Button
-              title="Use Web Interface Instead"
+              title={t('login.webViewOption')}
               onPress={() => setShowWebViewLogin(true)}
               variant="secondary"
               style={{ marginBottom: spacing.sm }}
@@ -197,7 +199,7 @@ export default function LoginScreen() {
           )}
 
           <Button
-            title={isDetecting ? "Detecting..." : "Detect Modem IP"}
+            title={isDetecting ? t('login.detecting') : t('login.detectModemIp')}
             onPress={detectModemIP}
             loading={isDetecting}
             disabled={isDetecting || isLoading || isDirectLogging}
@@ -207,11 +209,11 @@ export default function LoginScreen() {
 
         <View style={styles.footer}>
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
-            Will try direct login first.{'\n'}If it fails, web interface will be available.
+            {t('login.directLoginNote')}{'\n'}{t('login.webFallbackNote')}
           </Text>
           {/* app version */}
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
-            App Version: {Constants.expoConfig?.version || '1.0.0'}
+            {t('login.appVersion')}: {Constants.expoConfig?.version || '1.0.0'}
           </Text>
         </View>
       </ScrollView>

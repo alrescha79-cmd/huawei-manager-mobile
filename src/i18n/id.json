@@ -51,12 +51,14 @@
   },
   "login": {
     "title": "Huawei Manager",
-    "subtitle": "Hubungkan ke modem Huawei Anda",
+    "subtitle": "Hubungkan ke modem Anda",
     "modemIp": "Alamat IP Modem",
     "modemIpPlaceholder": "192.168.8.1",
     "username": "Nama Pengguna",
+    "usernameOptional": "Nama Pengguna (opsional)",
     "usernamePlaceholder": "admin",
     "password": "Kata Sandi",
+    "passwordOptional": "Kata Sandi (opsional)",
     "passwordPlaceholder": "Masukkan kata sandi",
     "loginButton": "Masuk",
     "loggingIn": "Sedang masuk...",
@@ -65,7 +67,15 @@
     "directLoginFailedMessage": "Tidak dapat login secara langsung. Apakah Anda ingin mencoba melalui Antarmuka Web?",
     "openWebLogin": "Buka Login Web",
     "loginSuccess": "Login berhasil!",
-    "enterModemIp": "Masukkan alamat IP modem"
+    "enterModemIp": "Masukkan alamat IP modem",
+    "detectModemIp": "Deteksi IP Modem",
+    "detecting": "Mendeteksi...",
+    "wifiRequired": "WiFi Diperlukan",
+    "wifiRequiredMessage": "Silakan hubungkan ke jaringan WiFi modem Huawei Anda untuk melanjutkan.",
+    "loginFailed": "Login gagal",
+    "directLoginNote": "Akan mencoba login langsung terlebih dahulu.",
+    "webFallbackNote": "Jika gagal, antarmuka web akan tersedia.",
+    "appVersion": "Versi Aplikasi"
   },
   "home": {
     "connectionStatus": "Status Koneksi",
@@ -73,7 +83,7 @@
     "disconnected": "Terputus",
     "connecting": "Menghubungkan",
     "networkInfo": "Info Jaringan",
-    "operator": "Operator",
+    "operator": "ISP",
     "networkType": "Tipe Jaringan",
     "roaming": "Roaming",
     "signalInfo": "Info Sinyal",
@@ -100,7 +110,11 @@
     "ipChangeStarted": "Pergantian IP dimulai. Ini mungkin memerlukan waktu hingga 60 detik.",
     "mobileData": "Data Seluler",
     "noSignalAvailable": "Tidak ada data sinyal",
-    "checkLogin": "Periksa apakah Anda sudah login ke modem"
+    "checkLogin": "Periksa apakah Anda sudah login ke modem",
+    "width": "Lebar",
+    "plmnScanHint": "Memicu pemindaian PLMN untuk mendapatkan alamat IP baru",
+    "status": "Status",
+    "speed": "Kecepatan"
   },
   "wifi": {
     "wifiSettings": "Pengaturan WiFi",
@@ -126,7 +140,9 @@
     "wifiEnabled": "WiFi diaktifkan",
     "wifiDisabled": "WiFi dinonaktifkan",
     "guestWifiEnabled": "WiFi Tamu diaktifkan",
-    "guestWifiDisabled": "WiFi Tamu dinonaktifkan"
+    "guestWifiDisabled": "WiFi Tamu dinonaktifkan",
+    "editSettings": "Edit Pengaturan WiFi",
+    "editSettingsHint": "Ketuk untuk mengubah SSID, kata sandi, atau keamanan"
   },
   "sms": {
     "smsCount": "Jumlah SMS",

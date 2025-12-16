@@ -51,12 +51,14 @@
   },
   "login": {
     "title": "Huawei Manager",
-    "subtitle": "Connect to your Huawei modem",
+    "subtitle": "Connect to your modem",
     "modemIp": "Modem IP Address",
     "modemIpPlaceholder": "192.168.8.1",
     "username": "Username",
+    "usernameOptional": "Username (optional)",
     "usernamePlaceholder": "admin",
     "password": "Password",
+    "passwordOptional": "Password (optional)",
     "passwordPlaceholder": "Enter password",
     "loginButton": "Login",
     "loggingIn": "Logging in...",
@@ -65,7 +67,15 @@
     "directLoginFailedMessage": "Unable to login directly. Would you like to try via Web Interface?",
     "openWebLogin": "Open Web Login",
     "loginSuccess": "Login successful!",
-    "enterModemIp": "Please enter modem IP address"
+    "enterModemIp": "Please enter modem IP address",
+    "detectModemIp": "Detect Modem IP",
+    "detecting": "Detecting...",
+    "wifiRequired": "WiFi Required",
+    "wifiRequiredMessage": "Please connect to your Huawei modem WiFi network to continue.",
+    "loginFailed": "Login failed",
+    "directLoginNote": "Will try direct login first.",
+    "webFallbackNote": "If it fails, web interface will be available.",
+    "appVersion": "App Version"
   },
   "home": {
     "connectionStatus": "Connection Status",
@@ -73,7 +83,7 @@
     "disconnected": "Disconnected",
     "connecting": "Connecting",
     "networkInfo": "Network Info",
-    "operator": "Operator",
+    "operator": "ISP",
     "networkType": "Network Type",
     "roaming": "Roaming",
     "signalInfo": "Signal Info",
@@ -100,7 +110,11 @@
     "ipChangeStarted": "IP change initiated. This may take up to 60 seconds.",
     "mobileData": "Mobile Data",
     "noSignalAvailable": "No signal data available",
-    "checkLogin": "Please check if you're logged in to the modem"
+    "checkLogin": "Please check if you're logged in to the modem",
+    "width": "Width",
+    "plmnScanHint": "Triggers PLMN scan to get a new IP address",
+    "status": "Status",
+    "speed": "Speed"
   },
   "wifi": {
     "wifiSettings": "WiFi Settings",
@@ -126,7 +140,9 @@
     "wifiEnabled": "WiFi enabled",
     "wifiDisabled": "WiFi disabled",
     "guestWifiEnabled": "Guest WiFi enabled",
-    "guestWifiDisabled": "Guest WiFi disabled"
+    "guestWifiDisabled": "Guest WiFi disabled",
+    "editSettings": "Edit WiFi Settings",
+    "editSettingsHint": "Tap to change SSID, password, or security"
   },
   "sms": {
     "smsCount": "SMS Count",
