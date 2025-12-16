@@ -31,7 +31,7 @@
 
 > **📡 Tested on Huawei B312-929**
 
-> **📲 Download on [Reales](https://reales.app/app/alrescha79-cmd/huawei-manager-mobile)**
+> **📲 Download on [Release](https://reales.app/app/alrescha79-cmd/huawei-manager-mobile)**
 
 ---
 
@@ -58,7 +58,7 @@
 
 | Dashboard | WiFi | SMS | Settings |
 |:---------:|:----:|:---:|:--------:|
-| ![Home](https://github.com/user-attachments/assets/bfaaadda-c5e5-4f4d-984a-fc03395d8f2d) | ![Wifi](https://github.com/user-attachments/assets/8d441230-dabe-4120-ba3b-3670c6c2ecb5) | ![sms](https://github.com/user-attachments/assets/3cebc87a-5ed4-49eb-b2bb-368546bfb751) | ![Settings](https://github.com/user-attachments/assets/2ec1e622-36d3-4e14-a35f-a4cde1ee1df1) |
+| ![Home](https://github.com/user-attachments/assets/9ff7a9b2-fd4a-45ab-8551-f94448ebb4c5) | ![Wifi](https://github.com/user-attachments/assets/7d6701ac-9437-4122-b2d2-109aa1015b51) | ![sms](https://github.com/user-attachments/assets/02051333-b094-4c52-9baf-a6d0f491cdf9) | ![Settings](https://github.com/user-attachments/assets/cf138be2-fea5-4c2f-a66f-5fc35e5f4616) |
 
 <p align="center">
   <em>Light Mode</em>
@@ -68,7 +68,7 @@
 
 | Dashboard | WiFi | SMS | Settings |
 |:---------:|:----:|:---:|:--------:|
-| ![Home](https://github.com/user-attachments/assets/d3164d23-effb-4259-a32e-42bdaff692d0) | ![Wifi](https://github.com/user-attachments/assets/40bd2810-8971-4b93-8d7e-1cbe79fb63c0) | ![sms](https://github.com/user-attachments/assets/63d7059d-9f3c-403b-8970-1026bac26634) | ![Settings](https://github.com/user-attachments/assets/b5340f90-57e4-4295-8e3f-b8586a17bad7) |
+| ![Home](https://github.com/user-attachments/assets/9308daf5-d9c2-4c3e-9d62-eaa6a3bb5589) | ![wifi](https://github.com/user-attachments/assets/94f32dae-aaae-4677-9207-c2074003282a) | ![sms](https://github.com/user-attachments/assets/6b8c2297-8369-452e-9fa9-cd77a1fa4d3c) | ![settings](https://github.com/user-attachments/assets/173a9c6e-a49f-4a04-9b98-174369d725f1) |
 
 
 ---
