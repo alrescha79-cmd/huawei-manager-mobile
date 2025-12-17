@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge, ThemedAlertHelper, WebViewLogin } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge, ThemedAlertHelper, WebViewLogin } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
@@ -364,9 +364,7 @@ export default function HomeScreen() {
       )}
 
       {/* Connection Status Card */}
-      <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title={t('home.connectionStatus')} />
-
+      <CollapsibleCard title={t('home.connectionStatus')}>
         <View style={styles.statusRow}>
           <View style={{ flex: 1 }}>
             <InfoRow
@@ -428,12 +426,10 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
-      </Card>
+      </CollapsibleCard>
 
       {/* Control Buttons Card */}
-      <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title={t('home.actions')} />
-
+      <CollapsibleCard title={t('home.actions')}>
         {/* Mobile Data Toggle */}
         <View style={styles.controlRow}>
           <View style={{ flex: 1 }}>
@@ -471,13 +467,11 @@ export default function HomeScreen() {
         <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
           {t('home.plmnScanHint')}
         </Text>
-      </Card>
+      </CollapsibleCard>
 
       {/* Signal Strength Card */}
       {signalInfo && (signalInfo.rssi || signalInfo.rsrp) ? (
-        <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title={t('home.signalInfo')} />
-
+        <CollapsibleCard title={t('home.signalInfo')}>
           {signalInfo.rssi && (
             <SignalMeter
               label="RSSI"
@@ -530,22 +524,19 @@ export default function HomeScreen() {
               {signalInfo.cellId && <InfoRow label={t('home.cellId')} value={signalInfo.cellId} />}
             </View>
           )}
-        </Card>
+        </CollapsibleCard>
       ) : (
-        <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title={t('home.signalInfo')} />
+        <CollapsibleCard title={t('home.signalInfo')}>
           <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>
             ⚠️ {t('home.noSignalAvailable')}{'\n'}
             {t('home.checkLogin')}
           </Text>
-        </Card>
+        </CollapsibleCard>
       )}
 
       {/* Traffic Statistics Card */}
       {trafficStats && (
-        <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title={t('home.trafficStats')} />
-
+        <CollapsibleCard title={t('home.trafficStats')}>
           {/* Speed Gauge */}
           <SpeedGauge
             downloadSpeed={trafficStats.currentDownloadRate}
@@ -591,7 +582,7 @@ export default function HomeScreen() {
               formatValue={formatBytes}
             />
           </View>
-        </Card>
+        </CollapsibleCard>
       )}
 
       {/* Hidden WebView for auto re-login when session expires */}
@@ -609,6 +600,13 @@ export default function HomeScreen() {
           }
         }}
         onLoginSuccess={handleReloginSuccess}
+        onTimeout={async () => {
+          // Session re-login timed out, redirect to login screen
+          setShowReloginWebView(false);
+          setSessionExpired(true);
+          await logout();
+          router.replace('/login');
+        }}
       />
     </ScrollView>
   );

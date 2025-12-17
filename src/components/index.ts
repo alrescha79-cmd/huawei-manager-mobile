@@ -1,5 +1,6 @@
 export { Card } from './Card';
 export { CardHeader } from './CardHeader';
+export { CollapsibleCard } from './CollapsibleCard';
 export { InfoRow } from './InfoRow';
 export { SignalBar } from './SignalBar';
 export { SignalMeter } from './SignalMeter';

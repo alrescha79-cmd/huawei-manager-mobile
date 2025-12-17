@@ -111,12 +111,77 @@ export class WiFiService {
 
   async kickDevice(macAddress: string): Promise<boolean> {
     try {
-      const kickData = `<?xml version="1.0" encoding="UTF-8"?>
+      // Huawei modems typically use MAC filter to block devices
+      // First, get current MAC filter settings
+      const currentFilterResponse = await this.apiClient.get('/api/wlan/mac-filter').catch(() => null);
+
+      // Get current blocked MACs
+      let currentBlockedMacs: string[] = [];
+      if (currentFilterResponse) {
+        const macListMatch = currentFilterResponse.match(/<MACAddress>(.*?)<\/MACAddress>/gs);
+        if (macListMatch) {
+          currentBlockedMacs = macListMatch.map(m => parseXMLValue(m, 'MACAddress')).filter(Boolean);
+        }
+      }
+
+      // Add the new MAC to the blocklist if not already there
+      if (!currentBlockedMacs.includes(macAddress)) {
+        currentBlockedMacs.push(macAddress);
+      }
+
+      // Build MAC filter entries XML
+      const macEntriesXml = currentBlockedMacs.map((mac, index) =>
+        `<Ssids><Index>${index}</Index><WifiMacFilterMac>${mac}</WifiMacFilterMac></Ssids>`
+      ).join('');
+
+      // Set MAC filter to deny mode with the blocked MACs
+      const filterData = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
-          <MacAddress>${macAddress}</MacAddress>
+          <WifiMacFilterEnable>1</WifiMacFilterEnable>
+          <WifiMacFilterPolicy>1</WifiMacFilterPolicy>
+          ${macEntriesXml}
         </request>`;
 
-      await this.apiClient.post('/api/wlan/kick-device', kickData);
+      await this.apiClient.post('/api/wlan/mac-filter', filterData);
+
+      // Also try the direct host control endpoint as fallback
+      try {
+        const hostControlData = `<?xml version="1.0" encoding="UTF-8"?>
+          <request>
+            <Hosts>
+              <Host>
+                <MacAddress>${macAddress}</MacAddress>
+                <IsBlock>1</IsBlock>
+              </Host>
+            </Hosts>
+          </request>`;
+        await this.apiClient.post('/api/wlan/host-setting', hostControlData);
+      } catch (e) {
+        // Host setting endpoint may not exist on all models
+      }
+
+      // Schedule removal from blocklist after 10 seconds
+      // This allows the device to be kicked but can reconnect later
+      setTimeout(async () => {
+        try {
+          const updatedMacs = currentBlockedMacs.filter(m => m !== macAddress);
+          const updatedMacEntriesXml = updatedMacs.map((mac, index) =>
+            `<Ssids><Index>${index}</Index><WifiMacFilterMac>${mac}</WifiMacFilterMac></Ssids>`
+          ).join('');
+
+          const unblockData = `<?xml version="1.0" encoding="UTF-8"?>
+            <request>
+              <WifiMacFilterEnable>${updatedMacs.length > 0 ? '1' : '0'}</WifiMacFilterEnable>
+              <WifiMacFilterPolicy>1</WifiMacFilterPolicy>
+              ${updatedMacEntriesXml}
+            </request>`;
+
+          await this.apiClient.post('/api/wlan/mac-filter', unblockData);
+        } catch (e) {
+          console.log('Failed to unblock MAC after timeout:', e);
+        }
+      }, 10000);
+
       return true;
     } catch (error) {
       console.error('Error kicking device:', error);

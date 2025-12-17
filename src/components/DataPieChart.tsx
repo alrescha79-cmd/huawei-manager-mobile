@@ -13,7 +13,8 @@ interface DataPieChartProps {
 
 /**
  * Donut chart showing download vs upload ratio
- * with legend below the chart
+ * Download = Blue (#007AFF)
+ * Upload = Orange (#FF9500)
  */
 export function DataPieChart({
     download,
@@ -26,17 +27,19 @@ export function DataPieChart({
     const { colors, typography, spacing } = useTheme();
 
     const total = download + upload;
-    const downloadPercent = total > 0 ? (download / total) * 100 : 50;
+    // Calculate UPLOAD percent - this is what we overlay on top of download
+    const uploadPercent = total > 0 ? (upload / total) * 100 : 50;
 
-    // Colors for download (blue) and upload (orange)
+    // Colors - Download is BLUE, Upload is ORANGE
     const downloadColor = '#007AFF';
     const uploadColor = '#FF9500';
 
-    // Calculate rotation for segments
-    const downloadDeg = (downloadPercent / 100) * 360;
-
     const size = compact ? 80 : 100;
-    const centerSize = compact ? 50 : 60;
+    const strokeWidth = compact ? 12 : 14;
+    const innerSize = size - (strokeWidth * 2);
+
+    // Calculate degrees for UPLOAD segment (we overlay upload on download background)
+    const uploadDeg = (uploadPercent / 100) * 360;
 
     return (
         <View style={[styles.container, compact && styles.containerCompact]}>
@@ -55,67 +58,75 @@ export function DataPieChart({
 
             {/* Donut Chart */}
             <View style={[styles.chartWrapper, { width: size, height: size }]}>
-                {/* Background (upload color - full circle) */}
+                {/* Download background (blue) - full ring */}
                 <View style={[
-                    styles.donutBackground,
+                    styles.ring,
                     {
                         width: size,
                         height: size,
                         borderRadius: size / 2,
-                        backgroundColor: uploadColor,
+                        borderWidth: strokeWidth,
+                        borderColor: downloadColor,
                     }
                 ]} />
 
-                {/* Download segment overlay */}
-                <View style={[styles.segmentContainer, { width: size, height: size }]}>
-                    {/* Left half of download */}
-                    {downloadDeg > 0 && (
-                        <View style={[styles.halfContainer, { width: size / 2, height: size, left: 0 }]}>
+                {/* Upload segment (orange) - overlay using clipping */}
+                {uploadPercent > 0 && (
+                    <>
+                        {/* First 180 degrees (left side) */}
+                        <View style={[styles.halfMask, { width: size / 2, height: size, left: 0 }]}>
                             <View style={[
-                                styles.halfCircle,
+                                styles.halfRing,
                                 {
-                                    width: size / 2,
+                                    width: size,
                                     height: size,
-                                    backgroundColor: downloadColor,
-                                    borderTopLeftRadius: size / 2,
-                                    borderBottomLeftRadius: size / 2,
-                                    transform: [{ rotate: `${Math.min(downloadDeg, 180)}deg` }],
-                                    transformOrigin: 'right center',
+                                    borderRadius: size / 2,
+                                    borderWidth: strokeWidth,
+                                    borderColor: uploadColor,
+                                    left: 0,
+                                    transform: [
+                                        { translateX: 0 },
+                                        { rotate: `${Math.min(uploadDeg, 180) - 90}deg` }
+                                    ],
                                 }
                             ]} />
                         </View>
-                    )}
-                    {/* Right half of download (if > 180deg) */}
-                    {downloadDeg > 180 && (
-                        <View style={[styles.halfContainer, { width: size / 2, height: size, right: 0 }]}>
-                            <View style={[
-                                styles.halfCircle,
-                                {
-                                    width: size / 2,
-                                    height: size,
-                                    backgroundColor: downloadColor,
-                                    borderTopRightRadius: size / 2,
-                                    borderBottomRightRadius: size / 2,
-                                    transform: [{ rotate: `${downloadDeg - 180}deg` }],
-                                    transformOrigin: 'left center',
-                                }
-                            ]} />
-                        </View>
-                    )}
-                </View>
 
-                {/* Center circle with total */}
+                        {/* Second 180 degrees (right side) - only if > 50% */}
+                        {uploadDeg > 180 && (
+                            <View style={[styles.halfMask, { width: size / 2, height: size, right: 0 }]}>
+                                <View style={[
+                                    styles.halfRing,
+                                    {
+                                        width: size,
+                                        height: size,
+                                        borderRadius: size / 2,
+                                        borderWidth: strokeWidth,
+                                        borderColor: uploadColor,
+                                        right: 0,
+                                        transform: [
+                                            { translateX: 0 },
+                                            { rotate: `${(uploadDeg - 180) + 90}deg` }
+                                        ],
+                                    }
+                                ]} />
+                            </View>
+                        )}
+                    </>
+                )}
+
+                {/* Center circle */}
                 <View style={[
                     styles.centerCircle,
                     {
-                        width: centerSize,
-                        height: centerSize,
-                        borderRadius: centerSize / 2,
-                        backgroundColor: colors.card
+                        width: innerSize,
+                        height: innerSize,
+                        borderRadius: innerSize / 2,
+                        backgroundColor: colors.card,
                     }
                 ]}>
                     <Text style={[
-                        compact ? typography.caption1 : typography.caption1,
+                        compact ? typography.caption1 : typography.body,
                         { color: colors.text, fontWeight: '700', textAlign: 'center' }
                     ]}>
                         {formatValue(total)}
@@ -123,7 +134,7 @@ export function DataPieChart({
                 </View>
             </View>
 
-            {/* Legend - horizontal below chart */}
+            {/* Legend */}
             <View style={styles.legend}>
                 <View style={styles.legendItem}>
                     <View style={[styles.legendDot, { backgroundColor: downloadColor }]} />
@@ -158,19 +169,17 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 8,
     },
-    donutBackground: {
+    ring: {
         position: 'absolute',
     },
-    segmentContainer: {
+    halfMask: {
         position: 'absolute',
         overflow: 'hidden',
     },
-    halfContainer: {
+    halfRing: {
         position: 'absolute',
-        overflow: 'hidden',
-    },
-    halfCircle: {
-        position: 'absolute',
+        borderLeftColor: 'transparent',
+        borderBottomColor: 'transparent',
     },
     centerCircle: {
         position: 'absolute',
@@ -195,3 +204,5 @@ const styles = StyleSheet.create({
 });
 
 export default DataPieChart;
+
+
