@@ -19,6 +19,7 @@
     "kick": "Kick"
   },
   "alerts": {
+    "newVersionAvailable": "A new version is available. Would you like to download it now?",
     "failedLoadModemData": "Failed to load modem data",
     "failedToggleData": "Failed to toggle mobile data",
     "failedLoadWifi": "Failed to load WiFi data",
@@ -150,7 +151,7 @@
     "unread": "Unread",
     "inbox": "Inbox",
     "sent": "Sent",
-    "newMessage": "New",
+    "newMessage": "New Message",
     "noMessages": "No messages",
     "smsNotSupported": "SMS might not be supported on this modem",
     "loadingMessages": "Loading messages...",
@@ -158,6 +159,7 @@
     "phoneNumberPlaceholder": "+1234567890",
     "message": "Message",
     "messagePlaceholder": "Type your message...",
+    "typeMessage": "Type your message...",
     "send": "Send",
     "deleteSms": "Delete SMS",
     "deleteConfirm": "Are you sure you want to delete this message?",
@@ -228,6 +230,7 @@
     "enterPassword": "Enter password",
     "saveCredentials": "Save Connection Settings",
     "modemSettingsSaved": "Modem settings saved successfully",
+    "currentWanIp": "Current WAN IP",
     "previousWanIp": "Previous WAN IP",
     "checkUpdate": "Check for Updates",
     "checkNow": "Check Now",

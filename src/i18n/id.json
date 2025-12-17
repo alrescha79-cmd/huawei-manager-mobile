@@ -19,6 +19,7 @@
     "kick": "Putuskan"
   },
   "alerts": {
+    "newVersionAvailable": "Versi baru tersedia. Apakah Anda ingin mengunduhnya sekarang?",
     "failedLoadModemData": "Gagal memuat data modem",
     "failedToggleData": "Gagal mengubah data seluler",
     "failedLoadWifi": "Gagal memuat data WiFi",
@@ -150,7 +151,7 @@
     "unread": "Belum Dibaca",
     "inbox": "Kotak Masuk",
     "sent": "Terkirim",
-    "newMessage": "Baru",
+    "newMessage": "Pesan Baru",
     "noMessages": "Tidak ada pesan",
     "smsNotSupported": "SMS mungkin tidak didukung pada modem ini",
     "loadingMessages": "Memuat pesan...",
@@ -158,6 +159,7 @@
     "phoneNumberPlaceholder": "+6281234567890",
     "message": "Pesan",
     "messagePlaceholder": "Ketik pesan Anda...",
+    "typeMessage": "Ketik pesan Anda...",
     "send": "Kirim",
     "deleteSms": "Hapus SMS",
     "deleteConfirm": "Yakin ingin menghapus pesan ini?",
@@ -228,6 +230,7 @@
     "enterPassword": "Masukkan kata sandi",
     "saveCredentials": "Simpan Pengaturan Koneksi",
     "modemSettingsSaved": "Pengaturan modem berhasil disimpan",
+    "currentWanIp": "IP WAN Saat Ini",
     "previousWanIp": "IP WAN Sebelumnya",
     "checkUpdate": "Cek Pembaruan",
     "checkNow": "Cek Sekarang",

@@ -55,7 +55,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { credentials, logout, login } = useAuthStore();
-  const { modemInfo, setModemInfo, previousWanIp, loadPreviousWanIp } = useModemStore();
+  const { modemInfo, setModemInfo } = useModemStore();
   const { themeMode, setThemeMode, language, setLanguage } = useThemeStore();
   const { t } = useTranslation();
 
@@ -104,8 +104,6 @@ export default function SettingsScreen() {
       loadAntennaMode(service);
       loadNetworkMode(service);
     }
-    // Load previous WAN IP from storage
-    loadPreviousWanIp();
   }, [credentials]);
 
   const loadModemInfo = async (service: ModemService) => {
@@ -350,6 +348,13 @@ export default function SettingsScreen() {
         latestVersion,
         downloadUrl: data.html_url || 'https://github.com/alrescha79-cmd/huawei-manager-mobile/releases',
       });
+
+      // Auto-hide "app is up to date" message after 3 seconds
+      if (!hasUpdate) {
+        setTimeout(() => {
+          setUpdateResult(null);
+        }, 3000);
+      }
     } catch (error) {
       console.error('Error checking for updates:', error);
       ThemedAlertHelper.alert(t('common.error'), t('settings.updateCheckFailed'));
@@ -650,9 +655,6 @@ export default function SettingsScreen() {
         <CardHeader title={t('settings.modemControl')} />
 
         <InfoRow label={t('settings.modemIp')} value={credentials?.modemIp || t('common.unknown')} />
-        {previousWanIp && (
-          <InfoRow label={t('settings.previousWanIp')} value={previousWanIp} />
-        )}
 
         {/* Collapsible Edit Credentials Section */}
         <TouchableOpacity

@@ -1,11 +1,14 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { useRouter, useSegments } from 'expo-router';
+import { Linking } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import Constants from 'expo-constants';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { ThemedAlert, setAlertListener } from '@/components';
+import { ThemedAlert, setAlertListener, ThemedAlertHelper } from '@/components';
+import { useTranslation } from '@/i18n';
 
 interface AlertButton {
   text: string;
@@ -20,10 +23,25 @@ interface AlertState {
   buttons?: AlertButton[];
 }
 
+// Version comparison helper
+const compareVersions = (v1: string, v2: string): number => {
+  const parts1 = v1.split('.').map(Number);
+  const parts2 = v2.split('.').map(Number);
+
+  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+    const p1 = parts1[i] || 0;
+    const p2 = parts2[i] || 0;
+    if (p1 > p2) return 1;
+    if (p1 < p2) return -1;
+  }
+  return 0;
+};
+
 export default function RootLayout() {
   const { colors } = useTheme();
   const { isAuthenticated, loadCredentials, autoLogin } = useAuthStore();
   const { initializeLanguage } = useThemeStore();
+  const { t } = useTranslation();
   const segments = useSegments();
   const router = useRouter();
 
@@ -35,10 +53,48 @@ export default function RootLayout() {
     buttons: [],
   });
 
+  // Check for updates from GitHub releases
+  const checkForUpdates = async () => {
+    try {
+      const response = await fetch(
+        'https://api.github.com/repos/alrescha79-cmd/huawei-manager-mobile/releases/latest'
+      );
+
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const latestVersion = data.tag_name?.replace(/^v/, '') || '';
+      const currentVersion = Constants.expoConfig?.version || '1.0.0';
+
+      // Check if update is available
+      if (compareVersions(latestVersion, currentVersion) > 0) {
+        const downloadUrl = data.html_url || 'https://github.com/alrescha79-cmd/huawei-manager-mobile/releases';
+
+        ThemedAlertHelper.alert(
+          t('settings.updateAvailable') + ` v${latestVersion}`,
+          t('alerts.newVersionAvailable'),
+          [
+            { text: t('common.cancel'), style: 'cancel' },
+            {
+              text: t('settings.downloadUpdate'),
+              onPress: () => Linking.openURL(downloadUrl)
+            },
+          ]
+        );
+      }
+    } catch (error) {
+      // Silently fail - don't interrupt user experience
+      console.log('Update check failed:', error);
+    }
+  };
+
   useEffect(() => {
     const initializeApp = async () => {
       // Auto-detect device language on first install
       initializeLanguage();
+
+      // Check for app updates
+      checkForUpdates();
 
       // Load auth credentials
       await loadCredentials();
