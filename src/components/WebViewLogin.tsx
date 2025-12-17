@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import {
     View,
     StyleSheet,
@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useTheme } from '@/theme';
+import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
 
 interface WebViewLoginProps {
@@ -21,7 +22,11 @@ interface WebViewLoginProps {
     hidden?: boolean; // If true, runs in background showing only loading overlay
     onClose: () => void;
     onLoginSuccess: () => void;
+    onTimeout?: () => void; // Called when login times out after max attempts
 }
+
+const LOGIN_TIMEOUT_MS = 30000; // 30 seconds timeout
+const MAX_RETRY_ATTEMPTS = 3;
 
 /**
  * WebView-based login component for Huawei modem.
@@ -35,15 +40,90 @@ export function WebViewLogin({
     hidden = false,
     onClose,
     onLoginSuccess,
+    onTimeout,
 }: WebViewLoginProps) {
     const { colors, typography, spacing } = useTheme();
+    const { t } = useTranslation();
     const webViewRef = useRef<WebView>(null);
     const [loading, setLoading] = useState(true);
     const [loginDetected, setLoginDetected] = useState(false);
     const [autoFillAttempted, setAutoFillAttempted] = useState(false);
 
+    // Timeout state
+    const [isTimedOut, setIsTimedOut] = useState(false);
+    const [retryAttempts, setRetryAttempts] = useState(0);
+    const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
     // Huawei modem login page URL
     const loginUrl = `http://${modemIp}/html/index.html`;
+
+    // Clear timeout on unmount or visibility change
+    useEffect(() => {
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, []);
+
+    // Start timeout timer when visible in hidden mode
+    useEffect(() => {
+        if (visible && hidden && !loginDetected && !isTimedOut) {
+            // Clear any existing timeout
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+
+            // Set new timeout
+            timeoutRef.current = setTimeout(() => {
+                setIsTimedOut(true);
+            }, LOGIN_TIMEOUT_MS);
+        }
+
+        return () => {
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        };
+    }, [visible, hidden, loginDetected, isTimedOut, retryAttempts]);
+
+    // Reset states when visibility changes
+    useEffect(() => {
+        if (!visible) {
+            setIsTimedOut(false);
+            setAutoFillAttempted(false);
+            setLoginDetected(false);
+            setRetryAttempts(0);
+            if (timeoutRef.current) {
+                clearTimeout(timeoutRef.current);
+            }
+        }
+    }, [visible]);
+
+    // Handle retry
+    const handleRetry = useCallback(() => {
+        if (retryAttempts >= MAX_RETRY_ATTEMPTS - 1) {
+            // Max retries reached, fallback to manual login
+            onTimeout?.();
+            onClose();
+            return;
+        }
+
+        setRetryAttempts(prev => prev + 1);
+        setIsTimedOut(false);
+        setAutoFillAttempted(false);
+
+        // Reload WebView
+        if (webViewRef.current) {
+            webViewRef.current.reload();
+        }
+    }, [retryAttempts, onTimeout, onClose]);
+
+    // Handle manual login fallback
+    const handleLoginManually = useCallback(() => {
+        onTimeout?.();
+        onClose();
+    }, [onTimeout, onClose]);
 
     // JavaScript to inject for auto-filling credentials
     const autoFillJs = username && password ? `
@@ -149,6 +229,10 @@ export function WebViewLogin({
             const message = JSON.parse(event.nativeEvent.data);
 
             if (message.type === 'LOGIN_SUCCESS') {
+                // Clear timeout on success
+                if (timeoutRef.current) {
+                    clearTimeout(timeoutRef.current);
+                }
                 setLoginDetected(true);
 
                 // Wait a bit to ensure cookies are set, then notify parent
@@ -156,7 +240,7 @@ export function WebViewLogin({
                     onLoginSuccess();
                 }, 500);
             } else if (message.type === 'LOGIN_ERROR') {
-                ThemedAlertHelper.alert('Login Failed', message.message || 'Please check your credentials');
+                ThemedAlertHelper.alert(t('webViewLogin.loginFailed'), message.message || t('webViewLogin.checkCredentials'));
             }
         } catch (error) {
         }
@@ -180,11 +264,11 @@ export function WebViewLogin({
     const handleClose = () => {
         if (!loginDetected) {
             ThemedAlertHelper.alert(
-                'Cancel Login',
-                'Are you sure you want to cancel?',
+                t('webViewLogin.cancelLogin'),
+                t('webViewLogin.cancelConfirm'),
                 [
-                    { text: 'No', style: 'cancel' },
-                    { text: 'Yes', onPress: onClose },
+                    { text: t('common.no'), style: 'cancel' },
+                    { text: t('common.yes'), onPress: onClose },
                 ]
             );
         } else {
@@ -201,44 +285,82 @@ export function WebViewLogin({
             onRequestClose={handleClose}
         >
             {hidden ? (
-                // Hidden mode - show only loading overlay
+                // Hidden mode - show loading overlay or timeout UI
                 <View style={[styles.hiddenContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
                     <View style={[styles.hiddenContent, { backgroundColor: colors.card }]}>
-                        <ActivityIndicator size="large" color={colors.primary} />
-                        <Text style={[typography.body, { color: colors.text, marginTop: spacing.md, textAlign: 'center' }]}>
-                            Logging in...
-                        </Text>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
-                            Please wait
-                        </Text>
+                        {isTimedOut ? (
+                            // Timeout UI with retry options
+                            <>
+                                <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm, textAlign: 'center' }]}>
+                                    ⏱ {t('webViewLogin.loginTimeout')}
+                                </Text>
+                                <Text style={[typography.body, { color: colors.text, marginBottom: spacing.md, textAlign: 'center' }]}>
+                                    {t('webViewLogin.timeoutMessage')}
+                                </Text>
+                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.lg, textAlign: 'center' }]}>
+                                    {t('webViewLogin.attempt')} {retryAttempts + 1}/{MAX_RETRY_ATTEMPTS}
+                                </Text>
+
+                                <TouchableOpacity
+                                    style={[styles.retryButton, { backgroundColor: colors.primary }]}
+                                    onPress={handleRetry}
+                                >
+                                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                                        {t('webViewLogin.tryAgain')}
+                                    </Text>
+                                </TouchableOpacity>
+
+                                <TouchableOpacity
+                                    style={[styles.manualButton, { borderColor: colors.border }]}
+                                    onPress={handleLoginManually}
+                                >
+                                    <Text style={[typography.body, { color: colors.text }]}>
+                                        {t('webViewLogin.loginManually')}
+                                    </Text>
+                                </TouchableOpacity>
+                            </>
+                        ) : (
+                            // Normal loading UI
+                            <>
+                                <ActivityIndicator size="large" color={colors.primary} />
+                                <Text style={[typography.body, { color: colors.text, marginTop: spacing.md, textAlign: 'center' }]}>
+                                    {t('webViewLogin.loggingIn')}
+                                </Text>
+                                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
+                                    {t('webViewLogin.pleaseWait')}
+                                </Text>
+                            </>
+                        )}
                     </View>
 
                     {/* WebView runs hidden but functional */}
-                    <View style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}>
-                        <WebView
-                            ref={webViewRef}
-                            source={{ uri: loginUrl }}
-                            onMessage={handleMessage}
-                            onNavigationStateChange={handleNavigationChange}
-                            onLoadStart={() => setLoading(true)}
-                            onLoadEnd={() => {
-                                setLoading(false);
-                                if (webViewRef.current) {
-                                    webViewRef.current.injectJavaScript(injectedJs);
-                                    if (autoFillJs && !autoFillAttempted) {
-                                        webViewRef.current.injectJavaScript(autoFillJs);
-                                        setAutoFillAttempted(true);
+                    {!isTimedOut && (
+                        <View style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}>
+                            <WebView
+                                ref={webViewRef}
+                                source={{ uri: loginUrl }}
+                                onMessage={handleMessage}
+                                onNavigationStateChange={handleNavigationChange}
+                                onLoadStart={() => setLoading(true)}
+                                onLoadEnd={() => {
+                                    setLoading(false);
+                                    if (webViewRef.current) {
+                                        webViewRef.current.injectJavaScript(injectedJs);
+                                        if (autoFillJs && !autoFillAttempted) {
+                                            webViewRef.current.injectJavaScript(autoFillJs);
+                                            setAutoFillAttempted(true);
+                                        }
                                     }
-                                }
-                            }}
-                            javaScriptEnabled={true}
-                            domStorageEnabled={true}
-                            sharedCookiesEnabled={true}
-                            thirdPartyCookiesEnabled={true}
-                            cacheEnabled={true}
-                            incognito={false}
-                        />
-                    </View>
+                                }}
+                                javaScriptEnabled={true}
+                                domStorageEnabled={true}
+                                sharedCookiesEnabled={true}
+                                thirdPartyCookiesEnabled={true}
+                                cacheEnabled={true}
+                                incognito={false}
+                            />
+                        </View>
+                    )}
                 </View>
             ) : (
                 // Normal mode - show full WebView UI
@@ -250,11 +372,11 @@ export function WebViewLogin({
                         paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 12 : 12
                     }]}>
                         <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                            <Text style={[typography.body, { color: colors.primary }]}>Cancel</Text>
+                            <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
 
                         <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>
-                            Modem Login
+                            {t('webViewLogin.title')}
                         </Text>
 
                         <View style={styles.closeButton} />
@@ -263,7 +385,7 @@ export function WebViewLogin({
                     {/* Instructions */}
                     <View style={[styles.instructions, { backgroundColor: colors.card }]}>
                         <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
-                            Please login to your modem. The app will detect when login is complete.
+                            {t('webViewLogin.instructions')}
                         </Text>
                     </View>
 
@@ -298,7 +420,7 @@ export function WebViewLogin({
                             <View style={styles.loadingContainer}>
                                 <ActivityIndicator size="large" color={colors.primary} />
                                 <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.md }]}>
-                                    Loading modem interface...
+                                    {t('webViewLogin.loadingModem')}
                                 </Text>
                             </View>
                         )}
@@ -306,9 +428,9 @@ export function WebViewLogin({
                             const { nativeEvent } = syntheticEvent;
                             console.error('[WebViewLogin] WebView error:', nativeEvent);
                             ThemedAlertHelper.alert(
-                                'Connection Error',
-                                'Could not connect to modem. Please check your WiFi connection.',
-                                [{ text: 'OK', onPress: onClose }]
+                                t('webViewLogin.connectionError'),
+                                t('webViewLogin.connectionErrorMessage'),
+                                [{ text: t('common.ok'), onPress: onClose }]
                             );
                         }}
                     />
@@ -324,16 +446,17 @@ export function WebViewLogin({
                     {loginDetected && (
                         <View style={[styles.successOverlay, { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
                             <Text style={[typography.title2, { color: '#fff', marginBottom: spacing.md }]}>
-                                ✓ Login Successful!
+                                ✓ {t('webViewLogin.loginSuccess')}
                             </Text>
                             <Text style={[typography.body, { color: '#fff' }]}>
-                                Redirecting...
+                                {t('webViewLogin.redirecting')}
                             </Text>
                         </View>
                     )}
                 </View>
-            )}
-        </Modal>
+            )
+            }
+        </Modal >
     );
 }
 
@@ -396,8 +519,25 @@ const styles = StyleSheet.create({
         padding: 32,
         borderRadius: 16,
         alignItems: 'center',
-        minWidth: 200,
+        minWidth: 250,
+    },
+    retryButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        borderRadius: 8,
+        marginBottom: 12,
+        minWidth: 180,
+        alignItems: 'center',
+    },
+    manualButton: {
+        paddingVertical: 12,
+        paddingHorizontal: 32,
+        borderRadius: 8,
+        borderWidth: 1,
+        minWidth: 180,
+        alignItems: 'center',
     },
 });
 
 export default WebViewLogin;
+

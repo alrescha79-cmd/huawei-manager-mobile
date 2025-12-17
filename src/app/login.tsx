@@ -250,6 +250,11 @@ export default function LoginScreen() {
         visible={showWebViewLogin}
         onClose={() => setShowWebViewLogin(false)}
         onLoginSuccess={handleWebViewLoginSuccess}
+        onTimeout={() => {
+          // Reset auto-login state so user can login manually
+          setShowWebViewLogin(false);
+          setShowWebViewOption(true);
+        }}
       />
     </KeyboardAvoidingView>
   );

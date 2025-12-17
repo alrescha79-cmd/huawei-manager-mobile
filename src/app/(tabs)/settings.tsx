@@ -55,7 +55,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
   const { credentials, logout, login } = useAuthStore();
-  const { modemInfo, setModemInfo } = useModemStore();
+  const { modemInfo, setModemInfo, previousWanIp, loadPreviousWanIp } = useModemStore();
   const { themeMode, setThemeMode, language, setLanguage } = useThemeStore();
   const { t } = useTranslation();
 
@@ -75,13 +75,20 @@ export default function SettingsScreen() {
   const [selectedBands, setSelectedBands] = useState<number[]>([]);
   const [isSavingBands, setIsSavingBands] = useState(false);
 
-  // Modem settings form state
   const [modemIp, setModemIp] = useState(credentials?.modemIp || '192.168.8.1');
   const [modemUsername, setModemUsername] = useState(credentials?.username || 'admin');
   const [modemPassword, setModemPassword] = useState(credentials?.password || '');
   const [isModemSettingsExpanded, setIsModemSettingsExpanded] = useState(false);
   const [isSavingModem, setIsSavingModem] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  // Update check state
+  const [isCheckingUpdate, setIsCheckingUpdate] = useState(false);
+  const [updateResult, setUpdateResult] = useState<{
+    hasUpdate: boolean;
+    latestVersion: string;
+    downloadUrl: string;
+  } | null>(null);
 
   // Check if credentials have changed
   const hasCredentialsChanges =
@@ -97,6 +104,8 @@ export default function SettingsScreen() {
       loadAntennaMode(service);
       loadNetworkMode(service);
     }
+    // Load previous WAN IP from storage
+    loadPreviousWanIp();
   }, [credentials]);
 
   const loadModemInfo = async (service: ModemService) => {
@@ -314,6 +323,53 @@ export default function SettingsScreen() {
     } finally {
       setIsSavingModem(false);
     }
+  };
+
+  const handleCheckUpdate = async () => {
+    setIsCheckingUpdate(true);
+    setUpdateResult(null);
+
+    try {
+      const response = await fetch(
+        'https://api.github.com/repos/alrescha79-cmd/huawei-manager-mobile/releases/latest'
+      );
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch release info');
+      }
+
+      const data = await response.json();
+      const latestVersion = data.tag_name?.replace(/^v/, '') || '';
+      const currentVersion = Constants.expoConfig?.version || '1.0.0';
+
+      // Compare versions
+      const hasUpdate = compareVersions(latestVersion, currentVersion) > 0;
+
+      setUpdateResult({
+        hasUpdate,
+        latestVersion,
+        downloadUrl: data.html_url || 'https://github.com/alrescha79-cmd/huawei-manager-mobile/releases',
+      });
+    } catch (error) {
+      console.error('Error checking for updates:', error);
+      ThemedAlertHelper.alert(t('common.error'), t('settings.updateCheckFailed'));
+    } finally {
+      setIsCheckingUpdate(false);
+    }
+  };
+
+  // Version comparison helper (returns 1 if v1 > v2, -1 if v1 < v2, 0 if equal)
+  const compareVersions = (v1: string, v2: string): number => {
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
+
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+      const p1 = parts1[i] || 0;
+      const p2 = parts2[i] || 0;
+      if (p1 > p2) return 1;
+      if (p1 < p2) return -1;
+    }
+    return 0;
   };
 
   return (
@@ -594,6 +650,9 @@ export default function SettingsScreen() {
         <CardHeader title={t('settings.modemControl')} />
 
         <InfoRow label={t('settings.modemIp')} value={credentials?.modemIp || t('common.unknown')} />
+        {previousWanIp && (
+          <InfoRow label={t('settings.previousWanIp')} value={previousWanIp} />
+        )}
 
         {/* Collapsible Edit Credentials Section */}
         <TouchableOpacity
@@ -714,8 +773,66 @@ export default function SettingsScreen() {
 
         <InfoRow label={t('settings.appVersion')} value={Constants.expoConfig?.version || '1.0.0'} />
 
+        {/* Check for Updates */}
+        <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
+          <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
+            {t('settings.checkUpdate')}
+          </Text>
+          <TouchableOpacity
+            style={[styles.updateButton, { backgroundColor: colors.primary }]}
+            onPress={handleCheckUpdate}
+            disabled={isCheckingUpdate}
+          >
+            {isCheckingUpdate ? (
+              <ActivityIndicator size="small" color="#FFFFFF" />
+            ) : (
+              <>
+                <MaterialIcons name="refresh" size={16} color="#FFFFFF" />
+                <Text style={[typography.caption1, { color: '#FFFFFF', marginLeft: 4 }]}>
+                  {t('settings.checkNow')}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
+
+        {/* Update Result */}
+        {updateResult && (
+          <View style={[styles.updateResult, {
+            backgroundColor: updateResult.hasUpdate ? colors.warning + '20' : colors.success + '20',
+            borderColor: updateResult.hasUpdate ? colors.warning : colors.success,
+          }]}>
+            {updateResult.hasUpdate ? (
+              <>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.xs }}>
+                  <MaterialIcons name="new-releases" size={20} color={colors.warning} />
+                  <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: spacing.xs }]}>
+                    {t('settings.updateAvailable')} v{updateResult.latestVersion}
+                  </Text>
+                </View>
+                <TouchableOpacity
+                  style={{ flexDirection: 'row', alignItems: 'center' }}
+                  onPress={() => Linking.openURL(updateResult.downloadUrl)}
+                >
+                  <Text style={[typography.body, { color: colors.primary }]}>
+                    {t('settings.downloadUpdate')}
+                  </Text>
+                  <MaterialIcons name="open-in-new" size={16} color={colors.primary} style={{ marginLeft: 4 }} />
+                </TouchableOpacity>
+              </>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <MaterialIcons name="check-circle" size={20} color={colors.success} />
+                <Text style={[typography.body, { color: colors.text, marginLeft: spacing.xs }]}>
+                  {t('settings.appUpToDate')}
+                </Text>
+              </View>
+            )}
+          </View>
+        )}
+
         {/* Developer with GitHub link */}
-        <View style={[styles.settingRow, { marginBottom: spacing.sm }]}>
+        <View style={[styles.settingRow, { marginBottom: spacing.sm, marginTop: spacing.md }]}>
           <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
             {t('settings.developer')}
           </Text>
@@ -909,6 +1026,19 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 10,
+    borderWidth: 1,
+  },
+  updateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  updateResult: {
+    marginTop: 12,
+    padding: 12,
+    borderRadius: 8,
     borderWidth: 1,
   },
 });

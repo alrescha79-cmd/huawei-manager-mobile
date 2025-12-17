@@ -227,7 +227,14 @@
     "enterModemIp": "Please enter modem IP address",
     "enterPassword": "Enter password",
     "saveCredentials": "Save Connection Settings",
-    "modemSettingsSaved": "Modem settings saved successfully"
+    "modemSettingsSaved": "Modem settings saved successfully",
+    "previousWanIp": "Previous WAN IP",
+    "checkUpdate": "Check for Updates",
+    "checkNow": "Check Now",
+    "updateAvailable": "Update Available:",
+    "downloadUpdate": "Download Update",
+    "appUpToDate": "App is up to date",
+    "updateCheckFailed": "Failed to check for updates"
   },
   "webViewLogin": {
     "title": "Modem Login",
@@ -237,7 +244,17 @@
     "connectionError": "Connection Error",
     "connectionErrorMessage": "Could not connect to modem. Please check your WiFi connection.",
     "loginSuccess": "Login Successful!",
-    "redirecting": "Redirecting..."
+    "redirecting": "Redirecting...",
+    "loginTimeout": "Login Timeout",
+    "timeoutMessage": "Auto-login is taking too long.",
+    "tryAgain": "Try Again",
+    "loginManually": "Login Manually",
+    "attempt": "Attempt",
+    "loggingIn": "Logging in...",
+    "pleaseWait": "Please wait...",
+    "loginFailed": "Login Failed",
+    "checkCredentials": "Please check your credentials",
+    "loadingModem": "Loading modem interface..."
   }
 }
 

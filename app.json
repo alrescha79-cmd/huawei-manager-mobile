@@ -16,7 +16,8 @@
             "usesCleartextTraffic": true
           }
         }
-      ]
+      ],
+      "expo-localization"
     ],
     "splash": {
       "image": "./assets/logo.png",

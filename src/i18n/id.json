@@ -1,7 +1,7 @@
 {
   "common": {
     "loading": "Memuat...",
-    "error": "Error",
+    "error": "Kesalahan",
     "success": "Berhasil",
     "cancel": "Batal",
     "save": "Simpan",
@@ -227,7 +227,14 @@
     "enterModemIp": "Masukkan alamat IP modem",
     "enterPassword": "Masukkan kata sandi",
     "saveCredentials": "Simpan Pengaturan Koneksi",
-    "modemSettingsSaved": "Pengaturan modem berhasil disimpan"
+    "modemSettingsSaved": "Pengaturan modem berhasil disimpan",
+    "previousWanIp": "IP WAN Sebelumnya",
+    "checkUpdate": "Cek Pembaruan",
+    "checkNow": "Cek Sekarang",
+    "updateAvailable": "Pembaruan Tersedia:",
+    "downloadUpdate": "Download Pembaruan",
+    "appUpToDate": "Aplikasi sudah terbaru",
+    "updateCheckFailed": "Gagal memeriksa pembaruan"
   },
   "webViewLogin": {
     "title": "Login Modem",
@@ -237,7 +244,17 @@
     "connectionError": "Kesalahan Koneksi",
     "connectionErrorMessage": "Tidak dapat terhubung ke modem. Periksa koneksi WiFi Anda.",
     "loginSuccess": "Login Berhasil!",
-    "redirecting": "Mengalihkan..."
+    "redirecting": "Mengalihkan...",
+    "loginTimeout": "Login Timeout",
+    "timeoutMessage": "Auto-login memakan waktu terlalu lama.",
+    "tryAgain": "Coba Lagi",
+    "loginManually": "Login Manual",
+    "attempt": "Percobaan",
+    "loggingIn": "Sedang login...",
+    "pleaseWait": "Mohon tunggu...",
+    "loginFailed": "Login Gagal",
+    "checkCredentials": "Periksa kredensial Anda",
+    "loadingModem": "Memuat antarmuka modem..."
   }
 }
 

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '@/stores/auth.store';
+import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
 import { ThemedAlert, setAlertListener } from '@/components';
 
@@ -22,6 +23,7 @@ interface AlertState {
 export default function RootLayout() {
   const { colors } = useTheme();
   const { isAuthenticated, loadCredentials, autoLogin } = useAuthStore();
+  const { initializeLanguage } = useThemeStore();
   const segments = useSegments();
   const router = useRouter();
 
@@ -34,7 +36,11 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    const initializeAuth = async () => {
+    const initializeApp = async () => {
+      // Auto-detect device language on first install
+      initializeLanguage();
+
+      // Load auth credentials
       await loadCredentials();
       // Auto-login if credentials exist
       const credentials = useAuthStore.getState().credentials;
@@ -42,7 +48,7 @@ export default function RootLayout() {
         await autoLogin();
       }
     };
-    initializeAuth();
+    initializeApp();
   }, []);
 
   // Set up global alert listener
