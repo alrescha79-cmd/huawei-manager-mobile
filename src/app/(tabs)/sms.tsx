@@ -239,21 +239,27 @@ export default function SMSScreen() {
         onRequestClose={() => setShowCompose(false)}
       >
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-          <View style={styles.modalHeader}>
+          <View style={[
+            styles.modalHeader,
+            {
+              borderBottomColor: colors.border,
+              paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 12 : 16
+            }
+          ]}>
             <TouchableOpacity onPress={() => setShowCompose(false)}>
               <Text style={[typography.body, { color: colors.primary }]}>
-                Cancel
+                {t('common.cancel')}
               </Text>
             </TouchableOpacity>
             <Text style={[typography.headline, { color: colors.text }]}>
-              New Message
+              {t('sms.newMessage')}
             </Text>
             <View style={{ width: 60 }} />
           </View>
 
           <ScrollView style={styles.modalContent}>
             <Input
-              label="Phone Number"
+              label={t('sms.phoneNumber')}
               value={newPhone}
               onChangeText={setNewPhone}
               placeholder="+1234567890"
@@ -261,17 +267,17 @@ export default function SMSScreen() {
             />
 
             <Input
-              label="Message"
+              label={t('sms.message')}
               value={newMessage}
               onChangeText={setNewMessage}
-              placeholder="Type your message..."
+              placeholder={t('sms.typeMessage')}
               multiline
               numberOfLines={6}
               style={{ height: 120 }}
             />
 
             <Button
-              title="Send"
+              title={t('sms.send')}
               onPress={handleSend}
               loading={isSending}
               disabled={isSending || !newPhone || !newMessage}
