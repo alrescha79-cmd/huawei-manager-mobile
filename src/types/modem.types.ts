@@ -139,3 +139,79 @@ export interface WanInfo {
 export interface MobileDataStatus {
   dataswitch: boolean;
 }
+
+// Network Settings Types
+export interface MobileNetworkSettings {
+  mobileData: boolean;
+  dataRoaming: boolean;
+  autoSelectNetwork: boolean;
+}
+
+export interface APNProfile {
+  id: string;
+  name: string;
+  apn: string;
+  username: string;
+  password: string;
+  authType: 'none' | 'pap' | 'chap' | 'pap_chap';
+  ipType: 'ipv4' | 'ipv6' | 'ipv4v6';
+  isDefault: boolean;
+}
+
+export interface EthernetSettings {
+  connectionMode: 'auto' | 'lan_only' | 'pppoe' | 'dynamic_ip' | 'pppoe_dynamic';
+  status: EthernetStatus;
+}
+
+export interface EthernetStatus {
+  connected: boolean;
+  ipAddress: string;
+  gateway: string;
+  netmask: string;
+  dns1: string;
+  dns2: string;
+  macAddress: string;
+}
+
+export interface PPPoEProfile {
+  id: string;
+  name: string;
+  username: string;
+  password: string;
+  serviceName: string;
+  mtu: number;
+  isDefault: boolean;
+}
+
+export interface DynamicIPProfile {
+  id: string;
+  name: string;
+  hostname: string;
+  mtu: number;
+  isDefault: boolean;
+}
+
+// Time Settings Types
+export interface TimeSettings {
+  currentTime: string;
+  sntpEnabled: boolean;
+  ntpServer: string;
+  ntpServerBackup: string;
+  timezone: string;
+}
+
+// Parental Control Types
+export interface ParentalControlSettings {
+  enabled: boolean;
+  profiles: ParentalControlProfile[];
+}
+
+export interface ParentalControlProfile {
+  id: string;
+  name: string;
+  deviceMacs: string[];
+  startTime: string; // HH:mm format
+  endTime: string; // HH:mm format
+  activeDays: number[]; // 0-6, 0=Sunday
+  enabled: boolean;
+}

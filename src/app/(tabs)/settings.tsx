@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   Modal,
   TextInput,
+  Switch,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -21,6 +22,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
+import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
 
 const ANTENNA_MODES = [
@@ -51,6 +53,34 @@ const LTE_BANDS = [
   { bit: 40, name: 'B41', freq: '2500 MHz TDD' },
 ];
 
+// NTP Servers
+const NTP_SERVERS = [
+  'pool.ntp.org',
+  'time.google.com',
+  'time.cloudflare.com',
+  'time.windows.com',
+  'time.apple.com',
+  'ntp.ubuntu.com',
+];
+
+// Timezones
+const TIMEZONES = [
+  'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5',
+  'UTC-4', 'UTC-3', 'UTC-2', 'UTC-1', 'UTC+0', 'UTC+1', 'UTC+2', 'UTC+3',
+  'UTC+4', 'UTC+5', 'UTC+5:30', 'UTC+6', 'UTC+7', 'UTC+8', 'UTC+9', 'UTC+10',
+  'UTC+11', 'UTC+12',
+];
+
+// Ethernet connection modes
+const ETHERNET_MODES = [
+  { value: 'auto', labelKey: 'networkSettings.modeAuto' },
+  { value: 'lan_only', labelKey: 'networkSettings.modeLanOnly' },
+  { value: 'pppoe', labelKey: 'networkSettings.modePppoe' },
+  { value: 'dynamic_ip', labelKey: 'networkSettings.modeDynamicIp' },
+  { value: 'pppoe_dynamic', labelKey: 'networkSettings.modePppoeDynamic' },
+];
+
+
 export default function SettingsScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
@@ -60,6 +90,7 @@ export default function SettingsScreen() {
   const { t } = useTranslation();
 
   const [modemService, setModemService] = useState<ModemService | null>(null);
+  const [networkSettingsService, setNetworkSettingsService] = useState<NetworkSettingsService | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [antennaMode, setAntennaMode] = useState('auto');
   const [showAntennaDropdown, setShowAntennaDropdown] = useState(false);
@@ -90,21 +121,70 @@ export default function SettingsScreen() {
     downloadUrl: string;
   } | null>(null);
 
+  // Mobile Network state
+  const [mobileDataEnabled, setMobileDataEnabled] = useState(false);
+  const [dataRoamingEnabled, setDataRoamingEnabled] = useState(false);
+  const [autoNetworkEnabled, setAutoNetworkEnabled] = useState(true);
+  const [isTogglingMobileData, setIsTogglingMobileData] = useState(false);
+  const [isTogglingRoaming, setIsTogglingRoaming] = useState(false);
+  const [isTogglingAutoNetwork, setIsTogglingAutoNetwork] = useState(false);
+
+  // Time Settings state
+  const [currentTime, setCurrentTime] = useState('');
+  const [sntpEnabled, setSntpEnabled] = useState(true);
+  const [ntpServer, setNtpServer] = useState('pool.ntp.org');
+  const [ntpServerBackup, setNtpServerBackup] = useState('time.google.com');
+  const [timezone, setTimezone] = useState('UTC+7');
+  const [showNtpDropdown, setShowNtpDropdown] = useState(false);
+  const [showNtpBackupDropdown, setShowNtpBackupDropdown] = useState(false);
+  const [showTimezoneDropdown, setShowTimezoneDropdown] = useState(false);
+  const [isTogglingSntp, setIsTogglingSntp] = useState(false);
+
+  // Ethernet state
+  const [ethernetMode, setEthernetMode] = useState<'auto' | 'lan_only' | 'pppoe' | 'dynamic_ip' | 'pppoe_dynamic'>('auto');
+  const [showEthernetDropdown, setShowEthernetDropdown] = useState(false);
+  const [isChangingEthernet, setIsChangingEthernet] = useState(false);
+  const [ethernetStatus, setEthernetStatus] = useState({
+    connected: false,
+    ipAddress: '',
+    gateway: '',
+    netmask: '',
+    dns1: '',
+    dns2: '',
+    macAddress: '',
+  });
+
   // Check if credentials have changed
   const hasCredentialsChanges =
     modemIp !== (credentials?.modemIp || '192.168.8.1') ||
     modemUsername !== (credentials?.username || 'admin') ||
     modemPassword !== (credentials?.password || '');
 
+
   useEffect(() => {
     if (credentials?.modemIp) {
       const service = new ModemService(credentials.modemIp);
+      const netService = new NetworkSettingsService(credentials.modemIp);
       setModemService(service);
+      setNetworkSettingsService(netService);
       loadModemInfo(service);
       loadAntennaMode(service);
       loadNetworkMode(service);
+      loadMobileNetworkSettings(service);
+      loadTimeSettings(service);
+      loadEthernetSettings(netService);
     }
   }, [credentials]);
+
+  // Time update interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (modemService) {
+        modemService.getCurrentTime().then(time => setCurrentTime(time)).catch(() => { });
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [modemService]);
 
   const loadModemInfo = async (service: ModemService) => {
     try {
@@ -114,6 +194,63 @@ export default function SettingsScreen() {
       console.error('Error loading modem info:', error);
     }
   };
+
+  const loadMobileNetworkSettings = async (service: ModemService) => {
+    try {
+      const [mobileData, roaming, autoNetwork] = await Promise.all([
+        service.getMobileDataStatus(),
+        service.getDataRoamingStatus(),
+        service.getAutoNetworkStatus(),
+      ]);
+      setMobileDataEnabled(mobileData.dataswitch);
+      setDataRoamingEnabled(roaming);
+      setAutoNetworkEnabled(autoNetwork);
+    } catch (error) {
+      console.error('Error loading mobile network settings:', error);
+    }
+  };
+
+  const loadTimeSettings = async (service: ModemService) => {
+    try {
+      const settings = await service.getTimeSettings();
+      setCurrentTime(settings.currentTime);
+      setSntpEnabled(settings.sntpEnabled);
+      setNtpServer(settings.ntpServer);
+      setNtpServerBackup(settings.ntpServerBackup);
+      setTimezone(settings.timezone);
+    } catch (error) {
+      console.error('Error loading time settings:', error);
+    }
+  };
+
+  const loadEthernetSettings = async (service: NetworkSettingsService) => {
+    try {
+      const settings = await service.getEthernetSettings();
+      setEthernetMode(settings.connectionMode);
+      setEthernetStatus(settings.status);
+    } catch (error) {
+      console.error('Error loading ethernet settings:', error);
+    }
+  };
+
+  const handleEthernetModeChange = async (mode: typeof ethernetMode) => {
+    if (!networkSettingsService || isChangingEthernet) return;
+    setIsChangingEthernet(true);
+    setShowEthernetDropdown(false);
+    try {
+      await networkSettingsService.setEthernetConnectionMode(mode);
+      setEthernetMode(mode);
+      // Refresh status after mode change
+      const settings = await networkSettingsService.getEthernetSettings();
+      setEthernetStatus(settings.status);
+      ThemedAlertHelper.alert(t('common.success'), t('networkSettings.profileSaved'));
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+    } finally {
+      setIsChangingEthernet(false);
+    }
+  };
+
 
   const loadAntennaMode = async (service: ModemService) => {
     try {
@@ -174,6 +311,93 @@ export default function SettingsScreen() {
       ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeNetwork'));
     } finally {
       setIsChangingNetwork(false);
+    }
+  };
+
+  // Mobile Network Handlers
+  const handleToggleMobileData = async (enabled: boolean) => {
+    if (!modemService || isTogglingMobileData) return;
+    setIsTogglingMobileData(true);
+    try {
+      await modemService.toggleMobileData(enabled);
+      setMobileDataEnabled(enabled);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
+    } finally {
+      setIsTogglingMobileData(false);
+    }
+  };
+
+  const handleToggleDataRoaming = async (enabled: boolean) => {
+    if (!modemService || isTogglingRoaming) return;
+    setIsTogglingRoaming(true);
+    try {
+      await modemService.setDataRoaming(enabled);
+      setDataRoamingEnabled(enabled);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeNetwork'));
+    } finally {
+      setIsTogglingRoaming(false);
+    }
+  };
+
+  const handleToggleAutoNetwork = async (enabled: boolean) => {
+    if (!modemService || isTogglingAutoNetwork) return;
+    setIsTogglingAutoNetwork(true);
+    try {
+      await modemService.setAutoNetwork(enabled);
+      setAutoNetworkEnabled(enabled);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeNetwork'));
+    } finally {
+      setIsTogglingAutoNetwork(false);
+    }
+  };
+
+  // Time Settings Handlers
+  const handleToggleSntp = async (enabled: boolean) => {
+    if (!modemService || isTogglingSntp) return;
+    setIsTogglingSntp(true);
+    try {
+      await modemService.setTimeSettings({ sntpEnabled: enabled });
+      setSntpEnabled(enabled);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+    } finally {
+      setIsTogglingSntp(false);
+    }
+  };
+
+  const handleNtpServerChange = async (server: string) => {
+    if (!modemService) return;
+    setShowNtpDropdown(false);
+    try {
+      await modemService.setTimeSettings({ ntpServer: server });
+      setNtpServer(server);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+    }
+  };
+
+  const handleNtpBackupChange = async (server: string) => {
+    if (!modemService) return;
+    setShowNtpBackupDropdown(false);
+    try {
+      await modemService.setTimeSettings({ ntpServerBackup: server });
+      setNtpServerBackup(server);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+    }
+  };
+
+  const handleTimezoneChange = async (tz: string) => {
+    if (!modemService) return;
+    setShowTimezoneDropdown(false);
+    try {
+      await modemService.setTimeSettings({ timezone: tz });
+      setTimezone(tz);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
     }
   };
 
@@ -459,6 +683,218 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* Separator */}
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+        {/* Time Settings Section */}
+        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: spacing.sm }]}>
+          {t('timeSettings.title')}
+        </Text>
+
+        {/* Current Time */}
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.currentTime')}</Text>
+          </View>
+          <Text style={[typography.body, { color: colors.primary, fontFamily: 'monospace' }]}>
+            {currentTime ? new Date(currentTime).toLocaleString() : '--:--:--'}
+          </Text>
+        </View>
+
+        {/* SNTP Switch */}
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.sntp')}</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {t('timeSettings.sntpHint')}
+            </Text>
+          </View>
+          {isTogglingSntp ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <Switch
+              value={sntpEnabled}
+              onValueChange={handleToggleSntp}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={sntpEnabled ? colors.primary : colors.textSecondary}
+            />
+          )}
+        </View>
+
+        {/* NTP Server */}
+        <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.ntpServer')}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowNtpDropdown(!showNtpDropdown)}
+          >
+            <Text style={[typography.body, { color: colors.text }]}>{ntpServer}</Text>
+            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {showNtpDropdown && (
+          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {NTP_SERVERS.map((server) => (
+              <TouchableOpacity
+                key={server}
+                style={[styles.dropdownItem, {
+                  backgroundColor: ntpServer === server ? colors.primary + '20' : 'transparent'
+                }]}
+                onPress={() => handleNtpServerChange(server)}
+              >
+                <Text style={[typography.body, {
+                  color: ntpServer === server ? colors.primary : colors.text
+                }]}>
+                  {server}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* NTP Server Backup */}
+        <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.ntpServerBackup')}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowNtpBackupDropdown(!showNtpBackupDropdown)}
+          >
+            <Text style={[typography.body, { color: colors.text }]}>{ntpServerBackup}</Text>
+            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {showNtpBackupDropdown && (
+          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {NTP_SERVERS.map((server) => (
+              <TouchableOpacity
+                key={server}
+                style={[styles.dropdownItem, {
+                  backgroundColor: ntpServerBackup === server ? colors.primary + '20' : 'transparent'
+                }]}
+                onPress={() => handleNtpBackupChange(server)}
+              >
+                <Text style={[typography.body, {
+                  color: ntpServerBackup === server ? colors.primary : colors.text
+                }]}>
+                  {server}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Timezone */}
+        <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.timeZone')}</Text>
+          </View>
+          <TouchableOpacity
+            style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+            onPress={() => setShowTimezoneDropdown(!showTimezoneDropdown)}
+          >
+            <Text style={[typography.body, { color: colors.text }]}>{timezone}</Text>
+            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+          </TouchableOpacity>
+        </View>
+
+        {showTimezoneDropdown && (
+          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, maxHeight: 200 }]}>
+            <ScrollView nestedScrollEnabled>
+              {TIMEZONES.map((tz) => (
+                <TouchableOpacity
+                  key={tz}
+                  style={[styles.dropdownItem, {
+                    backgroundColor: timezone === tz ? colors.primary + '20' : 'transparent'
+                  }]}
+                  onPress={() => handleTimezoneChange(tz)}
+                >
+                  <Text style={[typography.body, {
+                    color: timezone === tz ? colors.primary : colors.text
+                  }]}>
+                    {tz}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </View>
+        )}
+      </Card>
+
+      {/* Network Settings Card */}
+      <Card style={{ marginBottom: spacing.md }}>
+        <CardHeader title={t('networkSettings.title')} />
+
+        {/* Mobile Network Section */}
+        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: spacing.sm }]}>
+          {t('networkSettings.mobileNetwork')}
+        </Text>
+
+        {/* Mobile Data Switch */}
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.mobileData')}</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {t('networkSettings.mobileDataHint')}
+            </Text>
+          </View>
+          {isTogglingMobileData ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <Switch
+              value={mobileDataEnabled}
+              onValueChange={handleToggleMobileData}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={mobileDataEnabled ? colors.primary : colors.textSecondary}
+            />
+          )}
+        </View>
+
+        {/* Data Roaming Switch */}
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.dataRoaming')}</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {t('networkSettings.dataRoamingHint')}
+            </Text>
+          </View>
+          {isTogglingRoaming ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <Switch
+              value={dataRoamingEnabled}
+              onValueChange={handleToggleDataRoaming}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={dataRoamingEnabled ? colors.primary : colors.textSecondary}
+            />
+          )}
+        </View>
+
+        {/* Auto Select Network Switch */}
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.autoSelectNetwork')}</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {t('networkSettings.autoSelectNetworkHint')}
+            </Text>
+          </View>
+          {isTogglingAutoNetwork ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <Switch
+              value={autoNetworkEnabled}
+              onValueChange={handleToggleAutoNetwork}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={autoNetworkEnabled ? colors.primary : colors.textSecondary}
+            />
+          )}
+        </View>
+
         {/* Network Mode Settings */}
         <View style={[styles.settingRow, { marginTop: spacing.md }]}>
           <View style={{ flex: 1 }}>
@@ -528,6 +964,102 @@ export default function SettingsScreen() {
             <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
+
+        {/* Separator */}
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+        {/* Ethernet Section */}
+        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: spacing.sm }]}>
+          {t('networkSettings.ethernet')}
+        </Text>
+
+        {/* Connection Mode */}
+        <View style={styles.settingRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.connectionMode')}</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {t('networkSettings.connectionModeHint')}
+            </Text>
+          </View>
+          {isChangingEthernet ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <TouchableOpacity
+              style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+              onPress={() => setShowEthernetDropdown(!showEthernetDropdown)}
+            >
+              <MaterialIcons name="settings-ethernet" size={18} color={colors.primary} />
+              <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
+                {(() => { const mode = ETHERNET_MODES.find(m => m.value === ethernetMode); return mode ? t(mode.labelKey) : t('networkSettings.modeAuto'); })()}
+              </Text>
+              <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {showEthernetDropdown && (
+          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+            {ETHERNET_MODES.map((mode) => (
+              <TouchableOpacity
+                key={mode.value}
+                style={[styles.dropdownItem, {
+                  backgroundColor: ethernetMode === mode.value ? colors.primary + '20' : 'transparent'
+                }]}
+                onPress={() => handleEthernetModeChange(mode.value as typeof ethernetMode)}
+              >
+                <MaterialIcons
+                  name="settings-ethernet"
+                  size={20}
+                  color={ethernetMode === mode.value ? colors.primary : colors.text}
+                />
+                <Text style={[typography.body, {
+                  color: ethernetMode === mode.value ? colors.primary : colors.text,
+                  marginLeft: 10
+                }]}>
+                  {t(mode.labelKey)}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
+
+        {/* Ethernet Status */}
+        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.ethernetStatus')}</Text>
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+            <View style={{
+              width: 10,
+              height: 10,
+              borderRadius: 5,
+              backgroundColor: ethernetStatus.connected ? colors.success : colors.error,
+            }} />
+            <Text style={[typography.body, { color: ethernetStatus.connected ? colors.success : colors.error }]}>
+              {ethernetStatus.connected ? t('networkSettings.connected') : t('networkSettings.disconnected')}
+            </Text>
+          </View>
+        </View>
+
+        {ethernetStatus.connected && (
+          <View style={{ marginTop: spacing.sm, paddingLeft: spacing.md }}>
+            {ethernetStatus.ipAddress && (
+              <InfoRow label={t('networkSettings.ipAddress')} value={ethernetStatus.ipAddress} />
+            )}
+            {ethernetStatus.gateway && (
+              <InfoRow label={t('networkSettings.gateway')} value={ethernetStatus.gateway} />
+            )}
+            {ethernetStatus.netmask && (
+              <InfoRow label={t('networkSettings.netmask')} value={ethernetStatus.netmask} />
+            )}
+            {ethernetStatus.dns1 && (
+              <InfoRow label={t('networkSettings.dns')} value={`${ethernetStatus.dns1}${ethernetStatus.dns2 ? ', ' + ethernetStatus.dns2 : ''}`} />
+            )}
+            {ethernetStatus.macAddress && (
+              <InfoRow label={t('networkSettings.macAddress')} value={ethernetStatus.macAddress} />
+            )}
+          </View>
+        )}
       </Card>
 
       {/* App Settings Card */}

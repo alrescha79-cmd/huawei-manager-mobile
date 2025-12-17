@@ -11,6 +11,7 @@ import {
   TextInput,
   TouchableOpacity,
   ActivityIndicator,
+  Modal,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -53,6 +54,31 @@ export default function WiFiScreen() {
   // Guest WiFi state
   const [guestWifiEnabled, setGuestWifiEnabled] = useState(false);
   const [isTogglingGuest, setIsTogglingGuest] = useState(false);
+
+  // Parental Control state
+  const [parentalControlEnabled, setParentalControlEnabled] = useState(false);
+  const [isTogglingParental, setIsTogglingParental] = useState(false);
+  const [parentalProfiles, setParentalProfiles] = useState<{
+    id: string;
+    name: string;
+    deviceMacs: string[];
+    startTime: string;
+    endTime: string;
+    activeDays: number[];
+    enabled: boolean;
+  }[]>([]);
+  const [isParentalExpanded, setIsParentalExpanded] = useState(false);
+
+  // Parental Control Profile Modal state
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState('');
+  const [profileStartTime, setProfileStartTime] = useState('08:00');
+  const [profileEndTime, setProfileEndTime] = useState('22:00');
+  const [profileDays, setProfileDays] = useState<number[]>([1, 2, 3, 4, 5]); // Mon-Fri default
+  const [profileDevices, setProfileDevices] = useState<string[]>([]);
+  const [profileEnabled, setProfileEnabled] = useState(true);
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
 
   // Collapse state for edit form
   const [isEditExpanded, setIsEditExpanded] = useState(false);
@@ -98,15 +124,19 @@ export default function WiFiScreen() {
     try {
       setIsRefreshing(true);
 
-      const [devices, settings, guestSettings] = await Promise.all([
+      const [devices, settings, guestSettings, parentalEnabled, profiles] = await Promise.all([
         service.getConnectedDevices(),
         service.getWiFiSettings(),
         service.getGuestWiFiSettings(),
+        service.getParentalControlEnabled(),
+        service.getParentalControlProfiles(),
       ]);
 
       setConnectedDevices(devices);
       setWiFiSettings(settings);
       setGuestWifiEnabled(guestSettings.enabled);
+      setParentalControlEnabled(parentalEnabled);
+      setParentalProfiles(profiles);
 
     } catch (error) {
       console.error('Error loading WiFi data:', error);
@@ -115,6 +145,7 @@ export default function WiFiScreen() {
       setIsRefreshing(false);
     }
   };
+
 
   // Silent background refresh
   const loadDataSilent = async (service: WiFiService) => {
@@ -213,6 +244,127 @@ export default function WiFiScreen() {
     const mode = SECURITY_MODES.find(m => m.value === value);
     return mode ? t(mode.labelKey) : value;
   };
+
+  // Parental Control Handlers
+  const handleToggleParentalControl = async (enabled: boolean) => {
+    if (!wifiService || isTogglingParental) return;
+    setIsTogglingParental(true);
+    try {
+      await wifiService.toggleParentalControl(enabled);
+      setParentalControlEnabled(enabled);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+    } finally {
+      setIsTogglingParental(false);
+    }
+  };
+
+  const getDayName = (day: number): string => {
+    const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    return t(`parentalControl.${days[day]}`);
+  };
+
+  const openAddProfileModal = () => {
+    setEditingProfile(null);
+    setProfileName('');
+    setProfileStartTime('08:00');
+    setProfileEndTime('22:00');
+    setProfileDays([1, 2, 3, 4, 5]);
+    setProfileDevices([]);
+    setProfileEnabled(true);
+    setShowProfileModal(true);
+  };
+
+  const openEditProfileModal = (profile: typeof parentalProfiles[0]) => {
+    setEditingProfile(profile.id);
+    setProfileName(profile.name);
+    setProfileStartTime(profile.startTime);
+    setProfileEndTime(profile.endTime);
+    setProfileDays([...profile.activeDays]);
+    setProfileDevices([...profile.deviceMacs]);
+    setProfileEnabled(profile.enabled);
+    setShowProfileModal(true);
+  };
+
+  const toggleProfileDay = (day: number) => {
+    setProfileDays(prev =>
+      prev.includes(day)
+        ? prev.filter(d => d !== day)
+        : [...prev, day].sort()
+    );
+  };
+
+  const toggleProfileDevice = (mac: string) => {
+    setProfileDevices(prev =>
+      prev.includes(mac)
+        ? prev.filter(m => m !== mac)
+        : [...prev, mac]
+    );
+  };
+
+  const handleSaveProfile = async () => {
+    if (!wifiService || isSavingProfile) return;
+
+    if (!profileName.trim()) {
+      ThemedAlertHelper.alert(t('common.error'), t('parentalControl.profileName'));
+      return;
+    }
+
+    if (profileDays.length === 0) {
+      ThemedAlertHelper.alert(t('common.error'), t('parentalControl.selectAtLeastOneDay'));
+      return;
+    }
+
+    setIsSavingProfile(true);
+    try {
+      const profileData = {
+        name: profileName.trim(),
+        deviceMacs: profileDevices,
+        startTime: profileStartTime,
+        endTime: profileEndTime,
+        activeDays: profileDays,
+        enabled: profileEnabled,
+      };
+
+      if (editingProfile) {
+        await wifiService.updateParentalControlProfile({ id: editingProfile, ...profileData });
+      } else {
+        await wifiService.createParentalControlProfile(profileData);
+      }
+
+      ThemedAlertHelper.alert(t('common.success'), t('parentalControl.profileSaved'));
+      setShowProfileModal(false);
+      handleRefresh();
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const handleDeleteProfile = (profileId: string, profileName: string) => {
+    ThemedAlertHelper.alert(
+      t('parentalControl.deleteProfile'),
+      t('parentalControl.deleteConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await wifiService?.deleteParentalControlProfile(profileId);
+              ThemedAlertHelper.alert(t('common.success'), t('parentalControl.profileDeleted'));
+              handleRefresh();
+            } catch (error) {
+              ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
 
   return (
     <ScrollView
@@ -449,6 +601,271 @@ export default function WiFiScreen() {
           ))
         )}
       </Card>
+
+      {/* Parental Control Card */}
+      <Card style={{ marginTop: spacing.md }}>
+        <CardHeader title={t('parentalControl.title')} />
+
+        {/* Enable/Disable Switch */}
+        <View style={styles.toggleRow}>
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('parentalControl.title')}</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {t('parentalControl.enableHint')}
+            </Text>
+          </View>
+          {isTogglingParental ? (
+            <ActivityIndicator color={colors.primary} />
+          ) : (
+            <Switch
+              value={parentalControlEnabled}
+              onValueChange={handleToggleParentalControl}
+              trackColor={{ false: colors.border, true: colors.primary + '80' }}
+              thumbColor={parentalControlEnabled ? colors.primary : colors.textSecondary}
+            />
+          )}
+        </View>
+
+        {/* Separator */}
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+        {/* Profiles Section - Collapsible */}
+        <TouchableOpacity
+          style={[styles.collapseHeader, { borderColor: colors.border }]}
+          onPress={() => setIsParentalExpanded(!isParentalExpanded)}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+              {t('parentalControl.profiles')}
+            </Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+              {parentalProfiles.length > 0
+                ? `${parentalProfiles.length} ${t('parentalControl.profiles').toLowerCase()}`
+                : t('parentalControl.noProfiles')}
+            </Text>
+          </View>
+          <MaterialIcons
+            name={isParentalExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        {isParentalExpanded && (
+          <View style={{ marginTop: spacing.md }}>
+            {parentalProfiles.length === 0 ? (
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.md }]}>
+                {t('parentalControl.noProfiles')}
+              </Text>
+            ) : (
+              parentalProfiles.map((profile, index) => (
+                <TouchableOpacity
+                  key={profile.id}
+                  onPress={() => openEditProfileModal(profile)}
+                  style={[
+                    styles.deviceItem,
+                    {
+                      borderBottomWidth: index < parentalProfiles.length - 1 ? 1 : 0,
+                      borderBottomColor: colors.border,
+                      paddingBottom: spacing.md,
+                      marginBottom: index < parentalProfiles.length - 1 ? spacing.md : 0,
+                      backgroundColor: profile.enabled ? colors.primary + '10' : 'transparent',
+                      padding: spacing.sm,
+                      borderRadius: 8,
+                    },
+                  ]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
+                      {profile.name}
+                    </Text>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {t('parentalControl.timeRange')}: {profile.startTime} - {profile.endTime}
+                    </Text>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {t('parentalControl.activeDays')}: {profile.activeDays.map(d => getDayName(d).substring(0, 3)).join(', ')}
+                    </Text>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {profile.deviceMacs.length} {t('parentalControl.selectDevices').toLowerCase()}
+                    </Text>
+                  </View>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <TouchableOpacity
+                      onPress={(e) => { e.stopPropagation(); handleDeleteProfile(profile.id, profile.name); }}
+                      style={{ padding: 4 }}
+                    >
+                      <MaterialIcons name="delete" size={20} color={colors.error} />
+                    </TouchableOpacity>
+                    <MaterialIcons
+                      name={profile.enabled ? 'check-circle' : 'radio-button-unchecked'}
+                      size={24}
+                      color={profile.enabled ? colors.success : colors.textSecondary}
+                    />
+                  </View>
+                </TouchableOpacity>
+              ))
+            )}
+
+            {/* Add Profile Button */}
+            <Button
+              title={t('parentalControl.addProfile')}
+              onPress={openAddProfileModal}
+              style={{ marginTop: spacing.md }}
+            />
+          </View>
+        )}
+      </Card>
+
+      {/* Parental Control Profile Modal */}
+      <Modal
+        visible={showProfileModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => setShowProfileModal(false)}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.modalHeader, {
+            borderBottomColor: colors.border,
+            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
+          }]}>
+            <TouchableOpacity onPress={() => setShowProfileModal(false)}>
+              <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
+            </TouchableOpacity>
+            <Text style={[typography.headline, { color: colors.text }]}>
+              {editingProfile ? t('parentalControl.editProfile') : t('parentalControl.addProfile')}
+            </Text>
+            <TouchableOpacity onPress={handleSaveProfile} disabled={isSavingProfile}>
+              {isSavingProfile ? (
+                <ActivityIndicator color={colors.primary} size="small" />
+              ) : (
+                <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('common.save')}</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContentScroll}>
+            {/* Profile Name */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+              {t('parentalControl.profileName')}
+            </Text>
+            <TextInput
+              style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
+              value={profileName}
+              onChangeText={setProfileName}
+              placeholder={t('parentalControl.profileName')}
+              placeholderTextColor={colors.textSecondary}
+            />
+
+            {/* Time Range */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+              {t('parentalControl.timeRange')}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
+              <TextInput
+                style={[styles.input, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, color: colors.text, textAlign: 'center' }]}
+                value={profileStartTime}
+                onChangeText={setProfileStartTime}
+                placeholder="08:00"
+                placeholderTextColor={colors.textSecondary}
+              />
+              <Text style={[typography.body, { color: colors.textSecondary, marginHorizontal: spacing.sm }]}>—</Text>
+              <TextInput
+                style={[styles.input, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, color: colors.text, textAlign: 'center' }]}
+                value={profileEndTime}
+                onChangeText={setProfileEndTime}
+                placeholder="22:00"
+                placeholderTextColor={colors.textSecondary}
+              />
+            </View>
+
+            {/* Active Days */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+              {t('parentalControl.activeDays')}
+            </Text>
+            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md }}>
+              {[0, 1, 2, 3, 4, 5, 6].map(day => (
+                <TouchableOpacity
+                  key={day}
+                  onPress={() => toggleProfileDay(day)}
+                  style={[
+                    styles.dayButton,
+                    {
+                      backgroundColor: profileDays.includes(day) ? colors.primary : colors.card,
+                      borderColor: profileDays.includes(day) ? colors.primary : colors.border,
+                    }
+                  ]}
+                >
+                  <Text style={[typography.caption1, {
+                    color: profileDays.includes(day) ? '#fff' : colors.text,
+                    fontWeight: profileDays.includes(day) ? '600' : '400'
+                  }]}>
+                    {getDayName(day).substring(0, 3)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Select Devices */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+              {t('parentalControl.selectDevices')}
+            </Text>
+            {connectedDevices.length === 0 ? (
+              <View style={[styles.deviceSelectItem, { backgroundColor: colors.card, borderColor: colors.border, justifyContent: 'center' }]}>
+                <Text style={[typography.body, { color: colors.textSecondary }]}>
+                  {t('wifi.noDevices')}
+                </Text>
+              </View>
+            ) : (
+              connectedDevices.map(device => (
+                <TouchableOpacity
+                  key={device.macAddress}
+                  onPress={() => toggleProfileDevice(device.macAddress)}
+                  style={[
+                    styles.deviceSelectItem,
+                    {
+                      backgroundColor: profileDevices.includes(device.macAddress) ? colors.primary + '15' : colors.card,
+                      borderColor: profileDevices.includes(device.macAddress) ? colors.primary : colors.border,
+                      marginBottom: 8,
+                    }
+                  ]}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
+                      {device.hostName || 'Unknown Device'}
+                    </Text>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {formatMacAddress(device.macAddress)}
+                    </Text>
+                  </View>
+                  <MaterialIcons
+                    name={profileDevices.includes(device.macAddress) ? 'check-circle' : 'radio-button-unchecked'}
+                    size={24}
+                    color={profileDevices.includes(device.macAddress) ? colors.primary : colors.textSecondary}
+                  />
+                </TouchableOpacity>
+              ))
+            )}
+
+            {/* Enabled Switch */}
+            <View style={[styles.toggleRow, { marginTop: spacing.md, paddingVertical: spacing.sm }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.body, { color: colors.text }]}>
+                  {t('parentalControl.enabled')}
+                </Text>
+                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                  {profileEnabled ? t('parentalControl.enabled') : t('parentalControl.disabled')}
+                </Text>
+              </View>
+              <Switch
+                value={profileEnabled}
+                onValueChange={setProfileEnabled}
+                trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                thumbColor={profileEnabled ? colors.primary : colors.textSecondary}
+              />
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -521,5 +938,35 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 12,
     paddingHorizontal: 4,
+  },
+  modalContainer: {
+    flex: 1,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  modalContentScroll: {
+    flex: 1,
+    padding: 16,
+  },
+  dayButton: {
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    borderRadius: 10,
+    borderWidth: 1,
+    minWidth: 42,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  deviceSelectItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 12,
+    borderWidth: 1,
   },
 });
