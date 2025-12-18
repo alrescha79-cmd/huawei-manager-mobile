@@ -598,6 +598,7 @@ export default function HomeScreen() {
             <View style={styles.dataUsageItem}>
               <DataPieChart
                 title={t('home.monthlyUsage')}
+                subtitle={new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
                 download={trafficStats.monthDownload}
                 upload={trafficStats.monthUpload}
                 formatValue={formatBytes}
