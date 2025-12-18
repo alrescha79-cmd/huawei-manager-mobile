@@ -29,12 +29,12 @@
 
 > **⚡ Built with Expo SDK 54**
 
-> **📡 Tested on Huawei B312-929**
+> **📡 Tested on Huawei B312-929 (Orbit Star 2)**
 
-> **📲 Download on [Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
- - arm64-v8a: Untuk Android 64-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-arm64-v8a.apk)
- - armeabi-v7a: Untuk Android 32-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-armeabi-v7a.apk)
- - universal: Untuk semua perangkat [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-universal.apk)
+> **📲 Download on [Github Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
+ - arm64-v8a: Untuk Android 64-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-arm64-v8a.apk)
+ - armeabi-v7a: Untuk Android 32-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-armeabi-v7a.apk)
+ - universal: Untuk semua perangkat [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-universal.apk)
 
 ---
 
@@ -46,6 +46,9 @@
 | 📶 **WiFi Management** | Kelola connected devices dan WiFi settings |
 | 💬 **SMS** | Baca, kirim, dan hapus SMS (Jika fitur ini tersedia di modem) |
 | ⚙️ **Settings** | Antenna mode, network type, band lock, reboot modem |
+| 👨‍👩‍👧‍👦 **Parental Control** | Batasi penggunaan perangkat |
+| 📱 **Profile APN** | Kelola APN settings |
+| 🖧 **Ethernet** | Kelola Ethernet settings |
 | 🌙 **Dark Mode** | Support light dan dark theme |
 | 🔤 **Language** | Pilih bahasa (Bahasa Indonesia dan Bahasa Inggris) |
 
@@ -54,24 +57,24 @@
 ## 📸 Screenshots
 
 <p align="center">
-  <em>Dark Mode</em>
+  <em>Dark Mode | 🇬🇧 EN</em>
 </p>
 
 
 
 | Dashboard | WiFi | SMS | Settings |
 |:---------:|:----:|:---:|:--------:|
-| ![Home](https://github.com/user-attachments/assets/9ff7a9b2-fd4a-45ab-8551-f94448ebb4c5) | ![Wifi](https://github.com/user-attachments/assets/7d6701ac-9437-4122-b2d2-109aa1015b51) | ![sms](https://github.com/user-attachments/assets/02051333-b094-4c52-9baf-a6d0f491cdf9) | ![Settings](https://github.com/user-attachments/assets/cf138be2-fea5-4c2f-a66f-5fc35e5f4616) |
+| ![home](https://github.com/user-attachments/assets/20b0b754-97c7-4463-87f0-554a8a4ac74c) | ![wifi](https://github.com/user-attachments/assets/a42b5ef0-2d1e-4f44-b1f6-a6c6f39ee722) | ![sms](https://github.com/user-attachments/assets/02051333-b094-4c52-9baf-a6d0f491cdf9) | ![settings](https://github.com/user-attachments/assets/185a3edf-af6a-47b3-88d2-1fe56fddb0a1) |
 
 <p align="center">
-  <em>Light Mode</em>
+  <em>Light Mode| 🇮🇩 ID</em>
 </p>
 
 
 
 | Dashboard | WiFi | SMS | Settings |
 |:---------:|:----:|:---:|:--------:|
-| ![Home](https://github.com/user-attachments/assets/9308daf5-d9c2-4c3e-9d62-eaa6a3bb5589) | ![wifi](https://github.com/user-attachments/assets/94f32dae-aaae-4677-9207-c2074003282a) | ![sms](https://github.com/user-attachments/assets/6b8c2297-8369-452e-9fa9-cd77a1fa4d3c) | ![settings](https://github.com/user-attachments/assets/173a9c6e-a49f-4a04-9b98-174369d725f1) |
+| ![home](https://github.com/user-attachments/assets/6b6da857-3476-4e23-9075-22af158decf0) | ![wifi](https://github.com/user-attachments/assets/40b126bc-aa33-4813-af4a-8e17fa4687c3) | ![sms](https://github.com/user-attachments/assets/6b8c2297-8369-452e-9fa9-cd77a1fa4d3c) | ![settings](https://github.com/user-attachments/assets/60eb10a8-19ae-4cac-a06f-f07ce9eabbbb) |
 
 
 ---

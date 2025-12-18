@@ -357,4 +357,126 @@ export class ModemService {
       throw error;
     }
   }
+
+  // ============ Mobile Network Settings ============
+
+  async getDataRoamingStatus(): Promise<boolean> {
+    try {
+      const response = await this.apiClient.get('/api/dialup/connection');
+      return parseXMLValue(response, 'RoamAutoConnectEnable') === '1';
+    } catch (error) {
+      console.error('Error getting data roaming status:', error);
+      return false;
+    }
+  }
+
+  async setDataRoaming(enable: boolean): Promise<boolean> {
+    try {
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <RoamAutoConnectEnable>${enable ? '1' : '0'}</RoamAutoConnectEnable>
+        </request>`;
+
+      await this.apiClient.post('/api/dialup/connection', data);
+      return true;
+    } catch (error) {
+      console.error('Error setting data roaming:', error);
+      throw error;
+    }
+  }
+
+  async getAutoNetworkStatus(): Promise<boolean> {
+    try {
+      const response = await this.apiClient.get('/api/net/net-mode');
+      // Auto network is when NetworkMode is '00' (Auto)
+      return parseXMLValue(response, 'NetworkMode') === '00';
+    } catch (error) {
+      console.error('Error getting auto network status:', error);
+      return true;
+    }
+  }
+
+  async setAutoNetwork(enable: boolean): Promise<boolean> {
+    try {
+      // If enabling auto, set to '00', otherwise keep the current non-auto mode
+      const mode = enable ? '00' : '03'; // Default to 4G only if disabling auto
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <NetworkMode>${mode}</NetworkMode>
+          <NetworkBand>3FFFFFFF</NetworkBand>
+          <LTEBand>7FFFFFFFFFFFFFFF</LTEBand>
+        </request>`;
+
+      await this.apiClient.post('/api/net/net-mode', data);
+      return true;
+    } catch (error) {
+      console.error('Error setting auto network:', error);
+      throw error;
+    }
+  }
+
+  // ============ Time Settings ============
+
+  async getTimeSettings(): Promise<{
+    currentTime: string;
+    sntpEnabled: boolean;
+    ntpServer: string;
+    ntpServerBackup: string;
+    timezone: string;
+  }> {
+    try {
+      const response = await this.apiClient.get('/api/time/settings');
+
+      return {
+        currentTime: parseXMLValue(response, 'CurrentTime') || new Date().toISOString(),
+        sntpEnabled: parseXMLValue(response, 'NTPEnable') === '1',
+        ntpServer: parseXMLValue(response, 'NTPServer') || 'pool.ntp.org',
+        ntpServerBackup: parseXMLValue(response, 'NTPServerBackup') || 'time.google.com',
+        timezone: parseXMLValue(response, 'TimeZone') || 'UTC+7',
+      };
+    } catch (error) {
+      console.error('Error getting time settings:', error);
+      return {
+        currentTime: new Date().toISOString(),
+        sntpEnabled: true,
+        ntpServer: 'pool.ntp.org',
+        ntpServerBackup: 'time.google.com',
+        timezone: 'UTC+7',
+      };
+    }
+  }
+
+  async setTimeSettings(settings: {
+    sntpEnabled?: boolean;
+    ntpServer?: string;
+    ntpServerBackup?: string;
+    timezone?: string;
+  }): Promise<boolean> {
+    try {
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          ${settings.sntpEnabled !== undefined ? `<NTPEnable>${settings.sntpEnabled ? '1' : '0'}</NTPEnable>` : ''}
+          ${settings.ntpServer ? `<NTPServer>${settings.ntpServer}</NTPServer>` : ''}
+          ${settings.ntpServerBackup ? `<NTPServerBackup>${settings.ntpServerBackup}</NTPServerBackup>` : ''}
+          ${settings.timezone ? `<TimeZone>${settings.timezone}</TimeZone>` : ''}
+        </request>`;
+
+      await this.apiClient.post('/api/time/settings', data);
+      return true;
+    } catch (error) {
+      console.error('Error setting time settings:', error);
+      throw error;
+    }
+  }
+
+  async getCurrentTime(): Promise<string> {
+    try {
+      const response = await this.apiClient.get('/api/time/settings');
+      return parseXMLValue(response, 'CurrentTime') || new Date().toISOString();
+    } catch (error) {
+      console.error('Error getting current time:', error);
+      return new Date().toISOString();
+    }
+  }
 }
+
