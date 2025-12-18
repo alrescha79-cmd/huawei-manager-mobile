@@ -167,6 +167,8 @@ export default function SettingsScreen() {
     isDefault: boolean;
   }[]>([]);
   const [isApnExpanded, setIsApnExpanded] = useState(false);
+  const [isMobileNetworkExpanded, setIsMobileNetworkExpanded] = useState(false);
+  const [isEthernetExpanded, setIsEthernetExpanded] = useState(false);
   const [showApnModal, setShowApnModal] = useState(false);
   const [editingApn, setEditingApn] = useState<string | null>(null);
   const [apnName, setApnName] = useState('');
@@ -752,7 +754,7 @@ export default function SettingsScreen() {
       {/* Modem Info Card */}
       {modemInfo && (
         <Card style={{ marginBottom: spacing.md }}>
-          <CardHeader title={t('settings.modemInfo')} />
+          <CardHeader title={t('settings.modemInfo')} icon="router" />
 
           <InfoRow label={t('settings.device')} value={modemInfo.deviceName} />
           <InfoRow label={t('settings.serialNumber')} value={modemInfo.serialNumber} />
@@ -767,15 +769,18 @@ export default function SettingsScreen() {
 
       {/* System Settings Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title={t('settings.systemSettings')} />
+        <CardHeader title={t('settings.systemSettings')} icon="settings" />
 
         {/* Antenna Settings */}
         <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('settings.antennaMode')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {t('settings.selectAntenna')}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="settings-input-antenna" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text }]}>{t('settings.antennaMode')}</Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {t('settings.selectAntenna')}
+              </Text>
+            </View>
           </View>
           {isChangingAntenna ? (
             <ActivityIndicator color={colors.primary} />
@@ -827,27 +832,34 @@ export default function SettingsScreen() {
         <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
         {/* Time Settings Section */}
-        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: spacing.sm }]}>
-          {t('timeSettings.title')}
-        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.sm }}>
+          <MaterialIcons name="schedule" size={18} color={colors.primary} />
+          <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 8 }]}>
+            {t('timeSettings.title')}
+          </Text>
+        </View>
 
         {/* Current Time */}
         <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="access-time-filled" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
             <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.currentTime')}</Text>
           </View>
-          <Text style={[typography.body, { color: colors.primary, fontFamily: 'monospace' }]}>
+          <Text style={[typography.caption1, { color: colors.primary, fontFamily: 'monospace' }]}>
             {currentTime ? new Date(currentTime).toLocaleString() : '--:--:--'}
           </Text>
         </View>
 
         {/* SNTP Switch */}
         <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.sntp')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {t('timeSettings.sntpHint')}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="cloud-sync" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.sntp')}</Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {t('timeSettings.sntpHint')}
+              </Text>
+            </View>
           </View>
           {isTogglingSntp ? (
             <ActivityIndicator color={colors.primary} />
@@ -861,227 +873,265 @@ export default function SettingsScreen() {
           )}
         </View>
 
-        {/* NTP Server */}
-        <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.ntpServer')}</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setShowNtpDropdown(!showNtpDropdown)}
-          >
-            <Text style={[typography.body, { color: colors.text }]}>{ntpServer}</Text>
-            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-
-        {showNtpDropdown && (
-          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {NTP_SERVERS.map((server) => (
+        {/* NTP Settings - only show when SNTP is enabled */}
+        {sntpEnabled && (
+          <>
+            {/* NTP Server */}
+            <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="dns" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.ntpServer')}</Text>
+              </View>
               <TouchableOpacity
-                key={server}
-                style={[styles.dropdownItem, {
-                  backgroundColor: ntpServer === server ? colors.primary + '20' : 'transparent'
-                }]}
-                onPress={() => handleNtpServerChange(server)}
+                style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => setShowNtpDropdown(!showNtpDropdown)}
               >
-                <Text style={[typography.body, {
-                  color: ntpServer === server ? colors.primary : colors.text
-                }]}>
-                  {server}
-                </Text>
+                <Text style={[typography.body, { color: colors.text }]}>{ntpServer}</Text>
+                <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
-            ))}
-          </View>
-        )}
+            </View>
 
-        {/* NTP Server Backup */}
-        <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.ntpServerBackup')}</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setShowNtpBackupDropdown(!showNtpBackupDropdown)}
-          >
-            <Text style={[typography.body, { color: colors.text }]}>{ntpServerBackup}</Text>
-            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
+            {showNtpDropdown && (
+              <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {NTP_SERVERS.map((server) => (
+                  <TouchableOpacity
+                    key={server}
+                    style={[styles.dropdownItem, {
+                      backgroundColor: ntpServer === server ? colors.primary + '20' : 'transparent'
+                    }]}
+                    onPress={() => handleNtpServerChange(server)}
+                  >
+                    <Text style={[typography.body, {
+                      color: ntpServer === server ? colors.primary : colors.text
+                    }]}>
+                      {server}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
-        {showNtpBackupDropdown && (
-          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {NTP_SERVERS.map((server) => (
+            {/* NTP Server Backup */}
+            <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="backup" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.ntpServerBackup')}</Text>
+              </View>
               <TouchableOpacity
-                key={server}
-                style={[styles.dropdownItem, {
-                  backgroundColor: ntpServerBackup === server ? colors.primary + '20' : 'transparent'
-                }]}
-                onPress={() => handleNtpBackupChange(server)}
+                style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => setShowNtpBackupDropdown(!showNtpBackupDropdown)}
               >
-                <Text style={[typography.body, {
-                  color: ntpServerBackup === server ? colors.primary : colors.text
-                }]}>
-                  {server}
-                </Text>
+                <Text style={[typography.body, { color: colors.text }]}>{ntpServerBackup}</Text>
+                <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
               </TouchableOpacity>
-            ))}
-          </View>
-        )}
+            </View>
 
-        {/* Timezone */}
-        <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.timeZone')}</Text>
-          </View>
-          <TouchableOpacity
-            style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-            onPress={() => setShowTimezoneDropdown(!showTimezoneDropdown)}
-          >
-            <Text style={[typography.body, { color: colors.text }]}>{timezone}</Text>
-            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
+            {showNtpBackupDropdown && (
+              <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {NTP_SERVERS.map((server) => (
+                  <TouchableOpacity
+                    key={server}
+                    style={[styles.dropdownItem, {
+                      backgroundColor: ntpServerBackup === server ? colors.primary + '20' : 'transparent'
+                    }]}
+                    onPress={() => handleNtpBackupChange(server)}
+                  >
+                    <Text style={[typography.body, {
+                      color: ntpServerBackup === server ? colors.primary : colors.text
+                    }]}>
+                      {server}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
 
-        {showTimezoneDropdown && (
-          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, maxHeight: 200 }]}>
-            <ScrollView nestedScrollEnabled>
-              {TIMEZONES.map((tz) => (
-                <TouchableOpacity
-                  key={tz}
-                  style={[styles.dropdownItem, {
-                    backgroundColor: timezone === tz ? colors.primary + '20' : 'transparent'
-                  }]}
-                  onPress={() => handleTimezoneChange(tz)}
-                >
-                  <Text style={[typography.body, {
-                    color: timezone === tz ? colors.primary : colors.text
-                  }]}>
-                    {tz}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </ScrollView>
-          </View>
+            {/* Timezone */}
+            <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="public" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <Text style={[typography.body, { color: colors.text }]}>{t('timeSettings.timeZone')}</Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => setShowTimezoneDropdown(!showTimezoneDropdown)}
+              >
+                <Text style={[typography.body, { color: colors.text }]}>{timezone}</Text>
+                <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            {showTimezoneDropdown && (
+              <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, maxHeight: 200 }]}>
+                <ScrollView nestedScrollEnabled>
+                  {TIMEZONES.map((tz) => (
+                    <TouchableOpacity
+                      key={tz}
+                      style={[styles.dropdownItem, {
+                        backgroundColor: timezone === tz ? colors.primary + '20' : 'transparent'
+                      }]}
+                      onPress={() => handleTimezoneChange(tz)}
+                    >
+                      <Text style={[typography.body, {
+                        color: timezone === tz ? colors.primary : colors.text
+                      }]}>
+                        {tz}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+          </>
         )}
       </Card>
 
       {/* Network Settings Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title={t('networkSettings.title')} />
+        <CardHeader title={t('networkSettings.title')} icon="cell-tower" />
 
-        {/* Mobile Network Section */}
-        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: spacing.sm }]}>
-          {t('networkSettings.mobileNetwork')}
-        </Text>
-
-        {/* Mobile Data Switch */}
-        <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.mobileData')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {t('networkSettings.mobileDataHint')}
+        {/* Mobile Network Section - Collapsible */}
+        <TouchableOpacity
+          style={styles.collapseHeader}
+          onPress={() => setIsMobileNetworkExpanded(!isMobileNetworkExpanded)}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="smartphone" size={18} color={colors.primary} />
+            <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 8 }]}>
+              {t('networkSettings.mobileNetwork')}
             </Text>
           </View>
-          {isTogglingMobileData ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Switch
-              value={mobileDataEnabled}
-              onValueChange={handleToggleMobileData}
-              trackColor={{ false: colors.border, true: colors.primary + '80' }}
-              thumbColor={mobileDataEnabled ? colors.primary : colors.textSecondary}
-            />
-          )}
-        </View>
+          <MaterialIcons
+            name={isMobileNetworkExpanded ? 'expand-less' : 'expand-more'}
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
 
-        {/* Data Roaming Switch */}
-        <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.dataRoaming')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {t('networkSettings.dataRoamingHint')}
-            </Text>
-          </View>
-          {isTogglingRoaming ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Switch
-              value={dataRoamingEnabled}
-              onValueChange={handleToggleDataRoaming}
-              trackColor={{ false: colors.border, true: colors.primary + '80' }}
-              thumbColor={dataRoamingEnabled ? colors.primary : colors.textSecondary}
-            />
-          )}
-        </View>
+        {isMobileNetworkExpanded && (
+          <View style={{ paddingTop: spacing.sm }}>
 
-        {/* Auto Select Network Switch */}
-        <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.autoSelectNetwork')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {t('networkSettings.autoSelectNetworkHint')}
-            </Text>
-          </View>
-          {isTogglingAutoNetwork ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Switch
-              value={autoNetworkEnabled}
-              onValueChange={handleToggleAutoNetwork}
-              trackColor={{ false: colors.border, true: colors.primary + '80' }}
-              thumbColor={autoNetworkEnabled ? colors.primary : colors.textSecondary}
-            />
-          )}
-        </View>
-
-        {/* Network Mode Settings */}
-        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('settings.networkType')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {t('settings.selectNetwork')}
-            </Text>
-          </View>
-          {isChangingNetwork ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <TouchableOpacity
-              style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => setShowNetworkDropdown(!showNetworkDropdown)}
-            >
-              <MaterialIcons name="signal-cellular-alt" size={18} color={colors.primary} />
-              <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
-                {(() => { const mode = NETWORK_MODES.find(m => m.value === networkMode); return mode ? t(mode.labelKey) : t('settings.networkAuto'); })()}
-              </Text>
-              <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        {showNetworkDropdown && (
-          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {NETWORK_MODES.map((mode) => (
-              <TouchableOpacity
-                key={mode.value}
-                style={[styles.dropdownItem, {
-                  backgroundColor: networkMode === mode.value ? colors.primary + '20' : 'transparent'
-                }]}
-                onPress={() => handleNetworkModeChange(mode.value)}
-              >
-                <MaterialIcons
-                  name="signal-cellular-alt"
-                  size={20}
-                  color={networkMode === mode.value ? colors.primary : colors.text}
+            {/* Mobile Data Switch */}
+            <View style={styles.settingRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="mobiledata-off" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.mobileData')}</Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('networkSettings.mobileDataHint')}
+                  </Text>
+                </View>
+              </View>
+              {isTogglingMobileData ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <Switch
+                  value={mobileDataEnabled}
+                  onValueChange={handleToggleMobileData}
+                  trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                  thumbColor={mobileDataEnabled ? colors.primary : colors.textSecondary}
                 />
-                <Text style={[typography.body, {
-                  color: networkMode === mode.value ? colors.primary : colors.text,
-                  marginLeft: 10
-                }]}>
-                  {t(mode.labelKey)}
-                </Text>
-              </TouchableOpacity>
-            ))}
+              )}
+            </View>
+
+            {/* Data Roaming Switch */}
+            <View style={styles.settingRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="r-mobiledata" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.dataRoaming')}</Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('networkSettings.dataRoamingHint')}
+                  </Text>
+                </View>
+              </View>
+              {isTogglingRoaming ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <Switch
+                  value={dataRoamingEnabled}
+                  onValueChange={handleToggleDataRoaming}
+                  trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                  thumbColor={dataRoamingEnabled ? colors.primary : colors.textSecondary}
+                />
+              )}
+            </View>
+
+            {/* Auto Select Network Switch */}
+            <View style={styles.settingRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="autorenew" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.autoSelectNetwork')}</Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('networkSettings.autoSelectNetworkHint')}
+                  </Text>
+                </View>
+              </View>
+              {isTogglingAutoNetwork ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <Switch
+                  value={autoNetworkEnabled}
+                  onValueChange={handleToggleAutoNetwork}
+                  trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                  thumbColor={autoNetworkEnabled ? colors.primary : colors.textSecondary}
+                />
+              )}
+            </View>
+
+            {/* Network Mode Settings */}
+            <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="signal-cellular-alt" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('settings.networkType')}</Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('settings.selectNetwork')}
+                  </Text>
+                </View>
+              </View>
+              {isChangingNetwork ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <TouchableOpacity
+                  style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => setShowNetworkDropdown(!showNetworkDropdown)}
+                >
+                  <MaterialIcons name="signal-cellular-alt" size={18} color={colors.primary} />
+                  <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
+                    {(() => { const mode = NETWORK_MODES.find(m => m.value === networkMode); return mode ? t(mode.labelKey) : t('settings.networkAuto'); })()}
+                  </Text>
+                  <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {showNetworkDropdown && (
+              <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {NETWORK_MODES.map((mode) => (
+                  <TouchableOpacity
+                    key={mode.value}
+                    style={[styles.dropdownItem, {
+                      backgroundColor: networkMode === mode.value ? colors.primary + '20' : 'transparent'
+                    }]}
+                    onPress={() => handleNetworkModeChange(mode.value)}
+                  >
+                    <MaterialIcons
+                      name="signal-cellular-alt"
+                      size={20}
+                      color={networkMode === mode.value ? colors.primary : colors.text}
+                    />
+                    <Text style={[typography.body, {
+                      color: networkMode === mode.value ? colors.primary : colors.text,
+                      marginLeft: 10
+                    }]}>
+                      {t(mode.labelKey)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
@@ -1177,11 +1227,14 @@ export default function SettingsScreen() {
 
         {/* LTE Band Selection */}
         <View style={[styles.settingRow, { marginTop: spacing.md }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('settings.lteBands')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {selectedBands.length === LTE_BANDS.length ? t('settings.allBands') : `${selectedBands.length} ${t('settings.bandsSelected')}`}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="settings-input-antenna" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text }]}>{t('settings.lteBands')}</Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {selectedBands.length === LTE_BANDS.length ? t('settings.allBands') : `${selectedBands.length} ${t('settings.bandsSelected')}`}
+              </Text>
+            </View>
           </View>
           <TouchableOpacity
             style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -1198,95 +1251,115 @@ export default function SettingsScreen() {
         {/* Separator */}
         <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-        {/* Ethernet Section */}
-        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: spacing.sm }]}>
-          {t('networkSettings.ethernet')}
-        </Text>
-
-        {/* Connection Mode */}
-        <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.connectionMode')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {t('networkSettings.connectionModeHint')}
+        {/* Ethernet Section - Collapsible */}
+        <TouchableOpacity
+          style={styles.collapseHeader}
+          onPress={() => setIsEthernetExpanded(!isEthernetExpanded)}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="cable" size={18} color={colors.primary} />
+            <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 8 }]}>
+              {t('networkSettings.ethernet')}
             </Text>
           </View>
-          {isChangingEthernet ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <TouchableOpacity
-              style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-              onPress={() => setShowEthernetDropdown(!showEthernetDropdown)}
-            >
-              <MaterialIcons name="settings-ethernet" size={18} color={colors.primary} />
-              <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
-                {(() => { const mode = ETHERNET_MODES.find(m => m.value === ethernetMode); return mode ? t(mode.labelKey) : t('networkSettings.modeAuto'); })()}
-              </Text>
-              <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-            </TouchableOpacity>
-          )}
-        </View>
+          <MaterialIcons
+            name={isEthernetExpanded ? 'expand-less' : 'expand-more'}
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
 
-        {showEthernetDropdown && (
-          <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-            {ETHERNET_MODES.map((mode) => (
-              <TouchableOpacity
-                key={mode.value}
-                style={[styles.dropdownItem, {
-                  backgroundColor: ethernetMode === mode.value ? colors.primary + '20' : 'transparent'
-                }]}
-                onPress={() => handleEthernetModeChange(mode.value as typeof ethernetMode)}
-              >
-                <MaterialIcons
-                  name="settings-ethernet"
-                  size={20}
-                  color={ethernetMode === mode.value ? colors.primary : colors.text}
-                />
-                <Text style={[typography.body, {
-                  color: ethernetMode === mode.value ? colors.primary : colors.text,
-                  marginLeft: 10
-                }]}>
-                  {t(mode.labelKey)}
+        {isEthernetExpanded && (
+          <View style={{ paddingTop: spacing.sm }}>
+            {/* Connection Mode */}
+            <View style={styles.settingRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="settings-ethernet" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.connectionMode')}</Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('networkSettings.connectionModeHint')}
+                  </Text>
+                </View>
+              </View>
+              {isChangingEthernet ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <TouchableOpacity
+                  style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => setShowEthernetDropdown(!showEthernetDropdown)}
+                >
+                  <MaterialIcons name="settings-ethernet" size={18} color={colors.primary} />
+                  <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
+                    {(() => { const mode = ETHERNET_MODES.find(m => m.value === ethernetMode); return mode ? t(mode.labelKey) : t('networkSettings.modeAuto'); })()}
+                  </Text>
+                  <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+              )}
+            </View>
+
+            {showEthernetDropdown && (
+              <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                {ETHERNET_MODES.map((mode) => (
+                  <TouchableOpacity
+                    key={mode.value}
+                    style={[styles.dropdownItem, {
+                      backgroundColor: ethernetMode === mode.value ? colors.primary + '20' : 'transparent'
+                    }]}
+                    onPress={() => handleEthernetModeChange(mode.value as typeof ethernetMode)}
+                  >
+                    <MaterialIcons
+                      name="settings-ethernet"
+                      size={20}
+                      color={ethernetMode === mode.value ? colors.primary : colors.text}
+                    />
+                    <Text style={[typography.body, {
+                      color: ethernetMode === mode.value ? colors.primary : colors.text,
+                      marginLeft: 10
+                    }]}>
+                      {t(mode.labelKey)}
+                    </Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Ethernet Status */}
+            <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.ethernetStatus')}</Text>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <View style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: ethernetStatus.connected ? colors.success : colors.error,
+                }} />
+                <Text style={[typography.body, { color: ethernetStatus.connected ? colors.success : colors.error }]}>
+                  {ethernetStatus.connected ? t('networkSettings.connected') : t('networkSettings.disconnected')}
                 </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+              </View>
+            </View>
 
-        {/* Ethernet Status */}
-        <View style={[styles.settingRow, { marginTop: spacing.md }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.ethernetStatus')}</Text>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            <View style={{
-              width: 10,
-              height: 10,
-              borderRadius: 5,
-              backgroundColor: ethernetStatus.connected ? colors.success : colors.error,
-            }} />
-            <Text style={[typography.body, { color: ethernetStatus.connected ? colors.success : colors.error }]}>
-              {ethernetStatus.connected ? t('networkSettings.connected') : t('networkSettings.disconnected')}
-            </Text>
-          </View>
-        </View>
-
-        {ethernetStatus.connected && (
-          <View style={{ marginTop: spacing.sm, paddingLeft: spacing.md }}>
-            {ethernetStatus.ipAddress && (
-              <InfoRow label={t('networkSettings.ipAddress')} value={ethernetStatus.ipAddress} />
-            )}
-            {ethernetStatus.gateway && (
-              <InfoRow label={t('networkSettings.gateway')} value={ethernetStatus.gateway} />
-            )}
-            {ethernetStatus.netmask && (
-              <InfoRow label={t('networkSettings.netmask')} value={ethernetStatus.netmask} />
-            )}
-            {ethernetStatus.dns1 && (
-              <InfoRow label={t('networkSettings.dns')} value={`${ethernetStatus.dns1}${ethernetStatus.dns2 ? ', ' + ethernetStatus.dns2 : ''}`} />
-            )}
-            {ethernetStatus.macAddress && (
-              <InfoRow label={t('networkSettings.macAddress')} value={ethernetStatus.macAddress} />
+            {ethernetStatus.connected && (
+              <View style={{ marginTop: spacing.sm, paddingLeft: spacing.md }}>
+                {ethernetStatus.ipAddress && (
+                  <InfoRow label={t('networkSettings.ipAddress')} value={ethernetStatus.ipAddress} />
+                )}
+                {ethernetStatus.gateway && (
+                  <InfoRow label={t('networkSettings.gateway')} value={ethernetStatus.gateway} />
+                )}
+                {ethernetStatus.netmask && (
+                  <InfoRow label={t('networkSettings.netmask')} value={ethernetStatus.netmask} />
+                )}
+                {ethernetStatus.dns1 && (
+                  <InfoRow label={t('networkSettings.dns')} value={`${ethernetStatus.dns1}${ethernetStatus.dns2 ? ', ' + ethernetStatus.dns2 : ''}`} />
+                )}
+                {ethernetStatus.macAddress && (
+                  <InfoRow label={t('networkSettings.macAddress')} value={ethernetStatus.macAddress} />
+                )}
+              </View>
             )}
           </View>
         )}
@@ -1294,16 +1367,19 @@ export default function SettingsScreen() {
 
       {/* App Settings Card */}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title={t('settings.appSettings')} />
+        <CardHeader title={t('settings.appSettings')} icon="tune" />
 
         <View style={styles.settingRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>
-              {t('settings.theme')}
-            </Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {themeMode === 'system' ? t('settings.themeSystem') : themeMode === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="palette" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text }]}>
+                {t('settings.theme')}
+              </Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {themeMode === 'system' ? t('settings.themeSystem') : themeMode === 'dark' ? t('settings.themeDark') : t('settings.themeLight')}
+              </Text>
+            </View>
           </View>
           <View style={styles.themeButtons}>
             <TouchableOpacity
@@ -1359,13 +1435,16 @@ export default function SettingsScreen() {
 
         {/* Language Setting */}
         <View style={[styles.settingRow, { marginTop: spacing.md }]}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>
-              {t('settings.language')}
-            </Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {language === 'id' ? t('settings.languageId') : t('settings.languageEn')}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="translate" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text }]}>
+                {t('settings.language')}
+              </Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {language === 'id' ? t('settings.languageId') : t('settings.languageEn')}
+              </Text>
+            </View>
           </View>
           <View style={styles.themeButtons}>
             <TouchableOpacity
@@ -1414,22 +1493,25 @@ export default function SettingsScreen() {
 
       {/* Modem Control*/}
       <Card style={{ marginBottom: spacing.md }}>
-        <CardHeader title={t('settings.modemControl')} />
+        <CardHeader title={t('settings.modemControl')} icon="admin-panel-settings" />
 
-        <InfoRow label={t('settings.modemIp')} value={credentials?.modemIp || t('common.unknown')} />
+        <InfoRow label={t('settings.modemIp')} value={credentials?.modemIp || t('common.unknown')} icon={<MaterialIcons name="router" size={18} color={colors.textSecondary} />} />
 
         {/* Collapsible Edit Credentials Section */}
         <TouchableOpacity
           style={[styles.collapseHeader, { marginTop: spacing.sm }]}
           onPress={() => setIsModemSettingsExpanded(!isModemSettingsExpanded)}
         >
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>
-              {t('settings.editCredentials')}
-            </Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {t('settings.credentialsHint')}
-            </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="edit" size={18} color={colors.primary} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>
+                {t('settings.editCredentials')}
+              </Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {t('settings.credentialsHint')}
+              </Text>
+            </View>
           </View>
           <MaterialIcons
             name={isModemSettingsExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
@@ -1533,15 +1615,18 @@ export default function SettingsScreen() {
 
       {/* About Card */}
       <Card>
-        <CardHeader title={t('settings.about')} />
+        <CardHeader title={t('settings.about')} icon="info" />
 
-        <InfoRow label={t('settings.appVersion')} value={Constants.expoConfig?.version || '1.0.0'} />
+        <InfoRow label={t('settings.appVersion')} value={Constants.expoConfig?.version || '1.0.0'} icon={<MaterialIcons name="apps" size={18} color={colors.textSecondary} />} />
 
         {/* Check for Updates */}
         <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
-          <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-            {t('settings.checkUpdate')}
-          </Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="update" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+            <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
+              {t('settings.checkUpdate')}
+            </Text>
+          </View>
           <TouchableOpacity
             style={[styles.updateButton, { backgroundColor: colors.primary }]}
             onPress={handleCheckUpdate}
