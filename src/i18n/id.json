@@ -115,6 +115,8 @@
     "checkLogin": "Periksa apakah Anda sudah login ke modem",
     "width": "Lebar",
     "plmnScanHint": "Memicu pemindaian PLMN untuk mendapatkan alamat IP baru",
+    "lteBandSelection": "Pilih LTE Band",
+    "lteBandHint": "Konfigurasi LTE band yang diinginkan",
     "status": "Status",
     "speed": "Kecepatan"
   },
@@ -323,7 +325,12 @@
     "profileDeleted": "Profil dihapus",
     "deleteProfileConfirm": "Yakin ingin menghapus profil ini?",
     "noProfiles": "Tidak ada profil yang dikonfigurasi",
-    "manageProfiles": "Kelola"
+    "manageProfiles": "Kelola",
+    "authType": "Tipe Autentikasi",
+    "ipType": "Tipe IP",
+    "setAsDefaultHint": "Gunakan profil ini sebagai default untuk data seluler",
+    "default": "Default",
+    "apnRequired": "Nama profil dan APN wajib diisi"
   },
   "timeSettings": {
     "title": "Pengaturan Waktu",

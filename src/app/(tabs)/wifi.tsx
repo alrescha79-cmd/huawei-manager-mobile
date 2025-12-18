@@ -29,6 +29,16 @@ const SECURITY_MODES = [
   { value: 'WPA3SAE', labelKey: 'wifi.securityWpa3' },
 ];
 
+// Time options for time picker (every 30 minutes)
+const TIME_OPTIONS = [
+  '00:00', '00:30', '01:00', '01:30', '02:00', '02:30', '03:00', '03:30',
+  '04:00', '04:30', '05:00', '05:30', '06:00', '06:30', '07:00', '07:30',
+  '08:00', '08:30', '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+  '12:00', '12:30', '13:00', '13:30', '14:00', '14:30', '15:00', '15:30',
+  '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00', '19:30',
+  '20:00', '20:30', '21:00', '21:30', '22:00', '22:30', '23:00', '23:30',
+];
+
 export default function WiFiScreen() {
   const { colors, typography, spacing } = useTheme();
   const { t } = useTranslation();
@@ -79,6 +89,8 @@ export default function WiFiScreen() {
   const [profileDevices, setProfileDevices] = useState<string[]>([]);
   const [profileEnabled, setProfileEnabled] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [showStartTimePicker, setShowStartTimePicker] = useState(false);
+  const [showEndTimePicker, setShowEndTimePicker] = useState(false);
 
   // Collapse state for edit form
   const [isEditExpanded, setIsEditExpanded] = useState(false);
@@ -731,7 +743,7 @@ export default function WiFiScreen() {
             <TouchableOpacity onPress={() => setShowProfileModal(false)}>
               <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={[typography.headline, { color: colors.text }]}>
+            <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
               {editingProfile ? t('parentalControl.editProfile') : t('parentalControl.addProfile')}
             </Text>
             <TouchableOpacity onPress={handleSaveProfile} disabled={isSavingProfile}>
@@ -757,26 +769,91 @@ export default function WiFiScreen() {
             />
 
             {/* Time Range */}
-            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
               {t('parentalControl.timeRange')}
             </Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
-              <TextInput
-                style={[styles.input, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, color: colors.text, textAlign: 'center' }]}
-                value={profileStartTime}
-                onChangeText={setProfileStartTime}
-                placeholder="08:00"
-                placeholderTextColor={colors.textSecondary}
-              />
-              <Text style={[typography.body, { color: colors.textSecondary, marginHorizontal: spacing.sm }]}>—</Text>
-              <TextInput
-                style={[styles.input, { flex: 1, backgroundColor: colors.card, borderColor: colors.border, color: colors.text, textAlign: 'center' }]}
-                value={profileEndTime}
-                onChangeText={setProfileEndTime}
-                placeholder="22:00"
-                placeholderTextColor={colors.textSecondary}
-              />
+              {/* Start Time Picker */}
+              <TouchableOpacity
+                style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => { setShowStartTimePicker(!showStartTimePicker); setShowEndTimePicker(false); }}
+              >
+                <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
+                  {profileStartTime}
+                </Text>
+                <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+
+              <Text style={[typography.title3, { color: colors.textSecondary, marginHorizontal: spacing.md }]}>→</Text>
+
+              {/* End Time Picker */}
+              <TouchableOpacity
+                style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => { setShowEndTimePicker(!showEndTimePicker); setShowStartTimePicker(false); }}
+              >
+                <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
+                  {profileEndTime}
+                </Text>
+                <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
             </View>
+
+            {/* Start Time Dropdown */}
+            {showStartTimePicker && (
+              <View style={[styles.timePickerDropdown, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: spacing.md }]}>
+                <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                  {TIME_OPTIONS.map((time) => (
+                    <TouchableOpacity
+                      key={`start-${time}`}
+                      style={[styles.timePickerItem, {
+                        backgroundColor: profileStartTime === time ? colors.primary + '20' : 'transparent'
+                      }]}
+                      onPress={() => { setProfileStartTime(time); setShowStartTimePicker(false); }}
+                    >
+                      <Text style={[typography.body, {
+                        color: profileStartTime === time ? colors.primary : colors.text,
+                        fontWeight: profileStartTime === time ? '600' : '400'
+                      }]}>
+                        {time}
+                      </Text>
+                      {profileStartTime === time && (
+                        <MaterialIcons name="check" size={20} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
+            {/* End Time Dropdown */}
+            {showEndTimePicker && (
+              <View style={[styles.timePickerDropdown, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: spacing.md }]}>
+                <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                  {TIME_OPTIONS.map((time) => (
+                    <TouchableOpacity
+                      key={`end-${time}`}
+                      style={[styles.timePickerItem, {
+                        backgroundColor: profileEndTime === time ? colors.primary + '20' : 'transparent'
+                      }]}
+                      onPress={() => { setProfileEndTime(time); setShowEndTimePicker(false); }}
+                    >
+                      <Text style={[typography.body, {
+                        color: profileEndTime === time ? colors.primary : colors.text,
+                        fontWeight: profileEndTime === time ? '600' : '400'
+                      }]}>
+                        {time}
+                      </Text>
+                      {profileEndTime === time && (
+                        <MaterialIcons name="check" size={20} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
 
             {/* Active Days */}
             <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
@@ -968,5 +1045,26 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  timePicker: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
+  },
+  timePickerDropdown: {
+    borderRadius: 12,
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  timePickerItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
   },
 });

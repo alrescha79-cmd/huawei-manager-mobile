@@ -13,11 +13,11 @@ import {
   TextInput,
   Switch,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Button, InfoRow, ThemedAlertHelper } from '@/components';
+import { Card, CardHeader, Button, InfoRow, ThemedAlertHelper, BandSelectionModal, PageSheetModal } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -83,6 +83,7 @@ const ETHERNET_MODES = [
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { openBandModal } = useLocalSearchParams<{ openBandModal?: string }>();
   const { colors, typography, spacing } = useTheme();
   const { credentials, logout, login } = useAuthStore();
   const { modemInfo, setModemInfo } = useModemStore();
@@ -154,6 +155,32 @@ export default function SettingsScreen() {
     macAddress: '',
   });
 
+  // APN Profile state
+  const [apnProfiles, setApnProfiles] = useState<{
+    id: string;
+    name: string;
+    apn: string;
+    username: string;
+    password: string;
+    authType: 'none' | 'pap' | 'chap' | 'pap_chap';
+    ipType: 'ipv4' | 'ipv6' | 'ipv4v6';
+    isDefault: boolean;
+  }[]>([]);
+  const [isApnExpanded, setIsApnExpanded] = useState(false);
+  const [showApnModal, setShowApnModal] = useState(false);
+  const [editingApn, setEditingApn] = useState<string | null>(null);
+  const [apnName, setApnName] = useState('');
+  const [apnApn, setApnApn] = useState('');
+  const [apnUsername, setApnUsername] = useState('');
+  const [apnPassword, setApnPassword] = useState('');
+  const [apnAuthType, setApnAuthType] = useState<'none' | 'pap' | 'chap' | 'pap_chap'>('none');
+  const [apnIpType, setApnIpType] = useState<'ipv4' | 'ipv6' | 'ipv4v6'>('ipv4');
+  const [apnIsDefault, setApnIsDefault] = useState(false);
+  const [isSavingApn, setIsSavingApn] = useState(false);
+  const [showApnAuthDropdown, setShowApnAuthDropdown] = useState(false);
+  const [showApnIpDropdown, setShowApnIpDropdown] = useState(false);
+
+
   // Check if credentials have changed
   const hasCredentialsChanges =
     modemIp !== (credentials?.modemIp || '192.168.8.1') ||
@@ -173,6 +200,7 @@ export default function SettingsScreen() {
       loadMobileNetworkSettings(service);
       loadTimeSettings(service);
       loadEthernetSettings(netService);
+      loadApnProfiles(netService);
     }
   }, [credentials]);
 
@@ -185,6 +213,15 @@ export default function SettingsScreen() {
     }, 1000);
     return () => clearInterval(interval);
   }, [modemService]);
+
+  // Auto-open band modal if navigated with openBandModal parameter
+  useEffect(() => {
+    if (openBandModal === 'true') {
+      setShowBandModal(true);
+      // Clear the parameter by replacing route
+      router.replace('/settings');
+    }
+  }, [openBandModal]);
 
   const loadModemInfo = async (service: ModemService) => {
     try {
@@ -248,6 +285,109 @@ export default function SettingsScreen() {
       ThemedAlertHelper.alert(t('common.error'), t('common.error'));
     } finally {
       setIsChangingEthernet(false);
+    }
+  };
+
+  const loadApnProfiles = async (service: NetworkSettingsService) => {
+    try {
+      const profiles = await service.getAPNProfiles();
+      setApnProfiles(profiles);
+    } catch (error) {
+      console.error('Error loading APN profiles:', error);
+    }
+  };
+
+  const openAddApnModal = () => {
+    setEditingApn(null);
+    setApnName('');
+    setApnApn('');
+    setApnUsername('');
+    setApnPassword('');
+    setApnAuthType('none');
+    setApnIpType('ipv4');
+    setApnIsDefault(false);
+    setShowApnModal(true);
+  };
+
+  const openEditApnModal = (profile: typeof apnProfiles[0]) => {
+    setEditingApn(profile.id);
+    setApnName(profile.name);
+    setApnApn(profile.apn);
+    setApnUsername(profile.username);
+    setApnPassword(profile.password);
+    setApnAuthType(profile.authType);
+    setApnIpType(profile.ipType);
+    setApnIsDefault(profile.isDefault);
+    setShowApnModal(true);
+  };
+
+  const handleSaveApnProfile = async () => {
+    if (!networkSettingsService || isSavingApn) return;
+
+    if (!apnName.trim() || !apnApn.trim()) {
+      ThemedAlertHelper.alert(t('common.error'), t('networkSettings.apnRequired'));
+      return;
+    }
+
+    setIsSavingApn(true);
+    try {
+      const profileData = {
+        name: apnName.trim(),
+        apn: apnApn.trim(),
+        username: apnUsername,
+        password: apnPassword,
+        authType: apnAuthType,
+        ipType: apnIpType,
+        isDefault: apnIsDefault,
+      };
+
+      if (editingApn) {
+        await networkSettingsService.updateAPNProfile({ id: editingApn, ...profileData });
+      } else {
+        await networkSettingsService.createAPNProfile(profileData);
+      }
+
+      ThemedAlertHelper.alert(t('common.success'), t('networkSettings.profileSaved'));
+      setShowApnModal(false);
+      await loadApnProfiles(networkSettingsService);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+    } finally {
+      setIsSavingApn(false);
+    }
+  };
+
+  const handleDeleteApnProfile = (profileId: string, profileName: string) => {
+    ThemedAlertHelper.alert(
+      t('networkSettings.deleteProfile'),
+      t('networkSettings.deleteProfileConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await networkSettingsService?.deleteAPNProfile(profileId);
+              ThemedAlertHelper.alert(t('common.success'), t('networkSettings.profileDeleted'));
+              if (networkSettingsService) await loadApnProfiles(networkSettingsService);
+            } catch (error) {
+              ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleSetDefaultApn = async (profileId: string) => {
+    if (!networkSettingsService) return;
+    try {
+      await networkSettingsService.setActiveAPNProfile(profileId);
+      ThemedAlertHelper.alert(t('common.success'), t('networkSettings.profileSaved'));
+      await loadApnProfiles(networkSettingsService);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
     }
   };
 
@@ -945,6 +1085,96 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* APN Profile Section */}
+        <View style={{ marginTop: spacing.md }}>
+          <TouchableOpacity
+            style={styles.collapseHeader}
+            onPress={() => setIsApnExpanded(!isApnExpanded)}
+          >
+            <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+              <MaterialIcons name="sim-card" size={20} color={colors.primary} />
+              <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
+                {t('networkSettings.apnProfiles')}
+              </Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 8 }]}>
+                ({apnProfiles.length})
+              </Text>
+            </View>
+            <MaterialIcons
+              name={isApnExpanded ? 'expand-less' : 'expand-more'}
+              size={24}
+              color={colors.textSecondary}
+            />
+          </TouchableOpacity>
+
+          {isApnExpanded && (
+            <View style={{ paddingVertical: spacing.sm }}>
+              {apnProfiles.length === 0 ? (
+                <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.md }]}>
+                  {t('networkSettings.noProfiles')}
+                </Text>
+              ) : (
+                apnProfiles.map((profile, index) => (
+                  <TouchableOpacity
+                    key={profile.id}
+                    onPress={() => openEditApnModal(profile)}
+                    style={[
+                      styles.profileItem,
+                      {
+                        backgroundColor: profile.isDefault ? colors.primary + '15' : colors.card,
+                        borderColor: profile.isDefault ? colors.primary : colors.border,
+                        marginBottom: index < apnProfiles.length - 1 ? 8 : 0,
+                      }
+                    ]}
+                  >
+                    <View style={{ flex: 1 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                          {profile.name}
+                        </Text>
+                        {profile.isDefault && (
+                          <View style={{ backgroundColor: colors.primary, borderRadius: 4, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 8 }}>
+                            <Text style={[typography.caption2, { color: '#fff' }]}>{t('networkSettings.default')}</Text>
+                          </View>
+                        )}
+                      </View>
+                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                        APN: {profile.apn}
+                      </Text>
+                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                        {profile.authType.toUpperCase()} • {profile.ipType.toUpperCase()}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      {!profile.isDefault && (
+                        <TouchableOpacity
+                          onPress={(e) => { e.stopPropagation(); handleSetDefaultApn(profile.id); }}
+                          style={{ padding: 4 }}
+                        >
+                          <MaterialIcons name="star-outline" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                      )}
+                      <TouchableOpacity
+                        onPress={(e) => { e.stopPropagation(); handleDeleteApnProfile(profile.id, profile.name); }}
+                        style={{ padding: 4 }}
+                      >
+                        <MaterialIcons name="delete" size={20} color={colors.error} />
+                      </TouchableOpacity>
+                      <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                    </View>
+                  </TouchableOpacity>
+                ))
+              )}
+
+              <Button
+                title={t('networkSettings.addProfile')}
+                onPress={openAddApnModal}
+                style={{ marginTop: spacing.md }}
+              />
+            </View>
+          )}
+        </View>
+
         {/* LTE Band Selection */}
         <View style={[styles.settingRow, { marginTop: spacing.md }]}>
           <View style={{ flex: 1 }}>
@@ -1386,24 +1616,26 @@ export default function SettingsScreen() {
         </Text>
       </Card>
 
-      {/* Band Selection Modal */}
+      {/* APN Profile Modal */}
       <Modal
-        visible={showBandModal}
+        visible={showApnModal}
         animationType="slide"
         presentationStyle="pageSheet"
-        onRequestClose={() => setShowBandModal(false)}
+        onRequestClose={() => setShowApnModal(false)}
       >
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.modalHeader, {
             borderBottomColor: colors.border,
             paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
           }]}>
-            <TouchableOpacity onPress={() => setShowBandModal(false)}>
+            <TouchableOpacity onPress={() => setShowApnModal(false)}>
               <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
             </TouchableOpacity>
-            <Text style={[typography.headline, { color: colors.text }]}>{t('settings.lteBands')}</Text>
-            <TouchableOpacity onPress={saveBandSettings} disabled={isSavingBands}>
-              {isSavingBands ? (
+            <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+              {editingApn ? t('networkSettings.editProfile') : t('networkSettings.addProfile')}
+            </Text>
+            <TouchableOpacity onPress={handleSaveApnProfile} disabled={isSavingApn}>
+              {isSavingApn ? (
                 <ActivityIndicator color={colors.primary} size="small" />
               ) : (
                 <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('common.save')}</Text>
@@ -1412,54 +1644,158 @@ export default function SettingsScreen() {
           </View>
 
           <ScrollView style={styles.modalContent}>
-            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.md, textAlign: 'center' }]}>
-              {t('settings.selectBands')}
+            {/* Profile Name */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+              {t('networkSettings.profileName')}
             </Text>
+            <TextInput
+              style={[styles.textInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
+              value={apnName}
+              onChangeText={setApnName}
+              placeholder={t('networkSettings.profileName')}
+              placeholderTextColor={colors.textSecondary}
+            />
 
-            {/* Select All / Deselect All */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: spacing.md, gap: spacing.sm }}>
-              <TouchableOpacity
-                style={[styles.selectAllButton, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}
-                onPress={() => setSelectedBands(LTE_BANDS.map(b => b.bit))}
-              >
-                <Text style={[typography.caption1, { color: colors.primary }]}>{t('settings.selectAll')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.selectAllButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => setSelectedBands([])}
-              >
-                <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('settings.deselectAll')}</Text>
-              </TouchableOpacity>
+            {/* APN */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+              APN
+            </Text>
+            <TextInput
+              style={[styles.textInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
+              value={apnApn}
+              onChangeText={setApnApn}
+              placeholder="internet"
+              placeholderTextColor={colors.textSecondary}
+              autoCapitalize="none"
+            />
+
+            {/* Username */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+              {t('networkSettings.apnUsername')}
+            </Text>
+            <TextInput
+              style={[styles.textInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
+              value={apnUsername}
+              onChangeText={setApnUsername}
+              placeholder={t('networkSettings.apnUsername')}
+              placeholderTextColor={colors.textSecondary}
+              autoCapitalize="none"
+            />
+
+            {/* Password */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+              {t('networkSettings.apnPassword')}
+            </Text>
+            <TextInput
+              style={[styles.textInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
+              value={apnPassword}
+              onChangeText={setApnPassword}
+              placeholder={t('networkSettings.apnPassword')}
+              placeholderTextColor={colors.textSecondary}
+              secureTextEntry
+            />
+
+            {/* Auth Type */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+              {t('networkSettings.authType')}
+            </Text>
+            <TouchableOpacity
+              style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: showApnAuthDropdown ? 0 : spacing.md }]}
+              onPress={() => { setShowApnAuthDropdown(!showApnAuthDropdown); setShowApnIpDropdown(false); }}
+            >
+              <Text style={[typography.body, { color: colors.text, flex: 1 }]}>
+                {apnAuthType.toUpperCase()}
+              </Text>
+              <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            {showApnAuthDropdown && (
+              <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: spacing.md }]}>
+                {(['none', 'pap', 'chap', 'pap_chap'] as const).map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[styles.dropdownItem, {
+                      backgroundColor: apnAuthType === type ? colors.primary + '20' : 'transparent'
+                    }]}
+                    onPress={() => { setApnAuthType(type); setShowApnAuthDropdown(false); }}
+                  >
+                    <Text style={[typography.body, {
+                      color: apnAuthType === type ? colors.primary : colors.text
+                    }]}>
+                      {type.toUpperCase().replace('_', '/')}
+                    </Text>
+                    {apnAuthType === type && (
+                      <MaterialIcons name="check" size={20} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* IP Type */}
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+              {t('networkSettings.ipType')}
+            </Text>
+            <TouchableOpacity
+              style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: showApnIpDropdown ? 0 : spacing.md }]}
+              onPress={() => { setShowApnIpDropdown(!showApnIpDropdown); setShowApnAuthDropdown(false); }}
+            >
+              <Text style={[typography.body, { color: colors.text, flex: 1 }]}>
+                {apnIpType.toUpperCase()}
+              </Text>
+              <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+            </TouchableOpacity>
+
+            {showApnIpDropdown && (
+              <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: spacing.md }]}>
+                {(['ipv4', 'ipv6', 'ipv4v6'] as const).map((type) => (
+                  <TouchableOpacity
+                    key={type}
+                    style={[styles.dropdownItem, {
+                      backgroundColor: apnIpType === type ? colors.primary + '20' : 'transparent'
+                    }]}
+                    onPress={() => { setApnIpType(type); setShowApnIpDropdown(false); }}
+                  >
+                    <Text style={[typography.body, {
+                      color: apnIpType === type ? colors.primary : colors.text
+                    }]}>
+                      {type.toUpperCase()}
+                    </Text>
+                    {apnIpType === type && (
+                      <MaterialIcons name="check" size={20} color={colors.primary} />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            )}
+
+            {/* Set as Default */}
+            <View style={[styles.settingRow, { marginTop: spacing.sm }]}>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.body, { color: colors.text }]}>
+                  {t('networkSettings.setAsDefault')}
+                </Text>
+                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                  {t('networkSettings.setAsDefaultHint')}
+                </Text>
+              </View>
+              <Switch
+                value={apnIsDefault}
+                onValueChange={setApnIsDefault}
+                trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                thumbColor={apnIsDefault ? colors.primary : colors.textSecondary}
+              />
             </View>
-
-            {/* Band List */}
-            {LTE_BANDS.map((band) => (
-              <TouchableOpacity
-                key={band.bit}
-                style={[styles.bandItem, {
-                  backgroundColor: selectedBands.includes(band.bit) ? colors.primary + '15' : colors.card,
-                  borderColor: selectedBands.includes(band.bit) ? colors.primary : colors.border
-                }]}
-                onPress={() => toggleBand(band.bit)}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
-                    {band.name}
-                  </Text>
-                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    {band.freq}
-                  </Text>
-                </View>
-                <MaterialIcons
-                  name={selectedBands.includes(band.bit) ? 'check-circle' : 'radio-button-unchecked'}
-                  size={24}
-                  color={selectedBands.includes(band.bit) ? colors.primary : colors.textSecondary}
-                />
-              </TouchableOpacity>
-            ))}
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Band Selection Modal */}
+      <BandSelectionModal
+        visible={showBandModal}
+        onClose={() => setShowBandModal(false)}
+        modemService={modemService}
+      />
     </ScrollView>
   );
 }
@@ -1573,6 +1909,13 @@ const styles = StyleSheet.create({
     marginTop: 12,
     padding: 12,
     borderRadius: 8,
+    borderWidth: 1,
+  },
+  profileItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 14,
+    borderRadius: 12,
     borderWidth: 1,
   },
 });

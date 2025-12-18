@@ -29,12 +29,12 @@
 
 > **⚡ Built with Expo SDK 54**
 
-> **📡 Tested on Huawei B312-929**
+> **📡 Tested on Huawei B312-929 (Orbit Star 2)**
 
-> **📲 Download on [Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
- - arm64-v8a: Untuk Android 64-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-arm64-v8a.apk)
- - armeabi-v7a: Untuk Android 32-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-armeabi-v7a.apk)
- - universal: Untuk semua perangkat [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.0/huawei-manager-v1.0.0-universal.apk)
+> **📲 Download on [Github Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
+ - arm64-v8a: Untuk Android 64-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-arm64-v8a.apk)
+ - armeabi-v7a: Untuk Android 32-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-armeabi-v7a.apk)
+ - universal: Untuk semua perangkat [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-universal.apk)
 
 ---
 
@@ -46,6 +46,9 @@
 | 📶 **WiFi Management** | Kelola connected devices dan WiFi settings |
 | 💬 **SMS** | Baca, kirim, dan hapus SMS (Jika fitur ini tersedia di modem) |
 | ⚙️ **Settings** | Antenna mode, network type, band lock, reboot modem |
+| 👨‍👩‍👧‍👦 **Parental Control** | Batasi penggunaan perangkat |
+| 📱 **Profile APN** | Kelola APN settings |
+| 🖧 **Ethernet** | Kelola Ethernet settings |
 | 🌙 **Dark Mode** | Support light dan dark theme |
 | 🔤 **Language** | Pilih bahasa (Bahasa Indonesia dan Bahasa Inggris) |
 

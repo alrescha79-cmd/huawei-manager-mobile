@@ -35,8 +35,8 @@ export const API_ENDPOINTS = {
 
 export const APP_CONFIG = {
   NAME: 'Huawei Manager',
-  VERSION: '1.0.0',
-  DEVELOPER: 'Huawei Manager Team',
+  VERSION: '1.0.1',
+  DEVELOPER: 'Anggun Caksono',
 };
 
 export const STORAGE_KEYS = {

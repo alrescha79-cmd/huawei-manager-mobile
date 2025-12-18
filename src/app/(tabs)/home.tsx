@@ -14,7 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge, ThemedAlertHelper, WebViewLogin } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
@@ -58,6 +58,8 @@ export default function HomeScreen() {
   const [showReloginWebView, setShowReloginWebView] = useState(false);
   const [sessionExpired, setSessionExpired] = useState(false);
   const [reloginAttempts, setReloginAttempts] = useState(0);
+  const [selectedBands, setSelectedBands] = useState<string[]>([]);
+  const [showBandModal, setShowBandModal] = useState(false);
 
   // Auto-refresh interval (fast for speed, slower for other data)
   useEffect(() => {
@@ -67,6 +69,7 @@ export default function HomeScreen() {
 
       // Initial load
       loadData(service);
+      loadBands(service);
 
       // Fast refresh for traffic/speed data only (every 1 second)
       const fastIntervalId = setInterval(() => {
@@ -204,8 +207,22 @@ export default function HomeScreen() {
   const handleRefresh = () => {
     if (modemService) {
       loadData(modemService);
+      loadBands(modemService);
     }
   };
+
+  const loadBands = async (service: ModemService) => {
+    try {
+      const bands = await service.getBandSettings();
+      if (bands && bands.lteBand) {
+        const bandNames = getSelectedBandsDisplay(bands.lteBand);
+        setSelectedBands(bandNames.length > 0 ? bandNames : [t('common.all')]);
+      }
+    } catch (error) {
+      // Silent fail
+    }
+  };
+
 
   // Handle successful re-login from WebView
   const handleReloginSuccess = async () => {
@@ -450,6 +467,23 @@ export default function HomeScreen() {
           )}
         </View>
 
+        {/* LTE Band Selection */}
+        <TouchableOpacity
+          style={[styles.controlRow, { marginTop: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md }]}
+          onPress={() => setShowBandModal(true)}
+        >
+          <View style={{ flex: 1 }}>
+            <Text style={[typography.body, { color: colors.text }]}>{t('home.lteBandSelection')}</Text>
+            <Text style={[typography.caption1, { color: colors.textSecondary }]} numberOfLines={1}>
+              {selectedBands.length > 0 ? selectedBands.join(', ') : t('common.loading')}
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
+        </TouchableOpacity>
+
+        {/* Divider */}
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
         {/* Change IP Button */}
         <TouchableOpacity
           style={[styles.controlButton, { backgroundColor: colors.primary }]}
@@ -606,6 +640,16 @@ export default function HomeScreen() {
           setSessionExpired(true);
           await logout();
           router.replace('/login');
+        }}
+      />
+
+      {/* LTE Band Selection Modal */}
+      <BandSelectionModal
+        visible={showBandModal}
+        onClose={() => setShowBandModal(false)}
+        modemService={modemService}
+        onSaved={() => {
+          if (modemService) loadBands(modemService);
         }}
       />
     </ScrollView>
