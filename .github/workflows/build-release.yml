@@ -209,6 +209,74 @@ jobs:
     needs: [build-arm64, build-armv7, build-universal]
     
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "prev_tag=$PREV_TAG" >> $GITHUB_OUTPUT
+          echo "Previous tag: $PREV_TAG"
+
+      - name: Generate Release Notes from PRs
+        id: release_notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PREV_TAG="${{ steps.prev_tag.outputs.prev_tag }}"
+          REPO="${{ github.repository }}"
+          
+          # Get commits since last tag (or all if no previous tag)
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"%H" 2>/dev/null || echo "")
+          else
+            COMMITS=$(git log --pretty=format:"%H" 2>/dev/null || echo "")
+          fi
+          
+          # Find merged PRs from commits
+          echo "## What's Changed" > release_notes.md
+          echo "" >> release_notes.md
+          
+          PR_FOUND=false
+          for COMMIT in $COMMITS; do
+            # Get PR number from commit (if merged via PR)
+            PR_DATA=$(gh api "repos/${REPO}/commits/${COMMIT}/pulls" --jq '.[0] | {number, title, user: .user.login, html_url}' 2>/dev/null || echo "")
+            
+            if [ -n "$PR_DATA" ] && [ "$PR_DATA" != "null" ]; then
+              PR_NUM=$(echo "$PR_DATA" | jq -r '.number')
+              PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')
+              PR_USER=$(echo "$PR_DATA" | jq -r '.user')
+              PR_URL=$(echo "$PR_DATA" | jq -r '.html_url')
+              
+              # Check if already added (avoid duplicates)
+              if ! grep -q "#${PR_NUM}" release_notes.md 2>/dev/null; then
+                echo "* ${PR_TITLE} by @${PR_USER} in [#${PR_NUM}](${PR_URL})" >> release_notes.md
+                PR_FOUND=true
+              fi
+            fi
+          done
+          
+          if [ "$PR_FOUND" = false ]; then
+            echo "* Various improvements and bug fixes" >> release_notes.md
+          fi
+          
+          echo "" >> release_notes.md
+          
+          # Add full changelog link
+          if [ -n "$PREV_TAG" ]; then
+            echo "**Full Changelog**: https://github.com/${REPO}/compare/${PREV_TAG}...v${{ needs.build-arm64.outputs.version }}" >> release_notes.md
+          fi
+          
+          # Output for use in release body
+          {
+            echo 'notes<<EOF'
+            cat release_notes.md
+            echo 'EOF'
+          } >> $GITHUB_OUTPUT
+
       - name: Download all APKs
         uses: actions/download-artifact@v4
         with:
@@ -225,6 +293,10 @@ jobs:
           name: Huawei Manager v${{ needs.build-arm64.outputs.version }}
           body: |
             ## Huawei Manager v${{ needs.build-arm64.outputs.version }}
+            
+            ${{ steps.release_notes.outputs.notes }}
+            
+            ---
             
             ### Downloads
             - **arm64-v8a** - For modern 64-bit devices (recommended)
@@ -249,6 +321,10 @@ jobs:
           name: Huawei Manager ${{ github.event.inputs.version }}
           body: |
             ## Huawei Manager ${{ github.event.inputs.version }}
+            
+            ${{ steps.release_notes.outputs.notes }}
+            
+            ---
             
             ### Downloads
             - **arm64-v8a** - For modern 64-bit devices (recommended)
