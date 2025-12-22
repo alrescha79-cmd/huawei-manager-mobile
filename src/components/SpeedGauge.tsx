@@ -1,6 +1,7 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme';
+import Svg, { Path, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 interface SpeedGaugeProps {
     downloadSpeed: number; // in bps
@@ -8,247 +9,185 @@ interface SpeedGaugeProps {
 }
 
 /**
- * Speed gauge showing current download/upload speeds with colored circular progress
+ * Classic Speedometer-style gauge
  */
 export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
     const { colors, typography, spacing } = useTheme();
 
-    // Animated values for smooth transitions
-    const downloadAnim = useRef(new Animated.Value(0)).current;
-    const uploadAnim = useRef(new Animated.Value(0)).current;
-
     // Format speed to human readable
     const formatSpeed = (bps: number): { value: string; unit: string } => {
-        if (bps === 0) return { value: '0', unit: 'bps' };
-
+        if (bps === 0) return { value: '0.0', unit: 'bps' };
         const k = 1000;
         const sizes = ['bps', 'Kbps', 'Mbps', 'Gbps'];
         const i = Math.floor(Math.log(bps) / Math.log(k));
         const value = (bps / Math.pow(k, i)).toFixed(1);
-
         return { value, unit: sizes[i] };
     };
-
-    // Calculate gauge percentage (0-100) - max at 100 Mbps
-    const maxSpeed = 100 * 1000 * 1000; // 100 Mbps
-    const downloadPercent = Math.min((downloadSpeed / maxSpeed) * 100, 100);
-    const uploadPercent = Math.min((uploadSpeed / maxSpeed) * 100, 100);
-
-    // Animate when speed changes
-    useEffect(() => {
-        Animated.timing(downloadAnim, {
-            toValue: downloadPercent,
-            duration: 500,
-            useNativeDriver: false,
-        }).start();
-    }, [downloadPercent]);
-
-    useEffect(() => {
-        Animated.timing(uploadAnim, {
-            toValue: uploadPercent,
-            duration: 500,
-            useNativeDriver: false,
-        }).start();
-    }, [uploadPercent]);
 
     const dlSpeed = formatSpeed(downloadSpeed);
     const ulSpeed = formatSpeed(uploadSpeed);
 
-    // Get color based on speed percentage
-    const getSpeedColor = (percent: number, isDownload: boolean): string => {
-        if (isDownload) {
-            if (percent >= 60) return '#00C853'; // Bright Green - very fast
-            if (percent >= 30) return '#00BFA5'; // Teal - good
-            if (percent >= 10) return '#26A69A'; // Light Teal - moderate
-            if (percent >= 1) return '#4DB6AC';  // Pale Teal - low
-            return '#546E7A'; // Blue Gray - idle
-        } else {
-            if (percent >= 60) return '#FF6D00'; // Bright Orange - very fast
-            if (percent >= 30) return '#FF9100'; // Orange - good
-            if (percent >= 10) return '#FFA726'; // Light Orange - moderate
-            if (percent >= 1) return '#FFB74D';  // Pale Orange - low
-            return '#78909C'; // Gray - idle
-        }
+    // SVG parameters  
+    const size = 140;
+    const strokeWidth = 10;
+    const radius = (size / 2) - strokeWidth - 8;
+    const center = size / 2;
+
+    // Arc: from 135° (bottom-left) to 405° (bottom-right) = 270° sweep
+    // In radians: startAngle = 0.75π, endAngle = 2.25π
+    const startAngle = 0.75 * Math.PI; // 135°
+    const endAngle = 2.25 * Math.PI;   // 405° (= 45°)
+    const totalAngle = endAngle - startAngle; // 270°
+
+    // Get point on circle
+    const getPoint = (angle: number, r: number) => ({
+        x: center + Math.cos(angle) * r,
+        y: center + Math.sin(angle) * r,
+    });
+
+    // Create arc path
+    const createArc = (start: number, end: number, r: number) => {
+        const p1 = getPoint(start, r);
+        const p2 = getPoint(end, r);
+        const sweep = end - start;
+        const largeArc = sweep > Math.PI ? 1 : 0;
+        return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${largeArc} 1 ${p2.x} ${p2.y}`;
     };
 
-    const downloadColor = getSpeedColor(downloadPercent, true);
-    const uploadColor = getSpeedColor(uploadPercent, false);
+    // Draw ticks (40 total, every 10th is major)
+    const renderTicks = () => {
+        const ticks = [];
+        const numTicks = 40;
+        const innerR = radius - 12;
+        const outerR = radius - 6;
 
-    // Size constants
-    const size = 100;
-    const strokeWidth = 8;
-    const innerSize = size - (strokeWidth * 2) - 8;
+        for (let i = 0; i <= numTicks; i++) {
+            const angle = startAngle + (totalAngle * (i / numTicks));
+            const p1 = getPoint(angle, innerR);
+            const p2 = getPoint(angle, outerR);
+            const isMajor = i % 10 === 0;
 
-    // Calculate degrees for progress
-    const downloadDeg = (downloadPercent / 100) * 360;
-    const uploadDeg = (uploadPercent / 100) * 360;
+            ticks.push(
+                <Line
+                    key={`tick-${i}`}
+                    x1={p1.x}
+                    y1={p1.y}
+                    x2={p2.x}
+                    y2={p2.y}
+                    stroke={isMajor ? colors.text : colors.textSecondary}
+                    strokeWidth={isMajor ? 2 : 1}
+                />
+            );
+        }
+        return ticks;
+    };
+
+    const renderGauge = (
+        speedBps: number,
+        speedValue: string,
+        speedUnit: string,
+        primaryColor: string,
+        secondaryColor: string,
+        label: string,
+        icon: string,
+        gradientId: string
+    ) => {
+        // Dynamic max scale based on unit
+        // Kbps: max 1000 Kbps, Mbps: max 100 Mbps, Gbps: max 10 Gbps
+        let progressRatio = 0;
+        if (speedBps > 0) {
+            if (speedUnit === 'Kbps' || speedUnit === 'bps') {
+                // For Kbps/bps: max scale is 1000 Kbps (1,000,000 bps)
+                progressRatio = Math.min(speedBps / (1000 * 1000), 1);
+            } else if (speedUnit === 'Mbps') {
+                // For Mbps: max scale is 100 Mbps
+                progressRatio = Math.min(speedBps / (100 * 1000 * 1000), 1);
+            } else {
+                // For Gbps: max scale is 10 Gbps
+                progressRatio = Math.min(speedBps / (10 * 1000 * 1000 * 1000), 1);
+            }
+        }
+        const progressEndAngle = startAngle + (totalAngle * progressRatio);
+
+        return (
+            <View style={styles.gaugeItem}>
+                <Svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>
+                    <Defs>
+                        <LinearGradient id={gradientId} x1="0%" y1="0%" x2="100%" y2="0%">
+                            <Stop offset="0%" stopColor={secondaryColor} />
+                            <Stop offset="100%" stopColor={primaryColor} />
+                        </LinearGradient>
+                    </Defs>
+
+                    {/* Background arc (track) */}
+                    <Path
+                        d={createArc(startAngle, endAngle, radius)}
+                        stroke={colors.border}
+                        strokeWidth={strokeWidth}
+                        fill="none"
+                        strokeLinecap="round"
+                    />
+
+                    {/* Progress arc - always render if there's any progress */}
+                    {progressRatio > 0 && (
+                        <Path
+                            d={createArc(startAngle, progressEndAngle, radius)}
+                            stroke={`url(#${gradientId})`}
+                            strokeWidth={strokeWidth}
+                            fill="none"
+                            strokeLinecap="round"
+                        />
+                    )}
+
+                    {/* Ticks */}
+                    {renderTicks()}
+                </Svg>
+
+                {/* Center value */}
+                <View style={styles.centerValue}>
+                    <Text style={[styles.speedValue, { color: primaryColor }]}>
+                        {speedValue}
+                    </Text>
+                    <Text style={[styles.unitLabel, { color: primaryColor + '99' }]}>
+                        {speedUnit}
+                    </Text>
+                </View>
+
+                {/* Label */}
+                <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]}>
+                    {icon} {label}
+                </Text>
+            </View>
+        );
+    };
+
+    // Colors from HTML design
+    const downloadColors = { primary: '#22d3ee', secondary: '#0e7490' }; // Cyan
+    const uploadColors = { primary: '#e879f9', secondary: '#a21caf' };   // Fuchsia
 
     return (
         <View style={styles.container}>
-            <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600', marginBottom: spacing.md, textAlign: 'center' }]}>
-                Current Speed
-            </Text>
-
-            <View style={styles.gaugesContainer}>
-                {/* Download Speed */}
-                <View style={styles.gaugeItem}>
-                    <View style={[styles.speedCircle, { width: size, height: size }]}>
-                        {/* Background circle */}
-                        <View style={[
-                            styles.circleBackground,
-                            {
-                                width: size,
-                                height: size,
-                                borderRadius: size / 2,
-                                borderWidth: strokeWidth,
-                                borderColor: colors.border,
-                            }
-                        ]} />
-
-                        {/* Progress circle with color */}
-                        {downloadPercent > 0 && (
-                            <>
-                                {/* First 180 degrees (left) */}
-                                <View style={[styles.halfMask, { width: size / 2, height: size, left: 0 }]}>
-                                    <View style={[
-                                        styles.halfRing,
-                                        {
-                                            width: size,
-                                            height: size,
-                                            borderRadius: size / 2,
-                                            borderWidth: strokeWidth,
-                                            borderColor: downloadColor,
-                                            left: 0,
-                                            transform: [{ rotate: `${Math.min(downloadDeg, 180) - 90}deg` }],
-                                        }
-                                    ]} />
-                                </View>
-
-                                {/* Second 180 degrees (right) - only if > 50% */}
-                                {downloadDeg > 180 && (
-                                    <View style={[styles.halfMask, { width: size / 2, height: size, right: 0 }]}>
-                                        <View style={[
-                                            styles.halfRing,
-                                            {
-                                                width: size,
-                                                height: size,
-                                                borderRadius: size / 2,
-                                                borderWidth: strokeWidth,
-                                                borderColor: downloadColor,
-                                                right: 0,
-                                                transform: [{ rotate: `${(downloadDeg - 180) + 90}deg` }],
-                                            }
-                                        ]} />
-                                    </View>
-                                )}
-                            </>
-                        )}
-
-                        {/* Center content */}
-                        <View style={[
-                            styles.circleCenter,
-                            {
-                                width: innerSize,
-                                height: innerSize,
-                                borderRadius: innerSize / 2,
-                                backgroundColor: colors.card,
-                            }
-                        ]}>
-                            <Text style={[styles.speedValue, { color: downloadColor }]}>
-                                {dlSpeed.value}
-                            </Text>
-                            <Text style={[typography.caption2, { color: colors.textSecondary }]}>
-                                {dlSpeed.unit}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.labelContainer}>
-                        <View style={[styles.speedIndicator, { backgroundColor: downloadColor }]} />
-                        <Text style={[typography.caption1, { color: colors.text, fontWeight: '600' }]}>
-                            ↓ Download
-                        </Text>
-                    </View>
-                </View>
-
-                {/* Upload Speed */}
-                <View style={styles.gaugeItem}>
-                    <View style={[styles.speedCircle, { width: size, height: size }]}>
-                        {/* Background circle */}
-                        <View style={[
-                            styles.circleBackground,
-                            {
-                                width: size,
-                                height: size,
-                                borderRadius: size / 2,
-                                borderWidth: strokeWidth,
-                                borderColor: colors.border,
-                            }
-                        ]} />
-
-                        {/* Progress circle with color */}
-                        {uploadPercent > 0 && (
-                            <>
-                                {/* First 180 degrees (left) */}
-                                <View style={[styles.halfMask, { width: size / 2, height: size, left: 0 }]}>
-                                    <View style={[
-                                        styles.halfRing,
-                                        {
-                                            width: size,
-                                            height: size,
-                                            borderRadius: size / 2,
-                                            borderWidth: strokeWidth,
-                                            borderColor: uploadColor,
-                                            left: 0,
-                                            transform: [{ rotate: `${Math.min(uploadDeg, 180) - 90}deg` }],
-                                        }
-                                    ]} />
-                                </View>
-
-                                {/* Second 180 degrees (right) - only if > 50% */}
-                                {uploadDeg > 180 && (
-                                    <View style={[styles.halfMask, { width: size / 2, height: size, right: 0 }]}>
-                                        <View style={[
-                                            styles.halfRing,
-                                            {
-                                                width: size,
-                                                height: size,
-                                                borderRadius: size / 2,
-                                                borderWidth: strokeWidth,
-                                                borderColor: uploadColor,
-                                                right: 0,
-                                                transform: [{ rotate: `${(uploadDeg - 180) + 90}deg` }],
-                                            }
-                                        ]} />
-                                    </View>
-                                )}
-                            </>
-                        )}
-
-                        {/* Center content */}
-                        <View style={[
-                            styles.circleCenter,
-                            {
-                                width: innerSize,
-                                height: innerSize,
-                                borderRadius: innerSize / 2,
-                                backgroundColor: colors.card,
-                            }
-                        ]}>
-                            <Text style={[styles.speedValue, { color: uploadColor }]}>
-                                {ulSpeed.value}
-                            </Text>
-                            <Text style={[typography.caption2, { color: colors.textSecondary }]}>
-                                {ulSpeed.unit}
-                            </Text>
-                        </View>
-                    </View>
-                    <View style={styles.labelContainer}>
-                        <View style={[styles.speedIndicator, { backgroundColor: uploadColor }]} />
-                        <Text style={[typography.caption1, { color: colors.text, fontWeight: '600' }]}>
-                            ↑ Upload
-                        </Text>
-                    </View>
-                </View>
+            <View style={styles.gaugesRow}>
+                {renderGauge(
+                    downloadSpeed,
+                    dlSpeed.value,
+                    dlSpeed.unit,
+                    downloadColors.primary,
+                    downloadColors.secondary,
+                    'Download',
+                    '↓',
+                    'dlGrad'
+                )}
+                {renderGauge(
+                    uploadSpeed,
+                    ulSpeed.value,
+                    ulSpeed.unit,
+                    uploadColors.primary,
+                    uploadColors.secondary,
+                    'Upload',
+                    '↑',
+                    'ulGrad'
+                )}
             </View>
         </View>
     );
@@ -258,49 +197,34 @@ const styles = StyleSheet.create({
     container: {
         marginBottom: 16,
     },
-    gaugesContainer: {
+    gaugesRow: {
         flexDirection: 'row',
         justifyContent: 'space-around',
+        alignItems: 'center',
     },
     gaugeItem: {
         alignItems: 'center',
-    },
-    speedCircle: {
-        justifyContent: 'center',
-        alignItems: 'center',
         position: 'relative',
     },
-    circleBackground: {
+    centerValue: {
         position: 'absolute',
-    },
-    halfMask: {
-        position: 'absolute',
-        overflow: 'hidden',
-    },
-    halfRing: {
-        position: 'absolute',
-        borderLeftColor: 'transparent',
-        borderBottomColor: 'transparent',
-    },
-    circleCenter: {
-        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
+        paddingTop: 10,
     },
     speedValue: {
-        fontSize: 20,
+        fontSize: 26,
         fontWeight: '700',
+        fontFamily: 'monospace',
     },
-    labelContainer: {
-        marginTop: 8,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    speedIndicator: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginRight: 6,
+    unitLabel: {
+        fontSize: 10,
+        fontWeight: '500',
+        marginTop: 2,
     },
 });
 

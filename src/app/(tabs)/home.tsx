@@ -6,15 +6,13 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  StatusBar,
-  Platform,
   Switch,
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, DataPieChart, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
@@ -29,6 +27,29 @@ import {
   getLteBandInfo,
 } from '@/utils/helpers';
 import { useTranslation } from '@/i18n';
+
+// Helper to determine signal quality based on thresholds
+const getSignalQuality = (
+  value: number,
+  thresholds: { excellent: number; good: number; fair: number; poor: number },
+  reverseScale: boolean
+): 'excellent' | 'good' | 'fair' | 'poor' | 'unknown' => {
+  if (isNaN(value)) return 'unknown';
+
+  if (reverseScale) {
+    // Higher value is better (e.g., RSSI: -60 is better than -90)
+    if (value >= thresholds.excellent) return 'excellent';
+    if (value >= thresholds.good) return 'good';
+    if (value >= thresholds.fair) return 'fair';
+    return 'poor';
+  } else {
+    // Higher value is better in normal scale (e.g., SINR: 20 is better than 5)
+    if (value >= thresholds.excellent) return 'excellent';
+    if (value >= thresholds.good) return 'good';
+    if (value >= thresholds.fair) return 'fair';
+    return 'poor';
+  }
+};
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -506,58 +527,40 @@ export default function HomeScreen() {
       {/* Signal Strength Card */}
       {signalInfo && (signalInfo.rssi || signalInfo.rsrp) ? (
         <CollapsibleCard title={t('home.signalInfo')}>
-          {signalInfo.rssi && (
-            <SignalMeter
-              label="RSSI"
-              value={signalInfo.rssi}
-              unit="dBm"
-              min={-110}
-              max={-50}
-              thresholds={{ excellent: -65, good: -75, fair: -85, poor: -95 }}
-              reverseScale={true}
-            />
-          )}
-          {signalInfo.rsrp && (
-            <SignalMeter
-              label="RSRP"
-              value={signalInfo.rsrp}
-              unit="dBm"
-              min={-140}
-              max={-70}
-              thresholds={{ excellent: -80, good: -90, fair: -100, poor: -110 }}
-              reverseScale={true}
-            />
-          )}
-          {signalInfo.rsrq && (
-            <SignalMeter
-              label="RSRQ"
-              value={signalInfo.rsrq}
-              unit="dB"
-              min={-20}
-              max={-3}
-              thresholds={{ excellent: -5, good: -9, fair: -12, poor: -15 }}
-              reverseScale={true}
-            />
-          )}
-          {signalInfo.sinr && (
-            <SignalMeter
-              label="SINR"
-              value={signalInfo.sinr}
-              unit="dB"
-              min={-5}
-              max={30}
-              thresholds={{ excellent: 20, good: 13, fair: 6, poor: 0 }}
-              reverseScale={false}
-            />
-          )}
-
-          {/* Additional Info */}
-          {(signalInfo.band || signalInfo.cellId) && (
-            <View style={{ marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: colors.border }}>
-              {signalInfo.band && <InfoRow label={t('home.band')} value={signalInfo.band} />}
-              {signalInfo.cellId && <InfoRow label={t('home.cellId')} value={signalInfo.cellId} />}
-            </View>
-          )}
+          <SignalCard
+            title={t('home.signalStrength')}
+            badge={getSignalStrength(signalInfo.rssi)}
+            color="blue"
+            icon="signal-cellular-alt"
+            metrics={[
+              ...(signalInfo.rssi ? [{
+                label: 'RSSI',
+                value: signalInfo.rssi,
+                unit: 'dBm',
+                quality: getSignalQuality(parseFloat(signalInfo.rssi), { excellent: -65, good: -75, fair: -85, poor: -95 }, true),
+              }] : []),
+              ...(signalInfo.rsrp ? [{
+                label: 'RSRP',
+                value: signalInfo.rsrp,
+                unit: 'dBm',
+                quality: getSignalQuality(parseFloat(signalInfo.rsrp), { excellent: -80, good: -90, fair: -100, poor: -110 }, true),
+              }] : []),
+              ...(signalInfo.rsrq ? [{
+                label: 'RSRQ',
+                value: signalInfo.rsrq,
+                unit: 'dB',
+                quality: getSignalQuality(parseFloat(signalInfo.rsrq), { excellent: -5, good: -9, fair: -12, poor: -15 }, true),
+              }] : []),
+              ...(signalInfo.sinr ? [{
+                label: 'SINR',
+                value: signalInfo.sinr,
+                unit: 'dB',
+                quality: getSignalQuality(parseFloat(signalInfo.sinr), { excellent: 20, good: 13, fair: 6, poor: 0 }, false),
+              }] : []),
+            ]}
+            band={signalInfo.band ? getLteBandInfo(signalInfo.band) : undefined}
+            cellId={signalInfo.cellId}
+          />
         </CollapsibleCard>
       ) : (
         <CollapsibleCard title={t('home.signalInfo')}>
@@ -580,43 +583,35 @@ export default function HomeScreen() {
           {/* Divider */}
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-          {/* Data Usage Grid - 2 columns */}
-          <View style={styles.dataUsageGrid}>
-            {/* Current Session */}
-            <View style={styles.dataUsageItem}>
-              <DataPieChart
-                title={t('home.currentSession')}
-                subtitle={formatDuration(trafficStats.currentConnectTime)}
-                download={trafficStats.currentDownload}
-                upload={trafficStats.currentUpload}
-                formatValue={formatBytes}
-                compact
-              />
-            </View>
+          {/* Current Session Card */}
+          <UsageCard
+            title={t('home.currentSession')}
+            badge={formatDuration(trafficStats.currentConnectTime)}
+            download={trafficStats.currentDownload}
+            upload={trafficStats.currentUpload}
+            color="cyan"
+            icon="schedule"
+          />
 
-            {/* Monthly */}
-            <View style={styles.dataUsageItem}>
-              <DataPieChart
-                title={t('home.monthlyUsage')}
-                subtitle={new Date().toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                download={trafficStats.monthDownload}
-                upload={trafficStats.monthUpload}
-                formatValue={formatBytes}
-                compact
-              />
-            </View>
-          </View>
+          {/* Monthly Usage Card */}
+          <UsageCard
+            title={t('home.monthlyUsage')}
+            badge={new Date().toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
+            download={trafficStats.monthDownload}
+            upload={trafficStats.monthUpload}
+            color="emerald"
+            icon="calendar-today"
+          />
 
-          {/* Total Usage - centered below */}
-          <View style={styles.totalUsageContainer}>
-            <DataPieChart
-              title={t('home.trafficStats')}
-              subtitle={formatDuration(trafficStats.totalConnectTime)}
-              download={trafficStats.totalDownload}
-              upload={trafficStats.totalUpload}
-              formatValue={formatBytes}
-            />
-          </View>
+          {/* Total Traffic Card */}
+          <UsageCard
+            title={t('home.totalUsage')}
+            badge={formatDuration(trafficStats.totalConnectTime)}
+            download={trafficStats.totalDownload}
+            upload={trafficStats.totalUpload}
+            color="amber"
+            icon="storage"
+          />
         </CollapsibleCard>
       )}
 
