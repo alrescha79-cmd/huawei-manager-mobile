@@ -13,18 +13,41 @@ import { PageSheetModal } from './PageSheetModal';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { ModemService } from '@/services/modem.service';
 
-// LTE Band definitions
+// LTE Band definitions - Comprehensive FDD and TDD bands
 const LTE_BANDS = [
-    { bit: 0, name: 'B1', freq: '2100 MHz' },
-    { bit: 2, name: 'B3', freq: '1800 MHz' },
-    { bit: 4, name: 'B5', freq: '850 MHz' },
-    { bit: 6, name: 'B7', freq: '2600 MHz' },
-    { bit: 7, name: 'B8', freq: '900 MHz' },
-    { bit: 19, name: 'B20', freq: '800 MHz' },
-    { bit: 27, name: 'B28', freq: '700 MHz' },
-    { bit: 37, name: 'B38', freq: '2600 MHz TDD' },
-    { bit: 39, name: 'B40', freq: '2300 MHz TDD' },
-    { bit: 40, name: 'B41', freq: '2500 MHz TDD' },
+    // === FDD Bands ===
+    { bit: 0, name: 'B1', freq: '2100 MHz', region: 'Global' },
+    { bit: 1, name: 'B2', freq: '1900 MHz', region: 'Americas' },
+    { bit: 2, name: 'B3', freq: '1800 MHz', region: 'Global' },
+    { bit: 3, name: 'B4', freq: '1700/2100 MHz', region: 'Americas' },
+    { bit: 4, name: 'B5', freq: '850 MHz', region: 'Americas/Asia' },
+    { bit: 6, name: 'B7', freq: '2600 MHz', region: 'Global' },
+    { bit: 7, name: 'B8', freq: '900 MHz', region: 'Europe/Asia' },
+    { bit: 11, name: 'B12', freq: '700 MHz', region: 'Americas' },
+    { bit: 12, name: 'B13', freq: '700 MHz', region: 'Americas' },
+    { bit: 16, name: 'B17', freq: '700 MHz', region: 'Americas' },
+    { bit: 17, name: 'B18', freq: '850 MHz', region: 'Japan' },
+    { bit: 18, name: 'B19', freq: '850 MHz', region: 'Japan' },
+    { bit: 19, name: 'B20', freq: '800 MHz', region: 'Europe' },
+    { bit: 20, name: 'B21', freq: '1500 MHz', region: 'Japan' },
+    { bit: 24, name: 'B25', freq: '1900 MHz', region: 'Americas' },
+    { bit: 25, name: 'B26', freq: '850 MHz', region: 'Americas' },
+    { bit: 27, name: 'B28', freq: '700 MHz', region: 'Asia Pacific' },
+    { bit: 28, name: 'B29', freq: '700 MHz SDL', region: 'Americas' },
+    { bit: 29, name: 'B30', freq: '2300 MHz', region: 'Americas' },
+    { bit: 31, name: 'B32', freq: '1500 MHz SDL', region: 'Europe' },
+    { bit: 65, name: 'B66', freq: '1700/2100 MHz', region: 'Americas' },
+    { bit: 70, name: 'B71', freq: '600 MHz', region: 'Americas' },
+    // === TDD Bands ===
+    { bit: 33, name: 'B34', freq: '2010 MHz TDD', region: 'China' },
+    { bit: 37, name: 'B38', freq: '2600 MHz TDD', region: 'Global' },
+    { bit: 38, name: 'B39', freq: '1900 MHz TDD', region: 'China' },
+    { bit: 39, name: 'B40', freq: '2300 MHz TDD', region: 'Global' },
+    { bit: 40, name: 'B41', freq: '2500 MHz TDD', region: 'Global' },
+    { bit: 41, name: 'B42', freq: '3500 MHz TDD', region: 'Global' },
+    { bit: 42, name: 'B43', freq: '3700 MHz TDD', region: 'Global' },
+    { bit: 45, name: 'B46', freq: '5200 MHz LAA', region: 'Global' },
+    { bit: 47, name: 'B48', freq: '3600 MHz CBRS', region: 'Americas' },
 ];
 
 interface BandSelectionModalProps {
@@ -58,10 +81,11 @@ export function BandSelectionModal({
         try {
             const bands = await modemService.getBandSettings();
             if (bands && bands.lteBand) {
-                const lteBandValue = parseInt(bands.lteBand, 16);
+                // Use BigInt for handling large bit positions
+                const lteBandValue = BigInt('0x' + bands.lteBand);
                 const activeBits: number[] = [];
                 for (const band of LTE_BANDS) {
-                    if ((lteBandValue & (1 << band.bit)) !== 0) {
+                    if ((lteBandValue >> BigInt(band.bit)) & BigInt(1)) {
                         activeBits.push(band.bit);
                     }
                 }
@@ -82,12 +106,13 @@ export function BandSelectionModal({
         if (!modemService || isSaving) return;
         setIsSaving(true);
         try {
-            let lteBandValue = 0;
+            // Use BigInt for handling large bit positions
+            let lteBandValue = BigInt(0);
             for (const bit of selectedBandBits) {
-                lteBandValue |= (1 << bit);
+                lteBandValue |= (BigInt(1) << BigInt(bit));
             }
-            if (lteBandValue === 0) {
-                lteBandValue = 0x7FFFFFFFFFFFFFFF;
+            if (lteBandValue === BigInt(0)) {
+                lteBandValue = BigInt('0x7FFFFFFFFFFFFFFF');
             }
             const lteBandHex = lteBandValue.toString(16).toUpperCase();
             await modemService.setBandSettings('3FFFFFFF', lteBandHex);
@@ -147,7 +172,7 @@ export function BandSelectionModal({
                                 {band.name}
                             </Text>
                             <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                                {band.freq}
+                                {band.freq} • {band.region}
                             </Text>
                         </View>
                         <MaterialIcons
@@ -186,10 +211,11 @@ const styles = StyleSheet.create({
 // Helper function to get selected bands as display string
 export function getSelectedBandsDisplay(lteBandHex: string): string[] {
     try {
-        const lteBandValue = parseInt(lteBandHex, 16);
+        // Use BigInt for handling large bit positions (like bit 65 for B66)
+        const lteBandValue = BigInt('0x' + lteBandHex);
         const activeBands: string[] = [];
         for (const band of LTE_BANDS) {
-            if ((lteBandValue & (1 << band.bit)) !== 0) {
+            if ((lteBandValue >> BigInt(band.bit)) & BigInt(1)) {
                 activeBands.push(band.name);
             }
         }
