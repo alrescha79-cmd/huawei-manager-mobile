@@ -2,7 +2,6 @@ import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { View, StyleSheet, StatusBar, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as NavigationBar from 'expo-navigation-bar';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
@@ -10,14 +9,21 @@ import { useTranslation } from '@/i18n';
 
 // Status bar header component for Android
 const StatusBarHeader = () => {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0;
 
   return (
-    <View style={{
-      height: statusBarHeight,
-      backgroundColor: colors.primary
-    }} />
+    <>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        backgroundColor={colors.background}
+        translucent={false}
+      />
+      <View style={{
+        height: statusBarHeight,
+        backgroundColor: colors.background
+      }} />
+    </>
   );
 };
 
@@ -59,15 +65,7 @@ export default function TabLayout() {
     }
   }, [isAuthenticated, credentials]);
 
-  // Set Android navigation bar style based on theme
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      // Set navigation bar background color to match tab bar
-      NavigationBar.setBackgroundColorAsync(colors.tabBar);
-      // Set button style: dark buttons for light mode, light buttons for dark mode
-      NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
-    }
-  }, [colors.tabBar, isDark]);
+  // Note: Navigation bar styling in edge-to-edge mode is handled automatically by the system
 
   // Don't render tabs if not authenticated
   if (!isAuthenticated || !credentials) {

@@ -5,17 +5,12 @@ import {
     StyleSheet,
     TouchableOpacity,
     LayoutAnimation,
-    Platform,
-    UIManager,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card } from './Card';
 
-// Enable LayoutAnimation for Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-    UIManager.setLayoutAnimationEnabledExperimental(true);
-}
+// Note: LayoutAnimation is enabled by default in New Architecture
 
 interface CollapsibleCardProps {
     title: string;

@@ -252,46 +252,80 @@ export class ModemService {
 
   async getAntennaMode(): Promise<string> {
     try {
+      console.log('[DEBUG] getAntennaMode: Fetching from /api/device/antenna_type');
       const response = await this.apiClient.get('/api/device/antenna_type');
+      console.log('[DEBUG] getAntennaMode: Raw response:', response);
+
       const antennaValue = parseXMLValue(response, 'antenna_type') ||
         parseXMLValue(response, 'AntennaType') ||
         parseXMLValue(response, 'antennatype');
+      console.log('[DEBUG] getAntennaMode: Parsed value:', antennaValue);
 
-      // Map numeric values to string values
+      // Map numeric values to string values (B312: 0=auto, 1=external, 2=internal)
       const modeMap: Record<string, string> = {
         '0': 'auto',
-        '1': 'internal',
-        '2': 'external',
+        '1': 'external',
+        '2': 'internal',
         'auto': 'auto',
         'internal': 'internal',
         'external': 'external',
       };
 
-      return modeMap[antennaValue] || 'auto';
+      const result = modeMap[antennaValue] || 'auto';
+      console.log('[DEBUG] getAntennaMode: Mapped result:', result);
+      return result;
     } catch (error) {
-      console.error('Error getting antenna mode:', error);
+      console.error('[DEBUG] getAntennaMode: Error:', error);
       return 'auto'; // Default to auto if endpoint not available
     }
   }
 
   async setAntennaMode(mode: 'auto' | 'internal' | 'external'): Promise<boolean> {
     try {
-      // Map mode to API values: 0=auto, 1=internal, 2=external
+      console.log('[DEBUG] setAntennaMode: Setting mode to:', mode);
+
+      // Map mode to API values: 0=auto, 2=internal, 1=external (B312 modem)
       const modeMap: Record<string, string> = {
         'auto': '0',
-        'internal': '1',
-        'external': '2',
+        'internal': '2',
+        'external': '1',
       };
 
-      const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <antenna_type>${modeMap[mode]}</antenna_type>
-        </request>`;
+      const modeValue = modeMap[mode];
 
-      await this.apiClient.post('/api/device/antenna_type', data);
-      return true;
+      // Try antenna_set_type endpoint first (discovered from modem)
+      // GET returns <antennasettype>2</antennasettype>
+      const data1 = `<?xml version="1.0" encoding="UTF-8"?><request><antennasettype>${modeValue}</antennasettype></request>`;
+      console.log('[DEBUG] setAntennaMode: Trying antenna_set_type endpoint...');
+
+      try {
+        const response = await this.apiClient.post('/api/device/antenna_set_type', data1);
+        console.log('[DEBUG] setAntennaMode: antenna_set_type Response:', response);
+        if (!response.includes('<error>')) {
+          return true;
+        }
+      } catch (e) {
+        console.log('[DEBUG] setAntennaMode: antenna_set_type failed');
+      }
+
+      // Try antenna_type endpoint as fallback
+      const data2 = `<?xml version="1.0" encoding="UTF-8"?><request><antennatype>${modeValue}</antennatype></request>`;
+      console.log('[DEBUG] setAntennaMode: Trying antenna_type endpoint...');
+
+      try {
+        const response = await this.apiClient.post('/api/device/antenna_type', data2);
+        console.log('[DEBUG] setAntennaMode: antenna_type Response:', response);
+        if (!response.includes('<error>')) {
+          return true;
+        }
+      } catch (e) {
+        console.log('[DEBUG] setAntennaMode: antenna_type failed');
+      }
+
+      // If both fail, throw error
+      throw new Error('Antenna mode change not supported on this modem');
     } catch (error) {
-      console.error('Error setting antenna mode:', error);
+      console.error('[DEBUG] setAntennaMode: Error:', error);
       throw error;
     }
   }
@@ -442,15 +476,38 @@ export class ModemService {
       // Try primary endpoint first
       let response: string;
       try {
+        console.log('[DEBUG] getTimeSettings: Trying /api/time/settings');
         response = await this.apiClient.get('/api/time/settings');
-      } catch {
+
+        // Check if response contains error
+        if (response.includes('<error>') || response.includes('<code>100003</code>')) {
+          console.log('[DEBUG] getTimeSettings: Endpoint not supported (100003)');
+          throw new Error('Time settings not supported');
+        }
+        console.log('[DEBUG] getTimeSettings: Primary endpoint success');
+      } catch (primaryError) {
+        console.log('[DEBUG] getTimeSettings: Primary failed, trying /api/ntp/settings');
         // Try alternative endpoint
         try {
           response = await this.apiClient.get('/api/ntp/settings');
+          if (response.includes('<error>')) {
+            throw new Error('NTP settings not supported');
+          }
+          console.log('[DEBUG] getTimeSettings: Alternative endpoint success');
         } catch {
-          throw new Error('Time settings endpoint not available');
+          console.log('[DEBUG] getTimeSettings: Time settings not available on this modem');
+          // Return defaults silently - this is expected for some modems
+          return {
+            currentTime: new Date().toISOString(),
+            sntpEnabled: false,
+            ntpServer: 'pool.ntp.org',
+            ntpServerBackup: 'time.google.com',
+            timezone: 'UTC+7',
+          };
         }
       }
+
+      console.log('[DEBUG] getTimeSettings: Raw response:', response);
 
       // Try multiple possible tag names
       const sntpValue = parseXMLValue(response, 'NTPEnable') ||
@@ -493,6 +550,8 @@ export class ModemService {
     timezone?: string;
   }): Promise<boolean> {
     try {
+      console.log('[DEBUG] setTimeSettings: Settings:', settings);
+
       const data = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
           ${settings.sntpEnabled !== undefined ? `<NTPEnable>${settings.sntpEnabled ? '1' : '0'}</NTPEnable>` : ''}
@@ -500,18 +559,23 @@ export class ModemService {
           ${settings.ntpServerBackup ? `<NTPServerBackup>${settings.ntpServerBackup}</NTPServerBackup>` : ''}
           ${settings.timezone ? `<TimeZone>${settings.timezone}</TimeZone>` : ''}
         </request>`;
+      console.log('[DEBUG] setTimeSettings: Sending data:', data);
 
       // Try primary endpoint first
       try {
-        await this.apiClient.post('/api/time/settings', data);
+        console.log('[DEBUG] setTimeSettings: Trying /api/time/settings');
+        const response = await this.apiClient.post('/api/time/settings', data);
+        console.log('[DEBUG] setTimeSettings: Response:', response);
         return true;
-      } catch {
+      } catch (primaryError) {
+        console.log('[DEBUG] setTimeSettings: Primary failed, trying /api/ntp/settings');
         // Try alternative endpoint
-        await this.apiClient.post('/api/ntp/settings', data);
+        const response = await this.apiClient.post('/api/ntp/settings', data);
+        console.log('[DEBUG] setTimeSettings: Alternative response:', response);
         return true;
       }
     } catch (error) {
-      console.error('Error setting time settings:', error);
+      console.error('[DEBUG] setTimeSettings: Error:', error);
       throw error;
     }
   }

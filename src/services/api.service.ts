@@ -347,9 +347,12 @@ export class ModemAPIClient {
     }
   }
 
-  async post(endpoint: string, data: string): Promise<string> {
+  async post(endpoint: string, data: string, retryCount = 0): Promise<string> {
     try {
-      const { token } = await this.getToken();
+      // Always force refresh token before POST - modem requires fresh token for each POST
+      console.log('[DEBUG] POST: Force refreshing token before request...');
+      const { token } = await this.getToken(true);  // Force refresh
+      console.log('[DEBUG] POST: Got fresh token, sending request to', endpoint);
 
       const response = await this.client.post(endpoint, data, {
         headers: {
@@ -358,9 +361,31 @@ export class ModemAPIClient {
         },
       });
 
+      // Check if response contains session/token errors
+      const responseData = typeof response.data === 'string' ? response.data : '';
+
+      // Error 125003 = Session expired, 125002 = Wrong token
+      if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
+        console.log('[DEBUG] POST: Got session/token error, clearing session...');
+        // Clear session to force re-login
+        this.sessionToken = '';
+        this.sessionCookie = '';
+        this.tokenExpiry = 0;
+
+        // Throw error with specific message for UI to handle
+        const errorCode = responseData.includes('125003') ? '125003' : '125002';
+        throw new Error(`Session expired (${errorCode}). Please re-login.`);
+      }
+
+      // Error 100005 = Parameter error (may need different handling)
+      if (responseData.includes('<code>100005</code>')) {
+        console.log('[DEBUG] POST: Got parameter error (100005)');
+        throw new Error('Parameter error (100005). The request format may be incorrect.');
+      }
+
       return response.data;
     } catch (error) {
-      console.error(`Error posting to ${endpoint}:`, error);
+      console.error(`[DEBUG] POST error to ${endpoint}:`, error);
       throw error;
     }
   }

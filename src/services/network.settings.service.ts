@@ -22,12 +22,16 @@ export class NetworkSettingsService {
             // Try primary endpoint first
             let response: string;
             try {
+                console.log('[DEBUG] getAPNProfiles: Fetching from /api/dialup/profiles');
                 response = await this.apiClient.get('/api/dialup/profiles');
+                console.log('[DEBUG] getAPNProfiles: Raw response:', response.substring(0, 500));
             } catch {
                 // Try alternative endpoint
                 try {
+                    console.log('[DEBUG] getAPNProfiles: Trying /api/dialup/profile-list');
                     response = await this.apiClient.get('/api/dialup/profile-list');
                 } catch {
+                    console.log('[DEBUG] getAPNProfiles: Both endpoints failed');
                     return [];
                 }
             }
@@ -35,10 +39,11 @@ export class NetworkSettingsService {
             const profiles: APNProfile[] = [];
             // Use [\s\S] for multiline matching
             const profilesXML = response.match(/<Profile>[\s\S]*?<\/Profile>/g);
+            console.log('[DEBUG] getAPNProfiles: Found profiles:', profilesXML?.length || 0);
 
             if (profilesXML) {
                 profilesXML.forEach((profileXML, index) => {
-                    profiles.push({
+                    const profile = {
                         id: parseXMLValue(profileXML, 'Index') || String(index),
                         name: parseXMLValue(profileXML, 'Name') ||
                             parseXMLValue(profileXML, 'ProfileName') || '',
@@ -54,13 +59,15 @@ export class NetworkSettingsService {
                             parseXMLValue(profileXML, 'PdpType')),
                         isDefault: parseXMLValue(profileXML, 'IsDefault') === '1' ||
                             parseXMLValue(profileXML, 'Default') === '1',
-                    });
+                    };
+                    console.log('[DEBUG] getAPNProfiles: Profile', index, ':', profile.name, profile.apn);
+                    profiles.push(profile);
                 });
             }
 
             return profiles;
         } catch (error) {
-            console.error('Error getting APN profiles:', error);
+            console.error('[DEBUG] getAPNProfiles: Error:', error);
             return [];
         }
     }
@@ -68,7 +75,10 @@ export class NetworkSettingsService {
     async getActiveAPNProfile(): Promise<string> {
         try {
             const response = await this.apiClient.get('/api/dialup/connection');
-            return parseXMLValue(response, 'CurrentProfile') || '0';
+            const activeId = parseXMLValue(response, 'CurrentProfile') || '0';
+            console.log('[DEBUG] getActiveAPNProfile: Response:', response.substring(0, 200));
+            console.log('[DEBUG] getActiveAPNProfile: Active ID:', activeId);
+            return activeId;
         } catch (error) {
             console.error('Error getting active APN profile:', error);
             return '0';
@@ -77,28 +87,53 @@ export class NetworkSettingsService {
 
     async createAPNProfile(profile: Omit<APNProfile, 'id'>): Promise<boolean> {
         try {
-            const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Delete>0</Delete>
-          <SetDefault>0</SetDefault>
-          <Modify>0</Modify>
-          <Profile>
-            <Index></Index>
-            <IsValid>1</IsValid>
-            <Name>${profile.name}</Name>
-            <ApnName>${profile.apn}</ApnName>
-            <Username>${profile.username}</Username>
-            <Password>${profile.password}</Password>
-            <AuthMode>${this.authTypeToValue(profile.authType)}</AuthMode>
-            <IpType>${this.ipTypeToValue(profile.ipType)}</IpType>
-            <IsDefault>${profile.isDefault ? '1' : '0'}</IsDefault>
-          </Profile>
-        </request>`;
+            console.log('[DEBUG] createAPNProfile: Profile data:', profile);
 
-            await this.apiClient.post('/api/dialup/profiles', data);
+            // Format based on huawei-lte-api library
+            // Key differences: Modify=1 for create, iptype lowercase, ReadOnly field
+            const data = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<SetDefault>${profile.isDefault ? '1' : '0'}</SetDefault>
+<Delete>0</Delete>
+<Modify>1</Modify>
+<Profile>
+<Index></Index>
+<IsValid>1</IsValid>
+<Name>${profile.name}</Name>
+<ApnIsStatic>1</ApnIsStatic>
+<ApnName>${profile.apn}</ApnName>
+<DialupNum>*99#</DialupNum>
+<Username>${profile.username || ''}</Username>
+<Password>${profile.password || ''}</Password>
+<AuthMode>${this.authTypeToValue(profile.authType)}</AuthMode>
+<IpIsStatic></IpIsStatic>
+<IpAddress></IpAddress>
+<DnsIsStatic></DnsIsStatic>
+<PrimaryDns></PrimaryDns>
+<SecondaryDns></SecondaryDns>
+<ReadOnly>0</ReadOnly>
+<iptype>${this.ipTypeToValue(profile.ipType)}</iptype>
+</Profile>
+</request>`;
+            console.log('[DEBUG] createAPNProfile: Sending data:', data);
+
+            const response = await this.apiClient.post('/api/dialup/profiles', data);
+            console.log('[DEBUG] createAPNProfile: Response:', response);
+
+            // Check if response indicates success
+            if (response.includes('<response>OK</response>') || response.includes('OK')) {
+                return true;
+            }
+
+            // Check for error
+            if (response.includes('<error>')) {
+                const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+                throw new Error(`APN creation failed with error code: ${errorCode}`);
+            }
+
             return true;
         } catch (error) {
-            console.error('Error creating APN profile:', error);
+            console.error('[DEBUG] createAPNProfile: Error:', error);
             throw error;
         }
     }
@@ -178,12 +213,17 @@ export class NetworkSettingsService {
             // Try primary endpoint first
             let response: string;
             try {
+                console.log('[DEBUG] getEthernetSettings: Trying /api/cradle/basic-info');
                 response = await this.apiClient.get('/api/cradle/basic-info');
-            } catch {
+                console.log('[DEBUG] getEthernetSettings: Primary response:', response);
+            } catch (primaryError) {
+                console.log('[DEBUG] getEthernetSettings: Primary failed, trying /api/ethernet/settings');
                 // Try alternative endpoint
                 try {
                     response = await this.apiClient.get('/api/ethernet/settings');
+                    console.log('[DEBUG] getEthernetSettings: Alternative response:', response);
                 } catch {
+                    console.log('[DEBUG] getEthernetSettings: Both endpoints failed, returning defaults');
                     // Return default if no endpoint available
                     return {
                         connectionMode: 'auto',
@@ -193,15 +233,17 @@ export class NetworkSettingsService {
             }
 
             const modeValue = parseXMLValue(response, 'CradleMode') ||
+                parseXMLValue(response, 'connectionmode') ||
                 parseXMLValue(response, 'Mode') ||
                 parseXMLValue(response, 'ConnectionMode') || '0';
+            console.log('[DEBUG] getEthernetSettings: Mode value:', modeValue);
 
             return {
                 connectionMode: this.parseCradleMode(modeValue),
                 status: await this.getEthernetStatus(),
             };
         } catch (error) {
-            console.error('Error getting ethernet settings:', error);
+            console.error('[DEBUG] getEthernetSettings: Error:', error);
             return {
                 connectionMode: 'auto',
                 status: {
