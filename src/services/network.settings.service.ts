@@ -19,21 +19,41 @@ export class NetworkSettingsService {
 
     async getAPNProfiles(): Promise<APNProfile[]> {
         try {
-            const response = await this.apiClient.get('/api/dialup/profiles');
+            // Try primary endpoint first
+            let response: string;
+            try {
+                response = await this.apiClient.get('/api/dialup/profiles');
+            } catch {
+                // Try alternative endpoint
+                try {
+                    response = await this.apiClient.get('/api/dialup/profile-list');
+                } catch {
+                    return [];
+                }
+            }
+
             const profiles: APNProfile[] = [];
-            const profilesXML = response.match(/<Profile>(.*?)<\/Profile>/gs);
+            // Use [\s\S] for multiline matching
+            const profilesXML = response.match(/<Profile>[\s\S]*?<\/Profile>/g);
 
             if (profilesXML) {
                 profilesXML.forEach((profileXML, index) => {
                     profiles.push({
                         id: parseXMLValue(profileXML, 'Index') || String(index),
-                        name: parseXMLValue(profileXML, 'Name') || '',
-                        apn: parseXMLValue(profileXML, 'ApnName') || '',
-                        username: parseXMLValue(profileXML, 'Username') || '',
+                        name: parseXMLValue(profileXML, 'Name') ||
+                            parseXMLValue(profileXML, 'ProfileName') || '',
+                        apn: parseXMLValue(profileXML, 'ApnName') ||
+                            parseXMLValue(profileXML, 'APN') || '',
+                        username: parseXMLValue(profileXML, 'Username') ||
+                            parseXMLValue(profileXML, 'UserName') || '',
                         password: parseXMLValue(profileXML, 'Password') || '',
-                        authType: this.parseAuthType(parseXMLValue(profileXML, 'AuthMode')),
-                        ipType: this.parseIpType(parseXMLValue(profileXML, 'IpType')),
-                        isDefault: parseXMLValue(profileXML, 'IsDefault') === '1',
+                        authType: this.parseAuthType(parseXMLValue(profileXML, 'AuthMode') ||
+                            parseXMLValue(profileXML, 'AuthType')),
+                        ipType: this.parseIpType(parseXMLValue(profileXML, 'IpType') ||
+                            parseXMLValue(profileXML, 'IPType') ||
+                            parseXMLValue(profileXML, 'PdpType')),
+                        isDefault: parseXMLValue(profileXML, 'IsDefault') === '1' ||
+                            parseXMLValue(profileXML, 'Default') === '1',
                     });
                 });
             }
@@ -155,8 +175,26 @@ export class NetworkSettingsService {
 
     async getEthernetSettings(): Promise<EthernetSettings> {
         try {
-            const response = await this.apiClient.get('/api/cradle/basic-info');
-            const modeValue = parseXMLValue(response, 'CradleMode') || '0';
+            // Try primary endpoint first
+            let response: string;
+            try {
+                response = await this.apiClient.get('/api/cradle/basic-info');
+            } catch {
+                // Try alternative endpoint
+                try {
+                    response = await this.apiClient.get('/api/ethernet/settings');
+                } catch {
+                    // Return default if no endpoint available
+                    return {
+                        connectionMode: 'auto',
+                        status: await this.getEthernetStatus(),
+                    };
+                }
+            }
+
+            const modeValue = parseXMLValue(response, 'CradleMode') ||
+                parseXMLValue(response, 'Mode') ||
+                parseXMLValue(response, 'ConnectionMode') || '0';
 
             return {
                 connectionMode: this.parseCradleMode(modeValue),
@@ -181,29 +219,55 @@ export class NetworkSettingsService {
 
     async getEthernetStatus(): Promise<EthernetStatus> {
         try {
-            const response = await this.apiClient.get('/api/cradle/status-info');
+            // Try primary endpoint first
+            let response: string;
+            try {
+                response = await this.apiClient.get('/api/cradle/status-info');
+            } catch {
+                // Try alternative endpoint
+                try {
+                    response = await this.apiClient.get('/api/ethernet/status');
+                } catch {
+                    return this.getDefaultEthernetStatus();
+                }
+            }
 
             return {
-                connected: parseXMLValue(response, 'CradleStatus') === '1',
-                ipAddress: parseXMLValue(response, 'CradleIPAddress') || '',
-                gateway: parseXMLValue(response, 'CradleGateway') || '',
-                netmask: parseXMLValue(response, 'CradleNetMask') || '',
-                dns1: parseXMLValue(response, 'CradlePrimaryDNS') || '',
-                dns2: parseXMLValue(response, 'CradleSecondaryDNS') || '',
-                macAddress: parseXMLValue(response, 'CradleMACAddress') || '',
+                connected: parseXMLValue(response, 'CradleStatus') === '1' ||
+                    parseXMLValue(response, 'Status') === '1' ||
+                    parseXMLValue(response, 'Connected') === '1',
+                ipAddress: parseXMLValue(response, 'CradleIPAddress') ||
+                    parseXMLValue(response, 'IPAddress') || '',
+                gateway: parseXMLValue(response, 'CradleGateway') ||
+                    parseXMLValue(response, 'Gateway') || '',
+                netmask: parseXMLValue(response, 'CradleNetMask') ||
+                    parseXMLValue(response, 'NetMask') ||
+                    parseXMLValue(response, 'SubnetMask') || '',
+                dns1: parseXMLValue(response, 'CradlePrimaryDNS') ||
+                    parseXMLValue(response, 'PrimaryDNS') ||
+                    parseXMLValue(response, 'DNS1') || '',
+                dns2: parseXMLValue(response, 'CradleSecondaryDNS') ||
+                    parseXMLValue(response, 'SecondaryDNS') ||
+                    parseXMLValue(response, 'DNS2') || '',
+                macAddress: parseXMLValue(response, 'CradleMACAddress') ||
+                    parseXMLValue(response, 'MACAddress') || '',
             };
         } catch (error) {
             console.error('Error getting ethernet status:', error);
-            return {
-                connected: false,
-                ipAddress: '',
-                gateway: '',
-                netmask: '',
-                dns1: '',
-                dns2: '',
-                macAddress: '',
-            };
+            return this.getDefaultEthernetStatus();
         }
+    }
+
+    private getDefaultEthernetStatus(): EthernetStatus {
+        return {
+            connected: false,
+            ipAddress: '',
+            gateway: '',
+            netmask: '',
+            dns1: '',
+            dns2: '',
+            macAddress: '',
+        };
     }
 
     async setEthernetConnectionMode(mode: EthernetSettings['connectionMode']): Promise<boolean> {
@@ -214,8 +278,15 @@ export class NetworkSettingsService {
           <CradleMode>${modeValue}</CradleMode>
         </request>`;
 
-            await this.apiClient.post('/api/cradle/basic-info', data);
-            return true;
+            // Try primary endpoint first
+            try {
+                await this.apiClient.post('/api/cradle/basic-info', data);
+                return true;
+            } catch {
+                // Try alternative endpoint
+                await this.apiClient.post('/api/ethernet/settings', data);
+                return true;
+            }
         } catch (error) {
             console.error('Error setting ethernet connection mode:', error);
             throw error;

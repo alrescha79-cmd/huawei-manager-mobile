@@ -372,11 +372,22 @@ export default function SettingsScreen() {
         await networkSettingsService.createAPNProfile(profileData);
       }
 
-      ThemedAlertHelper.alert(t('common.success'), t('networkSettings.profileSaved'));
+      // Close modal first to prevent UI issues
       setShowApnModal(false);
-      await loadApnProfiles(networkSettingsService);
-    } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+      ThemedAlertHelper.alert(t('common.success'), t('networkSettings.apnSaved'));
+
+      // Add delay before refreshing to allow modem to stabilize
+      setTimeout(async () => {
+        try {
+          await loadApnProfiles(networkSettingsService);
+        } catch (refreshError) {
+          console.log('Refresh after APN save failed, will retry on next load');
+        }
+      }, 2000);
+    } catch (error: any) {
+      console.error('Error saving APN profile:', error);
+      const errorMessage = error?.message || t('common.error');
+      ThemedAlertHelper.alert(t('common.error'), errorMessage);
     } finally {
       setIsSavingApn(false);
     }

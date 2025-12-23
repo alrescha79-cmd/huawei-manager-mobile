@@ -1,6 +1,6 @@
 {
   "name": "hm-mobile",
-  "version": "1.0.25",
+  "version": "1.0.30",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
