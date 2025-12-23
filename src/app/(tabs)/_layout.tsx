@@ -1,6 +1,8 @@
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
 import { View, StyleSheet, StatusBar, Platform } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import * as NavigationBar from 'expo-navigation-bar';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
@@ -47,6 +49,7 @@ export default function TabLayout() {
   const router = useRouter();
   const { isAuthenticated, credentials } = useAuthStore();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   // Protect tabs - redirect to login if not authenticated
   useEffect(() => {
@@ -56,10 +59,24 @@ export default function TabLayout() {
     }
   }, [isAuthenticated, credentials]);
 
+  // Set Android navigation bar style based on theme
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      // Set navigation bar background color to match tab bar
+      NavigationBar.setBackgroundColorAsync(colors.tabBar);
+      // Set button style: dark buttons for light mode, light buttons for dark mode
+      NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+    }
+  }, [colors.tabBar, isDark]);
+
   // Don't render tabs if not authenticated
   if (!isAuthenticated || !credentials) {
     return null;
   }
+
+  // Calculate bottom padding: use safe area inset for gesture nav, or minimum padding for 3-button nav
+  const bottomPadding = Math.max(insets.bottom, 8);
+  const tabBarHeight = 52 + bottomPadding;
 
   return (
     <>
@@ -72,8 +89,8 @@ export default function TabLayout() {
             backgroundColor: colors.tabBar,
             borderTopColor: colors.border,
             borderTopWidth: 1,
-            height: 60,
-            paddingBottom: 8,
+            height: tabBarHeight,
+            paddingBottom: bottomPadding,
             paddingTop: 8,
           },
           headerShown: false, // Hide headers for fullscreen

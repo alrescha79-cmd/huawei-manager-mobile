@@ -12,22 +12,33 @@ export class SMSService {
   async getSMSList(page: number = 1, count: number = 20): Promise<SMSMessage[]> {
     try {
       const response = await this.apiClient.get(`/api/sms/sms-list?page=${page}&count=${count}&sortType=0&readCount=0&boxType=1`);
-      
+
       const messages: SMSMessage[] = [];
-      const messagesXML = response.match(/<Message>(.*?)<\/Message>/gs);
-      
+      // Use [\s\S] instead of . to properly match content including newlines
+      const messagesXML = response.match(/<Message>[\s\S]*?<\/Message>/g);
+
       if (messagesXML) {
         messagesXML.forEach((messageXML) => {
+          // Extract and decode content, handling potential CDATA and special characters
+          let content = parseXMLValue(messageXML, 'Content');
+          // Decode HTML entities if present
+          content = content
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&amp;/g, '&')
+            .replace(/&quot;/g, '"')
+            .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)));
+
           messages.push({
             index: parseXMLValue(messageXML, 'Index'),
             phone: parseXMLValue(messageXML, 'Phone'),
-            content: parseXMLValue(messageXML, 'Content'),
+            content: content,
             date: parseXMLValue(messageXML, 'Date'),
             smstat: parseXMLValue(messageXML, 'Smstat'),
           });
         });
       }
-      
+
       return messages;
     } catch (error) {
       console.error('Error getting SMS list:', error);
@@ -38,7 +49,7 @@ export class SMSService {
   async getSMSCount(): Promise<SMSCount> {
     try {
       const response = await this.apiClient.get('/api/sms/sms-count');
-      
+
       return {
         localUnread: parseInt(parseXMLValue(response, 'LocalUnread')),
         localInbox: parseInt(parseXMLValue(response, 'LocalInbox')),
@@ -74,7 +85,7 @@ export class SMSService {
           <Reserved>1</Reserved>
           <Date>${new Date().toISOString()}</Date>
         </request>`;
-      
+
       await this.apiClient.post('/api/sms/send-sms', smsData);
       return true;
     } catch (error) {
@@ -89,7 +100,7 @@ export class SMSService {
         <request>
           <Index>${index}</Index>
         </request>`;
-      
+
       await this.apiClient.post('/api/sms/delete-sms', deleteData);
       return true;
     } catch (error) {
@@ -104,7 +115,7 @@ export class SMSService {
         <request>
           <Index>${index}</Index>
         </request>`;
-      
+
       await this.apiClient.post('/api/sms/set-read', readData);
       return true;
     } catch (error) {

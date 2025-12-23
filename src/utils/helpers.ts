@@ -60,9 +60,10 @@ export const getSignalIcon = (rssi: string | number): number => {
 };
 
 export const parseXMLValue = (xml: string, tag: string): string => {
-  const regex = new RegExp(`<${tag}>(.*?)</${tag}>`);
+  // Use [\s\S] instead of . to properly match content including newlines
+  const regex = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`);
   const match = xml.match(regex);
-  return match ? match[1] : '';
+  return match ? match[1].trim() : '';
 };
 
 export const formatMacAddress = (mac: string): string => {
@@ -159,46 +160,260 @@ export const getRoamingStatusText = (code: string | undefined): string => {
   return roamingMap[code] || code;
 };
 
-// LTE Band mapping with frequency information
+// Comprehensive Band mapping for all technologies (2G, 3G, 4G, 5G)
 export const getLteBandInfo = (band: string | undefined): string => {
   if (!band) return '-';
 
-  // Common LTE Band mapping (Indonesia focused)
   const bandMap: Record<string, string> = {
-    // FDD Bands
-    'B1': 'B1 - 2100 MHz',
-    'B3': 'B3 - 1800 MHz',
-    'B5': 'B5 - 850 MHz',
-    'B7': 'B7 - 2600 MHz',
-    'B8': 'B8 - 900 MHz',
-    'B20': 'B20 - 800 MHz',
-    'B28': 'B28 - 700 MHz',
-    // TDD Bands
-    'B38': 'B38 - 2600 MHz',
-    'B40': 'B40 - 2300 MHz',
-    'B41': 'B41 - 2500 MHz',
-    // Numeric format
-    '1': 'B1 - 2100 MHz',
-    '3': 'B3 - 1800 MHz',
-    '5': 'B5 - 850 MHz',
-    '7': 'B7 - 2600 MHz',
-    '8': 'B8 - 900 MHz',
-    '20': 'B20 - 800 MHz',
-    '28': 'B28 - 700 MHz',
-    '38': 'B38 - 2600 MHz',
-    '40': 'B40 - 2300 MHz',
-    '41': 'B41 - 2500 MHz',
+    // ===== 2G GSM Bands =====
+    'GSM850': 'GSM 850 MHz',
+    'GSM900': 'GSM 900 MHz',
+    'EGSM900': 'E-GSM 900 MHz',
+    'DCS1800': 'DCS 1800 MHz',
+    'PCS1900': 'PCS 1900 MHz',
+    'GSM1800': 'GSM 1800 MHz',
+    'GSM1900': 'GSM 1900 MHz',
+
+    // ===== 3G WCDMA/UMTS Bands =====
+    // Band I (2100 MHz) - Common global
+    'WCDMA_I': 'WCDMA B1 - 2100 MHz',
+    'WCDMA1': 'WCDMA B1 - 2100 MHz',
+    'UMTS1': 'UMTS B1 - 2100 MHz',
+    // Band II (1900 MHz) - Americas
+    'WCDMA_II': 'WCDMA B2 - 1900 MHz',
+    'WCDMA2': 'WCDMA B2 - 1900 MHz',
+    // Band IV (1700/2100 MHz AWS) - Americas
+    'WCDMA_IV': 'WCDMA B4 - 1700/2100 MHz',
+    'WCDMA4': 'WCDMA B4 - 1700/2100 MHz',
+    // Band V (850 MHz) - Americas, Asia
+    'WCDMA_V': 'WCDMA B5 - 850 MHz',
+    'WCDMA5': 'WCDMA B5 - 850 MHz',
+    // Band VIII (900 MHz) - Europe, Asia
+    'WCDMA_VIII': 'WCDMA B8 - 900 MHz',
+    'WCDMA8': 'WCDMA B8 - 900 MHz',
+
+    // ===== 4G LTE FDD Bands =====
+    // Band 1 (2100 MHz) - Global
+    'B1': 'LTE B1 - 2100 MHz',
+    'LTE1': 'LTE B1 - 2100 MHz',
+    '1': 'LTE B1 - 2100 MHz',
+    // Band 2 (1900 MHz) - Americas
+    'B2': 'LTE B2 - 1900 MHz',
+    'LTE2': 'LTE B2 - 1900 MHz',
+    '2': 'LTE B2 - 1900 MHz',
+    // Band 3 (1800 MHz) - Global (Indonesia: Telkomsel, XL, Indosat)
+    'B3': 'LTE B3 - 1800 MHz',
+    'LTE3': 'LTE B3 - 1800 MHz',
+    '3': 'LTE B3 - 1800 MHz',
+    // Band 4 (1700/2100 MHz AWS) - Americas
+    'B4': 'LTE B4 - 1700/2100 MHz',
+    'LTE4': 'LTE B4 - 1700/2100 MHz',
+    '4': 'LTE B4 - 1700/2100 MHz',
+    // Band 5 (850 MHz) - Americas, Asia (Indonesia: Smartfren)
+    'B5': 'LTE B5 - 850 MHz',
+    'LTE5': 'LTE B5 - 850 MHz',
+    '5': 'LTE B5 - 850 MHz',
+    // Band 7 (2600 MHz) - Global
+    'B7': 'LTE B7 - 2600 MHz',
+    'LTE7': 'LTE B7 - 2600 MHz',
+    '7': 'LTE B7 - 2600 MHz',
+    // Band 8 (900 MHz) - Europe, Asia (Indonesia: Telkomsel, XL, Indosat, 3)
+    'B8': 'LTE B8 - 900 MHz',
+    'LTE8': 'LTE B8 - 900 MHz',
+    '8': 'LTE B8 - 900 MHz',
+    // Band 12 (700 MHz) - Americas
+    'B12': 'LTE B12 - 700 MHz',
+    'LTE12': 'LTE B12 - 700 MHz',
+    '12': 'LTE B12 - 700 MHz',
+    // Band 13 (700 MHz) - Americas
+    'B13': 'LTE B13 - 700 MHz',
+    'LTE13': 'LTE B13 - 700 MHz',
+    '13': 'LTE B13 - 700 MHz',
+    // Band 17 (700 MHz) - Americas
+    'B17': 'LTE B17 - 700 MHz',
+    'LTE17': 'LTE B17 - 700 MHz',
+    '17': 'LTE B17 - 700 MHz',
+    // Band 18 (850 MHz) - Japan
+    'B18': 'LTE B18 - 850 MHz',
+    'LTE18': 'LTE B18 - 850 MHz',
+    '18': 'LTE B18 - 850 MHz',
+    // Band 19 (850 MHz) - Japan
+    'B19': 'LTE B19 - 850 MHz',
+    'LTE19': 'LTE B19 - 850 MHz',
+    '19': 'LTE B19 - 850 MHz',
+    // Band 20 (800 MHz) - Europe
+    'B20': 'LTE B20 - 800 MHz',
+    'LTE20': 'LTE B20 - 800 MHz',
+    '20': 'LTE B20 - 800 MHz',
+    // Band 21 (1500 MHz) - Japan
+    'B21': 'LTE B21 - 1500 MHz',
+    'LTE21': 'LTE B21 - 1500 MHz',
+    '21': 'LTE B21 - 1500 MHz',
+    // Band 25 (1900 MHz) - Americas
+    'B25': 'LTE B25 - 1900 MHz',
+    'LTE25': 'LTE B25 - 1900 MHz',
+    '25': 'LTE B25 - 1900 MHz',
+    // Band 26 (850 MHz) - Americas
+    'B26': 'LTE B26 - 850 MHz',
+    'LTE26': 'LTE B26 - 850 MHz',
+    '26': 'LTE B26 - 850 MHz',
+    // Band 28 (700 MHz) - Asia Pacific, Europe
+    'B28': 'LTE B28 - 700 MHz',
+    'LTE28': 'LTE B28 - 700 MHz',
+    '28': 'LTE B28 - 700 MHz',
+    // Band 29 (700 MHz) - Americas (SDL)
+    'B29': 'LTE B29 - 700 MHz',
+    'LTE29': 'LTE B29 - 700 MHz',
+    '29': 'LTE B29 - 700 MHz',
+    // Band 30 (2300 MHz) - Americas
+    'B30': 'LTE B30 - 2300 MHz',
+    'LTE30': 'LTE B30 - 2300 MHz',
+    '30': 'LTE B30 - 2300 MHz',
+    // Band 32 (1500 MHz) - Europe (SDL)
+    'B32': 'LTE B32 - 1500 MHz',
+    'LTE32': 'LTE B32 - 1500 MHz',
+    '32': 'LTE B32 - 1500 MHz',
+    // Band 66 (1700/2100 MHz AWS-3) - Americas
+    'B66': 'LTE B66 - 1700/2100 MHz',
+    'LTE66': 'LTE B66 - 1700/2100 MHz',
+    '66': 'LTE B66 - 1700/2100 MHz',
+    // Band 71 (600 MHz) - Americas
+    'B71': 'LTE B71 - 600 MHz',
+    'LTE71': 'LTE B71 - 600 MHz',
+    '71': 'LTE B71 - 600 MHz',
+
+    // ===== 4G LTE TDD Bands =====
+    // Band 34 (2010 MHz) - China
+    'B34': 'LTE B34 TDD - 2010 MHz',
+    'LTE34': 'LTE B34 TDD - 2010 MHz',
+    '34': 'LTE B34 TDD - 2010 MHz',
+    // Band 38 (2600 MHz) - Global
+    'B38': 'LTE B38 TDD - 2600 MHz',
+    'LTE38': 'LTE B38 TDD - 2600 MHz',
+    '38': 'LTE B38 TDD - 2600 MHz',
+    // Band 39 (1900 MHz) - China
+    'B39': 'LTE B39 TDD - 1900 MHz',
+    'LTE39': 'LTE B39 TDD - 1900 MHz',
+    '39': 'LTE B39 TDD - 1900 MHz',
+    // Band 40 (2300 MHz) - Global (Indonesia: Telkomsel, XL)
+    'B40': 'LTE B40 TDD - 2300 MHz',
+    'LTE40': 'LTE B40 TDD - 2300 MHz',
+    '40': 'LTE B40 TDD - 2300 MHz',
+    // Band 41 (2500 MHz) - Global (China, US)
+    'B41': 'LTE B41 TDD - 2500 MHz',
+    'LTE41': 'LTE B41 TDD - 2500 MHz',
+    '41': 'LTE B41 TDD - 2500 MHz',
+    // Band 42 (3500 MHz) - Global
+    'B42': 'LTE B42 TDD - 3500 MHz',
+    'LTE42': 'LTE B42 TDD - 3500 MHz',
+    '42': 'LTE B42 TDD - 3500 MHz',
+    // Band 43 (3700 MHz) - Global
+    'B43': 'LTE B43 TDD - 3700 MHz',
+    'LTE43': 'LTE B43 TDD - 3700 MHz',
+    '43': 'LTE B43 TDD - 3700 MHz',
+    // Band 46 (5200 MHz LAA) - Global
+    'B46': 'LTE B46 LAA - 5200 MHz',
+    'LTE46': 'LTE B46 LAA - 5200 MHz',
+    '46': 'LTE B46 LAA - 5200 MHz',
+    // Band 48 (3600 MHz CBRS) - Americas
+    'B48': 'LTE B48 CBRS - 3600 MHz',
+    'LTE48': 'LTE B48 CBRS - 3600 MHz',
+    '48': 'LTE B48 CBRS - 3600 MHz',
+
+    // ===== 5G NR FR1 (Sub-6 GHz) Bands =====
+    // n1 (2100 MHz) - Global
+    'n1': '5G n1 - 2100 MHz',
+    'NR1': '5G n1 - 2100 MHz',
+    // n2 (1900 MHz) - Americas
+    'n2': '5G n2 - 1900 MHz',
+    'NR2': '5G n2 - 1900 MHz',
+    // n3 (1800 MHz) - Global
+    'n3': '5G n3 - 1800 MHz',
+    'NR3': '5G n3 - 1800 MHz',
+    // n5 (850 MHz) - Americas
+    'n5': '5G n5 - 850 MHz',
+    'NR5': '5G n5 - 850 MHz',
+    // n7 (2600 MHz) - Europe
+    'n7': '5G n7 - 2600 MHz',
+    'NR7': '5G n7 - 2600 MHz',
+    // n8 (900 MHz) - Europe, Asia
+    'n8': '5G n8 - 900 MHz',
+    'NR8': '5G n8 - 900 MHz',
+    // n12 (700 MHz) - Americas
+    'n12': '5G n12 - 700 MHz',
+    'NR12': '5G n12 - 700 MHz',
+    // n20 (800 MHz) - Europe
+    'n20': '5G n20 - 800 MHz',
+    'NR20': '5G n20 - 800 MHz',
+    // n25 (1900 MHz) - Americas
+    'n25': '5G n25 - 1900 MHz',
+    'NR25': '5G n25 - 1900 MHz',
+    // n28 (700 MHz) - Asia Pacific
+    'n28': '5G n28 - 700 MHz',
+    'NR28': '5G n28 - 700 MHz',
+    // n38 (2600 MHz TDD) - Europe, Asia
+    'n38': '5G n38 TDD - 2600 MHz',
+    'NR38': '5G n38 TDD - 2600 MHz',
+    // n40 (2300 MHz) - China, India
+    'n40': '5G n40 - 2300 MHz',
+    'NR40': '5G n40 - 2300 MHz',
+    // n41 (2500 MHz) - Global
+    'n41': '5G n41 TDD - 2500 MHz',
+    'NR41': '5G n41 TDD - 2500 MHz',
+    // n66 (1700/2100 MHz AWS) - Americas
+    'n66': '5G n66 - 1700/2100 MHz',
+    'NR66': '5G n66 - 1700/2100 MHz',
+    // n71 (600 MHz) - Americas
+    'n71': '5G n71 - 600 MHz',
+    'NR71': '5G n71 - 600 MHz',
+    // n77 (3700 MHz) - Global (C-Band)
+    'n77': '5G n77 TDD - 3700 MHz',
+    'NR77': '5G n77 TDD - 3700 MHz',
+    // n78 (3500 MHz) - Global (C-Band)
+    'n78': '5G n78 TDD - 3500 MHz',
+    'NR78': '5G n78 TDD - 3500 MHz',
+    // n79 (4700 MHz) - Japan, China
+    'n79': '5G n79 TDD - 4700 MHz',
+    'NR79': '5G n79 TDD - 4700 MHz',
+
+    // ===== 5G NR FR2 (mmWave) Bands =====
+    // n257 (28 GHz) - Global
+    'n257': '5G n257 mmWave - 28 GHz',
+    'NR257': '5G n257 mmWave - 28 GHz',
+    // n258 (26 GHz) - Global
+    'n258': '5G n258 mmWave - 26 GHz',
+    'NR258': '5G n258 mmWave - 26 GHz',
+    // n260 (39 GHz) - Americas
+    'n260': '5G n260 mmWave - 39 GHz',
+    'NR260': '5G n260 mmWave - 39 GHz',
+    // n261 (28 GHz) - Americas
+    'n261': '5G n261 mmWave - 28 GHz',
+    'NR261': '5G n261 mmWave - 28 GHz',
   };
 
   // Try direct match first
   if (bandMap[band]) return bandMap[band];
 
-  // Try extracting band number from string like "LTE B1" or "LTE B3"
-  const match = band.match(/B?(\d+)/i);
-  if (match) {
-    const bandNum = match[1];
+  // Try uppercase match
+  const upperBand = band.toUpperCase();
+  if (bandMap[upperBand]) return bandMap[upperBand];
+
+  // Try extracting band number from string like "LTE B1", "LTE B3", "5G n78"
+  // Match patterns: "B1", "LTE1", "n78", "NR78", etc.
+  const lteMatch = band.match(/(?:LTE\s*)?B?(\d+)/i);
+  if (lteMatch) {
+    const bandNum = lteMatch[1];
     if (bandMap[bandNum]) return bandMap[bandNum];
-    return `B${bandNum}`;
+    if (bandMap['B' + bandNum]) return bandMap['B' + bandNum];
+    return `LTE B${bandNum}`;
+  }
+
+  // Match 5G NR patterns
+  const nrMatch = band.match(/(?:5G\s*|NR\s*)?n(\d+)/i);
+  if (nrMatch) {
+    const nrBandNum = 'n' + nrMatch[1];
+    if (bandMap[nrBandNum]) return bandMap[nrBandNum];
+    return `5G ${nrBandNum}`;
   }
 
   return band;
