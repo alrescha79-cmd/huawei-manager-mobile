@@ -32,9 +32,9 @@
 > **📡 Tested on Huawei B312-929 (Orbit Star 2)**
 
 > **📲 Download on [Github Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
- - arm64-v8a: Untuk Android 64-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-arm64-v8a.apk)
- - armeabi-v7a: Untuk Android 32-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-armeabi-v7a.apk)
- - universal: Untuk semua perangkat [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.1/huawei-manager-v1.0.1-universal.apk)
+ - arm64-v8a: Untuk Android 64-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.25/huawei-manager-v1.0.25-arm64-v8a.apk)
+ - armeabi-v7a: Untuk Android 32-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.25/huawei-manager-v1.0.25-armeabi-v7a.apk)
+ - universal: Untuk semua perangkat [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.25/huawei-manager-v1.0.25-universal.apk)
 
 ---
 
@@ -49,6 +49,7 @@
 | 👨‍👩‍👧‍👦 **Parental Control** | Batasi penggunaan perangkat |
 | 📱 **Profile APN** | Kelola APN settings |
 | 🖧 **Ethernet** | Kelola Ethernet settings |
+| 📟 **Widget** | Widget untuk monitoring signal, traffic, dan status koneksi |
 | 🌙 **Dark Mode** | Support light dan dark theme |
 | 🔤 **Language** | Pilih bahasa (Bahasa Indonesia dan Bahasa Inggris) |
 
@@ -75,7 +76,6 @@
 | Home | WiFi | SMS | Sett |
 |:---------:|:----:|:---:|:--------:|
 | ![home](https://github.com/user-attachments/assets/eff4fd91-d750-4aac-9c37-9e7af39f34ef) | ![wifi](https://github.com/user-attachments/assets/40b126bc-aa33-4813-af4a-8e17fa4687c3) | ![sms](https://github.com/user-attachments/assets/6b8c2297-8369-452e-9fa9-cd77a1fa4d3c) | ![settings](https://github.com/user-attachments/assets/60eb10a8-19ae-4cac-a06f-f07ce9eabbbb) |
-
 
 ---
 
