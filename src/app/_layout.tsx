@@ -1,7 +1,8 @@
 import { Stack } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSegments } from 'expo-router';
-import { Linking } from 'react-native';
+import { Linking, AppState, Platform } from 'react-native';
+import type { AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Constants from 'expo-constants';
 import { useAuthStore } from '@/stores/auth.store';
@@ -9,6 +10,7 @@ import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
 import { ThemedAlert, setAlertListener, ThemedAlertHelper } from '@/components';
 import { useTranslation } from '@/i18n';
+import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 
 interface AlertButton {
   text: string;
@@ -84,7 +86,7 @@ export default function RootLayout() {
       }
     } catch (error) {
       // Silently fail - don't interrupt user experience
-      console.log('Update check failed:', error);
+      // console.log('Update check failed:', error);
     }
   };
 
@@ -112,6 +114,41 @@ export default function RootLayout() {
     setAlertListener((config) => {
       setAlertState(config);
     });
+  }, []);
+
+  // Start realtime widget updates when app is active (Android only)
+  useEffect(() => {
+    if (Platform.OS !== 'android') return;
+
+    let stopUpdates: (() => void) | null = null;
+
+    const handleAppStateChange = (nextAppState: AppStateStatus) => {
+      if (nextAppState === 'active') {
+        // App is in foreground - start realtime updates
+        stopUpdates = startRealtimeWidgetUpdates();
+      } else {
+        // App is in background - stop updates
+        if (stopUpdates) {
+          stopUpdates();
+          stopUpdates = null;
+        }
+        stopRealtimeWidgetUpdates();
+      }
+    };
+
+    // Start updates immediately since app is launching
+    stopUpdates = startRealtimeWidgetUpdates();
+
+    // Listen for app state changes
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+    return () => {
+      subscription.remove();
+      if (stopUpdates) {
+        stopUpdates();
+      }
+      stopRealtimeWidgetUpdates();
+    };
   }, []);
 
   const dismissAlert = () => {
