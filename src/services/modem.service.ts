@@ -439,14 +439,40 @@ export class ModemService {
     timezone: string;
   }> {
     try {
-      const response = await this.apiClient.get('/api/time/settings');
+      // Try primary endpoint first
+      let response: string;
+      try {
+        response = await this.apiClient.get('/api/time/settings');
+      } catch {
+        // Try alternative endpoint
+        try {
+          response = await this.apiClient.get('/api/ntp/settings');
+        } catch {
+          throw new Error('Time settings endpoint not available');
+        }
+      }
+
+      // Try multiple possible tag names
+      const sntpValue = parseXMLValue(response, 'NTPEnable') ||
+        parseXMLValue(response, 'Enable') ||
+        parseXMLValue(response, 'SntpEnable');
 
       return {
-        currentTime: parseXMLValue(response, 'CurrentTime') || new Date().toISOString(),
-        sntpEnabled: parseXMLValue(response, 'NTPEnable') === '1',
-        ntpServer: parseXMLValue(response, 'NTPServer') || 'pool.ntp.org',
-        ntpServerBackup: parseXMLValue(response, 'NTPServerBackup') || 'time.google.com',
-        timezone: parseXMLValue(response, 'TimeZone') || 'UTC+7',
+        currentTime: parseXMLValue(response, 'CurrentTime') ||
+          parseXMLValue(response, 'Time') ||
+          new Date().toISOString(),
+        sntpEnabled: sntpValue === '1' || sntpValue === 'true',
+        ntpServer: parseXMLValue(response, 'NTPServer') ||
+          parseXMLValue(response, 'Server') ||
+          parseXMLValue(response, 'NtpServer1') ||
+          'pool.ntp.org',
+        ntpServerBackup: parseXMLValue(response, 'NTPServerBackup') ||
+          parseXMLValue(response, 'NtpServer2') ||
+          parseXMLValue(response, 'BackupServer') ||
+          'time.google.com',
+        timezone: parseXMLValue(response, 'TimeZone') ||
+          parseXMLValue(response, 'Timezone') ||
+          'UTC+7',
       };
     } catch (error) {
       console.error('Error getting time settings:', error);
@@ -475,8 +501,15 @@ export class ModemService {
           ${settings.timezone ? `<TimeZone>${settings.timezone}</TimeZone>` : ''}
         </request>`;
 
-      await this.apiClient.post('/api/time/settings', data);
-      return true;
+      // Try primary endpoint first
+      try {
+        await this.apiClient.post('/api/time/settings', data);
+        return true;
+      } catch {
+        // Try alternative endpoint
+        await this.apiClient.post('/api/ntp/settings', data);
+        return true;
+      }
     } catch (error) {
       console.error('Error setting time settings:', error);
       throw error;

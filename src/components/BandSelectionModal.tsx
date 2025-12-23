@@ -111,16 +111,24 @@ export function BandSelectionModal({
             for (const bit of selectedBandBits) {
                 lteBandValue |= (BigInt(1) << BigInt(bit));
             }
+            // If no bands selected, use all bands
             if (lteBandValue === BigInt(0)) {
                 lteBandValue = BigInt('0x7FFFFFFFFFFFFFFF');
             }
             const lteBandHex = lteBandValue.toString(16).toUpperCase();
+
+            // Save band settings
             await modemService.setBandSettings('3FFFFFFF', lteBandHex);
-            ThemedAlertHelper.alert(t('common.success'), t('settings.bandsSaved'));
+
+            // Show success and close modal
+            ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
             onClose();
             onSaved?.();
-        } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+        } catch (error: any) {
+            console.error('Error saving band settings:', error);
+            // Show more specific error message
+            const errorMessage = error?.message || t('alerts.failedSaveBands');
+            ThemedAlertHelper.alert(t('common.error'), errorMessage);
         } finally {
             setIsSaving(false);
         }
