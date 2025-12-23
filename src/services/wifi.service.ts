@@ -191,13 +191,27 @@ export class WiFiService {
 
   async toggleWiFi(enable: boolean): Promise<boolean> {
     try {
+      // Try primary endpoint first (wifi-switch)
       const toggleData = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
           <WifiEnable>${enable ? '1' : '0'}</WifiEnable>
         </request>`;
 
-      await this.apiClient.post('/api/wlan/wifi-switch', toggleData);
-      return true;
+      try {
+        await this.apiClient.post('/api/wlan/wifi-switch', toggleData);
+        return true;
+      } catch (primaryError) {
+        // If primary endpoint fails, try alternative endpoint (basic-settings)
+        console.log('Primary wifi-switch failed, trying basic-settings...');
+
+        const basicSettingsData = `<?xml version="1.0" encoding="UTF-8"?>
+          <request>
+            <WifiEnable>${enable ? '1' : '0'}</WifiEnable>
+          </request>`;
+
+        await this.apiClient.post('/api/wlan/basic-settings', basicSettingsData);
+        return true;
+      }
     } catch (error) {
       console.error('Error toggling WiFi:', error);
       throw error;

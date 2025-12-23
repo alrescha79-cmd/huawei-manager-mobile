@@ -253,7 +253,21 @@ export class ModemService {
   async getAntennaMode(): Promise<string> {
     try {
       const response = await this.apiClient.get('/api/device/antenna_type');
-      return parseXMLValue(response, 'antenna_type') || 'auto';
+      const antennaValue = parseXMLValue(response, 'antenna_type') ||
+        parseXMLValue(response, 'AntennaType') ||
+        parseXMLValue(response, 'antennatype');
+
+      // Map numeric values to string values
+      const modeMap: Record<string, string> = {
+        '0': 'auto',
+        '1': 'internal',
+        '2': 'external',
+        'auto': 'auto',
+        'internal': 'internal',
+        'external': 'external',
+      };
+
+      return modeMap[antennaValue] || 'auto';
     } catch (error) {
       console.error('Error getting antenna mode:', error);
       return 'auto'; // Default to auto if endpoint not available
