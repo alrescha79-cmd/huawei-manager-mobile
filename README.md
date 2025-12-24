@@ -6,6 +6,10 @@
 
 <div align="center">
 
+![GitHub Downloads](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/total?style=flat&logo=github&label=Downloads&color=blue)
+![GitHub Stars](https://img.shields.io/github/stars/alrescha79-cmd/huawei-manager-mobile?style=flat&logo=github&label=Stars&color=yellow)
+![GitHub Forks](https://img.shields.io/github/forks/alrescha79-cmd/huawei-manager-mobile?style=flat&logo=github&label=Forks&color=green)
+
 ![Expo](https://img.shields.io/badge/Expo-54.0.29-000020?logo=expo&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?logo=react&logoColor=black)
 ![React Native](https://img.shields.io/badge/React_Native-0.81.5-20232A?logo=react&logoColor=61DAFB)
@@ -34,9 +38,12 @@
 > **📡 Tested on Huawei B312-929 (Orbit Star 2)**
 
 > **📲 Download on [Github Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
- - arm64-v8a: Untuk Android 64-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.45/huawei-manager-v1.0.45-arm64-v8a.apk)
- - armeabi-v7a: Untuk Android 32-bit [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.45/huawei-manager-v1.0.45-armeabi-v7a.apk)
- - universal: Untuk semua perangkat [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.45/huawei-manager-v1.0.45-universal.apk)
+>
+> ![Latest Version](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen)
+
+ - **arm64-v8a**: Untuk Android 64-bit → [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-arm64-v8a.apk)
+ - **armeabi-v7a**: Untuk Android 32-bit → [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-armeabi-v7a.apk)
+ - **universal**: Untuk semua perangkat → [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
 
 ---
 

@@ -67,9 +67,8 @@ jobs:
 
       - name: Rename and Upload arm64-v8a APK
         run: |
-          VERSION=${{ steps.get_version.outputs.version }}
           mv android/app/build/outputs/apk/release/app-release.apk \
-             huawei-manager-v${VERSION}-arm64-v8a.apk
+             huawei-manager-arm64-v8a.apk
 
       - name: Upload arm64-v8a APK
         uses: actions/upload-artifact@v4
@@ -131,9 +130,8 @@ jobs:
 
       - name: Rename and Upload armeabi-v7a APK
         run: |
-          VERSION=${{ steps.get_version.outputs.version }}
           mv android/app/build/outputs/apk/release/app-release.apk \
-             huawei-manager-v${VERSION}-armeabi-v7a.apk
+             huawei-manager-armeabi-v7a.apk
 
       - name: Upload armeabi-v7a APK
         uses: actions/upload-artifact@v4
@@ -193,9 +191,8 @@ jobs:
 
       - name: Rename and Upload Universal APK
         run: |
-          VERSION=${{ steps.get_version.outputs.version }}
           mv android/app/build/outputs/apk/release/app-release.apk \
-             huawei-manager-v${VERSION}-universal.apk
+             huawei-manager-universal.apk
 
       - name: Upload Universal APK
         uses: actions/upload-artifact@v4
@@ -251,6 +248,11 @@ jobs:
               PR_USER=$(echo "$PR_DATA" | jq -r '.user')
               PR_URL=$(echo "$PR_DATA" | jq -r '.html_url')
               
+              # Skip if PR number is null or empty (commit not from a PR)
+              if [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; then
+                continue
+              fi
+              
               # Check if already added (avoid duplicates)
               if ! grep -q "#${PR_NUM}" release_notes.md 2>/dev/null; then
                 echo "* ${PR_TITLE} by @${PR_USER} in [#${PR_NUM}](${PR_URL})" >> release_notes.md
@@ -299,14 +301,14 @@ jobs:
             ---
             
             ### Downloads
-            - **arm64-v8a** - For modern 64-bit devices (recommended)
-            - **armeabi-v7a** - For older 32-bit devices
-            - **universal** - Works on all devices (larger size)
+            - **arm64-v8a** - Untuk perangkat 64-bit (rekomended)
+            - **armeabi-v7a** - Untuk perangkat 32-bit
+            - **universal** - Bisa diinstall di semua perangkat (ukuran lebih besar)
             
-            ### Installation
-            1. Download the appropriate APK for your device
-            2. Enable "Install from unknown sources" in Settings
-            3. Open the APK file to install
+            ### Instalasi
+            1. Download APK yang sesuai dengan perangkat Anda
+            2. Enable "Install from unknown sources" di Settings
+            3. Buka file APK untuk menginstall
           files: apks/*.apk
           draft: false
           prerelease: false
