@@ -64,6 +64,16 @@ export default function WiFiScreen() {
   // Guest WiFi state
   const [guestWifiEnabled, setGuestWifiEnabled] = useState(false);
   const [isTogglingGuest, setIsTogglingGuest] = useState(false);
+  const [guestWifiSsid, setGuestWifiSsid] = useState('');
+  const [guestWifiPassword, setGuestWifiPassword] = useState('');
+  const [guestWifiSecurity, setGuestWifiSecurity] = useState('OPEN');
+  const [guestWifiDuration, setGuestWifiDuration] = useState('0');
+  const [isSavingGuestSettings, setIsSavingGuestSettings] = useState(false);
+  const [showGuestSecurityDropdown, setShowGuestSecurityDropdown] = useState(false);
+  const [showGuestDurationDropdown, setShowGuestDurationDropdown] = useState(false);
+  const [guestTimeRemaining, setGuestTimeRemaining] = useState(0);
+  const [isTimeRemainingActive, setIsTimeRemainingActive] = useState(false);
+  const [isExtendingTime, setIsExtendingTime] = useState(false);
 
   // Parental Control state
   const [parentalControlEnabled, setParentalControlEnabled] = useState(false);
@@ -94,6 +104,10 @@ export default function WiFiScreen() {
 
   // Collapse state for edit form
   const [isEditExpanded, setIsEditExpanded] = useState(false);
+
+  // Blocked devices state
+  const [blockedDevices, setBlockedDevices] = useState<{ macAddress: string; hostName: string }[]>([]);
+  const [isUnblocking, setIsUnblocking] = useState<string | null>(null);
 
   // Initialize form when settings load
   useEffect(() => {
@@ -147,8 +161,23 @@ export default function WiFiScreen() {
       setConnectedDevices(devices);
       setWiFiSettings(settings);
       setGuestWifiEnabled(guestSettings.enabled);
+      setGuestWifiSsid(guestSettings.ssid || '');
+      setGuestWifiPassword(guestSettings.password || '');
+      setGuestWifiSecurity(guestSettings.securityMode || 'OPEN');
+      setGuestWifiDuration(guestSettings.duration || '0');
       setParentalControlEnabled(parentalEnabled);
       setParentalProfiles(profiles);
+
+      // Fetch guest time remaining if enabled
+      if (guestSettings.enabled) {
+        const timeRemaining = await service.getGuestTimeRemaining();
+        setGuestTimeRemaining(timeRemaining.remainingSeconds);
+        setIsTimeRemainingActive(timeRemaining.isActive);
+      }
+
+      // Fetch blocked devices
+      const blocked = await service.getBlockedDevices();
+      setBlockedDevices(blocked);
 
     } catch (error) {
       console.error('Error loading WiFi data:', error);
@@ -205,6 +234,88 @@ export default function WiFiScreen() {
       ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleGuestWifi'));
     } finally {
       setIsTogglingGuest(false);
+    }
+  };
+
+  const handleSaveGuestSettings = async () => {
+    if (!wifiService || isSavingGuestSettings) return;
+
+    setIsSavingGuestSettings(true);
+    try {
+      await wifiService.updateGuestWiFiSettings({
+        enabled: guestWifiEnabled,
+        ssid: guestWifiSsid,
+        password: guestWifiPassword,
+        securityMode: guestWifiSecurity,
+        duration: guestWifiDuration,
+      });
+      ThemedAlertHelper.alert(t('common.success'), t('wifi.guestSettingsSaved'));
+      handleRefresh();
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveGuestWifi'));
+    } finally {
+      setIsSavingGuestSettings(false);
+    }
+  };
+
+  const handleExtendGuestTime = async () => {
+    if (!wifiService || isExtendingTime) return;
+
+    setIsExtendingTime(true);
+    try {
+      await wifiService.extendGuestWiFiTime();
+      // Refresh to get new time remaining
+      const timeRemaining = await wifiService.getGuestTimeRemaining();
+      setGuestTimeRemaining(timeRemaining.remainingSeconds);
+      ThemedAlertHelper.alert(t('common.success'), t('wifi.timeExtended'));
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('wifi.failedExtendTime'));
+    } finally {
+      setIsExtendingTime(false);
+    }
+  };
+
+  // Countdown timer effect for guest WiFi
+  useEffect(() => {
+    if (!guestWifiEnabled || !isTimeRemainingActive || guestTimeRemaining <= 0) return;
+
+    const timer = setInterval(() => {
+      setGuestTimeRemaining((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [guestWifiEnabled, isTimeRemainingActive]);
+
+  // Helper function to format seconds to days, hours, minutes, seconds
+  const formatTimeRemaining = (seconds: number): string => {
+    if (seconds <= 0) return '00d 00h 00m 00s';
+    const days = Math.floor(seconds / 86400);
+    const hours = Math.floor((seconds % 86400) / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${days.toString().padStart(2, '0')}d ${hours.toString().padStart(2, '0')}h ${minutes.toString().padStart(2, '0')}m ${secs.toString().padStart(2, '0')}s`;
+  };
+
+  const handleUnblockDevice = async (macAddress: string) => {
+    if (!wifiService || isUnblocking) return;
+
+    setIsUnblocking(macAddress);
+    try {
+      await wifiService.unblockDevice(macAddress);
+      ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceUnblocked'));
+      // Refresh blocked devices list
+      const blocked = await wifiService.getBlockedDevices();
+      setBlockedDevices(blocked);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('wifi.failedUnblockDevice'));
+    } finally {
+      setIsUnblocking(null);
     }
   };
 
@@ -433,6 +544,174 @@ export default function WiFiScreen() {
             )}
           </View>
 
+          {/* Guest WiFi Extended Settings - Only shown when enabled */}
+          {guestWifiEnabled && (
+            <View style={{ marginTop: spacing.md, paddingLeft: spacing.md }}>
+              {/* Duration Dropdown */}
+              <View style={styles.formGroup}>
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                  {t('wifi.duration')}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => setShowGuestDurationDropdown(!showGuestDurationDropdown)}
+                >
+                  <Text style={[typography.body, { color: colors.text }]}>
+                    {guestWifiDuration === '0' ? t('wifi.durationUnlimited') :
+                      guestWifiDuration === '24' ? t('wifi.duration1Day') :
+                        guestWifiDuration === '4' ? t('wifi.duration4Hours') : t('wifi.durationUnlimited')}
+                  </Text>
+                  <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
+                {showGuestDurationDropdown && (
+                  <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    {[
+                      { value: '0', label: t('wifi.durationUnlimited') },
+                      { value: '24', label: t('wifi.duration1Day') },
+                      { value: '4', label: t('wifi.duration4Hours') },
+                    ].map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[styles.dropdownItem, guestWifiDuration === option.value && { backgroundColor: colors.primary + '20' }]}
+                        onPress={() => {
+                          setGuestWifiDuration(option.value);
+                          setShowGuestDurationDropdown(false);
+                        }}
+                      >
+                        <Text style={[typography.body, { color: guestWifiDuration === option.value ? colors.primary : colors.text }]}>
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Time Remaining - Only shown when duration is not unlimited */}
+              {guestWifiDuration !== '0' && isTimeRemainingActive && (
+                <View style={[styles.formGroup, { backgroundColor: colors.card, padding: spacing.md, borderRadius: 8, marginTop: spacing.sm }]}>
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                    {t('wifi.timeRemaining')}
+                  </Text>
+                  <Text style={[typography.body, { color: colors.primary, fontFamily: 'monospace', fontSize: 20, fontWeight: 'bold' }]}>
+                    {formatTimeRemaining(guestTimeRemaining)}
+                  </Text>
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      backgroundColor: colors.success,
+                      paddingVertical: spacing.sm,
+                      paddingHorizontal: spacing.md,
+                      borderRadius: 6,
+                      marginTop: spacing.sm,
+                      opacity: isExtendingTime ? 0.6 : 1,
+                    }}
+                    onPress={handleExtendGuestTime}
+                    disabled={isExtendingTime}
+                  >
+                    {isExtendingTime ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <>
+                        <MaterialIcons name="add" size={18} color="#fff" />
+                        <Text style={[typography.caption1, { color: '#fff', marginLeft: 4, fontWeight: '600' }]}>
+                          {t('wifi.extend30Min')}
+                        </Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              )}
+
+              {/* WiFi Name */}
+              <View style={styles.formGroup}>
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                  {t('wifi.guestSsid')}
+                </Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                  value={guestWifiSsid}
+                  onChangeText={setGuestWifiSsid}
+                  placeholder={t('wifi.enterSsid')}
+                  placeholderTextColor={colors.textSecondary}
+                />
+              </View>
+
+              {/* Security Dropdown */}
+              <View style={styles.formGroup}>
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                  {t('wifi.security')}
+                </Text>
+                <TouchableOpacity
+                  style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                  onPress={() => setShowGuestSecurityDropdown(!showGuestSecurityDropdown)}
+                >
+                  <Text style={[typography.body, { color: colors.text }]}>
+                    {guestWifiSecurity === 'OPEN' ? t('wifi.securityOpen') : t('wifi.securityEncrypted')}
+                  </Text>
+                  <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
+                </TouchableOpacity>
+                {showGuestSecurityDropdown && (
+                  <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    {[
+                      { value: 'OPEN', label: t('wifi.securityOpen') },
+                      { value: 'WPA2-PSK', label: t('wifi.securityEncrypted') },
+                    ].map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[styles.dropdownItem, guestWifiSecurity === option.value && { backgroundColor: colors.primary + '20' }]}
+                        onPress={() => {
+                          setGuestWifiSecurity(option.value);
+                          setShowGuestSecurityDropdown(false);
+                        }}
+                      >
+                        <Text style={[typography.body, { color: guestWifiSecurity === option.value ? colors.primary : colors.text }]}>
+                          {option.label}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+              </View>
+
+              {/* Password - Only shown when security is not OPEN */}
+              {guestWifiSecurity !== 'OPEN' && (
+                <View style={styles.formGroup}>
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                    {t('wifi.password')}
+                  </Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                    value={guestWifiPassword}
+                    onChangeText={setGuestWifiPassword}
+                    placeholder={t('wifi.enterPassword')}
+                    placeholderTextColor={colors.textSecondary}
+                    secureTextEntry
+                  />
+                </View>
+              )}
+
+              {/* Save Button */}
+              <TouchableOpacity
+                style={[
+                  styles.saveButton,
+                  { backgroundColor: colors.primary },
+                  isSavingGuestSettings && { opacity: 0.6 }
+                ]}
+                onPress={handleSaveGuestSettings}
+                disabled={isSavingGuestSettings}
+              >
+                {isSavingGuestSettings ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={[typography.body, { color: '#fff', fontWeight: '600' }]}>{t('common.save')}</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
           {/* Separator */}
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
@@ -613,6 +892,70 @@ export default function WiFiScreen() {
           ))
         )}
       </Card>
+
+      {/* Blocked Devices Card - Only show if there are blocked devices */}
+      {blockedDevices.length > 0 && (
+        <Card style={{ marginTop: spacing.md }}>
+          <CardHeader title={t('wifi.blockedDevices')} />
+          {blockedDevices.map((device, index) => (
+            <View
+              key={device.macAddress + index}
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                paddingVertical: spacing.sm,
+                borderBottomWidth: index < blockedDevices.length - 1 ? 1 : 0,
+                borderBottomColor: colors.border,
+              }}
+            >
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <View style={{
+                  width: 40,
+                  height: 40,
+                  borderRadius: 20,
+                  backgroundColor: colors.error + '20',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  marginRight: spacing.sm,
+                }}>
+                  <MaterialIcons name="block" size={20} color={colors.error} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
+                    {device.hostName || t('wifi.unknownDevice')}
+                  </Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {device.macAddress}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: colors.success,
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: spacing.xs,
+                  borderRadius: 6,
+                  opacity: isUnblocking === device.macAddress ? 0.6 : 1,
+                }}
+                onPress={() => handleUnblockDevice(device.macAddress)}
+                disabled={isUnblocking === device.macAddress}
+              >
+                {isUnblocking === device.macAddress ? (
+                  <ActivityIndicator color="#fff" size="small" />
+                ) : (
+                  <>
+                    <MaterialIcons name="check" size={16} color="#fff" />
+                    <Text style={{ color: '#fff', fontSize: 12, marginLeft: 4 }}>{t('wifi.unblock')}</Text>
+                  </>
+                )}
+              </TouchableOpacity>
+            </View>
+          ))}
+        </Card>
+      )}
 
       {/* Parental Control Card */}
       <Card style={{ marginTop: spacing.md }}>

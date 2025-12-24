@@ -130,20 +130,12 @@ export default function HomeScreen() {
       if (dataStatus) setMobileDataStatus(dataStatus);
 
       // Check if data is empty (session expired returns empty values)
-      // Be less aggressive - only trigger re-login if ALL critical data is missing
-      const isDataEmpty = !signal?.rsrp && !signal?.rssi && !signal?.rsrq &&
-        !status?.connectionStatus && !network?.fullName;
+      const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        // Add a small delay before triggering re-login to allow for network reconnection
-        // This prevents re-login during band changes
-        setTimeout(() => {
-          if (!signalInfo?.rsrp && !signalInfo?.rssi) {
-            setSessionExpired(true);
-            setShowReloginWebView(true);
-            setReloginAttempts(prev => prev + 1);
-          }
-        }, 3000); // Wait 3 seconds before checking again
+        setSessionExpired(true);
+        setShowReloginWebView(true);
+        setReloginAttempts(prev => prev + 1);
       } else if (!isDataEmpty) {
         // Session is valid, reset expired state
         setSessionExpired(false);
@@ -153,24 +145,19 @@ export default function HomeScreen() {
     } catch (error: any) {
       console.error('Error loading data:', error);
 
-      // Check if this is a session/auth error
-      // Be more specific - only trigger on clear session errors, not on network issues
+      // Check if this is a session/auth error (no valid data means session expired)
       const errorMessage = error?.message || '';
       const isSessionError = errorMessage.includes('125003') ||
-        errorMessage.toLowerCase().includes('session expired') ||
-        errorMessage.toLowerCase().includes('not logged in');
+        errorMessage.includes('session') ||
+        errorMessage.includes('login') ||
+        !signalInfo; // No signal data might indicate session issue
 
-      // Don't trigger re-login for network errors during band changes
-      const isNetworkError = errorMessage.includes('timeout') ||
-        errorMessage.includes('network') ||
-        errorMessage.includes('ECONNREFUSED');
-
-      if (isSessionError && !isNetworkError && credentials && reloginAttempts < 3) {
+      if (isSessionError && credentials && reloginAttempts < 3) {
         // Session expired, trigger silent re-login via WebView
         setSessionExpired(true);
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
-      } else if (!isNetworkError) {
+      } else {
         ThemedAlertHelper.alert(t('common.error'), t('alerts.failedLoadModemData'));
       }
     } finally {
@@ -201,14 +188,12 @@ export default function HomeScreen() {
       if (dataStatus) setMobileDataStatus(dataStatus);
 
       // Check if data is empty (session expired returns empty values)
-      // Be less aggressive - only trigger if ALL critical data is missing
-      const isDataEmpty = !signal?.rsrp && !signal?.rssi && !signal?.rsrq &&
-        !status?.connectionStatus && !network?.fullName;
+      const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        // Don't immediately trigger re-login in silent mode
-        // The loadData function will handle it with proper delay
-        console.log('Silent refresh got empty data, waiting for next refresh...');
+        setSessionExpired(true);
+        setShowReloginWebView(true);
+        setReloginAttempts(prev => prev + 1);
       } else if (!isDataEmpty) {
         // Session is valid
         setSessionExpired(false);
@@ -217,23 +202,16 @@ export default function HomeScreen() {
 
     } catch (error: any) {
       // Check if session expired in background
-      // Be more specific about what constitutes a session error
       const errorMessage = error?.message || '';
       const isSessionError = errorMessage.includes('125003') ||
-        errorMessage.toLowerCase().includes('session expired') ||
-        errorMessage.toLowerCase().includes('not logged in');
+        errorMessage.includes('session') ||
+        !signalInfo;
 
-      // Ignore network errors during background refresh
-      const isNetworkError = errorMessage.includes('timeout') ||
-        errorMessage.includes('network') ||
-        errorMessage.includes('ECONNREFUSED');
-
-      if (isSessionError && !isNetworkError && credentials && reloginAttempts < 3 && !showReloginWebView) {
+      if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
         setSessionExpired(true);
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       }
-      // Don't show error alerts for silent background refresh
     }
   };
 

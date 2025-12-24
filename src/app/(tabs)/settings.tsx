@@ -189,6 +189,7 @@ export default function SettingsScreen() {
     ipType: 'ipv4' | 'ipv6' | 'ipv4v6';
     isDefault: boolean;
   }[]>([]);
+  const [activeApnProfileId, setActiveApnProfileId] = useState<string>('');
   const [isApnExpanded, setIsApnExpanded] = useState(false);
   const [isMobileNetworkExpanded, setIsMobileNetworkExpanded] = useState(false);
   const [isEthernetExpanded, setIsEthernetExpanded] = useState(false);
@@ -316,7 +317,15 @@ export default function SettingsScreen() {
   const loadApnProfiles = async (service: NetworkSettingsService) => {
     try {
       const profiles = await service.getAPNProfiles();
-      setApnProfiles(profiles);
+      const activeId = await service.getActiveAPNProfile();
+      setActiveApnProfileId(activeId);
+
+      // Mark the active profile as default based on CurrentProfile from API
+      const updatedProfiles = profiles.map(p => ({
+        ...p,
+        isDefault: p.id === activeId,
+      }));
+      setApnProfiles(updatedProfiles);
     } catch (error) {
       console.error('Error loading APN profiles:', error);
     }
@@ -431,13 +440,13 @@ export default function SettingsScreen() {
   const loadAntennaMode = async (service: ModemService) => {
     try {
       const mode = await service.getAntennaMode();
-      // Map API values to our values
-      const modeMap: Record<string, string> = {
-        '0': 'auto',
-        '1': 'internal',
-        '2': 'external',
-      };
-      setAntennaMode(modeMap[mode] || mode);
+      // getAntennaMode already returns 'auto', 'internal', or 'external'
+      // No need to re-map
+      if (mode === 'auto' || mode === 'internal' || mode === 'external') {
+        setAntennaMode(mode);
+      } else {
+        setAntennaMode('auto');
+      }
     } catch (error) {
       console.error('Error loading antenna mode:', error);
     }
@@ -862,6 +871,38 @@ export default function SettingsScreen() {
           </View>
         )}
 
+        {/* Active Antenna Status */}
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          marginTop: spacing.sm,
+          paddingVertical: spacing.xs,
+          paddingHorizontal: spacing.sm,
+          backgroundColor: antennaMode === 'internal' ? colors.success + '15' :
+            antennaMode === 'external' ? colors.warning + '15' : colors.primary + '15',
+          borderRadius: 8,
+        }}>
+          <MaterialIcons
+            name={antennaMode === 'internal' ? 'router' : antennaMode === 'external' ? 'settings-input-antenna' : 'tune'}
+            size={16}
+            color={antennaMode === 'internal' ? colors.success :
+              antennaMode === 'external' ? colors.warning : colors.primary}
+          />
+          <Text style={[typography.caption1, {
+            color: colors.textSecondary,
+            marginLeft: 6
+          }]}>
+            {t('settings.activeAntenna')}: {' '}
+            <Text style={{
+              fontWeight: '600',
+              color: antennaMode === 'internal' ? colors.success :
+                antennaMode === 'external' ? colors.warning : colors.primary
+            }}>
+              {getAntennaModeLabel()}
+            </Text>
+          </Text>
+        </View>
+
         {/* Separator */}
         <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
@@ -1230,7 +1271,9 @@ export default function SettingsScreen() {
                       </Text>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      {!profile.isDefault && (
+                      {profile.isDefault ? (
+                        <MaterialIcons name="star" size={20} color={colors.warning} />
+                      ) : (
                         <TouchableOpacity
                           onPress={(e) => { e.stopPropagation(); handleSetDefaultApn(profile.id); }}
                           style={{ padding: 4 }}

@@ -38,7 +38,7 @@ export class NetworkSettingsService {
 
             if (profilesXML) {
                 profilesXML.forEach((profileXML, index) => {
-                    profiles.push({
+                    const profile = {
                         id: parseXMLValue(profileXML, 'Index') || String(index),
                         name: parseXMLValue(profileXML, 'Name') ||
                             parseXMLValue(profileXML, 'ProfileName') || '',
@@ -54,13 +54,13 @@ export class NetworkSettingsService {
                             parseXMLValue(profileXML, 'PdpType')),
                         isDefault: parseXMLValue(profileXML, 'IsDefault') === '1' ||
                             parseXMLValue(profileXML, 'Default') === '1',
-                    });
+                    };
+                    profiles.push(profile);
                 });
             }
 
             return profiles;
         } catch (error) {
-            console.error('Error getting APN profiles:', error);
             return [];
         }
     }
@@ -68,7 +68,8 @@ export class NetworkSettingsService {
     async getActiveAPNProfile(): Promise<string> {
         try {
             const response = await this.apiClient.get('/api/dialup/connection');
-            return parseXMLValue(response, 'CurrentProfile') || '0';
+            const activeId = parseXMLValue(response, 'CurrentProfile') || '0';
+            return activeId;
         } catch (error) {
             console.error('Error getting active APN profile:', error);
             return '0';
@@ -77,28 +78,49 @@ export class NetworkSettingsService {
 
     async createAPNProfile(profile: Omit<APNProfile, 'id'>): Promise<boolean> {
         try {
-            const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Delete>0</Delete>
-          <SetDefault>0</SetDefault>
-          <Modify>0</Modify>
-          <Profile>
-            <Index></Index>
-            <IsValid>1</IsValid>
-            <Name>${profile.name}</Name>
-            <ApnName>${profile.apn}</ApnName>
-            <Username>${profile.username}</Username>
-            <Password>${profile.password}</Password>
-            <AuthMode>${this.authTypeToValue(profile.authType)}</AuthMode>
-            <IpType>${this.ipTypeToValue(profile.ipType)}</IpType>
-            <IsDefault>${profile.isDefault ? '1' : '0'}</IsDefault>
-          </Profile>
-        </request>`;
 
-            await this.apiClient.post('/api/dialup/profiles', data);
+            // Format based on huawei-lte-api library
+            // Key differences: Modify=1 for create, iptype lowercase, ReadOnly field
+            const data = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<SetDefault>${profile.isDefault ? '1' : '0'}</SetDefault>
+<Delete>0</Delete>
+<Modify>1</Modify>
+<Profile>
+<Index></Index>
+<IsValid>1</IsValid>
+<Name>${profile.name}</Name>
+<ApnIsStatic>1</ApnIsStatic>
+<ApnName>${profile.apn}</ApnName>
+<DialupNum>*99#</DialupNum>
+<Username>${profile.username || ''}</Username>
+<Password>${profile.password || ''}</Password>
+<AuthMode>${this.authTypeToValue(profile.authType)}</AuthMode>
+<IpIsStatic></IpIsStatic>
+<IpAddress></IpAddress>
+<DnsIsStatic></DnsIsStatic>
+<PrimaryDns></PrimaryDns>
+<SecondaryDns></SecondaryDns>
+<ReadOnly>0</ReadOnly>
+<iptype>${this.ipTypeToValue(profile.ipType)}</iptype>
+</Profile>
+</request>`;
+
+            const response = await this.apiClient.post('/api/dialup/profiles', data);
+
+            // Check if response indicates success
+            if (response.includes('<response>OK</response>') || response.includes('OK')) {
+                return true;
+            }
+
+            // Check for error
+            if (response.includes('<error>')) {
+                const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+                throw new Error(`APN creation failed with error code: ${errorCode}`);
+            }
+
             return true;
         } catch (error) {
-            console.error('Error creating APN profile:', error);
             throw error;
         }
     }
@@ -179,7 +201,7 @@ export class NetworkSettingsService {
             let response: string;
             try {
                 response = await this.apiClient.get('/api/cradle/basic-info');
-            } catch {
+            } catch (primaryError) {
                 // Try alternative endpoint
                 try {
                     response = await this.apiClient.get('/api/ethernet/settings');
@@ -193,6 +215,7 @@ export class NetworkSettingsService {
             }
 
             const modeValue = parseXMLValue(response, 'CradleMode') ||
+                parseXMLValue(response, 'connectionmode') ||
                 parseXMLValue(response, 'Mode') ||
                 parseXMLValue(response, 'ConnectionMode') || '0';
 
@@ -201,7 +224,6 @@ export class NetworkSettingsService {
                 status: await this.getEthernetStatus(),
             };
         } catch (error) {
-            console.error('Error getting ethernet settings:', error);
             return {
                 connectionMode: 'auto',
                 status: {
@@ -522,24 +544,29 @@ export class NetworkSettingsService {
     }
 
     private parseCradleMode(value: string): EthernetSettings['connectionMode'] {
+        let result: EthernetSettings['connectionMode'];
         switch (value) {
-            case '0': return 'auto';
-            case '1': return 'lan_only';
-            case '2': return 'pppoe';
-            case '3': return 'dynamic_ip';
-            case '4': return 'pppoe_dynamic';
-            default: return 'auto';
+            case '0': result = 'auto'; break;
+            case '1': result = 'pppoe'; break;
+            case '2': result = 'dynamic_ip'; break;
+            case '3': result = 'pppoe_dynamic'; break;
+            case '4': result = 'auto'; break;
+            case '5': result = 'lan_only'; break; // Confirmed: 5 = LAN Only
+            default: result = 'auto';
         }
+        return result;
     }
 
     private cradleModeToValue(mode: EthernetSettings['connectionMode']): string {
+        let result: string;
         switch (mode) {
-            case 'auto': return '0';
-            case 'lan_only': return '1';
-            case 'pppoe': return '2';
-            case 'dynamic_ip': return '3';
-            case 'pppoe_dynamic': return '4';
-            default: return '0';
+            case 'auto': result = '0'; break;
+            case 'lan_only': result = '5'; break; // Confirmed: LAN Only = 5
+            case 'pppoe': result = '1'; break;
+            case 'dynamic_ip': result = '2'; break;
+            case 'pppoe_dynamic': result = '3'; break;
+            default: result = '0';
         }
+        return result;
     }
 }
