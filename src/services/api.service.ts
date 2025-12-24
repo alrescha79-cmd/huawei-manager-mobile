@@ -350,9 +350,7 @@ export class ModemAPIClient {
   async post(endpoint: string, data: string, retryCount = 0): Promise<string> {
     try {
       // Always force refresh token before POST - modem requires fresh token for each POST
-      console.log('[DEBUG] POST: Force refreshing token before request...');
       const { token } = await this.getToken(true);  // Force refresh
-      console.log('[DEBUG] POST: Got fresh token, sending request to', endpoint);
 
       const response = await this.client.post(endpoint, data, {
         headers: {
@@ -366,7 +364,6 @@ export class ModemAPIClient {
 
       // Error 125003 = Session expired, 125002 = Wrong token
       if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
-        console.log('[DEBUG] POST: Got session/token error, clearing session...');
         // Clear session to force re-login
         this.sessionToken = '';
         this.sessionCookie = '';
@@ -379,13 +376,12 @@ export class ModemAPIClient {
 
       // Error 100005 = Parameter error (may need different handling)
       if (responseData.includes('<code>100005</code>')) {
-        console.log('[DEBUG] POST: Got parameter error (100005)');
         throw new Error('Parameter error (100005). The request format may be incorrect.');
       }
 
       return response.data;
     } catch (error) {
-      console.error(`[DEBUG] POST error to ${endpoint}:`, error);
+      console.error(`POST error to ${endpoint}:`, error);
       throw error;
     }
   }

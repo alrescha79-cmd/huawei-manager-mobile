@@ -43,7 +43,8 @@
     "notLoggedIn": "Belum login ke modem",
     "sessionExpired": "Sesi kedaluwarsa",
     "modemNotResponding": "Modem tidak merespons",
-    "failedSaveModemSettings": "Gagal menyimpan pengaturan modem"
+    "failedSaveModemSettings": "Gagal menyimpan pengaturan modem",
+    "failedSaveGuestWifi": "Gagal menyimpan pengaturan WiFi Tamu"
   },
   "tabs": {
     "home": "Beranda",
@@ -147,7 +148,26 @@
     "guestWifiEnabled": "WiFi Tamu diaktifkan",
     "guestWifiDisabled": "WiFi Tamu dinonaktifkan",
     "editSettings": "Edit Pengaturan WiFi",
-    "editSettingsHint": "Ketuk untuk mengubah SSID, kata sandi, atau keamanan"
+    "editSettingsHint": "Ketuk untuk mengubah SSID, kata sandi, atau keamanan",
+    "duration": "Durasi",
+    "durationUnlimited": "Tanpa Batas",
+    "duration1Day": "1 Hari",
+    "duration4Hours": "4 Jam",
+    "guestSsid": "Nama WiFi",
+    "enterSsid": "Masukkan nama WiFi",
+    "enterPassword": "Masukkan kata sandi",
+    "security": "Keamanan",
+    "securityEncrypted": "Terenkripsi",
+    "guestSettingsSaved": "Pengaturan WiFi Tamu berhasil disimpan",
+    "timeRemaining": "Sisa Waktu",
+    "extend30Min": "Tambah 30 menit",
+    "timeExtended": "Waktu WiFi Tamu ditambah 30 menit",
+    "failedExtendTime": "Gagal menambah waktu WiFi Tamu",
+    "blockedDevices": "Perangkat Diblokir",
+    "unknownDevice": "Perangkat Tidak Dikenal",
+    "unblock": "Buka Blokir",
+    "deviceUnblocked": "Perangkat berhasil dibuka blokirnya",
+    "failedUnblockDevice": "Gagal membuka blokir perangkat"
   },
   "sms": {
     "smsCount": "Jumlah SMS",
@@ -220,6 +240,7 @@
     "appVersion": "Versi Aplikasi",
     "developer": "Pengembang",
     "antennaModeChanged": "Mode antena diubah",
+    "activeAntenna": "Antena Aktif",
     "networkModeChanged": "Mode jaringan diubah",
     "modemSettings": "Pengaturan Modem",
     "currentModemIp": "IP Modem Saat Ini",

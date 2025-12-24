@@ -43,7 +43,8 @@
     "notLoggedIn": "Not logged in to modem",
     "sessionExpired": "Session expired",
     "modemNotResponding": "Modem not responding",
-    "failedSaveModemSettings": "Failed to save modem settings"
+    "failedSaveModemSettings": "Failed to save modem settings",
+    "failedSaveGuestWifi": "Failed to save guest WiFi settings"
   },
   "tabs": {
     "home": "Home",
@@ -147,7 +148,26 @@
     "guestWifiEnabled": "Guest WiFi enabled",
     "guestWifiDisabled": "Guest WiFi disabled",
     "editSettings": "Edit WiFi Settings",
-    "editSettingsHint": "Tap to change SSID, password, or security"
+    "editSettingsHint": "Tap to change SSID, password, or security",
+    "duration": "Duration",
+    "durationUnlimited": "Unlimited",
+    "duration1Day": "1 Day",
+    "duration4Hours": "4 Hours",
+    "guestSsid": "WiFi Name",
+    "enterSsid": "Enter WiFi name",
+    "enterPassword": "Enter password",
+    "security": "Security",
+    "securityEncrypted": "Encrypted",
+    "guestSettingsSaved": "Guest WiFi settings saved successfully",
+    "timeRemaining": "Time Remaining",
+    "extend30Min": "Extend by 30 minutes",
+    "timeExtended": "Guest WiFi time extended by 30 minutes",
+    "failedExtendTime": "Failed to extend guest WiFi time",
+    "blockedDevices": "Blocked Devices",
+    "unknownDevice": "Unknown Device",
+    "unblock": "Unblock",
+    "deviceUnblocked": "Device unblocked successfully",
+    "failedUnblockDevice": "Failed to unblock device"
   },
   "sms": {
     "smsCount": "SMS Count",
@@ -220,6 +240,7 @@
     "appVersion": "App Version",
     "developer": "Developer",
     "antennaModeChanged": "Antenna mode changed",
+    "activeAntenna": "Active Antenna",
     "networkModeChanged": "Network mode changed",
     "modemSettings": "Modem Settings",
     "currentModemIp": "Current Modem IP",

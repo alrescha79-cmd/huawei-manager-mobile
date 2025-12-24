@@ -14,7 +14,7 @@ export class WiFiService {
       const response = await this.apiClient.get('/api/wlan/host-list');
 
       const devices: ConnectedDevice[] = [];
-      const hostsXML = response.match(/<Host>(.*?)<\/Host>/gs);
+      const hostsXML = response.match(/<Host>([\s\S]*?)<\/Host>/g);
 
       if (hostsXML) {
         hostsXML.forEach((hostXML) => {
@@ -77,115 +77,264 @@ export class WiFiService {
     }
   }
 
-  async getGuestWiFiSettings(): Promise<{ enabled: boolean, ssid: string, password: string, securityMode: string }> {
+  async getGuestWiFiSettings(): Promise<{
+    enabled: boolean;
+    ssid: string;
+    password: string;
+    securityMode: string;
+    duration: string;
+  }> {
     try {
-      const response = await this.apiClient.get('/api/wlan/guest-basic-settings');
+      const response = await this.apiClient.get('/api/wlan/multi-basic-settings');
 
-      return {
-        enabled: parseXMLValue(response, 'WifiGuestEnable') === '1',
-        ssid: parseXMLValue(response, 'WifiGuestSsid'),
-        password: parseXMLValue(response, 'WifiGuestWpaPreSharedKey'),
-        securityMode: parseXMLValue(response, 'WifiGuestAuthmode'),
-      };
+      // Parse nested Ssid structure - Index 1 is Guest WiFi
+      const ssidMatches = response.match(/<Ssid>([\s\S]*?)<\/Ssid>/g);
+
+      if (ssidMatches) {
+        for (const ssidXml of ssidMatches) {
+          const index = parseXMLValue(ssidXml, 'Index');
+          const isGuest = parseXMLValue(ssidXml, 'wifiisguestnetwork') === '1';
+
+          if (index === '1' || isGuest) {
+            return {
+              enabled: parseXMLValue(ssidXml, 'WifiEnable') === '1',
+              ssid: parseXMLValue(ssidXml, 'WifiSsid') || '',
+              password: parseXMLValue(ssidXml, 'WifiWpapsk') || '',
+              securityMode: parseXMLValue(ssidXml, 'WifiAuthmode') || 'OPEN',
+              duration: parseXMLValue(ssidXml, 'wifiguestofftime') || '0',
+            };
+          }
+        }
+      }
+
+      return { enabled: false, ssid: '', password: '', securityMode: 'OPEN', duration: '0' };
     } catch (error) {
       console.error('Error getting guest WiFi settings:', error);
-      // Return default values if endpoint doesn't exist
-      return { enabled: false, ssid: '', password: '', securityMode: '' };
+      return { enabled: false, ssid: '', password: '', securityMode: 'OPEN', duration: '0' };
+    }
+  }
+
+  async getGuestTimeRemaining(): Promise<{
+    remainingSeconds: number;
+    isActive: boolean;
+  }> {
+    try {
+      const response = await this.apiClient.get('/api/wlan/guesttime-setting');
+      const remaintime = parseXMLValue(response, 'remaintime') || '0';
+      const isvalidtime = parseXMLValue(response, 'isvalidtime') || '0';
+
+      return {
+        remainingSeconds: parseInt(remaintime, 10) || 0,
+        isActive: isvalidtime === '1',
+      };
+    } catch (error) {
+      console.error('Error getting guest time remaining:', error);
+      return { remainingSeconds: 0, isActive: false };
+    }
+  }
+
+  async extendGuestWiFiTime(): Promise<boolean> {
+    try {
+      const data = `<?xml version="1.0" encoding="UTF-8"?><request><extendtime>30</extendtime></request>`;
+      const response = await this.apiClient.post('/api/wlan/guesttime-setting', data);
+
+      if (response.includes('<error>')) {
+        throw new Error('Failed to extend guest WiFi time');
+      }
+      return true;
+    } catch (error) {
+      console.error('Error extending guest WiFi time:', error);
+      throw error;
     }
   }
 
   async toggleGuestWiFi(enable: boolean): Promise<boolean> {
-    try {
-      const toggleData = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <WifiGuestEnable>${enable ? '1' : '0'}</WifiGuestEnable>
-        </request>`;
+    return this.updateGuestWiFiSettings({ enabled: enable });
+  }
 
-      await this.apiClient.post('/api/wlan/guest-basic-settings', toggleData);
+  async updateGuestWiFiSettings(settings: {
+    enabled?: boolean;
+    ssid?: string;
+    password?: string;
+    securityMode?: string;
+    duration?: string;
+  }): Promise<boolean> {
+    try {
+      // First get current settings to preserve ALL values
+      const currentResponse = await this.apiClient.get('/api/wlan/multi-basic-settings');
+
+      // Parse both SSIDs from current settings
+      const ssidMatches = currentResponse.match(/<Ssid>([\s\S]*?)<\/Ssid>/g);
+      if (!ssidMatches || ssidMatches.length < 2) {
+        throw new Error('Could not find SSIDs in settings');
+      }
+
+      // Extract values from main SSID (Index 0)
+      const mainSsid = ssidMatches[0];
+      const mainIndex = parseXMLValue(mainSsid, 'Index') || '0';
+      const mainAuthmode = parseXMLValue(mainSsid, 'WifiAuthmode') || 'WPA2-PSK';
+      const mainWepKeyIndex = parseXMLValue(mainSsid, 'WifiWepKeyIndex') || '1';
+      const mainEncrypt = parseXMLValue(mainSsid, 'WifiWpaencryptionmodes') || 'AES';
+      const mainBroadcast = parseXMLValue(mainSsid, 'WifiBroadcast') || '0';
+      const mainMac = parseXMLValue(mainSsid, 'WifiMac') || '';
+      const mainIsGuest = parseXMLValue(mainSsid, 'wifiisguestnetwork') || '0';
+      const mainOfftime = parseXMLValue(mainSsid, 'wifiguestofftime') || '4';
+      const mainId = parseXMLValue(mainSsid, 'ID') || '';
+      const mainEnable = parseXMLValue(mainSsid, 'WifiEnable') || '1';
+
+      // Extract current values from guest SSID (Index 1)
+      const guestSsidXml = ssidMatches[1];
+      const guestIndex = parseXMLValue(guestSsidXml, 'Index') || '1';
+      const guestWepKeyIndex = parseXMLValue(guestSsidXml, 'WifiWepKeyIndex') || '1';
+      const guestBroadcast = parseXMLValue(guestSsidXml, 'WifiBroadcast') || '0';
+      const guestMac = parseXMLValue(guestSsidXml, 'WifiMac') || '';
+      const guestId = parseXMLValue(guestSsidXml, 'ID') || '';
+
+      // Use provided values or fall back to current
+      const guestEnabled = settings.enabled !== undefined ? (settings.enabled ? '1' : '0') : parseXMLValue(guestSsidXml, 'WifiEnable') || '0';
+      const guestSsidName = settings.ssid !== undefined ? settings.ssid : parseXMLValue(guestSsidXml, 'WifiSsid') || '';
+      const guestAuthmode = settings.securityMode !== undefined ? settings.securityMode : parseXMLValue(guestSsidXml, 'WifiAuthmode') || 'OPEN';
+      const guestPassword = settings.password !== undefined ? settings.password : parseXMLValue(guestSsidXml, 'WifiWpapsk') || '';
+      const guestOfftime = settings.duration !== undefined ? settings.duration : parseXMLValue(guestSsidXml, 'wifiguestofftime') || '0';
+      const guestBasicEncrypt = guestAuthmode === 'OPEN' ? 'NONE' : '';
+      const guestWpaEncrypt = guestAuthmode !== 'OPEN' ? 'AES' : '';
+
+      // Build the full request with both SSIDs
+      const updateData = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<Ssids>
+<Ssid>
+<Index>${mainIndex}</Index>
+<WifiAuthmode>${mainAuthmode}</WifiAuthmode>
+<WifiWepKeyIndex>${mainWepKeyIndex}</WifiWepKeyIndex>
+<WifiWpaencryptionmodes>${mainEncrypt}</WifiWpaencryptionmodes>
+<WifiBroadcast>${mainBroadcast}</WifiBroadcast>
+<WifiMac>${mainMac}</WifiMac>
+<wifiisguestnetwork>${mainIsGuest}</wifiisguestnetwork>
+<wifiguestofftime>${mainOfftime}</wifiguestofftime>
+<ID>${mainId}</ID>
+<wifisupportsecmodelist></wifisupportsecmodelist>
+<WifiEnable>${mainEnable}</WifiEnable>
+</Ssid>
+<Ssid>
+<Index>${guestIndex}</Index>
+<WifiSsid>${guestSsidName}</WifiSsid>
+<WifiAuthmode>${guestAuthmode}</WifiAuthmode>
+<WifiWepKeyIndex>${guestWepKeyIndex}</WifiWepKeyIndex>
+<WifiBroadcast>${guestBroadcast}</WifiBroadcast>
+<WifiMac>${guestMac}</WifiMac>
+${guestBasicEncrypt ? `<WifiBasicencryptionmodes>${guestBasicEncrypt}</WifiBasicencryptionmodes>` : ''}
+${guestWpaEncrypt ? `<WifiWpaencryptionmodes>${guestWpaEncrypt}</WifiWpaencryptionmodes>` : ''}
+${guestPassword ? `<WifiWpapsk>${guestPassword}</WifiWpapsk>` : ''}
+<wifiisguestnetwork>1</wifiisguestnetwork>
+<wifiguestofftime>${guestOfftime}</wifiguestofftime>
+<ID>${guestId}</ID>
+<wifisupportsecmodelist></wifisupportsecmodelist>
+<WifiEnable>${guestEnabled}</WifiEnable>
+</Ssid>
+</Ssids>
+<WifiRestart>1</WifiRestart>
+<modify_guest_ssid>1</modify_guest_ssid>
+</request>`;
+
+      const response = await this.apiClient.post('/api/wlan/multi-basic-settings', updateData);
+
+      if (response.includes('<error>')) {
+        const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+        throw new Error(`Guest WiFi update failed: ${errorCode}`);
+      }
+
       return true;
     } catch (error) {
-      console.error('Error toggling guest WiFi:', error);
+      console.error('Error updating guest WiFi settings:', error);
+      throw error;
+    }
+  }
+  // Block device internet access using MAC filter
+  async kickDevice(macAddress: string): Promise<boolean> {
+    try {
+      // Block device by adding MAC to blacklist
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<Ssids>
+<Ssid>
+<WifiMacFilterStatus>2</WifiMacFilterStatus>
+<Index>0</Index>
+<WifiMacFilterMac0>${macAddress}</WifiMacFilterMac0>
+<wifihostname0></wifihostname0>
+</Ssid>
+</Ssids>
+</request>`;
+
+      const response = await this.apiClient.post('/api/wlan/multi-macfilter-settings', data);
+
+      if (response.includes('<error>')) {
+        throw new Error('Failed to block device');
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error blocking device:', error);
       throw error;
     }
   }
 
-  async kickDevice(macAddress: string): Promise<boolean> {
+  // Unblock device to restore internet access
+  async unblockDevice(macAddress: string): Promise<boolean> {
     try {
-      // Huawei modems typically use MAC filter to block devices
-      // First, get current MAC filter settings
-      const currentFilterResponse = await this.apiClient.get('/api/wlan/mac-filter').catch(() => null);
+      // Unblock device by removing MAC from blacklist (empty value)
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<Ssids>
+<Ssid>
+<WifiMacFilterMac0></WifiMacFilterMac0>
+<wifihostname0></wifihostname0>
+<WifiMacFilterStatus>2</WifiMacFilterStatus>
+<Index>0</Index>
+</Ssid>
+</Ssids>
+</request>`;
 
-      // Get current blocked MACs
-      let currentBlockedMacs: string[] = [];
-      if (currentFilterResponse) {
-        const macListMatch = currentFilterResponse.match(/<MACAddress>(.*?)<\/MACAddress>/gs);
-        if (macListMatch) {
-          currentBlockedMacs = macListMatch.map(m => parseXMLValue(m, 'MACAddress')).filter(Boolean);
-        }
+      const response = await this.apiClient.post('/api/wlan/multi-macfilter-settings', data);
+
+      if (response.includes('<error>')) {
+        throw new Error('Failed to unblock device');
       }
-
-      // Add the new MAC to the blocklist if not already there
-      if (!currentBlockedMacs.includes(macAddress)) {
-        currentBlockedMacs.push(macAddress);
-      }
-
-      // Build MAC filter entries XML
-      const macEntriesXml = currentBlockedMacs.map((mac, index) =>
-        `<Ssids><Index>${index}</Index><WifiMacFilterMac>${mac}</WifiMacFilterMac></Ssids>`
-      ).join('');
-
-      // Set MAC filter to deny mode with the blocked MACs
-      const filterData = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <WifiMacFilterEnable>1</WifiMacFilterEnable>
-          <WifiMacFilterPolicy>1</WifiMacFilterPolicy>
-          ${macEntriesXml}
-        </request>`;
-
-      await this.apiClient.post('/api/wlan/mac-filter', filterData);
-
-      // Also try the direct host control endpoint as fallback
-      try {
-        const hostControlData = `<?xml version="1.0" encoding="UTF-8"?>
-          <request>
-            <Hosts>
-              <Host>
-                <MacAddress>${macAddress}</MacAddress>
-                <IsBlock>1</IsBlock>
-              </Host>
-            </Hosts>
-          </request>`;
-        await this.apiClient.post('/api/wlan/host-setting', hostControlData);
-      } catch (e) {
-        // Host setting endpoint may not exist on all models
-      }
-
-      // Schedule removal from blocklist after 10 seconds
-      // This allows the device to be kicked but can reconnect later
-      setTimeout(async () => {
-        try {
-          const updatedMacs = currentBlockedMacs.filter(m => m !== macAddress);
-          const updatedMacEntriesXml = updatedMacs.map((mac, index) =>
-            `<Ssids><Index>${index}</Index><WifiMacFilterMac>${mac}</WifiMacFilterMac></Ssids>`
-          ).join('');
-
-          const unblockData = `<?xml version="1.0" encoding="UTF-8"?>
-            <request>
-              <WifiMacFilterEnable>${updatedMacs.length > 0 ? '1' : '0'}</WifiMacFilterEnable>
-              <WifiMacFilterPolicy>1</WifiMacFilterPolicy>
-              ${updatedMacEntriesXml}
-            </request>`;
-
-          await this.apiClient.post('/api/wlan/mac-filter', unblockData);
-        } catch (e) {
-          console.log('Failed to unblock MAC after timeout:', e);
-        }
-      }, 10000);
 
       return true;
     } catch (error) {
-      console.error('Error kicking device:', error);
+      console.error('Error unblocking device:', error);
       throw error;
+    }
+  }
+
+  // Get list of blocked devices
+  async getBlockedDevices(): Promise<{ macAddress: string; hostName: string }[]> {
+    try {
+      const response = await this.apiClient.get('/api/wlan/multi-macfilter-settings-ex');
+      const blockedDevices: { macAddress: string; hostName: string }[] = [];
+
+      // Parse blocked devices from wifimacblacklist tag
+      // Format: <WifiMacFilterMac0>MAC</WifiMacFilterMac0><wifihostname0>NAME</wifihostname0>
+      for (let i = 0; i < 16; i++) {
+        const macTag = `WifiMacFilterMac${i}`;
+        const hostTag = `wifihostname${i}`;
+
+        const macMatch = response.match(new RegExp(`<${macTag}>([^<]*)</${macTag}>`));
+        const hostMatch = response.match(new RegExp(`<${hostTag}>([^<]*)</${hostTag}>`));
+
+        if (macMatch && macMatch[1] && macMatch[1].trim() !== '') {
+          blockedDevices.push({
+            macAddress: macMatch[1].trim(),
+            hostName: hostMatch ? hostMatch[1].trim() : '',
+          });
+        }
+      }
+
+      return blockedDevices;
+    } catch (error) {
+      console.error('Error getting blocked devices:', error);
+      return [];
     }
   }
 
@@ -222,8 +371,13 @@ export class WiFiService {
 
   async getParentalControlEnabled(): Promise<boolean> {
     try {
-      const response = await this.apiClient.get('/api/timerule/timerulelist');
-      return parseXMLValue(response, 'Enable') === '1';
+      const response = await this.apiClient.get('/api/timerule/timerule');
+      // Check if there are any enabled rules
+      const rulesXML = response.match(/<TimeControlRule>([\s\S]*?)<\/TimeControlRule>/g);
+      if (rulesXML) {
+        return rulesXML.some(rule => parseXMLValue(rule, 'Enable') === '1');
+      }
+      return false;
     } catch (error) {
       console.error('Error getting parental control status:', error);
       return false;
@@ -231,55 +385,59 @@ export class WiFiService {
   }
 
   async toggleParentalControl(enable: boolean): Promise<boolean> {
-    try {
-      const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Enable>${enable ? '1' : '0'}</Enable>
-        </request>`;
-
-      await this.apiClient.post('/api/timerule/timerulelist', data);
-      return true;
-    } catch (error) {
-      console.error('Error toggling parental control:', error);
-      throw error;
-    }
+    // This modem doesn't have a global toggle - each rule has its own enable
+    // For now, just return true
+    return true;
   }
 
   async getParentalControlProfiles(): Promise<{
     id: string;
     name: string;
     deviceMacs: string[];
+    deviceNames: string[];
     startTime: string;
     endTime: string;
     activeDays: number[];
     enabled: boolean;
   }[]> {
     try {
-      const response = await this.apiClient.get('/api/timerule/timerulelist');
+      const response = await this.apiClient.get('/api/timerule/timerule');
+
       const profiles: {
         id: string;
         name: string;
         deviceMacs: string[];
+        deviceNames: string[];
         startTime: string;
         endTime: string;
         activeDays: number[];
         enabled: boolean;
       }[] = [];
 
-      const rulesXML = response.match(/<Rule>(.*?)<\/Rule>/gs);
+      const rulesXML = response.match(/<TimeControlRule>([\s\S]*?)<\/TimeControlRule>/g);
 
       if (rulesXML) {
         rulesXML.forEach((ruleXML, index) => {
-          const macList = parseXMLValue(ruleXML, 'MacAddresses') || '';
-          const daysString = parseXMLValue(ruleXML, 'WeekDays') || '0000000';
+
+          // Parse device MACs - look for DevicesMAC inside DevicesMACs
+          const macsMatch = ruleXML.match(/<DevicesMAC>([^<]+)<\/DevicesMAC>/g);
+          const deviceMacs = macsMatch ? macsMatch.map(m => m.replace(/<\/?DevicesMAC>/g, '')) : [];
+
+          // Parse device names
+          const namesMatch = ruleXML.match(/<DevicesName>([^<]+)<\/DevicesName>/g);
+          const deviceNames = namesMatch ? namesMatch.map(m => m.replace(/<\/?DevicesName>/g, '')) : [];
+
+          const weekEnable = parseXMLValue(ruleXML, 'WeekEnable') || '0000000';
+          const id = parseXMLValue(ruleXML, 'ID') || `rule_${index}`;
 
           profiles.push({
-            id: parseXMLValue(ruleXML, 'Index') || String(index),
-            name: parseXMLValue(ruleXML, 'RuleName') || `Rule ${index + 1}`,
-            deviceMacs: macList.split(',').filter(Boolean),
+            id: id,
+            name: deviceNames[0] || `Rule ${index + 1}`,
+            deviceMacs: deviceMacs,
+            deviceNames: deviceNames,
             startTime: parseXMLValue(ruleXML, 'StartTime') || '00:00',
             endTime: parseXMLValue(ruleXML, 'EndTime') || '23:59',
-            activeDays: this.parseDaysString(daysString),
+            activeDays: this.parseDaysString(weekEnable),
             enabled: parseXMLValue(ruleXML, 'Enable') === '1',
           });
         });
@@ -295,30 +453,51 @@ export class WiFiService {
   async createParentalControlProfile(profile: {
     name: string;
     deviceMacs: string[];
+    deviceNames?: string[];
     startTime: string;
     endTime: string;
     activeDays: number[];
     enabled: boolean;
   }): Promise<boolean> {
     try {
-      const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Delete>0</Delete>
-          <Modify>0</Modify>
-          <Rule>
-            <RuleName>${profile.name}</RuleName>
-            <MacAddresses>${profile.deviceMacs.join(',')}</MacAddresses>
-            <StartTime>${profile.startTime}</StartTime>
-            <EndTime>${profile.endTime}</EndTime>
-            <WeekDays>${this.daysToString(profile.activeDays)}</WeekDays>
-            <Enable>${profile.enabled ? '1' : '0'}</Enable>
-          </Rule>
-        </request>`;
 
-      await this.apiClient.post('/api/timerule/timerulelist', data);
+      // Build DevicesMAC elements
+      const deviceMacsXml = profile.deviceMacs.map(mac => `<DevicesMAC>${mac}</DevicesMAC>`).join('');
+
+      // Build DevicesName elements
+      const deviceNamesXml = (profile.deviceNames || [profile.name]).map(name => `<DevicesName>${name}</DevicesName>`).join('');
+
+      // WeekEnable format: 7 digits for Sun-Sat (0=disabled, 1=enabled)
+      const weekEnable = this.daysToString(profile.activeDays);
+
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<TimeControlRules>
+<TimeControlRule>
+<Action>create</Action>
+<Enable>${profile.enabled ? '1' : '0'}</Enable>
+<TimeMode>1</TimeMode>
+<ID></ID>
+<DevicesMACs>${deviceMacsXml}</DevicesMACs>
+<DevicesNames>${deviceNamesXml}</DevicesNames>
+<WeekEnable>${weekEnable}</WeekEnable>
+<StartTime>${profile.startTime}</StartTime>
+<EndTime>${profile.endTime}</EndTime>
+</TimeControlRule>
+</TimeControlRules>
+</request>`;
+
+
+      const response = await this.apiClient.post('/api/timerule/timerule', data);
+
+      if (response.includes('<error>')) {
+        const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+        throw new Error(`Failed to create profile: error ${errorCode}`);
+      }
+
       return true;
     } catch (error) {
-      console.error('Error creating parental control profile:', error);
+      console.error('[DEBUG] createParentalControlProfile: Error:', error);
       throw error;
     }
   }
@@ -327,50 +506,114 @@ export class WiFiService {
     id: string;
     name: string;
     deviceMacs: string[];
+    deviceNames?: string[];
     startTime: string;
     endTime: string;
     activeDays: number[];
     enabled: boolean;
   }): Promise<boolean> {
     try {
-      const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Delete>0</Delete>
-          <Modify>1</Modify>
-          <Rule>
-            <Index>${profile.id}</Index>
-            <RuleName>${profile.name}</RuleName>
-            <MacAddresses>${profile.deviceMacs.join(',')}</MacAddresses>
-            <StartTime>${profile.startTime}</StartTime>
-            <EndTime>${profile.endTime}</EndTime>
-            <WeekDays>${this.daysToString(profile.activeDays)}</WeekDays>
-            <Enable>${profile.enabled ? '1' : '0'}</Enable>
-          </Rule>
-        </request>`;
 
-      await this.apiClient.post('/api/timerule/timerulelist', data);
+      // Web interface uses DELETE + CREATE for editing (not modify)
+      // Step 1: Delete the old rule
+      await this.deleteParentalControlProfile(profile.id);
+
+      // Step 2: Create new rule with updated settings
+      await this.createParentalControlProfile({
+        name: profile.name,
+        deviceMacs: profile.deviceMacs.filter((mac, index, self) => self.indexOf(mac) === index), // Remove duplicates
+        deviceNames: profile.deviceNames,
+        startTime: profile.startTime,
+        endTime: profile.endTime,
+        activeDays: profile.activeDays,
+        enabled: profile.enabled,
+      });
+
       return true;
     } catch (error) {
-      console.error('Error updating parental control profile:', error);
+      console.error('[DEBUG] updateParentalControlProfile: Error:', error);
+      throw error;
+    }
+  }
+
+  // Toggle enable/disable for a rule without changing other settings
+  async toggleParentalControlProfileEnabled(profile: {
+    id: string;
+    name: string;
+    deviceMacs: string[];
+    deviceNames?: string[];
+    startTime: string;
+    endTime: string;
+    activeDays: number[];
+    enabled: boolean;
+  }): Promise<boolean> {
+    try {
+
+      // Build DevicesMAC elements - remove duplicates
+      const uniqueMacs = profile.deviceMacs.filter((mac, index, self) => self.indexOf(mac) === index);
+      const deviceMacsXml = uniqueMacs.map(mac => `<DevicesMAC>${mac}</DevicesMAC>`).join('');
+
+      // Build DevicesName elements
+      const deviceNamesXml = (profile.deviceNames || [profile.name]).map(name => `<DevicesName>${name}</DevicesName>`).join('');
+
+      const weekEnable = this.daysToString(profile.activeDays);
+
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<TimeControlRules>
+<TimeControlRule>
+<Action>update</Action>
+<Enable>${profile.enabled ? '1' : '0'}</Enable>
+<TimeMode>1</TimeMode>
+<ID>${profile.id}</ID>
+<DevicesMACs>${deviceMacsXml}</DevicesMACs>
+<DevicesNames>${deviceNamesXml}</DevicesNames>
+<WeekEnable>${weekEnable}</WeekEnable>
+<StartTime>${profile.startTime}</StartTime>
+<EndTime>${profile.endTime}</EndTime>
+</TimeControlRule>
+</TimeControlRules>
+</request>`;
+
+
+      const response = await this.apiClient.post('/api/timerule/timerule', data);
+
+      if (response.includes('<error>')) {
+        const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+        throw new Error(`Failed to toggle profile: error ${errorCode}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('[DEBUG] toggleParentalControlProfileEnabled: Error:', error);
       throw error;
     }
   }
 
   async deleteParentalControlProfile(profileId: string): Promise<boolean> {
     try {
-      const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Delete>1</Delete>
-          <Modify>0</Modify>
-          <Rule>
-            <Index>${profileId}</Index>
-          </Rule>
-        </request>`;
 
-      await this.apiClient.post('/api/timerule/timerulelist', data);
+      const data = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<TimeControlRules>
+<TimeControlRule>
+<Action>delete</Action>
+<ID>${profileId}</ID>
+</TimeControlRule>
+</TimeControlRules>
+</request>`;
+
+
+      const response = await this.apiClient.post('/api/timerule/timerule', data);
+
+      if (response.includes('<error>')) {
+        const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+        throw new Error(`Failed to delete profile: error ${errorCode}`);
+      }
+
       return true;
     } catch (error) {
-      console.error('Error deleting parental control profile:', error);
+      console.error('[DEBUG] deleteParentalControlProfile: Error:', error);
       throw error;
     }
   }

@@ -22,16 +22,12 @@ export class NetworkSettingsService {
             // Try primary endpoint first
             let response: string;
             try {
-                console.log('[DEBUG] getAPNProfiles: Fetching from /api/dialup/profiles');
                 response = await this.apiClient.get('/api/dialup/profiles');
-                console.log('[DEBUG] getAPNProfiles: Raw response:', response.substring(0, 500));
             } catch {
                 // Try alternative endpoint
                 try {
-                    console.log('[DEBUG] getAPNProfiles: Trying /api/dialup/profile-list');
                     response = await this.apiClient.get('/api/dialup/profile-list');
                 } catch {
-                    console.log('[DEBUG] getAPNProfiles: Both endpoints failed');
                     return [];
                 }
             }
@@ -39,7 +35,6 @@ export class NetworkSettingsService {
             const profiles: APNProfile[] = [];
             // Use [\s\S] for multiline matching
             const profilesXML = response.match(/<Profile>[\s\S]*?<\/Profile>/g);
-            console.log('[DEBUG] getAPNProfiles: Found profiles:', profilesXML?.length || 0);
 
             if (profilesXML) {
                 profilesXML.forEach((profileXML, index) => {
@@ -60,14 +55,12 @@ export class NetworkSettingsService {
                         isDefault: parseXMLValue(profileXML, 'IsDefault') === '1' ||
                             parseXMLValue(profileXML, 'Default') === '1',
                     };
-                    console.log('[DEBUG] getAPNProfiles: Profile', index, ':', profile.name, profile.apn);
                     profiles.push(profile);
                 });
             }
 
             return profiles;
         } catch (error) {
-            console.error('[DEBUG] getAPNProfiles: Error:', error);
             return [];
         }
     }
@@ -76,8 +69,6 @@ export class NetworkSettingsService {
         try {
             const response = await this.apiClient.get('/api/dialup/connection');
             const activeId = parseXMLValue(response, 'CurrentProfile') || '0';
-            console.log('[DEBUG] getActiveAPNProfile: Response:', response.substring(0, 200));
-            console.log('[DEBUG] getActiveAPNProfile: Active ID:', activeId);
             return activeId;
         } catch (error) {
             console.error('Error getting active APN profile:', error);
@@ -87,7 +78,6 @@ export class NetworkSettingsService {
 
     async createAPNProfile(profile: Omit<APNProfile, 'id'>): Promise<boolean> {
         try {
-            console.log('[DEBUG] createAPNProfile: Profile data:', profile);
 
             // Format based on huawei-lte-api library
             // Key differences: Modify=1 for create, iptype lowercase, ReadOnly field
@@ -115,10 +105,8 @@ export class NetworkSettingsService {
 <iptype>${this.ipTypeToValue(profile.ipType)}</iptype>
 </Profile>
 </request>`;
-            console.log('[DEBUG] createAPNProfile: Sending data:', data);
 
             const response = await this.apiClient.post('/api/dialup/profiles', data);
-            console.log('[DEBUG] createAPNProfile: Response:', response);
 
             // Check if response indicates success
             if (response.includes('<response>OK</response>') || response.includes('OK')) {
@@ -133,7 +121,6 @@ export class NetworkSettingsService {
 
             return true;
         } catch (error) {
-            console.error('[DEBUG] createAPNProfile: Error:', error);
             throw error;
         }
     }
@@ -213,17 +200,12 @@ export class NetworkSettingsService {
             // Try primary endpoint first
             let response: string;
             try {
-                console.log('[DEBUG] getEthernetSettings: Trying /api/cradle/basic-info');
                 response = await this.apiClient.get('/api/cradle/basic-info');
-                console.log('[DEBUG] getEthernetSettings: Primary response:', response);
             } catch (primaryError) {
-                console.log('[DEBUG] getEthernetSettings: Primary failed, trying /api/ethernet/settings');
                 // Try alternative endpoint
                 try {
                     response = await this.apiClient.get('/api/ethernet/settings');
-                    console.log('[DEBUG] getEthernetSettings: Alternative response:', response);
                 } catch {
-                    console.log('[DEBUG] getEthernetSettings: Both endpoints failed, returning defaults');
                     // Return default if no endpoint available
                     return {
                         connectionMode: 'auto',
@@ -236,14 +218,12 @@ export class NetworkSettingsService {
                 parseXMLValue(response, 'connectionmode') ||
                 parseXMLValue(response, 'Mode') ||
                 parseXMLValue(response, 'ConnectionMode') || '0';
-            console.log('[DEBUG] getEthernetSettings: Mode value:', modeValue);
 
             return {
                 connectionMode: this.parseCradleMode(modeValue),
                 status: await this.getEthernetStatus(),
             };
         } catch (error) {
-            console.error('[DEBUG] getEthernetSettings: Error:', error);
             return {
                 connectionMode: 'auto',
                 status: {
@@ -564,24 +544,29 @@ export class NetworkSettingsService {
     }
 
     private parseCradleMode(value: string): EthernetSettings['connectionMode'] {
+        let result: EthernetSettings['connectionMode'];
         switch (value) {
-            case '0': return 'auto';
-            case '1': return 'lan_only';
-            case '2': return 'pppoe';
-            case '3': return 'dynamic_ip';
-            case '4': return 'pppoe_dynamic';
-            default: return 'auto';
+            case '0': result = 'auto'; break;
+            case '1': result = 'pppoe'; break;
+            case '2': result = 'dynamic_ip'; break;
+            case '3': result = 'pppoe_dynamic'; break;
+            case '4': result = 'auto'; break;
+            case '5': result = 'lan_only'; break; // Confirmed: 5 = LAN Only
+            default: result = 'auto';
         }
+        return result;
     }
 
     private cradleModeToValue(mode: EthernetSettings['connectionMode']): string {
+        let result: string;
         switch (mode) {
-            case 'auto': return '0';
-            case 'lan_only': return '1';
-            case 'pppoe': return '2';
-            case 'dynamic_ip': return '3';
-            case 'pppoe_dynamic': return '4';
-            default: return '0';
+            case 'auto': result = '0'; break;
+            case 'lan_only': result = '5'; break; // Confirmed: LAN Only = 5
+            case 'pppoe': result = '1'; break;
+            case 'dynamic_ip': result = '2'; break;
+            case 'pppoe_dynamic': result = '3'; break;
+            default: result = '0';
         }
+        return result;
     }
 }
