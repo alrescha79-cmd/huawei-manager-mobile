@@ -6,9 +6,14 @@
 
 <div align="center">
 
-![GitHub Downloads](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/total?style=flat&logo=github&label=Downloads&color=blue)
+![GitHub Downloads](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/total?style=flat&logo=android&label=Downloads&color=blue)
 ![GitHub Stars](https://img.shields.io/github/stars/alrescha79-cmd/huawei-manager-mobile?style=flat&logo=github&label=Stars&color=yellow)
 ![GitHub Forks](https://img.shields.io/github/forks/alrescha79-cmd/huawei-manager-mobile?style=flat&logo=github&label=Forks&color=green)
+
+[![Last Commit](https://img.shields.io/github/last-commit/alrescha79-cmd/huawei-manager-mobile?logo=github)](https://github.com/alrescha79-cmd/huawei-manager-mobile)
+![Last PR](https://img.shields.io/github/issues-pr-closed-raw/alrescha79-cmd/huawei-manager-mobile?label=PR%20Closed&logo=github)
+![Last Release](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Last%20Release&logo=github-actions)
+![Release Date](https://img.shields.io/github/release-date/alrescha79-cmd/huawei-manager-mobile?logo=github-actions&label=Release%20Date)
 
 ![Expo](https://img.shields.io/badge/Expo-54.0.29-000020?logo=expo&logoColor=white)
 ![React](https://img.shields.io/badge/React-19.1.0-61DAFB?logo=react&logoColor=black)

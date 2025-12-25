@@ -14,3 +14,6 @@ export { PageSheetModal } from './PageSheetModal';
 export { BandSelectionModal, getSelectedBandsDisplay } from './BandSelectionModal';
 export { UsageCard } from './UsageCard';
 export { SignalCard } from './SignalCard';
+export { MonthlySettingsModal } from './MonthlySettingsModal';
+export { DeviceDetailModal } from './DeviceDetailModal';
+export { DiagnosisResultModal } from './DiagnosisResultModal';

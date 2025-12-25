@@ -526,4 +526,170 @@ export class ModemService {
       return new Date().toISOString();
     }
   }
+
+  // ============ Monthly Data Usage Settings ============
+
+  async getMonthlyDataSettings(): Promise<{
+    enabled: boolean;
+    startDay: number;
+    dataLimit: number;
+    dataLimitUnit: 'MB' | 'GB';
+    monthThreshold: number;
+    trafficMaxLimit: number;
+  }> {
+    try {
+      const response = await this.apiClient.get('/api/monitoring/start_date');
+
+      const setMonthData = parseXMLValue(response, 'SetMonthData');
+      const startDay = parseInt(parseXMLValue(response, 'StartDay') || '1');
+      const dataLimitStr = parseXMLValue(response, 'DataLimit') || '0';
+      const monthThreshold = parseInt(parseXMLValue(response, 'MonthThreshold') || '90');
+      const trafficMaxLimit = parseInt(parseXMLValue(response, 'trafficmaxlimit') || '0');
+
+      // Parse data limit string (e.g., "500GB" or "1024MB")
+      let dataLimit = 0;
+      let dataLimitUnit: 'MB' | 'GB' = 'GB';
+      const match = dataLimitStr.match(/^(\d+)(MB|GB)$/i);
+      if (match) {
+        dataLimit = parseInt(match[1]);
+        dataLimitUnit = match[2].toUpperCase() as 'MB' | 'GB';
+      }
+
+      return {
+        enabled: setMonthData === '1',
+        startDay: isNaN(startDay) ? 1 : startDay,
+        dataLimit,
+        dataLimitUnit,
+        monthThreshold: isNaN(monthThreshold) ? 90 : monthThreshold,
+        trafficMaxLimit: isNaN(trafficMaxLimit) ? 0 : trafficMaxLimit,
+      };
+    } catch (error) {
+      console.error('Error getting monthly data settings:', error);
+      return {
+        enabled: false,
+        startDay: 1,
+        dataLimit: 0,
+        dataLimitUnit: 'GB',
+        monthThreshold: 90,
+        trafficMaxLimit: 0,
+      };
+    }
+  }
+
+  async setMonthlyDataSettings(settings: {
+    enabled: boolean;
+    startDay: number;
+    dataLimit: number;
+    dataLimitUnit: 'MB' | 'GB';
+    monthThreshold: number;
+  }): Promise<boolean> {
+    try {
+      const startDayStr = settings.startDay.toString().padStart(2, '0');
+      const dataLimitStr = `${settings.dataLimit}${settings.dataLimitUnit}`;
+
+      const data = `<?xml version="1.0" encoding="UTF-8"?><request><StartDay>${startDayStr}</StartDay><DataLimit>${dataLimitStr}</DataLimit><MonthThreshold>${settings.monthThreshold}</MonthThreshold><SetMonthData>${settings.enabled ? '1' : '0'}</SetMonthData></request>`;
+
+      const response = await this.apiClient.post('/api/monitoring/start_date', data);
+
+      if (response.includes('<error>')) {
+        const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+        throw new Error(`Monthly data settings failed: ${errorCode}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error setting monthly data settings:', error);
+      throw error;
+    }
+  }
+
+  // ============ Diagnosis ============
+
+  async diagnosisPing(host: string = '1.1.1.1', timeout: number = 4000): Promise<{
+    success: boolean;
+    host: string;
+    message: string;
+  }> {
+    try {
+      const data = `<?xml version="1.0" encoding="UTF-8"?><request><Host>${host}</Host><Timeout>${timeout}</Timeout></request>`;
+
+      const response = await this.apiClient.post('/api/diagnosis/diagnose_ping', data);
+
+      if (response.includes('<error>')) {
+        const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+        return {
+          success: false,
+          host,
+          message: `Ping failed: error ${errorCode}`,
+        };
+      }
+
+      return {
+        success: true,
+        host,
+        message: `Ping to ${host} successful`,
+      };
+    } catch (error) {
+      console.error('Error running diagnosis ping:', error);
+      return {
+        success: false,
+        host,
+        message: `Ping failed: ${error}`,
+      };
+    }
+  }
+
+  async oneClickCheck(): Promise<{
+    internetConnection: boolean;
+    dnsResolution: boolean;
+    networkStatus: string;
+    signalStrength: string;
+    summaryKey: string;
+  }> {
+    try {
+      // Check internet connection with ping to google.com
+      const pingResult = await this.diagnosisPing('google.com', 5000);
+
+      // Get network status
+      const status = await this.getModemStatus();
+      const signal = await this.getSignalInfo();
+
+      const internetConnection = pingResult.success;
+      const networkStatus = status.connectionStatus === '901' ? 'Connected' : 'Disconnected';
+      const signalStrength = signal.rssi ? `${signal.rssi} dBm` : 'Unknown';
+
+      // DNS check with cloudflare as fallback
+      const dnsResult = await this.diagnosisPing('1.1.1.1', 5000);
+      const dnsResolution = dnsResult.success;
+
+      let summaryKey = '';
+      if (internetConnection && dnsResolution) {
+        summaryKey = 'allChecksPassed';
+      } else if (internetConnection && !dnsResolution) {
+        summaryKey = 'dnsIssue';
+      } else if (!internetConnection && networkStatus === 'Connected') {
+        summaryKey = 'noInternet';
+      } else {
+        summaryKey = 'connectionIssue';
+      }
+
+      return {
+        internetConnection,
+        dnsResolution,
+        networkStatus,
+        signalStrength,
+        summaryKey,
+      };
+    } catch (error) {
+      console.error('Error running one click check:', error);
+      return {
+        internetConnection: false,
+        dnsResolution: false,
+        networkStatus: 'Error',
+        signalStrength: 'Unknown',
+        summaryKey: 'checkFailed',
+      };
+    }
+  }
 }
+

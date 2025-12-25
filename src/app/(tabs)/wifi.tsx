@@ -15,7 +15,8 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper } from '@/components';
+import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal } from '@/components';
+import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
 import { WiFiService } from '@/services/wifi.service';
@@ -108,6 +109,10 @@ export default function WiFiScreen() {
   // Blocked devices state
   const [blockedDevices, setBlockedDevices] = useState<{ macAddress: string; hostName: string }[]>([]);
   const [isUnblocking, setIsUnblocking] = useState<string | null>(null);
+
+  // Device detail modal state
+  const [selectedDevice, setSelectedDevice] = useState<ConnectedDevice | null>(null);
+  const [showDeviceDetailModal, setShowDeviceDetailModal] = useState(false);
 
   // Initialize form when settings load
   useEffect(() => {
@@ -338,21 +343,21 @@ export default function WiFiScreen() {
     }
   };
 
-  const handleKickDevice = async (macAddress: string, hostName: string) => {
+  const handleBlockDevice = async (macAddress: string, hostName: string) => {
     if (!wifiService) return;
 
     ThemedAlertHelper.alert(
-      t('wifi.kickDevice'),
-      `${t('wifi.kickConfirm')} ${hostName || macAddress}?`,
+      t('wifi.blockDevice'),
+      `${t('wifi.blockConfirm')} ${hostName || macAddress}?`,
       [
         { text: t('common.cancel'), style: 'cancel' },
         {
-          text: t('common.kick'),
+          text: t('wifi.blockDevice'),
           style: 'destructive',
           onPress: async () => {
             try {
               await wifiService.kickDevice(macAddress);
-              ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceDisconnected'));
+              ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceBlocked'));
               handleRefresh();
             } catch (error) {
               ThemedAlertHelper.alert(t('common.error'), t('alerts.failedKickDevice'));
@@ -361,6 +366,19 @@ export default function WiFiScreen() {
         },
       ]
     );
+  };
+
+  const handleSaveDeviceName = async (deviceId: string, newName: string) => {
+    if (!wifiService) return;
+
+    try {
+      await wifiService.changeDeviceName(deviceId, newName);
+      ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceNameSaved'));
+      handleRefresh();
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('wifi.failedSaveDeviceName'));
+      throw error;
+    }
   };
 
   const getSecurityModeLabel = (value: string) => {
@@ -858,7 +876,7 @@ export default function WiFiScreen() {
           </Text>
         ) : (
           connectedDevices.map((device, index) => (
-            <View
+            <TouchableOpacity
               key={device.macAddress}
               style={[
                 styles.deviceItem,
@@ -869,6 +887,10 @@ export default function WiFiScreen() {
                   marginBottom: index < connectedDevices.length - 1 ? spacing.md : 0,
                 },
               ]}
+              onPress={() => {
+                setSelectedDevice(device);
+                setShowDeviceDetailModal(true);
+              }}
             >
               <View style={{ flex: 1 }}>
                 <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
@@ -883,12 +905,12 @@ export default function WiFiScreen() {
               </View>
 
               <Button
-                title={t('common.kick')}
+                title={t('wifi.blockDevice')}
                 variant="danger"
-                onPress={() => handleKickDevice(device.macAddress, device.hostName)}
+                onPress={() => handleBlockDevice(device.macAddress, device.hostName)}
                 style={styles.kickButton}
               />
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </Card>
@@ -1286,6 +1308,18 @@ export default function WiFiScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Device Detail Modal */}
+      <DeviceDetailModal
+        visible={showDeviceDetailModal}
+        onClose={() => {
+          setShowDeviceDetailModal(false);
+          setSelectedDevice(null);
+        }}
+        device={selectedDevice}
+        onSaveName={handleSaveDeviceName}
+        onBlock={handleBlockDevice}
+      />
     </ScrollView>
   );
 }
