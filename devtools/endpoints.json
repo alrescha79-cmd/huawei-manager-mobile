@@ -1,0 +1,5 @@
+{
+  "signal": "/api/device/signal",
+  "status": "/api/monitoring/status",
+  "traffic": "/api/monitoring/traffic-statistics"
+}

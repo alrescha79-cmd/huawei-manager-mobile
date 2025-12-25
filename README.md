@@ -31,19 +31,24 @@
 
 ---
 
-> **⚡ Built with Expo SDK 54**
+> [!WARNING] 
+> **Beberapa fitur mungkin belum sepenuhnya berfungsi pada device Anda**
 
-> **🐞 Beberpa fitur mungkin belum sepenuhnya berfungsi pada device Anda**
+> **⚡ Built with Expo SDK 54**
 
 > **📡 Tested on Huawei B312-929 (Orbit Star 2)**
 
-> **📲 Download on [Github Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
->
+> [!TIP]
 > ![Latest Version](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen)
+> 
+> **📥 Download di [Github Releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
 
- - **arm64-v8a**: Untuk Android 64-bit → [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-arm64-v8a.apk)
- - **armeabi-v7a**: Untuk Android 32-bit → [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-armeabi-v7a.apk)
- - **universal**: Untuk semua perangkat → [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
+
+> **arm64-v8a**: Untuk Android 64-bit (Rekomendasi) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-arm64-v8a.apk)
+> 
+> **armeabi-v7a**: Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-armeabi-v7a.apk)
+>
+>**universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
 
 ---
 
