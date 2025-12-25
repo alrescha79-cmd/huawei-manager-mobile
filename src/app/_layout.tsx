@@ -2,6 +2,7 @@ import { Stack } from 'expo-router';
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, useSegments } from 'expo-router';
 import { Linking, AppState, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Constants from 'expo-constants';
@@ -86,7 +87,48 @@ export default function RootLayout() {
       }
     } catch (error) {
       // Silently fail - don't interrupt user experience
-      // console.log('Update check failed:', error);
+    }
+  };
+
+  // Show star request alert once per version (after install/update)
+  const STAR_ALERT_VERSION_KEY = 'star_alert_shown_version';
+  const GITHUB_REPO_URL = 'https://github.com/alrescha79-cmd/huawei-manager-mobile';
+
+  const checkAndShowStarRequest = async () => {
+    try {
+      const currentVersion = Constants.expoConfig?.version || '1.0.0';
+      const shownVersion = await AsyncStorage.getItem(STAR_ALERT_VERSION_KEY);
+
+      // Only show if this version hasn't been shown yet
+      if (shownVersion !== currentVersion) {
+        // Delay to show after app is fully loaded
+        setTimeout(() => {
+          ThemedAlertHelper.alert(
+            t('alerts.enjoyingApp'),
+            t('alerts.starRequest'),
+            [
+              {
+                text: t('common.later'),
+                style: 'cancel',
+                onPress: async () => {
+                  // Don't save version - will ask again next time
+                }
+              },
+              {
+                text: '⭐ ' + t('alerts.giveStars'),
+                onPress: async () => {
+                  await AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
+                  Linking.openURL(GITHUB_REPO_URL);
+                }
+              },
+            ]
+          );
+          // Save version after showing (won't show again for this version)
+          AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
+        }, 2000); // 2 second delay
+      }
+    } catch (error) {
+      // Silently fail
     }
   };
 
@@ -97,6 +139,9 @@ export default function RootLayout() {
 
       // Check for app updates
       checkForUpdates();
+
+      // Show star request alert (once per version)
+      checkAndShowStarRequest();
 
       // Load auth credentials
       await loadCredentials();

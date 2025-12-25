@@ -16,10 +16,14 @@
     "continue": "Lanjutkan",
     "fetching": "Mengambil...",
     "goToLogin": "Ke Halaman Login",
-    "kick": "Putuskan"
+    "kick": "Putuskan",
+    "later": "Nanti"
   },
   "alerts": {
     "newVersionAvailable": "Versi baru tersedia. Apakah Anda ingin mengunduhnya sekarang?",
+    "enjoyingApp": "Menikmati Aplikasi?",
+    "starRequest": "Jika aplikasi ini bermanfaat, berikan bintang di GitHub untuk mendukung pengembangan!",
+    "giveStars": "Beri Bintang",
     "failedLoadModemData": "Gagal memuat data modem",
     "failedToggleData": "Gagal mengubah data seluler",
     "failedLoadWifi": "Gagal memuat data WiFi",

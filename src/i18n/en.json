@@ -16,10 +16,14 @@
     "continue": "Continue",
     "fetching": "Fetching...",
     "goToLogin": "Go to Login",
-    "kick": "Kick"
+    "kick": "Kick",
+    "later": "Later"
   },
   "alerts": {
     "newVersionAvailable": "A new version is available. Would you like to download it now?",
+    "enjoyingApp": "Enjoying the App?",
+    "starRequest": "If you find this app useful, please give us a star on GitHub to support development!",
+    "giveStars": "Give Stars",
     "failedLoadModemData": "Failed to load modem data",
     "failedToggleData": "Failed to toggle mobile data",
     "failedLoadWifi": "Failed to load WiFi data",

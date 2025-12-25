@@ -1,6 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { parseXMLValue } from '@/utils/helpers';
 import * as Crypto from 'expo-crypto';
+import CryptoJS from 'crypto-js';
 
 export class ModemAPIClient {
   private client: AxiosInstance;
@@ -132,6 +133,208 @@ export class ModemAPIClient {
     return btoa(binary);
   }
 
+  // Generate random nonce for SCRAM authentication
+  private async generateNonce(): Promise<string> {
+    const randomBytes = await Crypto.getRandomBytesAsync(32);
+    return Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // Convert hex string to byte array
+  private hexToBytes(hex: string): Uint8Array {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes;
+  }
+
+  // Convert byte array to hex string
+  private bytesToHex(bytes: Uint8Array): string {
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  // PBKDF2-SHA256 implementation using crypto-js
+  private pbkdf2(password: string, salt: string, iterations: number): Uint8Array {
+    const saltWordArray = CryptoJS.enc.Hex.parse(salt);
+    const derivedKey = CryptoJS.PBKDF2(password, saltWordArray, {
+      keySize: 256 / 32,  // 32 bytes
+      iterations: iterations,
+      hasher: CryptoJS.algo.SHA256,
+    });
+
+    // Convert WordArray to Uint8Array
+    const words = derivedKey.words;
+    const sigBytes = derivedKey.sigBytes;
+    const bytes = new Uint8Array(sigBytes);
+    for (let i = 0; i < sigBytes; i++) {
+      bytes[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+    }
+    return bytes;
+  }
+
+  // HMAC-SHA256 using crypto-js
+  private hmacSha256(key: Uint8Array, message: string): Uint8Array {
+    // Convert Uint8Array to WordArray
+    const keyWordArray = CryptoJS.lib.WordArray.create(key as any);
+    const hmac = CryptoJS.HmacSHA256(message, keyWordArray);
+
+    // Convert WordArray to Uint8Array
+    const words = hmac.words;
+    const sigBytes = hmac.sigBytes;
+    const bytes = new Uint8Array(sigBytes);
+    for (let i = 0; i < sigBytes; i++) {
+      bytes[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+    }
+    return bytes;
+  }
+
+  // XOR two byte arrays
+  private xorBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
+    const result = new Uint8Array(a.length);
+    for (let i = 0; i < a.length; i++) {
+      result[i] = a[i] ^ b[i];
+    }
+    return result;
+  }
+
+  // SHA256 hash of byte array using crypto-js
+  private sha256Bytes(data: Uint8Array): Uint8Array {
+    const wordArray = CryptoJS.lib.WordArray.create(data as any);
+    const hash = CryptoJS.SHA256(wordArray);
+
+    // Convert WordArray to Uint8Array
+    const words = hash.words;
+    const sigBytes = hash.sigBytes;
+    const bytes = new Uint8Array(sigBytes);
+    for (let i = 0; i < sigBytes; i++) {
+      bytes[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
+    }
+    return bytes;
+  }
+
+  // SCRAM authentication login
+  async scramLogin(username: string, password: string): Promise<boolean> {
+    try {
+      // Step 1a: Get session from SesTokInfo first
+      const sesResponse = await this.client.get('/api/webserver/SesTokInfo');
+      const sesInfo = parseXMLValue(sesResponse.data, 'SesInfo');
+
+      // Extract session cookie
+      let session = '';
+      if (sesInfo) {
+        session = sesInfo.includes('SessionID=') ? sesInfo : `SessionID=${sesInfo}`;
+      }
+
+      // Step 1b: Get CSRF token from /api/webserver/token (as shown in notes.txt)
+      const tokenResponse = await this.client.get('/api/webserver/token', {
+        headers: {
+          'Cookie': session,
+        },
+      });
+      const csrfToken = parseXMLValue(tokenResponse.data, 'token');
+
+      if (!csrfToken) {
+        console.error('[SCRAM] Failed to get CSRF token');
+        return false;
+      }
+
+      console.log('[SCRAM] Got token:', csrfToken.substring(0, 10) + '...');
+
+      // Step 2: Generate client nonce
+      const clientNonce = await this.generateNonce();
+
+      // Step 3: Send challenge_login with session cookie
+      const challengeXml = `<?xml version="1.0" encoding="UTF-8"?><request><username>${username}</username><firstnonce>${clientNonce}</firstnonce><mode>1</mode></request>`;
+
+      const challengeResponse = await this.client.post('/api/user/challenge_login', challengeXml, {
+        headers: {
+          '__RequestVerificationToken': csrfToken,
+          'Content-Type': 'application/xml',
+          'Cookie': session,
+        },
+      });
+
+      const challengeData = typeof challengeResponse.data === 'string' ? challengeResponse.data : JSON.stringify(challengeResponse.data);
+      console.log('[SCRAM] Challenge response:', challengeData);
+
+      const salt = parseXMLValue(challengeData, 'salt');
+      const serverNonce = parseXMLValue(challengeData, 'servernonce');
+      const iterations = parseInt(parseXMLValue(challengeData, 'iterations') || '100');
+
+      console.log('[SCRAM] Parsed - salt:', salt, 'serverNonce:', serverNonce, 'iterations:', iterations);
+
+      if (!salt || !serverNonce) {
+        console.error('[SCRAM] Invalid challenge response - missing salt or serverNonce');
+        return false;
+      }
+
+      // Step 4: Calculate client proof using SCRAM
+      // First, hash the password
+      const passwordHash = await Crypto.digestStringAsync(
+        Crypto.CryptoDigestAlgorithm.SHA256,
+        password,
+        { encoding: Crypto.CryptoEncoding.HEX }
+      );
+
+      // PBKDF2 to derive salted password
+      const saltedPassword = this.pbkdf2(passwordHash, salt, iterations);
+
+      // Calculate ClientKey = HMAC(SaltedPassword, "Client Key")
+      const clientKey = this.hmacSha256(saltedPassword, 'Client Key');
+
+      // Calculate StoredKey = SHA256(ClientKey)
+      const storedKey = this.sha256Bytes(clientKey);
+
+      // Auth message = clientNonce + "," + serverNonce + "," + serverNonce
+      const authMessage = `${clientNonce},${serverNonce},${serverNonce}`;
+
+      // Calculate ClientSignature = HMAC(StoredKey, AuthMessage)
+      const clientSignature = this.hmacSha256(storedKey, authMessage);
+
+      // Calculate ClientProof = ClientKey XOR ClientSignature
+      const clientProof = this.xorBytes(clientKey, clientSignature);
+      const clientProofHex = this.bytesToHex(clientProof);
+
+      // Step 5: Send authentication_login with session cookie
+      const authXml = `<?xml version="1.0" encoding="UTF-8"?><request><clientproof>${clientProofHex}</clientproof><finalnonce>${serverNonce}</finalnonce></request>`;
+
+      const authResponse = await this.client.post('/api/user/authentication_login', authXml, {
+        headers: {
+          '__RequestVerificationToken': csrfToken,
+          'Content-Type': 'application/xml',
+          'Cookie': session,
+        },
+      });
+
+      const authData = typeof authResponse.data === 'string' ? authResponse.data : '';
+      console.log('[SCRAM] Auth response:', authData);
+
+      // Check for success
+      if (authData.includes('<serversignature>') || authData.includes('<response>')) {
+        if (!authData.includes('<error>')) {
+          // Update session info
+          this.sessionToken = csrfToken;
+          this.sessionCookie = session;
+          this.tokenExpiry = Date.now() + 120000;
+          return true;
+        }
+      }
+
+      // Check for error
+      if (authData.includes('<error>')) {
+        const errorCode = parseXMLValue(authData, 'code');
+        console.error('[SCRAM] Auth error:', errorCode);
+        return false;
+      }
+
+      return false;
+    } catch (error) {
+      console.error('[SCRAM] Login error:', error);
+      return false;
+    }
+  }
+
+
   private xmlHttpRequest(
     method: string,
     url: string,
@@ -214,8 +417,21 @@ export class ModemAPIClient {
       // First, check if we're already logged in (from WebView or previous session)
       const alreadyLoggedIn = await this.isLoggedIn();
       if (alreadyLoggedIn) {
+        console.log('[Login] Already logged in');
         return true;
       }
+
+      // SCRAM authentication disabled for now - cookie handling in React Native axios
+      // causes 125003 errors. WebView fallback handles login reliably.
+      // TODO: Investigate proper cookie jar implementation for React Native
+      // console.log('[Login] Trying SCRAM authentication...');
+      // const scramSuccess = await this.scramLogin(username, password);
+      // if (scramSuccess) {
+      //   console.log('[Login] SCRAM authentication successful');
+      //   return true;
+      // }
+
+      console.log('[Login] Trying password_type 4 method...');
 
       // Step 1: Get fresh token and session using axios
       const tokenResponse = await this.client.get('/api/webserver/SesTokInfo');
