@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  TextInput, 
-  Text, 
-  StyleSheet, 
+import {
+  View,
+  TextInput,
+  Text,
+  StyleSheet,
   TouchableOpacity,
-  TextInputProps 
+  TextInputProps
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 
 interface InputProps extends TextInputProps {
@@ -16,13 +17,13 @@ interface InputProps extends TextInputProps {
   showPasswordToggle?: boolean;
 }
 
-export const Input: React.FC<InputProps> = ({ 
-  label, 
-  error, 
+export const Input: React.FC<InputProps> = ({
+  label,
+  error,
   secureTextEntry,
   showPasswordToggle = false,
   style,
-  ...props 
+  ...props
 }) => {
   const { colors, borderRadius, typography, spacing } = useTheme();
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
@@ -30,9 +31,9 @@ export const Input: React.FC<InputProps> = ({
   return (
     <View style={[styles.container, style]}>
       {label && (
-        <Text 
+        <Text
           style={[
-            typography.subheadline, 
+            typography.subheadline,
             { color: colors.text, marginBottom: spacing.xs }
           ]}
         >
@@ -60,16 +61,18 @@ export const Input: React.FC<InputProps> = ({
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             style={styles.eyeIcon}
           >
-            <Text style={{ color: colors.textSecondary }}>
-              {isPasswordVisible ? '👁️' : '👁️‍🗨️'}
-            </Text>
+            <MaterialIcons
+              name={isPasswordVisible ? 'visibility' : 'visibility-off'}
+              size={24}
+              color={colors.textSecondary}
+            />
           </TouchableOpacity>
         )}
       </View>
       {error && (
-        <Text 
+        <Text
           style={[
-            typography.caption1, 
+            typography.caption1,
             { color: colors.error, marginTop: spacing.xs }
           ]}
         >

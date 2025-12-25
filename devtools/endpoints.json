@@ -1,5 +1,264 @@
 {
-  "signal": "/api/device/signal",
-  "status": "/api/monitoring/status",
-  "traffic": "/api/monitoring/traffic-statistics"
+  "authentication": {
+    "getSessionToken": {
+      "method": "GET",
+      "endpoint": "/api/webserver/SesTokInfo",
+      "description": "Get session ID and token for authentication"
+    },
+    "getToken": {
+      "method": "GET",
+      "endpoint": "/api/webserver/token",
+      "description": "Get CSRF token for requests"
+    },
+    "login": {
+      "method": "POST",
+      "endpoint": "/api/user/login",
+      "description": "Login with password_type 4 encoding"
+    },
+    "logout": {
+      "method": "POST",
+      "endpoint": "/api/user/logout",
+      "description": "Logout and clear session"
+    },
+    "challengeLogin": {
+      "method": "POST",
+      "endpoint": "/api/user/challenge_login",
+      "description": "SCRAM authentication step 1 - challenge"
+    },
+    "authenticationLogin": {
+      "method": "POST",
+      "endpoint": "/api/user/authentication_login",
+      "description": "SCRAM authentication step 2 - verify"
+    },
+    "stateLogin": {
+      "method": "GET",
+      "endpoint": "/api/user/state-login",
+      "description": "Check current login state"
+    }
+  },
+  "device": {
+    "getInfo": {
+      "method": "GET",
+      "endpoint": "/api/device/information",
+      "description": "Get device info (name, IMEI, WAN IP, etc.)"
+    },
+    "getSignal": {
+      "method": "GET",
+      "endpoint": "/api/device/signal",
+      "description": "Get signal info (RSSI, RSRP, RSRQ, SINR, Band, etc.)"
+    },
+    "reboot": {
+      "method": "POST",
+      "endpoint": "/api/device/control",
+      "description": "Reboot device (Control=1)"
+    },
+    "getAntennaType": {
+      "method": "GET",
+      "endpoint": "/api/device/antenna_set_type",
+      "description": "Get current antenna type setting"
+    },
+    "setAntennaType": {
+      "method": "POST",
+      "endpoint": "/api/device/antenna_set_type",
+      "description": "Set antenna type (0=auto, 1=internal, 2=external)"
+    },
+    "setAntennaTypeAlt": {
+      "method": "POST",
+      "endpoint": "/api/device/antenna_type",
+      "description": "Alternative antenna type endpoint"
+    }
+  },
+  "monitoring": {
+    "getStatus": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/status",
+      "description": "Get connection status, network type, WiFi users, etc."
+    },
+    "getTrafficStats": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/traffic-statistics",
+      "description": "Get traffic statistics (upload/download rates, totals)"
+    },
+    "getMonthStats": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/month_statistics",
+      "description": "Get monthly usage statistics"
+    },
+    "getStartDate": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/start_date",
+      "description": "Get monthly data limit settings"
+    },
+    "setStartDate": {
+      "method": "POST",
+      "endpoint": "/api/monitoring/start_date",
+      "description": "Set monthly data limit settings"
+    }
+  },
+  "network": {
+    "getCurrentPlmn": {
+      "method": "GET",
+      "endpoint": "/api/net/current-plmn",
+      "description": "Get current network operator info"
+    },
+    "getNetMode": {
+      "method": "GET",
+      "endpoint": "/api/net/net-mode",
+      "description": "Get network mode and band settings"
+    },
+    "setNetMode": {
+      "method": "POST",
+      "endpoint": "/api/net/net-mode",
+      "description": "Set network mode and band (LTE band locking)"
+    },
+    "plmnList": {
+      "method": "GET",
+      "endpoint": "/api/net/plmn-list",
+      "description": "Trigger PLMN scan (used for IP change)"
+    }
+  },
+  "dialup": {
+    "getMobileDataSwitch": {
+      "method": "GET",
+      "endpoint": "/api/dialup/mobile-dataswitch",
+      "description": "Get mobile data on/off status"
+    },
+    "setMobileDataSwitch": {
+      "method": "POST",
+      "endpoint": "/api/dialup/mobile-dataswitch",
+      "description": "Toggle mobile data on/off"
+    },
+    "getConnection": {
+      "method": "GET",
+      "endpoint": "/api/dialup/connection",
+      "description": "Get connection settings"
+    },
+    "setConnection": {
+      "method": "POST",
+      "endpoint": "/api/dialup/connection",
+      "description": "Set connection settings"
+    },
+    "getApnRetry": {
+      "method": "GET",
+      "endpoint": "/api/dialup/apn-retry",
+      "description": "Get APN retry settings"
+    },
+    "setApnRetry": {
+      "method": "POST",
+      "endpoint": "/api/dialup/apn-retry",
+      "description": "Set APN retry settings"
+    }
+  },
+  "wifi": {
+    "getHostList": {
+      "method": "GET",
+      "endpoint": "/api/wlan/host-list",
+      "description": "Get connected devices list (XML)"
+    },
+    "getBasicSettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/basic-settings",
+      "description": "Get WiFi basic settings (SSID, password, etc.)"
+    },
+    "setBasicSettings": {
+      "method": "POST",
+      "endpoint": "/api/wlan/basic-settings",
+      "description": "Set WiFi basic settings"
+    },
+    "getMultiBasicSettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/multi-basic-settings",
+      "description": "Get multi-SSID settings (main + guest WiFi)"
+    },
+    "setMultiBasicSettings": {
+      "method": "POST",
+      "endpoint": "/api/wlan/multi-basic-settings",
+      "description": "Set multi-SSID settings"
+    },
+    "getGuestTimeSetting": {
+      "method": "GET",
+      "endpoint": "/api/wlan/guesttime-setting",
+      "description": "Get guest WiFi time settings"
+    },
+    "setGuestTimeSetting": {
+      "method": "POST",
+      "endpoint": "/api/wlan/guesttime-setting",
+      "description": "Set guest WiFi time settings"
+    },
+    "toggleWifi": {
+      "method": "POST",
+      "endpoint": "/api/wlan/wifi-switch",
+      "description": "Toggle WiFi on/off"
+    },
+    "getMacFilterSettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/multi-macfilter-settings-ex",
+      "description": "Get MAC filter/blacklist settings"
+    },
+    "setMacFilterSettings": {
+      "method": "POST",
+      "endpoint": "/api/wlan/multi-macfilter-settings",
+      "description": "Set MAC filter (block/unblock devices)"
+    }
+  },
+  "lan": {
+    "changeDeviceName": {
+      "method": "POST",
+      "endpoint": "/api/lan/changedevicename",
+      "description": "Change connected device display name"
+    }
+  },
+  "system": {
+    "getHostInfo": {
+      "method": "GET",
+      "endpoint": "/api/system/HostInfo",
+      "description": "Get detailed host info (JSON, includes AssociatedTime)"
+    }
+  },
+  "sms": {
+    "getSmsList": {
+      "method": "POST",
+      "endpoint": "/api/sms/sms-list",
+      "description": "Get SMS list"
+    },
+    "getSmsCount": {
+      "method": "GET",
+      "endpoint": "/api/sms/sms-count",
+      "description": "Get SMS inbox count"
+    },
+    "sendSms": {
+      "method": "POST",
+      "endpoint": "/api/sms/send-sms",
+      "description": "Send SMS"
+    },
+    "deleteSms": {
+      "method": "POST",
+      "endpoint": "/api/sms/delete-sms",
+      "description": "Delete SMS"
+    },
+    "setSmsRead": {
+      "method": "POST",
+      "endpoint": "/api/sms/set-read",
+      "description": "Mark SMS as read"
+    }
+  },
+  "timeRule": {
+    "getTimeRule": {
+      "method": "GET",
+      "endpoint": "/api/timerule/timerule",
+      "description": "Get parental control time rules"
+    },
+    "setTimeRule": {
+      "method": "POST",
+      "endpoint": "/api/timerule/timerule",
+      "description": "Set parental control time rules"
+    }
+  },
+  "diagnosis": {
+    "ping": {
+      "method": "POST",
+      "endpoint": "/api/diagnosis/diagnose_ping",
+      "description": "Perform ping test to specified host"
+    }
+  }
 }

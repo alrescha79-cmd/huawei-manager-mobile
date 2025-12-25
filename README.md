@@ -133,6 +133,7 @@ eas build --profile preview --platform android
 | [Architecture](docs/ARCHITECTURE.md) | Tech stack & project structure |
 | [User Guide](docs/USER_GUIDE.md) | Cara penggunaan aplikasi |
 | [API Reference](docs/API_REFERENCE.md) | Huawei modem API endpoints |
+| [Reverse engineering Web UI](devtools/README.md) | Reverse engineering Web UI |
 
 ---
 
