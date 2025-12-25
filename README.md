@@ -43,12 +43,11 @@
 > 
 > **📥 Download di [Github Releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
 
-
-> **arm64-v8a**: Untuk Android 64-bit (Rekomendasi) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-arm64-v8a.apk)
+ > **arm64-v8a**: Untuk Android 64-bit (Rekomendasi) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.45/huawei-manager-v1.0.45-arm64-v8a.apk)
 > 
-> **armeabi-v7a**: Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-armeabi-v7a.apk)
->
->**universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
+ > **armeabi-v7a**: Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.45/huawei-manager-v1.0.45-armeabi-v7a.apk)
+> 
+ > **universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.45/huawei-manager-v1.0.45-universal.apk)
 
 ---
 
