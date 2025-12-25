@@ -215,3 +215,14 @@ export interface ParentalControlProfile {
   activeDays: number[]; // 0-6, 0=Sunday
   enabled: boolean;
 }
+
+// Monthly Data Usage Settings
+export interface MonthlyDataSettings {
+  enabled: boolean;          // SetMonthData: 0/1
+  startDay: number;          // StartDay: 1-31
+  dataLimit: number;         // DataLimit in bytes
+  dataLimitUnit: 'MB' | 'GB';
+  monthThreshold: number;    // MonthThreshold: percentage
+  trafficMaxLimit: number;   // trafficmaxlimit in bytes
+}
+

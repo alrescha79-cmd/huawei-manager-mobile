@@ -14,19 +14,57 @@ export class WiFiService {
       const response = await this.apiClient.get('/api/wlan/host-list');
 
       const devices: ConnectedDevice[] = [];
-      const hostsXML = response.match(/<Host>([\s\S]*?)<\/Host>/g);
 
-      if (hostsXML) {
-        hostsXML.forEach((hostXML) => {
-          devices.push({
-            macAddress: parseXMLValue(hostXML, 'MacAddress'),
-            ipAddress: parseXMLValue(hostXML, 'IpAddress'),
-            hostName: parseXMLValue(hostXML, 'HostName'),
-            id: parseXMLValue(hostXML, 'ID'),
-            associatedTime: parseXMLValue(hostXML, 'AssociatedTime'),
-            isBlock: parseXMLValue(hostXML, 'IsBlock') === '1',
+      if (typeof response === 'string') {
+        const hostsXML = response.match(/<Host>([\s\S]*?)<\/Host>/g);
+        if (hostsXML) {
+          hostsXML.forEach((hostXML) => {
+            const hostName = parseXMLValue(hostXML, 'HostName');
+            const actualName = parseXMLValue(hostXML, 'ActualName');
+            const displayName = actualName || hostName;
+
+            devices.push({
+              macAddress: parseXMLValue(hostXML, 'MacAddress'),
+              ipAddress: parseXMLValue(hostXML, 'IpAddress'),
+              hostName: displayName,
+              id: parseXMLValue(hostXML, 'ID'),
+              associatedTime: parseXMLValue(hostXML, 'AssociatedTime') || '0',
+              isBlock: parseXMLValue(hostXML, 'IsBlock') === '1',
+            });
           });
-        });
+        }
+      }
+
+      // Try to get AssociatedTime from HostInfo API
+      try {
+        const hostInfoResponse = await this.apiClient.get('/api/system/HostInfo');
+        let hostInfoList: any[] = [];
+
+        if (typeof hostInfoResponse === 'string') {
+          hostInfoList = JSON.parse(hostInfoResponse);
+        } else if (Array.isArray(hostInfoResponse)) {
+          hostInfoList = hostInfoResponse;
+        }
+
+        if (Array.isArray(hostInfoList)) {
+          // Create a map of MAC address to AssociatedTime
+          const timeMap = new Map<string, number>();
+          hostInfoList.forEach((host: any) => {
+            if (host.MACAddress && host.AssociatedTime) {
+              timeMap.set(host.MACAddress.toUpperCase(), host.AssociatedTime);
+            }
+          });
+
+          // Update devices with AssociatedTime
+          devices.forEach((device) => {
+            const time = timeMap.get(device.macAddress.toUpperCase());
+            if (time) {
+              device.associatedTime = String(time);
+            }
+          });
+        }
+      } catch (hostInfoError) {
+        // Ignore error, keep original AssociatedTime
       }
 
       return devices;
@@ -637,6 +675,25 @@ ${guestPassword ? `<WifiWpapsk>${guestPassword}</WifiWpapsk>` : ''}
       result += days.includes(i) ? '1' : '0';
     }
     return result;
+  }
+
+  // Change device name via API
+  async changeDeviceName(deviceId: string, newName: string): Promise<boolean> {
+    try {
+      const data = `<?xml version="1.0" encoding="UTF-8"?><request><ID>${deviceId}</ID><ActualName>${newName}</ActualName></request>`;
+
+      const response = await this.apiClient.post('/api/lan/changedevicename', data);
+
+      if (response.includes('<error>')) {
+        const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+        throw new Error(`Failed to change device name: error ${errorCode}`);
+      }
+
+      return true;
+    } catch (error) {
+      console.error('Error changing device name:', error);
+      throw error;
+    }
   }
 }
 

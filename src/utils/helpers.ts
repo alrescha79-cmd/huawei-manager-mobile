@@ -59,11 +59,27 @@ export const getSignalIcon = (rssi: string | number): number => {
   return 0;
 };
 
+// Decode HTML entities in strings
+const decodeHtmlEntities = (text: string): string => {
+  const entities: Record<string, string> = {
+    '&lt;': '<',
+    '&gt;': '>',
+    '&amp;': '&',
+    '&quot;': '"',
+    '&apos;': "'",
+    '&#39;': "'",
+    '&nbsp;': ' ',
+  };
+  return text.replace(/&[a-zA-Z0-9#]+;/g, (match) => entities[match] || match);
+};
+
 export const parseXMLValue = (xml: string, tag: string): string => {
   // Use [\s\S] instead of . to properly match content including newlines
   const regex = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`);
   const match = xml.match(regex);
-  return match ? match[1].trim() : '';
+  const value = match ? match[1].trim() : '';
+  // Decode any HTML entities in the value
+  return decodeHtmlEntities(value);
 };
 
 export const formatMacAddress = (mac: string): string => {

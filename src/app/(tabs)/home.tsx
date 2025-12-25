@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
@@ -81,6 +81,23 @@ export default function HomeScreen() {
   const [reloginAttempts, setReloginAttempts] = useState(0);
   const [selectedBands, setSelectedBands] = useState<string[]>([]);
   const [showBandModal, setShowBandModal] = useState(false);
+  const [showMonthlySettingsModal, setShowMonthlySettingsModal] = useState(false);
+  const [isRunningDiagnosis, setIsRunningDiagnosis] = useState(false);
+  const [isRunningCheck, setIsRunningCheck] = useState(false);
+  const [monthlySettings, setMonthlySettings] = useState<{
+    enabled: boolean;
+    startDay: number;
+    dataLimit: number;
+    dataLimitUnit: 'MB' | 'GB';
+    monthThreshold: number;
+    trafficMaxLimit: number;
+  } | null>(null);
+
+  // Diagnosis result modal state
+  const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
+  const [diagnosisTitle, setDiagnosisTitle] = useState('');
+  const [diagnosisResults, setDiagnosisResults] = useState<{ label: string; success: boolean; value?: string }[]>([]);
+  const [diagnosisSummary, setDiagnosisSummary] = useState('');
 
   // Auto-refresh interval (fast for speed, slower for other data)
   useEffect(() => {
@@ -91,6 +108,7 @@ export default function HomeScreen() {
       // Initial load
       loadData(service);
       loadBands(service);
+      loadMonthlySettings(service);
 
       // Fast refresh for traffic/speed data only (every 1 second)
       const fastIntervalId = setInterval(() => {
@@ -229,6 +247,7 @@ export default function HomeScreen() {
     if (modemService) {
       loadData(modemService);
       loadBands(modemService);
+      loadMonthlySettings(modemService);
     }
   };
 
@@ -244,6 +263,34 @@ export default function HomeScreen() {
     }
   };
 
+  const loadMonthlySettings = async (service: ModemService) => {
+    try {
+      const settings = await service.getMonthlyDataSettings();
+      setMonthlySettings(settings);
+    } catch (error) {
+      // Silent fail
+    }
+  };
+
+  const handleSaveMonthlySettings = async (settings: {
+    enabled: boolean;
+    startDay: number;
+    dataLimit: number;
+    dataLimitUnit: 'MB' | 'GB';
+    monthThreshold: number;
+  }) => {
+    if (!modemService) return;
+
+    try {
+      await modemService.setMonthlyDataSettings(settings);
+      ThemedAlertHelper.alert(t('common.success'), t('home.monthlySettingsSaved'));
+      // Reload settings
+      loadMonthlySettings(modemService);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('home.failedSaveMonthlySettings'));
+      throw error;
+    }
+  };
 
   // Handle successful re-login from WebView
   const handleReloginSuccess = async () => {
@@ -326,6 +373,57 @@ export default function HomeScreen() {
         },
       ]
     );
+  };
+
+  const handleDiagnosis = async () => {
+    if (!modemService || isRunningDiagnosis) return;
+
+    setIsRunningDiagnosis(true);
+    try {
+      // Try google.com first
+      let result = await modemService.diagnosisPing('google.com', 5000);
+
+      // If google.com fails, try 1.1.1.1 as fallback
+      if (!result.success) {
+        result = await modemService.diagnosisPing('1.1.1.1', 4000);
+      }
+
+      // Show result in modal
+      setDiagnosisTitle(t('home.diagnosisResult'));
+      setDiagnosisResults([
+        { label: `Ping ${result.host}`, success: result.success },
+      ]);
+      setDiagnosisSummary(result.success ? t('home.connectionOk') || 'Connection is working!' : t('home.connectionFailed') || 'Could not reach server');
+      setShowDiagnosisModal(true);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), 'Diagnosis failed');
+    } finally {
+      setIsRunningDiagnosis(false);
+    }
+  };
+
+  const handleOneClickCheck = async () => {
+    if (!modemService || isRunningCheck) return;
+
+    setIsRunningCheck(true);
+    try {
+      const result = await modemService.oneClickCheck();
+
+      // Show result in modal
+      setDiagnosisTitle(t('home.oneClickCheckResult'));
+      setDiagnosisResults([
+        { label: t('home.internetConnection'), success: result.internetConnection },
+        { label: t('home.dnsResolution'), success: result.dnsResolution },
+        { label: t('home.status'), success: result.networkStatus === 'Connected', value: result.networkStatus },
+        { label: t('home.signalStrength'), success: true, value: result.signalStrength },
+      ]);
+      setDiagnosisSummary(t(`home.${result.summaryKey}`));
+      setShowDiagnosisModal(true);
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), 'Check failed');
+    } finally {
+      setIsRunningCheck(false);
+    }
   };
 
   const handleReLogin = () => {
@@ -522,6 +620,45 @@ export default function HomeScreen() {
         <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
           {t('home.plmnScanHint')}
         </Text>
+
+        {/* Modern Quick Action Buttons */}
+        <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg }}>
+          {/* Diagnosis Button */}
+          <TouchableOpacity
+            style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}
+            onPress={handleDiagnosis}
+            disabled={isRunningDiagnosis}
+          >
+            {isRunningDiagnosis ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <>
+                <MaterialIcons name="network-check" size={20} color={colors.primary} />
+                <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginLeft: spacing.xs }]}>
+                  {t('home.diagnosis')}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* One Click Check Button */}
+          <TouchableOpacity
+            style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}
+            onPress={handleOneClickCheck}
+            disabled={isRunningCheck}
+          >
+            {isRunningCheck ? (
+              <ActivityIndicator color={colors.success} size="small" />
+            ) : (
+              <>
+                <MaterialIcons name="speed" size={20} color={colors.success} />
+                <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginLeft: spacing.xs }]}>
+                  {t('home.oneClickCheck')}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+        </View>
       </CollapsibleCard>
 
       {/* Signal Strength Card */}
@@ -573,7 +710,18 @@ export default function HomeScreen() {
 
       {/* Traffic Statistics Card */}
       {trafficStats && (
-        <CollapsibleCard title={t('home.trafficStats')}>
+        <Card style={{ marginBottom: spacing.md }}>
+          {/* Header with gear icon - centered title */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm }}>
+            <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{t('home.trafficStats')}</Text>
+            <TouchableOpacity onPress={() => setShowMonthlySettingsModal(true)} style={{ position: 'absolute', right: 0 }}>
+              <MaterialIcons name="settings" size={24} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </View>
+
+          {/* Divider below header */}
+          <View style={{ height: 1, backgroundColor: colors.border, marginBottom: spacing.md }} />
+
           {/* Speed Gauge */}
           <SpeedGauge
             downloadSpeed={trafficStats.currentDownloadRate}
@@ -593,15 +741,64 @@ export default function HomeScreen() {
             icon="schedule"
           />
 
-          {/* Monthly Usage Card */}
-          <UsageCard
-            title={t('home.monthlyUsage')}
-            badge={new Date().toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
-            download={trafficStats.monthDownload}
-            upload={trafficStats.monthUpload}
-            color="emerald"
-            icon="calendar-today"
-          />
+          {/* Monthly Usage Card with Progress Bar */}
+          <View>
+            <UsageCard
+              title={t('home.monthlyUsage')}
+              badge={new Date().toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
+              download={trafficStats.monthDownload}
+              upload={trafficStats.monthUpload}
+              color="emerald"
+              icon="calendar-today"
+            />
+            {/* Progress bar when monthly limit is enabled */}
+            {monthlySettings?.enabled && monthlySettings.dataLimit > 0 && (
+              <View style={{ marginTop: -4, marginBottom: spacing.md, paddingHorizontal: 4 }}>
+                {(() => {
+                  const totalUsed = trafficStats.monthDownload + trafficStats.monthUpload;
+                  const limitBytes = monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1024 * 1024 * 1024 : 1024 * 1024);
+                  const percentage = Math.min((totalUsed / limitBytes) * 100, 100);
+
+                  // Gradient color based on percentage: green < 50%, yellow 50-80%, red > 80%
+                  let barColor = '#22C55E'; // Green
+                  let textColor = colors.text;
+                  if (percentage >= 80) {
+                    barColor = '#EF4444'; // Red
+                    textColor = '#EF4444';
+                  } else if (percentage >= 50) {
+                    barColor = '#F59E0B'; // Yellow/Amber
+                    textColor = '#F59E0B';
+                  }
+
+                  return (
+                    <View>
+                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                          {t('home.usageProgress')}
+                        </Text>
+                        <Text style={[typography.caption1, { color: textColor, fontWeight: '600' }]}>
+                          {percentage.toFixed(1)}%
+                        </Text>
+                      </View>
+                      <View style={{ height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden' }}>
+                        <View
+                          style={{
+                            height: '100%',
+                            width: `${percentage}%`,
+                            backgroundColor: barColor,
+                            borderRadius: 4,
+                          }}
+                        />
+                      </View>
+                      <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, textAlign: 'right' }]}>
+                        {formatBytes(totalUsed)} / {monthlySettings.dataLimit} {monthlySettings.dataLimitUnit}
+                      </Text>
+                    </View>
+                  );
+                })()}
+              </View>
+            )}
+          </View>
 
           {/* Total Traffic Card */}
           <UsageCard
@@ -612,7 +809,7 @@ export default function HomeScreen() {
             color="amber"
             icon="storage"
           />
-        </CollapsibleCard>
+        </Card>
       )}
 
       {/* Hidden WebView for auto re-login when session expires */}
@@ -647,6 +844,23 @@ export default function HomeScreen() {
         onSaved={() => {
           if (modemService) loadBands(modemService);
         }}
+      />
+
+      {/* Monthly Usage Settings Modal */}
+      <MonthlySettingsModal
+        visible={showMonthlySettingsModal}
+        onClose={() => setShowMonthlySettingsModal(false)}
+        onSave={handleSaveMonthlySettings}
+        initialSettings={monthlySettings || undefined}
+      />
+
+      {/* Diagnosis Result Modal */}
+      <DiagnosisResultModal
+        visible={showDiagnosisModal}
+        onClose={() => setShowDiagnosisModal(false)}
+        title={diagnosisTitle}
+        results={diagnosisResults}
+        summary={diagnosisSummary}
       />
     </ScrollView>
   );
@@ -728,6 +942,15 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  quickActionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 12,
+    borderWidth: 1,
   },
   infoRowCustom: {
     flexDirection: 'row',
