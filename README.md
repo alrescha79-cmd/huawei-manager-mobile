@@ -39,7 +39,9 @@
 > **📡 Tested on Huawei B312-929 (Orbit Star 2)**
 
 > [!TIP]
-> **📲 Download ![Versi Terbaru](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen) di [Github Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
+> ![Latest Version](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen)
+> 
+> **📥 Download di [Github Releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
 
  > **arm64-v8a**: Untuk Android 64-bit (Rekomendasi) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v1.0.45/huawei-manager-v1.0.45-arm64-v8a.apk)
 > 
