@@ -10,6 +10,7 @@ import {
   StatusBar,
   Platform,
 } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, Input, Button, ThemedAlertHelper } from '@/components';
@@ -17,6 +18,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
 import { useTranslation } from '@/i18n';
+import { SMSMessage } from '@/types';
 
 export default function SMSScreen() {
   const { colors, typography, spacing } = useTheme();
@@ -36,6 +38,11 @@ export default function SMSScreen() {
   const [newPhone, setNewPhone] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+
+  // Detail view state
+  const [selectedMessage, setSelectedMessage] = useState<SMSMessage | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [replyMessage, setReplyMessage] = useState('');
 
 
   // Auto-refresh SMS every 10 seconds
@@ -143,6 +150,44 @@ export default function SMSScreen() {
     }
   };
 
+  // Open message detail
+  const handleOpenDetail = async (message: SMSMessage) => {
+    setSelectedMessage(message);
+    setReplyMessage('');
+    setShowDetail(true);
+
+    // Mark as read if unread (smstat === '0')
+    if (smsService && message.smstat === '0') {
+      try {
+        await smsService.markAsRead(message.index);
+      } catch (error) {
+        // Silently fail
+      }
+    }
+  };
+
+  // Send reply
+  const handleReply = async () => {
+    if (!smsService || !selectedMessage || !replyMessage) {
+      ThemedAlertHelper.alert(t('common.error'), t('sms.fillAllFields'));
+      return;
+    }
+
+    setIsSending(true);
+    try {
+      await smsService.sendSMS(selectedMessage.phone, replyMessage);
+      ThemedAlertHelper.alert(t('common.success'), t('sms.messageSent'));
+      setReplyMessage('');
+      setShowDetail(false);
+      setSelectedMessage(null);
+      handleRefresh();
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSendSms'));
+    } finally {
+      setIsSending(false);
+    }
+  };
+
   return (
     <>
       <ScrollView
@@ -207,26 +252,46 @@ export default function SMSScreen() {
           </Card>
         ) : (
           messages.map((message) => (
-            <Card key={message.index} style={{ marginBottom: spacing.md }}>
-              <View style={styles.messageHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.headline, { color: colors.text }]}>
-                    {message.phone}
-                  </Text>
-                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    {dayjs(message.date).format('MMM D, YYYY h:mm A')}
-                  </Text>
+            <TouchableOpacity
+              key={message.index}
+              onPress={() => handleOpenDetail(message)}
+              activeOpacity={0.7}
+            >
+              <Card style={{ marginBottom: spacing.md }}>
+                <View style={styles.messageHeader}>
+                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                    {/* Unread indicator */}
+                    {message.smstat === '0' && (
+                      <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
+                    )}
+                    <View style={{ flex: 1 }}>
+                      <Text style={[
+                        typography.headline,
+                        {
+                          color: colors.text,
+                          fontWeight: message.smstat === '0' ? '700' : '600'
+                        }
+                      ]}>
+                        {message.phone}
+                      </Text>
+                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                        {dayjs(message.date).format('MMM D, YYYY h:mm A')}
+                      </Text>
+                    </View>
+                  </View>
+                  <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
                 </View>
-                <TouchableOpacity onPress={() => handleDelete(message.index)}>
-                  <Text style={[typography.body, { color: colors.error }]}>
-                    Delete
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              <Text style={[typography.body, { color: colors.text, marginTop: spacing.sm }]}>
-                {message.content}
-              </Text>
-            </Card>
+                <Text
+                  style={[
+                    typography.body,
+                    { color: colors.textSecondary, marginTop: spacing.sm }
+                  ]}
+                  numberOfLines={2}
+                >
+                  {message.content}
+                </Text>
+              </Card>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
@@ -285,6 +350,82 @@ export default function SMSScreen() {
           </ScrollView>
         </View>
       </Modal>
+
+      {/* Detail Modal */}
+      <Modal
+        visible={showDetail}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={() => {
+          setShowDetail(false);
+          setSelectedMessage(null);
+        }}
+      >
+        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          <View style={[
+            styles.modalHeader,
+            {
+              borderBottomColor: colors.border,
+              paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 12 : 16
+            }
+          ]}>
+            <TouchableOpacity onPress={() => {
+              setShowDetail(false);
+              setSelectedMessage(null);
+            }}>
+              <MaterialIcons name="arrow-back" size={24} color={colors.primary} />
+            </TouchableOpacity>
+            <Text style={[typography.headline, { color: colors.text, flex: 1, marginLeft: spacing.md }]}>
+              {selectedMessage?.phone || ''}
+            </Text>
+            <TouchableOpacity onPress={() => {
+              if (selectedMessage) {
+                handleDelete(selectedMessage.index);
+                setShowDetail(false);
+                setSelectedMessage(null);
+              }
+            }}>
+              <MaterialIcons name="delete" size={24} color={colors.error} />
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView style={styles.modalContent}>
+            {selectedMessage && (
+              <>
+                <View style={[styles.detailContent, { backgroundColor: colors.card }]}>
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                    {dayjs(selectedMessage.date).format('dddd, MMMM D, YYYY • h:mm A')}
+                  </Text>
+                  <Text style={[typography.body, { color: colors.text, lineHeight: 24 }]}>
+                    {selectedMessage.content}
+                  </Text>
+                </View>
+
+                <View style={[styles.replyContainer, { borderTopColor: colors.border }]}>
+                  <Text style={[typography.subheadline, { color: colors.text, marginBottom: spacing.sm }]}>
+                    {t('sms.reply')}
+                  </Text>
+                  <Input
+                    value={replyMessage}
+                    onChangeText={setReplyMessage}
+                    placeholder={t('sms.typeMessage')}
+                    multiline
+                    numberOfLines={4}
+                    style={{ height: 100 }}
+                  />
+                  <Button
+                    title={t('sms.send')}
+                    onPress={handleReply}
+                    loading={isSending}
+                    disabled={isSending || !replyMessage}
+                    style={{ marginTop: spacing.sm }}
+                  />
+                </View>
+              </>
+            )}
+          </ScrollView>
+        </View>
+      </Modal>
     </>
   );
 }
@@ -340,5 +481,21 @@ const styles = StyleSheet.create({
   modalContent: {
     flex: 1,
     padding: 16,
+  },
+  unreadDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginRight: 8,
+  },
+  detailContent: {
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 16,
+  },
+  replyContainer: {
+    marginTop: 'auto',
+    paddingTop: 16,
+    borderTopWidth: 1,
   },
 });

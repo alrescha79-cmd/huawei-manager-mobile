@@ -113,10 +113,12 @@ export class ModemService {
       // Also fetch monthly stats from separate endpoint
       let monthDownload = 0;
       let monthUpload = 0;
+      let dayUsed = 0;
+      let dayDuration = 0;
       try {
         const monthResponse = await this.apiClient.get('/api/monitoring/month_statistics');
 
-        // Try different possible tag names
+        // Try different possible tag names for monthly
         monthDownload = safeParseInt(
           parseXMLValue(monthResponse, 'CurrentMonthDownload') ||
           parseXMLValue(monthResponse, 'monthDownload') ||
@@ -127,7 +129,21 @@ export class ModemService {
           parseXMLValue(monthResponse, 'monthUpload') ||
           parseXMLValue(monthResponse, 'MonthUpload')
         );
-      } catch {
+
+        // Parse daily usage (combined download + upload)
+        dayUsed = safeParseInt(
+          parseXMLValue(monthResponse, 'CurrentDayUsed') ||
+          parseXMLValue(monthResponse, 'dayUsed') ||
+          parseXMLValue(monthResponse, 'DayUsed')
+        );
+
+        // Parse daily duration (seconds)
+        dayDuration = safeParseInt(
+          parseXMLValue(monthResponse, 'CurrentDayDuration') ||
+          parseXMLValue(monthResponse, 'dayDuration') ||
+          parseXMLValue(monthResponse, 'DayDuration')
+        );
+      } catch (monthErr) {
         // Month statistics not available - continue without them
       }
 
@@ -142,6 +158,8 @@ export class ModemService {
         totalConnectTime: safeParseInt(parseXMLValue(response, 'TotalConnectTime')),
         monthDownload,
         monthUpload,
+        dayUsed,
+        dayDuration,
       };
     } catch (error) {
       console.error('Error getting traffic stats:', error);

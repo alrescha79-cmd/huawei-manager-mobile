@@ -329,14 +329,14 @@ jobs:
             ---
             
             ### Downloads
-            - **arm64-v8a** - For modern 64-bit devices (recommended)
-            - **armeabi-v7a** - For older 32-bit devices
-            - **universal** - Works on all devices (larger size)
+            - **arm64-v8a** - Untuk perangkat 64-bit (rekomended)
+            - **armeabi-v7a** - Untuk perangkat 32-bit
+            - **universal** - Bisa diinstall di semua perangkat (ukuran lebih besar)
             
-            ### Installation
-            1. Download the appropriate APK for your device
-            2. Enable "Install from unknown sources" in Settings
-            3. Open the APK file to install
+            ### Instalasi
+            1. Download APK yang sesuai dengan perangkat Anda
+            2. Enable "Install from unknown sources" di Settings
+            3. Buka file APK untuk menginstall
           files: apks/*.apk
           draft: false
           prerelease: false

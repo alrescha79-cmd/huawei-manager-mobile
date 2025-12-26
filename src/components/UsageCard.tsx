@@ -12,6 +12,7 @@ interface UsageCardProps {
     duration?: number;
     color: 'cyan' | 'emerald' | 'amber' | 'fuchsia';
     icon: keyof typeof MaterialIcons.glyphMap;
+    totalOnly?: boolean;  // Hide download/upload breakdown, show only total
 }
 
 // Helper to format bytes with separate value and unit
@@ -38,7 +39,8 @@ export function UsageCard({
     upload,
     duration,
     color,
-    icon
+    icon,
+    totalOnly = false
 }: UsageCardProps) {
     const { colors, typography, spacing } = useTheme();
 
@@ -117,27 +119,29 @@ export function UsageCard({
                 </Text>
             )}
 
-            {/* Stats Grid */}
-            <View style={[styles.statsGrid, { borderTopColor: colors.border }]}>
-                <View style={styles.statItem}>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Download</Text>
-                    <View style={styles.statValue}>
-                        <MaterialIcons name="arrow-downward" size={12} color="#22d3ee" />
-                        <Text style={[styles.statText, { color: '#22d3ee' }]}>
-                            {dlFormatted.value} {dlFormatted.unit}
-                        </Text>
+            {/* Stats Grid - hidden when totalOnly */}
+            {!totalOnly && (
+                <View style={[styles.statsGrid, { borderTopColor: colors.border }]}>
+                    <View style={styles.statItem}>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Download</Text>
+                        <View style={styles.statValue}>
+                            <MaterialIcons name="arrow-downward" size={12} color="#22d3ee" />
+                            <Text style={[styles.statText, { color: '#22d3ee' }]}>
+                                {dlFormatted.value} {dlFormatted.unit}
+                            </Text>
+                        </View>
+                    </View>
+                    <View style={styles.statItem}>
+                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Upload</Text>
+                        <View style={styles.statValue}>
+                            <MaterialIcons name="arrow-upward" size={12} color="#e879f9" />
+                            <Text style={[styles.statText, { color: '#e879f9' }]}>
+                                {ulFormatted.value} {ulFormatted.unit}
+                            </Text>
+                        </View>
                     </View>
                 </View>
-                <View style={styles.statItem}>
-                    <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Upload</Text>
-                    <View style={styles.statValue}>
-                        <MaterialIcons name="arrow-upward" size={12} color="#e879f9" />
-                        <Text style={[styles.statText, { color: '#e879f9' }]}>
-                            {ulFormatted.value} {ulFormatted.unit}
-                        </Text>
-                    </View>
-                </View>
-            </View>
+            )}
         </View>
     );
 }

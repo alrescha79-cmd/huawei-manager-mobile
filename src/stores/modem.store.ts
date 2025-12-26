@@ -4,6 +4,16 @@ import { ModemInfo, SignalInfo, NetworkInfo, TrafficStats, ModemStatus, WanInfo,
 
 const PREVIOUS_WAN_IP_KEY = 'previous_wan_ip';
 
+// Monthly data settings interface
+export interface MonthlySettings {
+  enabled: boolean;
+  startDay: number;
+  dataLimit: number;
+  dataLimitUnit: 'MB' | 'GB';
+  monthThreshold: number;
+  trafficMaxLimit?: number;
+}
+
 interface ModemState {
   modemInfo: ModemInfo | null;
   signalInfo: SignalInfo | null;
@@ -12,6 +22,7 @@ interface ModemState {
   modemStatus: ModemStatus | null;
   wanInfo: WanInfo | null;
   mobileDataStatus: MobileDataStatus | null;
+  monthlySettings: MonthlySettings | null;
   previousWanIp: string | null;
   isLoading: boolean;
   error: string | null;
@@ -23,6 +34,7 @@ interface ModemState {
   setModemStatus: (status: ModemStatus) => void;
   setWanInfo: (info: WanInfo) => void;
   setMobileDataStatus: (status: MobileDataStatus) => void;
+  setMonthlySettings: (settings: MonthlySettings | null) => void;
   setPreviousWanIp: (ip: string | null) => void;
   loadPreviousWanIp: () => Promise<void>;
   setLoading: (isLoading: boolean) => void;
@@ -38,6 +50,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
   modemStatus: null,
   wanInfo: null,
   mobileDataStatus: null,
+  monthlySettings: null,
   previousWanIp: null,
   isLoading: false,
   error: null,
@@ -64,6 +77,8 @@ export const useModemStore = create<ModemState>((set, get) => ({
   },
 
   setMobileDataStatus: (status) => set({ mobileDataStatus: status }),
+
+  setMonthlySettings: (settings) => set({ monthlySettings: settings }),
 
   setPreviousWanIp: (ip) => {
     set({ previousWanIp: ip });

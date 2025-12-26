@@ -17,7 +17,11 @@
     "fetching": "Mengambil...",
     "goToLogin": "Ke Halaman Login",
     "kick": "Putuskan",
-    "later": "Nanti"
+    "later": "Nanti",
+    "days": "h",
+    "hours": "j",
+    "minutes": "m",
+    "seconds": "d"
   },
   "alerts": {
     "newVersionAvailable": "Versi baru tersedia. Apakah Anda ingin mengunduhnya sekarang?",
@@ -101,6 +105,8 @@
     "download": "Unduh",
     "upload": "Unggah",
     "currentSession": "Sesi",
+    "dailyUsage": "Penggunaan Harian",
+    "today": "Hari Ini",
     "monthlyUsage": "Penggunaan Bulanan",
     "totalUsage": "Total Penggunaan",
     "downloadSpeed": "Kecepatan Unduh",
@@ -177,6 +183,8 @@
     "securityWpa3": "WPA3-SAE",
     "wifiEnabled": "WiFi diaktifkan",
     "wifiDisabled": "WiFi dinonaktifkan",
+    "disableWifiTitle": "Matikan WiFi?",
+    "disableWifiWarning": "Mematikan WiFi akan memutuskan semua perangkat nirkabel. Anda perlu menggunakan kabel ethernet atau tombol fisik untuk menyambung kembali. Yakin ingin melanjutkan?",
     "guestWifiEnabled": "WiFi Tamu diaktifkan",
     "guestWifiDisabled": "WiFi Tamu dinonaktifkan",
     "editSettings": "Edit Pengaturan WiFi",
@@ -221,7 +229,8 @@
     "messageDeleted": "Pesan dihapus",
     "messageSent": "Pesan terkirim",
     "fillAllFields": "Mohon isi semua kolom",
-    "compose": "Tulis"
+    "compose": "Tulis",
+    "reply": "Balas"
   },
   "settings": {
     "modemInfo": "Informasi Modem",
@@ -384,7 +393,10 @@
     "ipType": "Tipe IP",
     "setAsDefaultHint": "Gunakan profil ini sebagai default untuk data seluler",
     "default": "Default",
-    "apnRequired": "Nama profil dan APN wajib diisi"
+    "apnRequired": "Nama profil dan APN wajib diisi",
+    "monthlyQuota": "Kuota Data Bulanan",
+    "notSet": "Belum diatur",
+    "configure": "Atur"
   },
   "timeSettings": {
     "title": "Pengaturan Waktu",

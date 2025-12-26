@@ -9,9 +9,20 @@ export class SMSService {
     this.apiClient = new ModemAPIClient(modemIp);
   }
 
-  async getSMSList(page: number = 1, count: number = 20): Promise<SMSMessage[]> {
+  async getSMSList(page: number = 1, count: number = 20, boxType: number = 1): Promise<SMSMessage[]> {
     try {
-      const response = await this.apiClient.get(`/api/sms/sms-list?page=${page}&count=${count}&sortType=0&readCount=0&boxType=1`);
+      // SMS list requires POST with XML body
+      const requestData = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <PageIndex>${page}</PageIndex>
+          <ReadCount>${count}</ReadCount>
+          <BoxType>${boxType}</BoxType>
+          <SortType>0</SortType>
+          <Ascending>0</Ascending>
+          <UnreadPreferred>0</UnreadPreferred>
+        </request>`;
+
+      const response = await this.apiClient.post('/api/sms/sms-list', requestData);
 
       const messages: SMSMessage[] = [];
       // Use [\s\S] instead of . to properly match content including newlines

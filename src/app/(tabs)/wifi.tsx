@@ -216,13 +216,45 @@ export default function WiFiScreen() {
   };
 
   const handleToggleWiFi = async (enabled: boolean) => {
+    console.log('[WiFi UI] handleToggleWiFi called, enabled:', enabled);
+    console.log('[WiFi UI] wifiService:', wifiService);
+    if (!wifiService) {
+      console.log('[WiFi UI] wifiService is null, returning');
+      return;
+    }
+
+    // Show confirmation alert when turning OFF WiFi
+    if (!enabled) {
+      ThemedAlertHelper.alert(
+        t('wifi.disableWifiTitle'),
+        t('wifi.disableWifiWarning'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('common.confirm'),
+            style: 'destructive',
+            onPress: async () => {
+              await performToggleWiFi(enabled);
+            },
+          },
+        ]
+      );
+    } else {
+      await performToggleWiFi(enabled);
+    }
+  };
+
+  const performToggleWiFi = async (enabled: boolean) => {
     if (!wifiService) return;
 
     try {
+      console.log('[WiFi UI] Calling wifiService.toggleWiFi...');
       await wifiService.toggleWiFi(enabled);
+      console.log('[WiFi UI] toggleWiFi completed successfully');
       ThemedAlertHelper.alert(t('common.success'), enabled ? t('wifi.wifiEnabled') : t('wifi.wifiDisabled'));
       handleRefresh();
     } catch (error) {
+      console.error('[WiFi UI] toggleWiFi error:', error);
       ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleWifi'));
     }
   };
@@ -325,18 +357,32 @@ export default function WiFiScreen() {
   };
 
   const handleSaveSettings = async () => {
-    if (!wifiService || !hasChanges || isSaving) return;
+    console.log('[WiFi UI] handleSaveSettings called');
+    console.log('[WiFi UI] wifiService:', wifiService);
+    console.log('[WiFi UI] hasChanges:', hasChanges);
+    console.log('[WiFi UI] isSaving:', isSaving);
+    console.log('[WiFi UI] formSsid:', formSsid);
+    console.log('[WiFi UI] formPassword:', formPassword);
+    console.log('[WiFi UI] formSecurityMode:', formSecurityMode);
+
+    if (!wifiService || !hasChanges || isSaving) {
+      console.log('[WiFi UI] Early return - conditions not met');
+      return;
+    }
 
     setIsSaving(true);
     try {
+      console.log('[WiFi UI] Calling wifiService.setWiFiSettings...');
       await wifiService.setWiFiSettings({
         ssid: formSsid,
         password: formPassword,
         securityMode: formSecurityMode,
       });
+      console.log('[WiFi UI] setWiFiSettings completed successfully');
       ThemedAlertHelper.alert(t('common.success'), t('wifi.settingsSaved'));
       handleRefresh();
     } catch (error) {
+      console.error('[WiFi UI] setWiFiSettings error:', error);
       ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveWifi'));
     } finally {
       setIsSaving(false);
