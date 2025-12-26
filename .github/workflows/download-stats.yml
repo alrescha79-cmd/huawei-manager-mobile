@@ -7,7 +7,7 @@ on:
 
 jobs:  
   stats:
-    runs-on: ubuntu-latest
+    runs-on:  ubuntu-latest
     steps: 
       - uses:  actions/checkout@v4
 
@@ -29,7 +29,7 @@ jobs:
 
       - name: Append history
         run: |
-          TOTAL=$(jq '[.[]. total] | add' stats/downloads.json)
+          TOTAL=$(jq '[.[].total] | add' stats/downloads.json)
           DATE=$(date -u +"%Y-%m-%d %H:%M")
           echo "$DATE,$TOTAL" >> stats/history.csv
 
