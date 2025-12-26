@@ -218,6 +218,19 @@ export interface ParentalControlProfile {
   enabled: boolean;
 }
 
+// DHCP Settings Types
+export interface DHCPSettings {
+  dhcpIPAddress: string;       // LAN IP Address (e.g., "192.168.8.1")
+  dhcpLanNetmask: string;      // Subnet mask (e.g., "255.255.255.0")
+  dhcpStatus: boolean;         // DHCP server on/off
+  dhcpStartIPAddress: string;  // Start of IP range (e.g., "192.168.8.100")
+  dhcpEndIPAddress: string;    // End of IP range (e.g., "192.168.8.200")
+  dhcpLeaseTime: number;       // Lease time in seconds
+  dnsStatus: boolean;          // DNS status
+  primaryDns: string;          // Primary DNS server
+  secondaryDns: string;        // Secondary DNS server
+}
+
 // Monthly Data Usage Settings
 export interface MonthlyDataSettings {
   enabled: boolean;          // SetMonthData: 0/1

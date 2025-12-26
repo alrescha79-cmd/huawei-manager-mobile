@@ -12,7 +12,7 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
@@ -102,6 +102,9 @@ export default function HomeScreen() {
   const [diagnosisTitle, setDiagnosisTitle] = useState('');
   const [diagnosisResults, setDiagnosisResults] = useState<{ label: string; success: boolean; value?: string }[]>([]);
   const [diagnosisSummary, setDiagnosisSummary] = useState('');
+
+  // Speedtest modal state
+  const [showSpeedtestModal, setShowSpeedtestModal] = useState(false);
 
   // Auto-refresh interval (fast for speed, slower for other data)
   useEffect(() => {
@@ -663,6 +666,17 @@ export default function HomeScreen() {
             )}
           </TouchableOpacity>
         </View>
+
+        {/* Speedtest Button */}
+        <TouchableOpacity
+          style={[styles.controlButton, { backgroundColor: colors.card, borderColor: colors.primary, borderWidth: 1, marginTop: spacing.md }]}
+          onPress={() => setShowSpeedtestModal(true)}
+        >
+          <MaterialIcons name="speed" size={20} color={colors.primary} />
+          <Text style={[typography.body, { color: colors.primary, fontWeight: '600', marginLeft: 8 }]}>
+            {t('home.speedtest')}
+          </Text>
+        </TouchableOpacity>
       </CollapsibleCard>
 
       {/* Signal Strength Card */}
@@ -876,6 +890,12 @@ export default function HomeScreen() {
         title={diagnosisTitle}
         results={diagnosisResults}
         summary={diagnosisSummary}
+      />
+
+      {/* Speedtest Modal */}
+      <SpeedtestModal
+        visible={showSpeedtestModal}
+        onClose={() => setShowSpeedtestModal(false)}
       />
     </ScrollView>
   );

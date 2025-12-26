@@ -5,6 +5,7 @@ import {
     EthernetStatus,
     PPPoEProfile,
     DynamicIPProfile,
+    DHCPSettings,
 } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
 
@@ -191,6 +192,84 @@ export class NetworkSettingsService {
             console.error('Error setting active APN profile:', error);
             throw error;
         }
+    }
+
+    // ============ DHCP Management ============
+
+    async getDHCPSettings(): Promise<DHCPSettings> {
+        try {
+            const response = await this.apiClient.get('/api/dhcp/settings');
+
+            return {
+                dhcpIPAddress: parseXMLValue(response, 'DhcpIPAddress') || '192.168.8.1',
+                dhcpLanNetmask: parseXMLValue(response, 'DhcpLanNetmask') || '255.255.255.0',
+                dhcpStatus: parseXMLValue(response, 'DhcpStatus') === '1',
+                dhcpStartIPAddress: parseXMLValue(response, 'DhcpStartIPAddress') || '192.168.8.100',
+                dhcpEndIPAddress: parseXMLValue(response, 'DhcpEndIPAddress') || '192.168.8.200',
+                dhcpLeaseTime: parseInt(parseXMLValue(response, 'DhcpLeaseTime') || '86400'),
+                dnsStatus: parseXMLValue(response, 'DnsStatus') === '1',
+                primaryDns: parseXMLValue(response, 'PrimaryDns') || '',
+                secondaryDns: parseXMLValue(response, 'SecondaryDns') || '',
+            };
+        } catch (error) {
+            console.error('Error getting DHCP settings:', error);
+            // Return default settings if API fails
+            return {
+                dhcpIPAddress: '192.168.8.1',
+                dhcpLanNetmask: '255.255.255.0',
+                dhcpStatus: true,
+                dhcpStartIPAddress: '192.168.8.100',
+                dhcpEndIPAddress: '192.168.8.200',
+                dhcpLeaseTime: 86400,
+                dnsStatus: true,
+                primaryDns: '',
+                secondaryDns: '',
+            };
+        }
+    }
+
+    async setDHCPSettings(settings: Partial<DHCPSettings>): Promise<boolean> {
+        try {
+            // First get current settings to merge with partial update
+            const current = await this.getDHCPSettings();
+            const merged = { ...current, ...settings };
+
+            // Build IP range from start/end
+            const data = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<DhcpIPAddress>${merged.dhcpIPAddress}</DhcpIPAddress>
+<DhcpLanNetmask>${merged.dhcpLanNetmask}</DhcpLanNetmask>
+<DhcpStatus>${merged.dhcpStatus ? '1' : '0'}</DhcpStatus>
+<DhcpStartIPAddress>${merged.dhcpStartIPAddress}</DhcpStartIPAddress>
+<DhcpEndIPAddress>${merged.dhcpEndIPAddress}</DhcpEndIPAddress>
+<DhcpLeaseTime>${merged.dhcpLeaseTime}</DhcpLeaseTime>
+<DnsStatus>${merged.dnsStatus ? '1' : '0'}</DnsStatus>
+<PrimaryDns>${merged.primaryDns}</PrimaryDns>
+<SecondaryDns>${merged.secondaryDns}</SecondaryDns>
+</request>`;
+
+            const response = await this.apiClient.post('/api/dhcp/settings', data);
+
+            // Check if response indicates success
+            if (response.includes('<response>OK</response>') || response.includes('OK')) {
+                return true;
+            }
+
+            // Check for error
+            if (response.includes('<error>')) {
+                const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+                throw new Error(`DHCP settings update failed with error code: ${errorCode}`);
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Error setting DHCP settings:', error);
+            throw error;
+        }
+    }
+
+    async toggleDHCPServer(enabled: boolean): Promise<boolean> {
+        return this.setDHCPSettings({ dhcpStatus: enabled });
     }
 
     // ============ Ethernet Management ============

@@ -21,7 +21,8 @@
     "days": "h",
     "hours": "j",
     "minutes": "m",
-    "seconds": "d"
+    "seconds": "d",
+    "stop": "Hentikan"
   },
   "alerts": {
     "newVersionAvailable": "Versi baru tersedia. Apakah Anda ingin mengunduhnya sekarang?",
@@ -153,7 +154,17 @@
     "dnsIssue": "Internet berfungsi tapi DNS mungkin bermasalah.",
     "noInternet": "Jaringan terhubung tapi tidak ada akses internet.",
     "connectionIssue": "Masalah koneksi terdeteksi. Periksa status modem.",
-    "checkFailed": "Pemeriksaan gagal. Silakan coba lagi."
+    "checkFailed": "Pemeriksaan gagal. Silakan coba lagi.",
+    "speedtest": "Tes Kecepatan",
+    "speedtestTitle": "Tes Kecepatan Internet",
+    "speedtestRunning": "Menguji kecepatan...",
+    "speedtestComplete": "Tes kecepatan selesai!",
+    "speedtestFailed": "Tes kecepatan gagal",
+    "latency": "Ping",
+    "jitter": "Jitter",
+    "startTest": "Mulai Tes",
+    "testAgain": "Tes Lagi",
+    "poweredBy": "Uji Coba Tes Kecepatan oleh Cloudflare"
   },
   "wifi": {
     "wifiSettings": "Pengaturan WiFi",
@@ -396,7 +407,22 @@
     "apnRequired": "Nama profil dan APN wajib diisi",
     "monthlyQuota": "Kuota Data Bulanan",
     "notSet": "Belum diatur",
-    "configure": "Atur"
+    "configure": "Atur",
+    "dhcp": "DHCP",
+    "dhcpSettings": "Pengaturan DHCP",
+    "lanIpAddress": "Alamat IP LAN",
+    "dhcpServer": "Server DHCP",
+    "dhcpServerHint": "Aktifkan atau nonaktifkan server DHCP",
+    "dhcpIpRange": "Rentang IP",
+    "dhcpStartIp": "IP Mulai",
+    "dhcpEndIp": "IP Akhir",
+    "dhcpLeaseTime": "Waktu Sewa",
+    "leaseTime1Hour": "1 Jam",
+    "leaseTime12Hours": "12 Jam",
+    "leaseTime1Day": "1 Hari",
+    "leaseTime1Week": "1 Minggu",
+    "dhcpSaved": "Pengaturan DHCP disimpan",
+    "failedSaveDhcp": "Gagal menyimpan pengaturan DHCP"
   },
   "timeSettings": {
     "title": "Pengaturan Waktu",
