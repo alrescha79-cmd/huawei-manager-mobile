@@ -37,8 +37,8 @@ jobs:
         run: |
           sudo apt install -y gnuplot
           gnuplot <<EOF
-          # Terminal settings with transparent background
-          set terminal svg size 800,400 dynamic enhanced font 'Arial,12' background 'transparent'
+          # Terminal settings
+          set terminal svg size 800,400 dynamic enhanced font 'Arial,12'
           set output "stats/chart.svg"
           
           # Data settings
