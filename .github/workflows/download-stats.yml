@@ -1,0 +1,53 @@
+name: Update Download Stats
+
+on:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  stats:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch release downloads
+        run: |
+          curl -s https://api.github.com/repos/${{ github.repository }}/releases \
+          | jq '
+            [
+              .[] |
+              {
+                tag: .tag_name,
+                total: (.assets | map(.download_count) | add)
+              }
+            ]
+          ' > stats/downloads.json
+
+      - name: Append history
+        run: |
+          TOTAL=$(jq '[.[].total] | add' stats/downloads.json)
+          DATE=$(date -u +"%Y-%m-%d %H:%M")
+          echo "$DATE,$TOTAL" >> stats/history.csv
+
+      - name: Generate chart (SVG)
+        run: |
+          sudo apt install -y gnuplot
+          gnuplot <<EOF
+          set terminal svg size 800,400
+          set output "stats/chart.svg"
+          set datafile separator ","
+          set xdata time
+          set timefmt "%Y-%m-%d %H:%M"
+          set format x "%d-%m"
+          set title "GitHub Release Downloads"
+          plot "stats/history.csv" using 1:2 with lines title "Downloads"
+          EOF
+
+      - name: Commit stats
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add stats/
+          git commit -m "chore: update download stats" || exit 0
+          git push

@@ -17,7 +17,11 @@
     "fetching": "Fetching...",
     "goToLogin": "Go to Login",
     "kick": "Kick",
-    "later": "Later"
+    "later": "Later",
+    "days": "d",
+    "hours": "h",
+    "minutes": "m",
+    "seconds": "s"
   },
   "alerts": {
     "newVersionAvailable": "A new version is available. Would you like to download it now?",
@@ -101,6 +105,8 @@
     "download": "Download",
     "upload": "Upload",
     "currentSession": "Session",
+    "dailyUsage": "Daily Usage",
+    "today": "Today",
     "monthlyUsage": "Monthly Usage",
     "totalUsage": "Total Usage",
     "downloadSpeed": "Download Speed",
@@ -177,6 +183,8 @@
     "securityWpa3": "WPA3-SAE",
     "wifiEnabled": "WiFi enabled",
     "wifiDisabled": "WiFi disabled",
+    "disableWifiTitle": "Turn Off WiFi?",
+    "disableWifiWarning": "Turning off WiFi will disconnect all wireless devices. You will need to use ethernet cable or physical button to reconnect. Are you sure?",
     "guestWifiEnabled": "Guest WiFi enabled",
     "guestWifiDisabled": "Guest WiFi disabled",
     "editSettings": "Edit WiFi Settings",
@@ -221,7 +229,8 @@
     "messageDeleted": "Message deleted",
     "messageSent": "Message sent",
     "fillAllFields": "Please fill in all fields",
-    "compose": "Compose"
+    "compose": "Compose",
+    "reply": "Reply"
   },
   "settings": {
     "modemInfo": "Modem Information",
@@ -384,7 +393,10 @@
     "ipType": "IP Type",
     "setAsDefaultHint": "Use this profile as default for mobile data",
     "default": "Default",
-    "apnRequired": "Profile name and APN are required"
+    "apnRequired": "Profile name and APN are required",
+    "monthlyQuota": "Monthly Data Quota",
+    "notSet": "Not set",
+    "configure": "Configure"
   },
   "timeSettings": {
     "title": "Time Settings",

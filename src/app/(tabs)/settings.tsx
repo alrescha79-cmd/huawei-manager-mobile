@@ -17,7 +17,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Button, InfoRow, ThemedAlertHelper, BandSelectionModal, PageSheetModal } from '@/components';
+import { Card, CardHeader, Button, InfoRow, ThemedAlertHelper, BandSelectionModal, PageSheetModal, MonthlySettingsModal } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -109,7 +109,7 @@ export default function SettingsScreen() {
   const { openBandModal } = useLocalSearchParams<{ openBandModal?: string }>();
   const { colors, typography, spacing } = useTheme();
   const { credentials, logout, login } = useAuthStore();
-  const { modemInfo, setModemInfo } = useModemStore();
+  const { modemInfo, monthlySettings, setModemInfo, setMonthlySettings } = useModemStore();
   const { themeMode, setThemeMode, language, setLanguage } = useThemeStore();
   const { t } = useTranslation();
 
@@ -206,12 +206,16 @@ export default function SettingsScreen() {
   const [showApnAuthDropdown, setShowApnAuthDropdown] = useState(false);
   const [showApnIpDropdown, setShowApnIpDropdown] = useState(false);
 
+  // Monthly quota/limit settings modal visibility
+  const [showMonthlySettingsModal, setShowMonthlySettingsModal] = useState(false);
+
 
   // Check if credentials have changed
   const hasCredentialsChanges =
     modemIp !== (credentials?.modemIp || '192.168.8.1') ||
     modemUsername !== (credentials?.username || 'admin') ||
     modemPassword !== (credentials?.password || '');
+
 
 
   useEffect(() => {
@@ -227,6 +231,18 @@ export default function SettingsScreen() {
       loadTimeSettings(service);
       loadEthernetSettings(netService);
       loadApnProfiles(netService);
+      // Load monthly quota settings
+      service.getMonthlyDataSettings().then(settings => {
+        if (settings) {
+          setMonthlySettings({
+            enabled: settings.enabled,
+            startDay: settings.startDay,
+            dataLimit: settings.dataLimit,
+            dataLimitUnit: settings.dataLimitUnit,
+            monthThreshold: settings.monthThreshold,
+          });
+        }
+      }).catch(() => { });
     }
   }, [credentials]);
 
@@ -1207,6 +1223,31 @@ export default function SettingsScreen() {
                 ))}
               </View>
             )}
+
+            {/* Monthly Quota Settings */}
+            <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <MaterialIcons name="data-usage" size={18} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.monthlyQuota')}</Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {monthlySettings.enabled
+                      ? `${monthlySettings.dataLimit} ${monthlySettings.dataLimitUnit}`
+                      : t('networkSettings.notSet')}
+                  </Text>
+                </View>
+              </View>
+              <TouchableOpacity
+                style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                onPress={() => setShowMonthlySettingsModal(true)}
+              >
+                <MaterialIcons name="speed" size={18} color={colors.primary} />
+                <Text style={[typography.body, { color: colors.text, marginLeft: 6 }]}>
+                  {t('networkSettings.configure')}
+                </Text>
+                <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
+              </TouchableOpacity>
+            </View>
           </View>
         )}
 
@@ -1957,6 +1998,25 @@ export default function SettingsScreen() {
         visible={showBandModal}
         onClose={() => setShowBandModal(false)}
         modemService={modemService}
+      />
+
+      {/* Monthly Quota Settings Modal */}
+      <MonthlySettingsModal
+        visible={showMonthlySettingsModal}
+        onClose={() => setShowMonthlySettingsModal(false)}
+        onSave={async (settings) => {
+          if (!modemService) return;
+          try {
+            await modemService.setMonthlyDataSettings(settings);
+            setMonthlySettings(settings);
+            setShowMonthlySettingsModal(false);
+            ThemedAlertHelper.alert(t('common.success'), t('home.monthlySettingsSaved'));
+          } catch (error) {
+            ThemedAlertHelper.alert(t('common.error'), t('home.failedSaveMonthlySettings'));
+            throw error;
+          }
+        }}
+        initialSettings={monthlySettings}
       />
     </ScrollView>
   );

@@ -21,20 +21,35 @@ export const formatBitsPerSecond = (bps: number): string => {
   return parseFloat((bps / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
-export const formatDuration = (seconds: number): string => {
+export interface DurationUnits {
+  days: string;
+  hours: string;
+  minutes: string;
+  seconds: string;
+}
+
+// Default units (English short form)
+const defaultUnits: DurationUnits = {
+  days: 'd',
+  hours: 'h',
+  minutes: 'm',
+  seconds: 's',
+};
+
+export const formatDuration = (seconds: number, units: DurationUnits = defaultUnits): string => {
   const days = Math.floor(seconds / 86400);
   const hours = Math.floor((seconds % 86400) / 3600);
   const minutes = Math.floor((seconds % 3600) / 60);
   const secs = seconds % 60;
 
   if (days > 0) {
-    return `${days}d ${hours}h ${minutes}m`;
+    return `${days}${units.days} ${hours}${units.hours} ${minutes}${units.minutes}`;
   } else if (hours > 0) {
-    return `${hours}h ${minutes}m`;
+    return `${hours}${units.hours} ${minutes}${units.minutes}`;
   } else if (minutes > 0) {
-    return `${minutes}m ${secs}s`;
+    return `${minutes}${units.minutes} ${secs}${units.seconds}`;
   } else {
-    return `${secs}s`;
+    return `${secs}${units.seconds}`;
   }
 };
 

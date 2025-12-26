@@ -133,7 +133,7 @@ eas build --profile preview --platform android
 | [Architecture](docs/ARCHITECTURE.md) | Tech stack & project structure |
 | [User Guide](docs/USER_GUIDE.md) | Cara penggunaan aplikasi |
 | [API Reference](docs/API_REFERENCE.md) | Huawei modem API endpoints |
-| [Reverse engineering Web UI](devtools/README.md) | Reverse engineering Web UI |
+| [Devtools](devtools/README.md) | Reverse engineering Web UI |
 
 ---
 
@@ -149,38 +149,18 @@ Menemukan bug? Bantu kami memperbaikinya dengan melaporkan issue di GitHub:
 
 [![Report Bug](https://img.shields.io/badge/Report-Bug-red?style=for-the-badge&logo=github)](https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=bug&projects=&template=bug_report.md&title=%5BBUG%5D+)
 
-**Template Bug Report:**
-```
-**Deskripsi Bug**
-Jelaskan bug yang ditemukan secara singkat.
-
-**Langkah Reproduksi**
-1. Buka '...'
-2. Klik '...'
-3. Scroll ke '...'
-4. Lihat error
-
-**Perilaku yang Diharapkan**
-Jelaskan apa yang seharusnya terjadi.
-
-**Screenshots**
-Jika memungkinkan, tambahkan screenshot.
-
-**Informasi Device:**
-- Device: [e.g. Samsung Galaxy A52]
-- OS: [e.g. Android 13]
-- App Version: [e.g. 1.0.25]
-- Modem: [e.g. Huawei B312-929]
-
-**Informasi Tambahan**
-Tambahkan konteks lain tentang bug di sini.
-```
 
 ---
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file
+MIT License - see [LICENSE](LICENSE)
+
+---
+
+## 📈 Download History
+
+![Download Chart](stats/chart.svg)
 
 ---
 

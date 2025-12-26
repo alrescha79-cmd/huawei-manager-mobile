@@ -95,6 +95,7 @@ export class WiFiService {
   }
 
   async setWiFiSettings(settings: Partial<WiFiSettings>): Promise<boolean> {
+    console.log('[WiFi] setWiFiSettings called with settings:', settings);
     try {
       const settingsData = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
@@ -107,10 +108,21 @@ export class WiFiService {
           ${settings.securityMode ? `<WifiAuthmode>${settings.securityMode}</WifiAuthmode>` : ''}
         </request>`;
 
-      await this.apiClient.post('/api/wlan/basic-settings', settingsData);
+      console.log('[WiFi] Sending settings to /api/wlan/basic-settings');
+      console.log('[WiFi] Request data:', settingsData);
+
+      const response = await this.apiClient.post('/api/wlan/basic-settings', settingsData);
+      console.log('[WiFi] setWiFiSettings response:', response);
+
+      // Check for error in response
+      const errorCode = parseXMLValue(response, 'code');
+      if (errorCode && errorCode !== '0') {
+        console.log('[WiFi] setWiFiSettings returned error code:', errorCode);
+        throw new Error(`API error: ${errorCode}`);
+      }
       return true;
     } catch (error) {
-      console.error('Error setting WiFi settings:', error);
+      console.error('[WiFi] Error setting WiFi settings:', error);
       throw error;
     }
   }
@@ -377,30 +389,78 @@ ${guestPassword ? `<WifiWpapsk>${guestPassword}</WifiWpapsk>` : ''}
   }
 
   async toggleWiFi(enable: boolean): Promise<boolean> {
+    console.log('[WiFi] toggleWiFi called with enable:', enable);
     try {
-      // Try primary endpoint first (wifi-switch)
-      const toggleData = `<?xml version="1.0" encoding="UTF-8"?>
+      // Method based on huawei-lte-api Python library:
+      // 1. GET current settings from multi-basic-settings
+      // 2. Build minimal Ssid structure with essential fields only
+      // 3. POST back to multi-basic-settings
+
+      console.log('[WiFi] Getting current settings from multi-basic-settings...');
+      const response = await this.apiClient.get('/api/wlan/multi-basic-settings');
+      console.log('[WiFi] Current multi-basic-settings response:', response);
+
+      // Parse Ssid blocks from response
+      const ssidMatches = response.match(/<Ssid>([\s\S]*?)<\/Ssid>/g);
+      console.log('[WiFi] Found Ssid blocks:', ssidMatches?.length || 0);
+
+      if (!ssidMatches || ssidMatches.length === 0) {
+        throw new Error('No SSID settings found');
+      }
+
+      // Build minimal Ssid structure with only essential fields (based on Python to_dict)
+      const ssidList: string[] = [];
+      for (const ssidBlock of ssidMatches) {
+        const index = parseXMLValue(ssidBlock, 'Index') || '0';
+        const ssid = parseXMLValue(ssidBlock, 'WifiSsid') || '';
+        const broadcast = parseXMLValue(ssidBlock, 'WifiBroadcast') || '0';
+        const authMode = parseXMLValue(ssidBlock, 'WifiAuthmode') || 'WPA2-PSK';
+        const wpaEncryption = parseXMLValue(ssidBlock, 'WifiWpaencryptionmodes') || 'AES';
+        const wepKeyIndex = parseXMLValue(ssidBlock, 'WifiWepKeyIndex') || '1';
+        const guestOffTime = parseXMLValue(ssidBlock, 'wifiguestofftime') || '4';
+        const isGuestNetwork = parseXMLValue(ssidBlock, 'wifiisguestnetwork') || '0';
+
+        // Only toggle the main WiFi (Index 0), not guest network
+        const wifiEnable = index === '0'
+          ? (enable ? '1' : '0')
+          : parseXMLValue(ssidBlock, 'WifiEnable') || '0';
+
+        // Build minimal Ssid based on Python to_dict()
+        const minimalSsid = `<Ssid>
+          <Index>${index}</Index>
+          <WifiEnable>${wifiEnable}</WifiEnable>
+          <WifiSsid>${ssid}</WifiSsid>
+          <WifiBroadcast>${broadcast}</WifiBroadcast>
+          <WifiAuthmode>${authMode}</WifiAuthmode>
+          <WifiWpaencryptionmodes>${wpaEncryption}</WifiWpaencryptionmodes>
+          <WifiWepKeyIndex>${wepKeyIndex}</WifiWepKeyIndex>
+          <wifiguestofftime>${guestOffTime}</wifiguestofftime>
+        </Ssid>`;
+
+        ssidList.push(minimalSsid);
+      }
+
+      // Build request with Ssids wrapper and WifiRestart
+      const postData = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
-          <WifiEnable>${enable ? '1' : '0'}</WifiEnable>
+          <Ssids>${ssidList.join('')}</Ssids>
+          <WifiRestart>1</WifiRestart>
         </request>`;
 
-      try {
-        await this.apiClient.post('/api/wlan/wifi-switch', toggleData);
-        return true;
-      } catch (primaryError) {
-        // If primary endpoint fails, try alternative endpoint (basic-settings)
-        console.log('Primary wifi-switch failed, trying basic-settings...');
+      console.log('[WiFi] Posting minimal settings to multi-basic-settings:', postData);
+      const postResponse = await this.apiClient.post('/api/wlan/multi-basic-settings', postData);
+      console.log('[WiFi] Post response:', postResponse);
 
-        const basicSettingsData = `<?xml version="1.0" encoding="UTF-8"?>
-          <request>
-            <WifiEnable>${enable ? '1' : '0'}</WifiEnable>
-          </request>`;
-
-        await this.apiClient.post('/api/wlan/basic-settings', basicSettingsData);
-        return true;
+      // Check for error
+      const errorCode = parseXMLValue(postResponse, 'code');
+      if (errorCode && errorCode !== '0') {
+        console.log('[WiFi] Post returned error code:', errorCode);
+        throw new Error(`API error: ${errorCode}`);
       }
+
+      return true;
     } catch (error) {
-      console.error('Error toggling WiFi:', error);
+      console.error('[WiFi] Error toggling WiFi:', error);
       throw error;
     }
   }

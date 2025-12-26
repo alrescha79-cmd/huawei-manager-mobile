@@ -20,6 +20,7 @@ import {
   formatBytes,
   formatBitsPerSecond,
   formatDuration,
+  DurationUnits,
   getSignalIcon,
   getSignalStrength,
   getConnectionStatusText,
@@ -56,6 +57,15 @@ export default function HomeScreen() {
   const { colors, typography, spacing } = useTheme();
   const { credentials, logout, login } = useAuthStore();
   const { t } = useTranslation();
+
+  // Duration units for i18n-aware formatting
+  const durationUnits: DurationUnits = {
+    days: t('common.days'),
+    hours: t('common.hours'),
+    minutes: t('common.minutes'),
+    seconds: t('common.seconds'),
+  };
+
   const {
     signalInfo,
     networkInfo,
@@ -63,12 +73,14 @@ export default function HomeScreen() {
     modemStatus,
     wanInfo,
     mobileDataStatus,
+    monthlySettings,
     setSignalInfo,
     setNetworkInfo,
     setTrafficStats,
     setModemStatus,
     setWanInfo,
     setMobileDataStatus,
+    setMonthlySettings,
   } = useModemStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -84,14 +96,6 @@ export default function HomeScreen() {
   const [showMonthlySettingsModal, setShowMonthlySettingsModal] = useState(false);
   const [isRunningDiagnosis, setIsRunningDiagnosis] = useState(false);
   const [isRunningCheck, setIsRunningCheck] = useState(false);
-  const [monthlySettings, setMonthlySettings] = useState<{
-    enabled: boolean;
-    startDay: number;
-    dataLimit: number;
-    dataLimitUnit: 'MB' | 'GB';
-    monthThreshold: number;
-    trafficMaxLimit: number;
-  } | null>(null);
 
   // Diagnosis result modal state
   const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
@@ -715,7 +719,7 @@ export default function HomeScreen() {
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm }}>
             <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{t('home.trafficStats')}</Text>
             <TouchableOpacity onPress={() => setShowMonthlySettingsModal(true)} style={{ position: 'absolute', right: 0 }}>
-              <MaterialIcons name="settings" size={24} color={colors.textSecondary} />
+              <MaterialIcons name="data-saver-on" size={24} color={colors.textSecondary} />
             </TouchableOpacity>
           </View>
 
@@ -731,10 +735,21 @@ export default function HomeScreen() {
           {/* Divider */}
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
+          {/* Daily Usage Card - API returns combined download+upload as CurrentDayUsed */}
+          <UsageCard
+            title={t('home.dailyUsage')}
+            badge={formatDuration(trafficStats.dayDuration, durationUnits)}
+            download={trafficStats.dayUsed}
+            upload={0}
+            color="amber"
+            icon="today"
+            totalOnly={true}
+          />
+
           {/* Current Session Card */}
           <UsageCard
             title={t('home.currentSession')}
-            badge={formatDuration(trafficStats.currentConnectTime)}
+            badge={formatDuration(trafficStats.currentConnectTime, durationUnits)}
             download={trafficStats.currentDownload}
             upload={trafficStats.currentUpload}
             color="cyan"
@@ -749,7 +764,7 @@ export default function HomeScreen() {
               download={trafficStats.monthDownload}
               upload={trafficStats.monthUpload}
               color="emerald"
-              icon="calendar-today"
+              icon="calendar-month"
             />
             {/* Progress bar when monthly limit is enabled */}
             {monthlySettings?.enabled && monthlySettings.dataLimit > 0 && (
@@ -803,11 +818,11 @@ export default function HomeScreen() {
           {/* Total Traffic Card */}
           <UsageCard
             title={t('home.totalUsage')}
-            badge={formatDuration(trafficStats.totalConnectTime)}
+            badge={formatDuration(trafficStats.totalConnectTime, durationUnits)}
             download={trafficStats.totalDownload}
             upload={trafficStats.totalUpload}
             color="amber"
-            icon="storage"
+            icon="data-usage"
           />
         </Card>
       )}
