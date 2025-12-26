@@ -21,7 +21,8 @@
     "days": "d",
     "hours": "h",
     "minutes": "m",
-    "seconds": "s"
+    "seconds": "s",
+    "stop": "Stop"
   },
   "alerts": {
     "newVersionAvailable": "A new version is available. Would you like to download it now?",
@@ -153,7 +154,17 @@
     "dnsIssue": "Internet works but DNS may have issues.",
     "noInternet": "Network connected but no internet access.",
     "connectionIssue": "Connection issues detected. Check modem status.",
-    "checkFailed": "Check failed. Please try again."
+    "checkFailed": "Check failed. Please try again.",
+    "speedtest": "Speed Test",
+    "speedtestTitle": "Internet Speed Test",
+    "speedtestRunning": "Testing speed...",
+    "speedtestComplete": "Speed test complete!",
+    "speedtestFailed": "Speed test failed",
+    "latency": "Ping",
+    "jitter": "Jitter",
+    "startTest": "Start Test",
+    "testAgain": "Test Again",
+    "poweredBy": "Speedtest Beta by Cloudflare"
   },
   "wifi": {
     "wifiSettings": "WiFi Settings",
@@ -396,7 +407,22 @@
     "apnRequired": "Profile name and APN are required",
     "monthlyQuota": "Monthly Data Quota",
     "notSet": "Not set",
-    "configure": "Configure"
+    "configure": "Configure",
+    "dhcp": "DHCP",
+    "dhcpSettings": "DHCP Settings",
+    "lanIpAddress": "LAN IP Address",
+    "dhcpServer": "DHCP Server",
+    "dhcpServerHint": "Enable or disable DHCP server",
+    "dhcpIpRange": "IP Range",
+    "dhcpStartIp": "Start IP",
+    "dhcpEndIp": "End IP",
+    "dhcpLeaseTime": "Lease Time",
+    "leaseTime1Hour": "1 Hour",
+    "leaseTime12Hours": "12 Hours",
+    "leaseTime1Day": "1 Day",
+    "leaseTime1Week": "1 Week",
+    "dhcpSaved": "DHCP settings saved",
+    "failedSaveDhcp": "Failed to save DHCP settings"
   },
   "timeSettings": {
     "title": "Time Settings",

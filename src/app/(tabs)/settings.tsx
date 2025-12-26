@@ -193,6 +193,23 @@ export default function SettingsScreen() {
   const [isApnExpanded, setIsApnExpanded] = useState(false);
   const [isMobileNetworkExpanded, setIsMobileNetworkExpanded] = useState(false);
   const [isEthernetExpanded, setIsEthernetExpanded] = useState(false);
+  const [isDhcpExpanded, setIsDhcpExpanded] = useState(false);
+
+  // DHCP state
+  const [dhcpSettings, setDhcpSettings] = useState({
+    dhcpIPAddress: '192.168.8.1',
+    dhcpLanNetmask: '255.255.255.0',
+    dhcpStatus: true,
+    dhcpStartIPAddress: '192.168.8.100',
+    dhcpEndIPAddress: '192.168.8.200',
+    dhcpLeaseTime: 86400,
+    dnsStatus: true,
+    primaryDns: '',
+    secondaryDns: '',
+  });
+  const [isTogglingDhcp, setIsTogglingDhcp] = useState(false);
+  const [isSavingDhcp, setIsSavingDhcp] = useState(false);
+  const [showLeaseTimeDropdown, setShowLeaseTimeDropdown] = useState(false);
   const [showApnModal, setShowApnModal] = useState(false);
   const [editingApn, setEditingApn] = useState<string | null>(null);
   const [apnName, setApnName] = useState('');
@@ -231,6 +248,7 @@ export default function SettingsScreen() {
       loadTimeSettings(service);
       loadEthernetSettings(netService);
       loadApnProfiles(netService);
+      loadDHCPSettings(netService);
       // Load monthly quota settings
       service.getMonthlyDataSettings().then(settings => {
         if (settings) {
@@ -328,6 +346,64 @@ export default function SettingsScreen() {
     } finally {
       setIsChangingEthernet(false);
     }
+  };
+
+  const loadDHCPSettings = async (service: NetworkSettingsService) => {
+    try {
+      const settings = await service.getDHCPSettings();
+      setDhcpSettings(settings);
+    } catch (error) {
+      console.error('Error loading DHCP settings:', error);
+    }
+  };
+
+  const handleDHCPToggle = async (enabled: boolean) => {
+    if (!networkSettingsService || isTogglingDhcp) return;
+    setIsTogglingDhcp(true);
+    try {
+      await networkSettingsService.toggleDHCPServer(enabled);
+      setDhcpSettings(prev => ({ ...prev, dhcpStatus: enabled }));
+      ThemedAlertHelper.alert(t('common.success'), t('networkSettings.dhcpSaved'));
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('networkSettings.failedSaveDhcp'));
+    } finally {
+      setIsTogglingDhcp(false);
+    }
+  };
+
+  const handleDHCPLeaseTimeChange = async (leaseTime: number) => {
+    if (!networkSettingsService) return;
+    setShowLeaseTimeDropdown(false);
+    setIsSavingDhcp(true);
+    try {
+      await networkSettingsService.setDHCPSettings({ dhcpLeaseTime: leaseTime });
+      setDhcpSettings(prev => ({ ...prev, dhcpLeaseTime: leaseTime }));
+      ThemedAlertHelper.alert(t('common.success'), t('networkSettings.dhcpSaved'));
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('networkSettings.failedSaveDhcp'));
+    } finally {
+      setIsSavingDhcp(false);
+    }
+  };
+
+  const handleSaveDHCPSettings = async () => {
+    if (!networkSettingsService || isSavingDhcp) return;
+    setIsSavingDhcp(true);
+    try {
+      await networkSettingsService.setDHCPSettings(dhcpSettings);
+      ThemedAlertHelper.alert(t('common.success'), t('networkSettings.dhcpSaved'));
+    } catch (error) {
+      ThemedAlertHelper.alert(t('common.error'), t('networkSettings.failedSaveDhcp'));
+    } finally {
+      setIsSavingDhcp(false);
+    }
+  };
+
+  const getLeaseTimeLabel = (seconds: number): string => {
+    if (seconds <= 3600) return t('networkSettings.leaseTime1Hour');
+    if (seconds <= 43200) return t('networkSettings.leaseTime12Hours');
+    if (seconds <= 86400) return t('networkSettings.leaseTime1Day');
+    return t('networkSettings.leaseTime1Week');
   };
 
   const loadApnProfiles = async (service: NetworkSettingsService) => {
@@ -1481,6 +1557,160 @@ export default function SettingsScreen() {
             )}
           </View>
         )}
+
+        {/* DHCP Settings Section - Collapsible */}
+        <TouchableOpacity
+          style={styles.collapseHeader}
+          onPress={() => setIsDhcpExpanded(!isDhcpExpanded)}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="router" size={18} color={colors.primary} />
+            <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 8 }]}>
+              {t('networkSettings.dhcpSettings')}
+            </Text>
+          </View>
+          <MaterialIcons
+            name={isDhcpExpanded ? 'expand-less' : 'expand-more'}
+            size={24}
+            color={colors.textSecondary}
+          />
+        </TouchableOpacity>
+
+        {isDhcpExpanded && (
+          <View style={{ paddingTop: spacing.sm }}>
+            {/* LAN IP Address - 4 Octet Inputs */}
+            <View style={styles.settingRow}>
+              <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.lanIpAddress')}</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                {dhcpSettings.dhcpIPAddress.split('.').map((octet, index) => (
+                  <React.Fragment key={index}>
+                    <TextInput
+                      style={[styles.octetInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                      value={octet}
+                      onChangeText={(text) => {
+                        const octets = dhcpSettings.dhcpIPAddress.split('.');
+                        octets[index] = text.replace(/[^0-9]/g, '').slice(0, 3);
+                        setDhcpSettings(prev => ({ ...prev, dhcpIPAddress: octets.join('.') }));
+                      }}
+                      keyboardType="numeric"
+                      maxLength={3}
+                    />
+                    {index < 3 && <Text style={[typography.body, { color: colors.textSecondary, marginHorizontal: 4 }]}>.</Text>}
+                  </React.Fragment>
+                ))}
+              </View>
+            </View>
+
+            {/* DHCP Server Toggle */}
+            <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+              <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.dhcpServer')}</Text>
+              {isTogglingDhcp ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <Switch
+                  value={dhcpSettings.dhcpStatus}
+                  onValueChange={handleDHCPToggle}
+                  trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                  thumbColor={dhcpSettings.dhcpStatus ? colors.primary : colors.textSecondary}
+                />
+              )}
+            </View>
+
+            {/* Show IP Range and Lease Time only when DHCP is ON */}
+            {dhcpSettings.dhcpStatus && (
+              <>
+                {/* DHCP IP Range - Shows prefix + editable last octet */}
+                <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.dhcpIpRange')}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    {/* Show base prefix from LAN IP */}
+                    <Text style={[typography.body, { color: colors.textSecondary }]}>
+                      {dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.')}.
+                    </Text>
+                    <TextInput
+                      style={[styles.octetInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                      value={dhcpSettings.dhcpStartIPAddress.split('.').pop() || '100'}
+                      onChangeText={(text) => {
+                        const base = dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.');
+                        const num = text.replace(/[^0-9]/g, '').slice(0, 3);
+                        setDhcpSettings(prev => ({ ...prev, dhcpStartIPAddress: `${base}.${num}` }));
+                      }}
+                      keyboardType="numeric"
+                      maxLength={3}
+                    />
+                    <Text style={[typography.body, { color: colors.textSecondary, marginHorizontal: 8 }]}>-</Text>
+                    <TextInput
+                      style={[styles.octetInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                      value={dhcpSettings.dhcpEndIPAddress.split('.').pop() || '200'}
+                      onChangeText={(text) => {
+                        const base = dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.');
+                        const num = text.replace(/[^0-9]/g, '').slice(0, 3);
+                        setDhcpSettings(prev => ({ ...prev, dhcpEndIPAddress: `${base}.${num}` }));
+                      }}
+                      keyboardType="numeric"
+                      maxLength={3}
+                    />
+                  </View>
+                </View>
+
+                {/* DHCP Lease Time Dropdown */}
+                <View style={[styles.settingRow, { marginTop: spacing.md }]}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('networkSettings.dhcpLeaseTime')}</Text>
+                  <TouchableOpacity
+                    style={[styles.leaseDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => setShowLeaseTimeDropdown(!showLeaseTimeDropdown)}
+                    disabled={isSavingDhcp}
+                  >
+                    <Text style={[typography.body, { color: colors.text, flex: 1 }]}>
+                      {getLeaseTimeLabel(dhcpSettings.dhcpLeaseTime)}
+                    </Text>
+                    <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                {showLeaseTimeDropdown && (
+                  <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    {[
+                      { value: 3600, labelKey: 'networkSettings.leaseTime1Hour' },
+                      { value: 43200, labelKey: 'networkSettings.leaseTime12Hours' },
+                      { value: 86400, labelKey: 'networkSettings.leaseTime1Day' },
+                      { value: 604800, labelKey: 'networkSettings.leaseTime1Week' },
+                    ].map((option) => (
+                      <TouchableOpacity
+                        key={option.value}
+                        style={[styles.dropdownItem, {
+                          backgroundColor: dhcpSettings.dhcpLeaseTime === option.value ? colors.primary + '20' : 'transparent'
+                        }]}
+                        onPress={() => handleDHCPLeaseTimeChange(option.value)}
+                      >
+                        <Text style={[typography.body, {
+                          color: dhcpSettings.dhcpLeaseTime === option.value ? colors.primary : colors.text,
+                        }]}>
+                          {t(option.labelKey)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                )}
+
+                {/* Save Button */}
+                <TouchableOpacity
+                  style={[styles.saveButton, { backgroundColor: colors.primary, marginTop: spacing.lg }]}
+                  onPress={handleSaveDHCPSettings}
+                  disabled={isSavingDhcp}
+                >
+                  {isSavingDhcp ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                      {t('common.save')}
+                    </Text>
+                  )}
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
+        )}
       </Card>
 
       {/* App Settings Card */}
@@ -2139,5 +2369,38 @@ const styles = StyleSheet.create({
     padding: 14,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  ipInput: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    fontSize: 14,
+    minWidth: 120,
+    textAlign: 'right',
+  },
+  octetInput: {
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 6,
+    borderWidth: 1,
+    fontSize: 14,
+    width: 50,
+    textAlign: 'center',
+  },
+  leaseDropdown: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    minWidth: 140,
+  },
+  saveButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+    borderRadius: 10,
   },
 });
