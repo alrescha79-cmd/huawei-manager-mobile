@@ -1,28 +1,28 @@
 name: Update Download Stats
 
-on:
+on: 
   schedule:
     - cron: "0 */6 * * *"
   workflow_dispatch:
 
-jobs: 
+jobs:  
   stats:
     runs-on: ubuntu-latest
     steps: 
-      - uses: actions/checkout@v4
+      - uses:  actions/checkout@v4
 
       - name:  Ensure stats directory exists
         run: mkdir -p stats
 
-      - name:  Fetch release downloads
-        run:  |
+      - name: Fetch release downloads
+        run: |
           curl -s https://api.github.com/repos/${{ github.repository }}/releases \
           | jq '
             [
               .[] |
               {
-                tag: .tag_name,
-                total: (.assets | map(.download_count) | add)
+                tag: . tag_name,
+                total:  (.assets | map(.download_count) | add)
               }
             ]
           ' > stats/downloads. json
