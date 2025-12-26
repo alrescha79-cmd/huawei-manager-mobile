@@ -37,14 +37,40 @@ jobs:
         run: |
           sudo apt install -y gnuplot
           gnuplot <<EOF
-          set terminal svg size 800,400
+          # Terminal settings with transparent background
+          set terminal svg size 800,400 dynamic enhanced font 'Arial,12' background 'transparent'
           set output "stats/chart.svg"
+          
+          # Data settings
           set datafile separator ","
           set xdata time
           set timefmt "%Y-%m-%d %H:%M"
-          set format x "%d-%m"
-          set title "GitHub Release Downloads"
-          plot "stats/history.csv" using 1:2 with lines title "Downloads"
+          set format x "%d %b"
+          
+          # Colors for dark mode compatibility (light gray/white text)
+          set border linecolor rgb "#a0a0a0" linewidth 1.5
+          set grid linecolor rgb "#404040" linewidth 0.5
+          set title "📊 Total Downloads Over Time" textcolor rgb "#e0e0e0" font ",16"
+          set xlabel "Date" textcolor rgb "#b0b0b0" font ",11"
+          set ylabel "Total Downloads" textcolor rgb "#b0b0b0" font ",11"
+          
+          # Axis tick colors
+          set xtics textcolor rgb "#b0b0b0" font ",10"
+          set ytics textcolor rgb "#b0b0b0" font ",10"
+          
+          # Legend/Key styling
+          set key right top textcolor rgb "#e0e0e0" box linecolor rgb "#606060"
+          
+          # Y-axis starts from 0 for better visualization
+          set yrange [0:*]
+          
+          # Enable grid
+          set grid xtics ytics
+          
+          # Plot with line and points for better visibility
+          plot "stats/history.csv" using 1:2 with linespoints \
+               linecolor rgb "#00d4aa" linewidth 2.5 pointtype 7 pointsize 1.2 \
+               title "Downloads"
           EOF
 
       - name: Commit stats
