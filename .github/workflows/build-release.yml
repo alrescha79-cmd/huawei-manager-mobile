@@ -307,21 +307,39 @@ jobs:
             
             ---
             
-            ### 📥 Downloads
+            ### 📄 File Descriptions / Deskripsi File
             
             #### 🇺🇸 EN (English)
-            | Architecture | Description | Downloads |
-            | :--- | :--- | :--- |
-            | **arm64-v8a** | For 64-bit devices (Recommended) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-arm64-v8a.apk?color=22c55e&label=) |
-            | **armeabi-v7a** | For 32-bit devices | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-armeabi-v7a.apk?color=blue&label=) |
-            | **universal** | Compatible with all devices (Larger size) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-universal.apk?color=orange&label=) |
+            * **huawei-manager-arm64-v8a.apk**
+              * Target: Modern & High-end devices (64-bit)
+              * Recommended for most Android phones released after 2016
+              * ✅ Better performance
+              
+            * **huawei-manager-armeabi-v7a.apk**
+              * Target: Older & Low-end devices (32-bit)
+              * Use this if arm64 version fails to install
+              * ✅ Smaller file size
+              
+            * **huawei-manager-universal.apk**
+              * Target: All devices
+              * Contains libraries for all architectures
+              * ⚠️ Larger file size, use only if you are unsure which one to pick
             
             #### 🇮🇩 ID (Bahasa Indonesia)
-            | Arsitektur | Deskripsi | Unduhan |
-            | :--- | :--- | :--- |
-            | **arm64-v8a** | Untuk perangkat 64-bit (Rekomendasi) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-arm64-v8a.apk?color=22c55e&label=) |
-            | **armeabi-v7a** | Untuk perangkat 32-bit | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-armeabi-v7a.apk?color=blue&label=) |
-            | **universal** | Bisa diinstall di semua perangkat (Ukuran lebih besar) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-universal.apk?color=orange&label=) |
+            * **huawei-manager-arm64-v8a.apk**
+              * Target: Perangkat Modern & High-end (64-bit)
+              * Direkomendasikan untuk sebagian besar HP Android keluaran di atas 2016
+              * ✅ Performa lebih baik
+              
+            * **huawei-manager-armeabi-v7a.apk**
+              * Target: Perangkat Lama & Low-end (32-bit)
+              * Gunakan ini jika versi arm64 gagal diinstall
+              * ✅ Ukuran file lebih kecil
+              
+            * **huawei-manager-universal.apk**
+              * Target: Semua perangkat
+              * Berisi library untuk semua arsitektur
+              * ⚠️ Ukuran file lebih besar, gunakan hanya jika Anda ragu memilih versi
             
             ### 🔧 Installation / Instalasi
             
@@ -360,21 +378,39 @@ jobs:
             
             ---
             
-            ### 📥 Downloads
+            ### 📄 File Descriptions / Deskripsi File
             
             #### 🇺🇸 EN (English)
-            | Architecture | Description | Downloads |
-            | :--- | :--- | :--- |
-            | **arm64-v8a** | For 64-bit devices (Recommended) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-arm64-v8a.apk?color=22c55e&label=) |
-            | **armeabi-v7a** | For 32-bit devices | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-armeabi-v7a.apk?color=blue&label=) |
-            | **universal** | Compatible with all devices (Larger size) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-universal.apk?color=orange&label=) |
+            * **huawei-manager-arm64-v8a.apk**
+              * Target: Modern & High-end devices (64-bit)
+              * Recommended for most Android phones released after 2016
+              * ✅ Better performance
+              
+            * **huawei-manager-armeabi-v7a.apk**
+              * Target: Older & Low-end devices (32-bit)
+              * Use this if arm64 version fails to install
+              * ✅ Smaller file size
+              
+            * **huawei-manager-universal.apk**
+              * Target: All devices
+              * Contains libraries for all architectures
+              * ⚠️ Larger file size, use only if you are unsure which one to pick
             
             #### 🇮🇩 ID (Bahasa Indonesia)
-            | Arsitektur | Deskripsi | Unduhan |
-            | :--- | :--- | :--- |
-            | **arm64-v8a** | Untuk perangkat 64-bit (Rekomendasi) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-arm64-v8a.apk?color=22c55e&label=) |
-            | **armeabi-v7a** | Untuk perangkat 32-bit | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-armeabi-v7a.apk?color=blue&label=) |
-            | **universal** | Bisa diinstall di semua perangkat (Ukuran lebih besar) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-universal.apk?color=orange&label=) |
+            * **huawei-manager-arm64-v8a.apk**
+              * Target: Perangkat Modern & High-end (64-bit)
+              * Direkomendasikan untuk sebagian besar HP Android keluaran di atas 2016
+              * ✅ Performa lebih baik
+              
+            * **huawei-manager-armeabi-v7a.apk**
+              * Target: Perangkat Lama & Low-end (32-bit)
+              * Gunakan ini jika versi arm64 gagal diinstall
+              * ✅ Ukuran file lebih kecil
+              
+            * **huawei-manager-universal.apk**
+              * Target: Semua perangkat
+              * Berisi library untuk semua arsitektur
+              * ⚠️ Ukuran file lebih besar, gunakan hanya jika Anda ragu memilih versi
             
             ### 🔧 Installation / Instalasi
             

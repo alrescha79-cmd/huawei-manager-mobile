@@ -46,7 +46,7 @@
 
 
 > [!TIP]
-> ![Latest Version](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen)
+> ![Latest Version](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen) ![Downloads](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/latest/total?style=flat&logo=android&label=Download@Latest&color=)
 > 
 > **📥 Download di [Github Releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
 
