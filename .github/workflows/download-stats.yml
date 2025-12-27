@@ -104,7 +104,7 @@ jobs:
           git commit -m "chore: update download stats [skip ci]"
           git push origin "$BRANCH"
           
-          # Create PR with auto-merge enabled
+          # Create PR
           PR_URL=$(gh pr create \
             --title "chore: update download stats" \
             --body "🤖 Automated PR to update download statistics.
@@ -112,11 +112,20 @@ jobs:
           This PR was created by the scheduled workflow.
 
           ---
-          _This PR will be auto-merged if all checks pass._" \
+          _This PR will be auto-merged._" \
             --base main \
             --head "$BRANCH")
           
           echo "Created PR: $PR_URL"
           
-          # Enable auto-merge (squash)
-          gh pr merge "$PR_URL" --auto --squash --delete-branch
+          # Wait a moment for PR to be processed
+          sleep 5
+          
+          # Try to merge directly first (works if PR is already clean/mergeable)
+          # If that fails, try to enable auto-merge
+          if gh pr merge "$PR_URL" --squash --delete-branch; then
+            echo "✅ PR merged successfully!"
+          else
+            echo "⏳ Direct merge failed, enabling auto-merge..."
+            gh pr merge "$PR_URL" --auto --squash --delete-branch || echo "⚠️ Auto-merge setup may have failed, PR will need manual merge"
+          fi
