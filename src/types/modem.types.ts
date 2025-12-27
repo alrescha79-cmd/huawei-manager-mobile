@@ -63,6 +63,7 @@ export interface TrafficStats {
   totalConnectTime: number;
   monthDownload: number;
   monthUpload: number;
+  monthDuration: number;
   dayUsed: number;
   dayDuration: number;
 }

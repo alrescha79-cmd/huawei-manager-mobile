@@ -294,21 +294,46 @@ jobs:
         with:
           name: Huawei Manager v${{ needs.build-arm64.outputs.version }}
           body: |
+            > [!WARNING]
+            > **🇬🇧 EN** 
+            > **Files are available in the Assets section below ↓**
+            >
+            > **🇮🇩 ID**
+            > **File download berada di bagian Assets di bawah ↓**
+
             ## Huawei Manager v${{ needs.build-arm64.outputs.version }}
             
             ${{ steps.release_notes.outputs.notes }}
             
             ---
             
-            ### Downloads
-            - **arm64-v8a** - Untuk perangkat 64-bit (rekomended)
-            - **armeabi-v7a** - Untuk perangkat 32-bit
-            - **universal** - Bisa diinstall di semua perangkat (ukuran lebih besar)
+            ### 📥 Downloads
             
-            ### Instalasi
-            1. Download APK yang sesuai dengan perangkat Anda
-            2. Enable "Install from unknown sources" di Settings
-            3. Buka file APK untuk menginstall
+            #### 🇺🇸 EN (English)
+            | Architecture | Description | Downloads |
+            | :--- | :--- | :--- |
+            | **arm64-v8a** | For 64-bit devices (Recommended) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-arm64-v8a.apk?color=22c55e&label=) |
+            | **armeabi-v7a** | For 32-bit devices | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-armeabi-v7a.apk?color=blue&label=) |
+            | **universal** | Compatible with all devices (Larger size) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-universal.apk?color=orange&label=) |
+            
+            #### 🇮🇩 ID (Bahasa Indonesia)
+            | Arsitektur | Deskripsi | Unduhan |
+            | :--- | :--- | :--- |
+            | **arm64-v8a** | Untuk perangkat 64-bit (Rekomendasi) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-arm64-v8a.apk?color=22c55e&label=) |
+            | **armeabi-v7a** | Untuk perangkat 32-bit | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-armeabi-v7a.apk?color=blue&label=) |
+            | **universal** | Bisa diinstall di semua perangkat (Ukuran lebih besar) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/v${{ needs.build-arm64.outputs.version }}/huawei-manager-universal.apk?color=orange&label=) |
+            
+            ### 🔧 Installation / Instalasi
+            
+            #### 🇺🇸 English
+            1. Download the APK suitable for your device (arm64 recommended).
+            2. Enable "Install from unknown sources" in your Android Settings.
+            3. Open the downloaded file to install.
+            
+            #### 🇮🇩 Bahasa Indonesia
+            1. Download APK yang sesuai dengan perangkat Anda (arm64 direkomendasikan).
+            2. Aktifkan "Install from unknown sources" (Instal dari sumber tidak dikenal) di Pengaturan.
+            3. Buka file APK untuk menginstall.
           files: apks/*.apk
           draft: false
           prerelease: false
@@ -322,21 +347,42 @@ jobs:
           tag_name: ${{ github.event.inputs.version }}
           name: Huawei Manager ${{ github.event.inputs.version }}
           body: |
+            > ℹ️ **Files are available in the Assets section below ↓**
+            > ℹ️ **File download berada di bagian Assets di bawah ↓**
+
             ## Huawei Manager ${{ github.event.inputs.version }}
             
             ${{ steps.release_notes.outputs.notes }}
             
             ---
             
-            ### Downloads
-            - **arm64-v8a** - Untuk perangkat 64-bit (rekomended)
-            - **armeabi-v7a** - Untuk perangkat 32-bit
-            - **universal** - Bisa diinstall di semua perangkat (ukuran lebih besar)
+            ### 📥 Downloads
             
-            ### Instalasi
-            1. Download APK yang sesuai dengan perangkat Anda
-            2. Enable "Install from unknown sources" di Settings
-            3. Buka file APK untuk menginstall
+            #### 🇺🇸 EN (English)
+            | Architecture | Description | Downloads |
+            | :--- | :--- | :--- |
+            | **arm64-v8a** | For 64-bit devices (Recommended) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-arm64-v8a.apk?color=22c55e&label=) |
+            | **armeabi-v7a** | For 32-bit devices | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-armeabi-v7a.apk?color=blue&label=) |
+            | **universal** | Compatible with all devices (Larger size) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-universal.apk?color=orange&label=) |
+            
+            #### 🇮🇩 ID (Bahasa Indonesia)
+            | Arsitektur | Deskripsi | Unduhan |
+            | :--- | :--- | :--- |
+            | **arm64-v8a** | Untuk perangkat 64-bit (Rekomendasi) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-arm64-v8a.apk?color=22c55e&label=) |
+            | **armeabi-v7a** | Untuk perangkat 32-bit | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-armeabi-v7a.apk?color=blue&label=) |
+            | **universal** | Bisa diinstall di semua perangkat (Ukuran lebih besar) | ![Downloads](https://img.shields.io/github/downloads/${{ github.repository }}/${{ github.event.inputs.version }}/huawei-manager-universal.apk?color=orange&label=) |
+            
+            ### 🔧 Installation / Instalasi
+            
+            #### 🇺🇸 English
+            1. Download the APK suitable for your device (arm64 recommended).
+            2. Enable "Install from unknown sources" in your Android Settings.
+            3. Open the downloaded file to install.
+            
+            #### 🇮🇩 Bahasa Indonesia
+            1. Download APK yang sesuai dengan perangkat Anda (arm64 direkomendasikan).
+            2. Aktifkan "Install from unknown sources" (Instal dari sumber tidak dikenal) di Pengaturan.
+            3. Buka file APK untuk menginstall.
           files: apks/*.apk
           draft: false
           prerelease: false

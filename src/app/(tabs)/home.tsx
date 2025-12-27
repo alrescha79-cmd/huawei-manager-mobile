@@ -607,76 +607,77 @@ export default function HomeScreen() {
           <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
         </TouchableOpacity>
 
-        {/* Divider */}
-        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+        {/* Quick Actions Grid - 2x2 Layout */}
+        <View style={{ marginTop: spacing.md }}>
+          <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
+            {/* Change IP Button */}
+            <TouchableOpacity
+              style={[styles.quickActionGrid, { backgroundColor: colors.primary, flex: 1 }]}
+              onPress={handleChangeIp}
+              disabled={isChangingIp}
+            >
+              {isChangingIp ? (
+                <ActivityIndicator color="#FFFFFF" size="small" />
+              ) : (
+                <>
+                  <MaterialIcons name="refresh" size={22} color="#FFFFFF" />
+                  <Text style={[typography.caption1, { color: '#FFFFFF', fontWeight: '600', marginTop: 4 }]} numberOfLines={1}>
+                    {t('home.changeIp')}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-        {/* Change IP Button */}
-        <TouchableOpacity
-          style={[styles.controlButton, { backgroundColor: colors.primary }]}
-          onPress={handleChangeIp}
-          disabled={isChangingIp}
-        >
-          {isChangingIp ? (
-            <ActivityIndicator color="#FFFFFF" />
-          ) : (
-            <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-              {t('home.changeIp')}
-            </Text>
-          )}
-        </TouchableOpacity>
-        <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xs }]}>
-          {t('home.plmnScanHint')}
-        </Text>
+            {/* Speedtest Button */}
+            <TouchableOpacity
+              style={[styles.quickActionGrid, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, flex: 1 }]}
+              onPress={() => setShowSpeedtestModal(true)}
+            >
+              <MaterialIcons name="speed" size={22} color={colors.primary} />
+              <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]} numberOfLines={1}>
+                {t('home.speedtest')}
+              </Text>
+            </TouchableOpacity>
+          </View>
 
-        {/* Modern Quick Action Buttons */}
-        <View style={{ flexDirection: 'row', gap: spacing.sm, marginTop: spacing.lg }}>
-          {/* Diagnosis Button */}
-          <TouchableOpacity
-            style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}
-            onPress={handleDiagnosis}
-            disabled={isRunningDiagnosis}
-          >
-            {isRunningDiagnosis ? (
-              <ActivityIndicator color={colors.primary} size="small" />
-            ) : (
-              <>
-                <MaterialIcons name="network-check" size={20} color={colors.primary} />
-                <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginLeft: spacing.xs }]}>
-                  {t('home.diagnosis')}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
+            {/* Diagnosis Button */}
+            <TouchableOpacity
+              style={[styles.quickActionGrid, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, flex: 1 }]}
+              onPress={handleDiagnosis}
+              disabled={isRunningDiagnosis}
+            >
+              {isRunningDiagnosis ? (
+                <ActivityIndicator color={colors.primary} size="small" />
+              ) : (
+                <>
+                  <MaterialIcons name="network-check" size={22} color={colors.primary} />
+                  <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]} numberOfLines={1}>
+                    {t('home.diagnosis')}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
 
-          {/* One Click Check Button */}
-          <TouchableOpacity
-            style={[styles.quickActionButton, { backgroundColor: colors.card, borderColor: colors.border, flex: 1 }]}
-            onPress={handleOneClickCheck}
-            disabled={isRunningCheck}
-          >
-            {isRunningCheck ? (
-              <ActivityIndicator color={colors.success} size="small" />
-            ) : (
-              <>
-                <MaterialIcons name="speed" size={20} color={colors.success} />
-                <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginLeft: spacing.xs }]}>
-                  {t('home.oneClickCheck')}
-                </Text>
-              </>
-            )}
-          </TouchableOpacity>
+            {/* One Click Check Button */}
+            <TouchableOpacity
+              style={[styles.quickActionGrid, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, flex: 1 }]}
+              onPress={handleOneClickCheck}
+              disabled={isRunningCheck}
+            >
+              {isRunningCheck ? (
+                <ActivityIndicator color={colors.success} size="small" />
+              ) : (
+                <>
+                  <MaterialIcons name="check-circle" size={22} color={colors.success} />
+                  <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]} numberOfLines={1}>
+                    {t('home.oneClickCheck')}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-
-        {/* Speedtest Button */}
-        <TouchableOpacity
-          style={[styles.controlButton, { backgroundColor: colors.card, borderColor: colors.primary, borderWidth: 1, marginTop: spacing.md }]}
-          onPress={() => setShowSpeedtestModal(true)}
-        >
-          <MaterialIcons name="speed" size={20} color={colors.primary} />
-          <Text style={[typography.body, { color: colors.primary, fontWeight: '600', marginLeft: 8 }]}>
-            {t('home.speedtest')}
-          </Text>
-        </TouchableOpacity>
       </CollapsibleCard>
 
       {/* Signal Strength Card */}
@@ -774,7 +775,9 @@ export default function HomeScreen() {
           <View>
             <UsageCard
               title={t('home.monthlyUsage')}
-              badge={new Date().toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
+              badge={trafficStats.monthDuration > 0
+                ? formatDuration(trafficStats.monthDuration, durationUnits)
+                : new Date().toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
               download={trafficStats.monthDownload}
               upload={trafficStats.monthUpload}
               color="emerald"
@@ -986,6 +989,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 12,
     borderWidth: 1,
+  },
+  quickActionGrid: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    minHeight: 70,
   },
   infoRowCustom: {
     flexDirection: 'row',

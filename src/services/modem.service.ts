@@ -113,6 +113,7 @@ export class ModemService {
       // Also fetch monthly stats from separate endpoint
       let monthDownload = 0;
       let monthUpload = 0;
+      let monthDuration = 0;
       let dayUsed = 0;
       let dayDuration = 0;
       try {
@@ -128,6 +129,13 @@ export class ModemService {
           parseXMLValue(monthResponse, 'CurrentMonthUpload') ||
           parseXMLValue(monthResponse, 'monthUpload') ||
           parseXMLValue(monthResponse, 'MonthUpload')
+        );
+
+        // Parse monthly duration (seconds)
+        monthDuration = safeParseInt(
+          parseXMLValue(monthResponse, 'CurrentMonthDuration') ||
+          parseXMLValue(monthResponse, 'monthDuration') ||
+          parseXMLValue(monthResponse, 'MonthDuration')
         );
 
         // Parse daily usage (combined download + upload)
@@ -158,6 +166,7 @@ export class ModemService {
         totalConnectTime: safeParseInt(parseXMLValue(response, 'TotalConnectTime')),
         monthDownload,
         monthUpload,
+        monthDuration,
         dayUsed,
         dayDuration,
       };
