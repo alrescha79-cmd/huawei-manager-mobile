@@ -56,11 +56,11 @@ export const formatDuration = (seconds: number, units: DurationUnits = defaultUn
 export const getSignalStrength = (rssi: string | number): string => {
   const rssiNum = typeof rssi === 'string' ? parseInt(rssi) : rssi;
 
-  if (rssiNum >= -65) return 'Excellent';
-  if (rssiNum >= -75) return 'Good';
-  if (rssiNum >= -85) return 'Fair';
-  if (rssiNum >= -95) return 'Poor';
-  return 'Very Poor';
+  if (rssiNum >= -65) return 'excellent';
+  if (rssiNum >= -75) return 'good';
+  if (rssiNum >= -85) return 'fair';
+  if (rssiNum >= -95) return 'poor';
+  return 'veryPoor';
 };
 
 export const getSignalIcon = (rssi: string | number): number => {
@@ -114,17 +114,17 @@ export const isValidIP = (ip: string): boolean => {
 
 // Decode Huawei modem status codes
 export const getConnectionStatusText = (code: string | undefined): string => {
-  if (!code) return 'Unknown';
+  if (!code) return 'unknown';
 
   const statusMap: Record<string, string> = {
-    '901': 'Connected',
-    '902': 'Disconnected',
-    '903': 'Connecting',
-    '904': 'Disconnecting',
-    '905': 'Connection Failed',
+    '901': 'connected',
+    '902': 'disconnected',
+    '903': 'connecting',
+    '904': 'disconnecting',
+    '905': 'connectionFailed',
   };
 
-  return statusMap[code] || `Status ${code}`;
+  return statusMap[code] || 'unknown';
 };
 
 export const getNetworkTypeText = (code: string | undefined): string => {

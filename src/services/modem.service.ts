@@ -683,7 +683,7 @@ export class ModemService {
 
       const internetConnection = pingResult.success;
       const networkStatus = status.connectionStatus === '901' ? 'Connected' : 'Disconnected';
-      const signalStrength = signal.rssi ? `${signal.rssi} dBm` : 'Unknown';
+      const signalStrength = signal.rssi ? signal.rssi : 'Unknown';
 
       // DNS check with cloudflare as fallback
       const dnsResult = await this.diagnosisPing('1.1.1.1', 5000);

@@ -323,19 +323,34 @@ export default function HomeScreen() {
     if (!modemService || isTogglingData) return;
 
     const newState = !mobileDataStatus?.dataswitch;
-    setIsTogglingData(true);
-    try {
-      await modemService.toggleMobileData(newState);
-      // Refresh data after toggle
-      const dataStatus = await modemService.getMobileDataStatus();
-      setMobileDataStatus(dataStatus);
-      ThemedAlertHelper.alert(t('common.success'), newState ? t('home.dataEnabled') : t('home.dataDisabled'));
-    } catch (error) {
-      console.error('Error toggling mobile data:', error);
-      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
-    } finally {
-      setIsTogglingData(false);
-    }
+    const actionText = newState ? t('home.enableData') : t('home.disableData');
+    const confirmMessage = newState ? t('home.confirmEnableData') : t('home.confirmDisableData');
+
+    ThemedAlertHelper.alert(
+      actionText,
+      confirmMessage,
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          onPress: async () => {
+            setIsTogglingData(true);
+            try {
+              await modemService.toggleMobileData(newState);
+              // Refresh data after toggle
+              const dataStatus = await modemService.getMobileDataStatus();
+              setMobileDataStatus(dataStatus);
+              ThemedAlertHelper.alert(t('common.success'), newState ? t('home.dataEnabled') : t('home.dataDisabled'));
+            } catch (error) {
+              console.error('Error toggling mobile data:', error);
+              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
+            } finally {
+              setIsTogglingData(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleChangeIp = async () => {
@@ -506,177 +521,258 @@ export default function HomeScreen() {
         </Card>
       )}
 
-      {/* Connection Status Card */}
+      {/* Connection Status Card - Matching Reference Design */}
       <CollapsibleCard title={t('home.connectionStatus')}>
-        <View style={styles.statusRow}>
-          <View style={{ flex: 1 }}>
-            <InfoRow
-              label={t('home.connectionStatus')}
-              value={getConnectionStatusText(modemStatus?.connectionStatus)}
+        {/* Top Section: Signal Bars + Info | Status + Network Badge */}
+        <View style={styles.connectionMainRow}>
+          {/* Left: Signal Bars + Good + ISP */}
+          <View style={styles.connectionLeftSection}>
+            <SignalBar
+              strength={getSignalIcon(signalInfo?.rssi)}
+              label=""
             />
-            <InfoRow
-              label={t('home.networkType')}
-              value={getNetworkTypeText(
-                networkInfo?.currentNetworkType || modemStatus?.currentNetworkType
-              )}
-            />
-            <InfoRow
-              label={t('home.operator')}
-              value={
-                networkInfo?.fullName ||
-                networkInfo?.networkName ||
-                networkInfo?.spnName ||
-                t('common.unknown')
-              }
-            />
-            <InfoRow
-              label={t('home.ipAddress')}
-              value={wanInfo?.wanIPAddress || 'Fetching...'}
-            />
-            <InfoRow
-              label={t('home.band')}
-              value={getLteBandInfo(signalInfo?.band)}
-            />
-            <View style={[styles.infoRowCustom, { marginBottom: spacing.sm }]}>
-              <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
-                {t('home.width')}
+            <View style={styles.connectionSignalLabels}>
+              <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
+                {t(`home.signal${getSignalStrength(signalInfo?.rssi).charAt(0).toUpperCase()}${getSignalStrength(signalInfo?.rssi).slice(1)}`)}
               </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
-                  <>
-                    <MaterialIcons name="arrow-downward" size={14} color={colors.success} />
-                    <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginRight: 8 }]}>
-                      {signalInfo.dlbandwidth || '-'}
-                    </Text>
-                    <MaterialIcons name="arrow-upward" size={14} color={colors.primary} />
-                    <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
-                      {signalInfo.ulbandwidth || '-'}
-                    </Text>
-                  </>
-                ) : (
-                  <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>-</Text>
-                )}
-              </View>
+              <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                {networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
+              </Text>
             </View>
           </View>
 
-          {signalInfo && (
-            <View style={styles.signalContainer}>
-              <SignalBar
-                strength={getSignalIcon(signalInfo.rssi)}
-                label={getSignalStrength(signalInfo.rssi)}
-              />
+          {/* Right: Connected Status + 4G Badge */}
+          <View style={styles.connectionRightSection}>
+            <Text style={[
+              typography.subheadline,
+              {
+                color: modemStatus?.connectionStatus === '901' ? colors.primary : colors.error,
+                fontWeight: '600',
+                marginBottom: 4,
+              }
+            ]}>
+              {t(`home.status${getConnectionStatusText(modemStatus?.connectionStatus).charAt(0).toUpperCase()}${getConnectionStatusText(modemStatus?.connectionStatus).slice(1)}`)}
+            </Text>
+            <View style={[styles.networkTypeBadge, { borderColor: colors.primary, borderWidth: 1 }]}>
+              <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700' }]}>
+                {getNetworkTypeText(networkInfo?.currentNetworkType || modemStatus?.currentNetworkType)}
+              </Text>
             </View>
-          )}
+          </View>
+        </View>
+
+        {/* Divider */}
+        <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 12 }} />
+
+        {/* Info Grid 2x2 */}
+        <View style={styles.connectionInfoGrid}>
+
+          {/* Network Type */}
+          <View style={styles.connectionInfoGridItem}>
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+              {t('home.networkType')}
+            </Text>
+            <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
+              {getNetworkTypeText(networkInfo?.currentNetworkType || modemStatus?.currentNetworkType)}
+            </Text>
+          </View>
+
+          {/* IP Address */}
+          <View style={styles.connectionInfoGridItem}>
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+              {t('home.ipAddress')}
+            </Text>
+            <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+              {wanInfo?.wanIPAddress || '...'}
+            </Text>
+          </View>
+
+          {/* Band */}
+          <View style={styles.connectionInfoGridItem}>
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+              {t('home.band')}
+            </Text>
+            <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
+              {getLteBandInfo(signalInfo?.band)}
+            </Text>
+          </View>
+
+          {/* Width */}
+          <View style={styles.connectionInfoGridItem}>
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+              {t('home.width')}
+            </Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
+                <>
+                  <MaterialIcons name="arrow-upward" size={14} color={colors.primary} />
+                  <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600', marginRight: 4 }]}>
+                    {signalInfo.ulbandwidth || '-'}
+                  </Text>
+                  <MaterialIcons name="arrow-downward" size={14} color={colors.success} />
+                  <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
+                    {signalInfo.dlbandwidth || '-'}
+                  </Text>
+                </>
+              ) : (
+                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>-</Text>
+              )}
+            </View>
+          </View>
         </View>
       </CollapsibleCard>
 
-      {/* Control Buttons Card */}
+      {/* Quick Actions Card - Modern Compact Design */}
       <CollapsibleCard title={t('home.actions')}>
-        {/* Mobile Data Toggle */}
-        <View style={styles.controlRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('home.mobileData')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-              {mobileDataStatus?.dataswitch ? t('wifi.enabled') : t('wifi.disabled')}
-            </Text>
-          </View>
-          {isTogglingData ? (
-            <ActivityIndicator color={colors.primary} />
-          ) : (
-            <Switch
-              value={mobileDataStatus?.dataswitch ?? false}
-              onValueChange={handleToggleMobileData}
-              trackColor={{ false: colors.border, true: colors.primary + '80' }}
-              thumbColor={mobileDataStatus?.dataswitch ? colors.primary : colors.textSecondary}
-            />
-          )}
-        </View>
-
-        {/* LTE Band Selection */}
-        <TouchableOpacity
-          style={[styles.controlRow, { marginTop: spacing.md, paddingVertical: spacing.sm, marginBottom: spacing.md }]}
-          onPress={() => setShowBandModal(true)}
-        >
-          <View style={{ flex: 1 }}>
-            <Text style={[typography.body, { color: colors.text }]}>{t('home.lteBandSelection')}</Text>
-            <Text style={[typography.caption1, { color: colors.textSecondary }]} numberOfLines={1}>
-              {selectedBands.length > 0 ? selectedBands.join(', ') : t('common.loading')}
-            </Text>
-          </View>
-          <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
-        </TouchableOpacity>
-
-        {/* Quick Actions Grid - 2x2 Layout */}
-        <View style={{ marginTop: spacing.md }}>
-          <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
-            {/* Change IP Button */}
-            <TouchableOpacity
-              style={[styles.quickActionGrid, { backgroundColor: colors.primary, flex: 1 }]}
-              onPress={handleChangeIp}
-              disabled={isChangingIp}
-            >
-              {isChangingIp ? (
-                <ActivityIndicator color="#FFFFFF" size="small" />
-              ) : (
-                <>
-                  <MaterialIcons name="refresh" size={22} color="#FFFFFF" />
-                  <Text style={[typography.caption1, { color: '#FFFFFF', fontWeight: '600', marginTop: 4 }]} numberOfLines={1}>
-                    {t('home.changeIp')}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Speedtest Button */}
-            <TouchableOpacity
-              style={[styles.quickActionGrid, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, flex: 1 }]}
-              onPress={() => setShowSpeedtestModal(true)}
-            >
-              <MaterialIcons name="speed" size={22} color={colors.primary} />
-              <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]} numberOfLines={1}>
-                {t('home.speedtest')}
+        {/* Row 1: Large Action Buttons */}
+        <View style={styles.quickActionsRow}>
+          {/* Set Band Button */}
+          <TouchableOpacity
+            style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+            onPress={() => setShowBandModal(true)}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.background }]}>
+              <MaterialIcons name="settings-input-antenna" size={20} color={colors.primary} />
+            </View>
+            <View style={styles.quickActionLargeContent}>
+              <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                {t('home.setBand')}
               </Text>
-            </TouchableOpacity>
-          </View>
+              <Text
+                style={[typography.caption2, { color: colors.textSecondary }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {selectedBands.length > 0 ? selectedBands.join(', ') : t('common.loading')}
+              </Text>
+            </View>
+          </TouchableOpacity>
 
-          <View style={{ flexDirection: 'row', gap: spacing.sm }}>
-            {/* Diagnosis Button */}
-            <TouchableOpacity
-              style={[styles.quickActionGrid, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, flex: 1 }]}
-              onPress={handleDiagnosis}
-              disabled={isRunningDiagnosis}
-            >
-              {isRunningDiagnosis ? (
+          {/* Change IP Button */}
+          <TouchableOpacity
+            style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+            onPress={handleChangeIp}
+            disabled={isChangingIp}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: colors.background }]}>
+              {isChangingIp ? (
                 <ActivityIndicator color={colors.primary} size="small" />
               ) : (
-                <>
-                  <MaterialIcons name="network-check" size={22} color={colors.primary} />
-                  <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]} numberOfLines={1}>
-                    {t('home.diagnosis')}
-                  </Text>
-                </>
+                <MaterialIcons name="sync" size={20} color={colors.primary} />
               )}
-            </TouchableOpacity>
+            </View>
+            <View style={styles.quickActionLargeContent}>
+              <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                {t('home.changeIp')}
+              </Text>
+              <Text
+                style={[typography.caption2, { color: colors.textSecondary }]}
+                numberOfLines={1}
+                ellipsizeMode="tail"
+              >
+                {wanInfo?.wanIPAddress || '...'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
 
-            {/* One Click Check Button */}
-            <TouchableOpacity
-              style={[styles.quickActionGrid, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, flex: 1 }]}
-              onPress={handleOneClickCheck}
-              disabled={isRunningCheck}
+        {/* Row 2: Compact Action Buttons Grid */}
+        <View style={styles.quickActionsRow}>
+          {/* Mobile Data Toggle Button */}
+          <TouchableOpacity
+            style={[
+              styles.quickActionSmall,
+              {
+                backgroundColor: mobileDataStatus?.dataswitch ? colors.primary : colors.card,
+                borderColor: colors.border,
+                borderWidth: 1,
+              }
+            ]}
+            onPress={handleToggleMobileData}
+            disabled={isTogglingData}
+          >
+            {isTogglingData ? (
+              <ActivityIndicator color={mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.primary} size="small" />
+            ) : (
+              <>
+                <MaterialIcons
+                  name="swap-vert"
+                  size={22}
+                  color={mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.primary}
+                />
+                <Text
+                  style={[
+                    typography.caption2,
+                    {
+                      color: mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.text,
+                      fontWeight: '500',
+                      marginTop: 4,
+                      textAlign: 'center',
+                    }
+                  ]}
+                  numberOfLines={1}
+                >
+                  {t('home.mobileData')}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Diagnosis Button */}
+          <TouchableOpacity
+            style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+            onPress={handleDiagnosis}
+            disabled={isRunningDiagnosis}
+          >
+            {isRunningDiagnosis ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <>
+                <MaterialIcons name="network-check" size={22} color={colors.primary} />
+                <Text
+                  style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
+                  numberOfLines={1}
+                >
+                  {t('home.diagnosis')}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Quick Check Button */}
+          <TouchableOpacity
+            style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+            onPress={handleOneClickCheck}
+            disabled={isRunningCheck}
+          >
+            {isRunningCheck ? (
+              <ActivityIndicator color={colors.primary} size="small" />
+            ) : (
+              <>
+                <MaterialIcons name="perm-scan-wifi" size={22} color={colors.primary} />
+                <Text
+                  style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
+                  numberOfLines={1}
+                >
+                  {t('home.quickCheck')}
+                </Text>
+              </>
+            )}
+          </TouchableOpacity>
+
+          {/* Speedtest Button */}
+          <TouchableOpacity
+            style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+            onPress={() => setShowSpeedtestModal(true)}
+          >
+            <MaterialIcons name="speed" size={22} color={colors.primary} />
+            <Text
+              style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
+              numberOfLines={1}
             >
-              {isRunningCheck ? (
-                <ActivityIndicator color={colors.success} size="small" />
-              ) : (
-                <>
-                  <MaterialIcons name="check-circle" size={22} color={colors.success} />
-                  <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]} numberOfLines={1}>
-                    {t('home.oneClickCheck')}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-          </View>
+              {t('home.speedtest')}
+            </Text>
+          </TouchableOpacity>
         </View>
       </CollapsibleCard>
 
@@ -685,7 +781,7 @@ export default function HomeScreen() {
         <CollapsibleCard title={t('home.signalInfo')}>
           <SignalCard
             title={t('home.signalStrength')}
-            badge={getSignalStrength(signalInfo.rssi)}
+            badge={t(`home.signal${getSignalStrength(signalInfo.rssi).charAt(0).toUpperCase()}${getSignalStrength(signalInfo.rssi).slice(1)}`)}
             color="blue"
             icon="signal-cellular-alt"
             metrics={[
@@ -1002,5 +1098,148 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+  },
+  // New Quick Actions styles
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 8,
+  },
+  quickActionLarge: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  quickActionSmall: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 6,
+    borderRadius: 12,
+    minHeight: 60,
+  },
+  quickActionIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 10,
+  },
+  quickActionLargeContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  // Connection Status Card styles
+  connectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  networkTypeBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  ispContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(128, 128, 128, 0.2)',
+  },
+  connectionGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  connectionGridItem: {
+    width: '48%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderRadius: 10,
+  },
+  connectionGridIcon: {
+    marginRight: 8,
+  },
+  connectionGridContent: {
+    flex: 1,
+    minWidth: 0,
+  },
+  // Connection Status Info-focused styles
+  connectionMainRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  signalIconContainer: {
+    marginRight: 12,
+  },
+  connectionInfoContainer: {
+    flex: 1,
+    minWidth: 0,
+  },
+  connectionStatusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginLeft: 8,
+  },
+  connectionStatusBadge: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  connectionInfoRows: {
+    gap: 8,
+  },
+  connectionInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  // Connection Status - Reference Design styles
+  connectionLeftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+  },
+  connectionSignalLabels: {
+    marginLeft: 12,
+    flex: 1,
+  },
+  connectionRightSection: {
+    alignItems: 'flex-end',
+  },
+  connectionInfoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 0,
+  },
+  connectionInfoGridItem: {
+    width: '50%',
+    paddingVertical: 8,
+    paddingRight: 8,
   },
 });
