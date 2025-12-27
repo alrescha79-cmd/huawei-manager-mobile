@@ -60,6 +60,32 @@
 > **⚡ Built with Expo SDK 54**
 
 > **📡 Tested on Huawei B312-929 (Orbit Star 2)**
+
+> [!WARNING]
+> **⚠️ Known Issue / Masalah yang Diketahui** 
+> 
+> **🇬🇧 English**
+> SMS Tab Login Loop Issue
+On some devices, there may be an issue where opening the SMS tab causes the application to repeatedly attempt to re-login.
+This happens due to limited availability of modem devices that support SMS for comprehensive testing.
+> Temporary workaround:
+> - Close the application completely
+> - Reopen the app
+> - Do not open or tap the SMS tab
+> 
+> We are actively monitoring this issue and will improve stability as more compatible devices become available for testing.
+> 
+> **🇮🇩 Bahasa Indonesia**
+> Masalah Loop Login pada Tab SMS
+Pada beberapa perangkat, terdapat kemungkinan bug di mana saat membuka tab SMS, aplikasi akan terus mencoba melakukan login ulang.
+Hal ini disebabkan oleh keterbatasan modem yang mendukung fitur SMS untuk keperluan pengujian secara menyeluruh.
+> Solusi sementara:
+> - Tutup aplikasi sepenuhnya
+> - Buka kembali aplikasi
+> - Hindari membuka atau mengklik tab SMS
+> 
+> Kami akan terus memantau dan memperbaiki masalah ini seiring dengan bertambahnya perangkat yang kompatibel untuk proses pengujian.
+
 ---
 
 ## ✨ Fitur Utama
