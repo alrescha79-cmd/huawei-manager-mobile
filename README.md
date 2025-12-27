@@ -37,10 +37,10 @@
 ---
 
 > [!WARNING]
-> **EN:**  
+> **🇬🇧 EN**  
 > Login currently still uses WebView, and changing the WiFi password is not yet functional due to limited information about the encryption method used by the latest Huawei firmware.
 >
-> **ID:**  
+> **🇮🇩 ID**  
 > Saat ini proses login masih menggunakan WebView, dan fitur ganti password WiFi belum berfungsi karena keterbatasan informasi mengenai metode enkripsi yang digunakan oleh firmware Huawei terbaru.
 
 

@@ -164,7 +164,7 @@
     "jitter": "Jitter",
     "startTest": "Start Test",
     "testAgain": "Test Again",
-    "poweredBy": "Speedtest Beta by Cloudflare"
+    "poweredBy": "Beta Speed Test (speed is not yet 100% accurate)"
   },
   "wifi": {
     "wifiSettings": "WiFi Settings",

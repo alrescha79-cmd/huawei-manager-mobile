@@ -233,6 +233,7 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                 { bytes: 1000000, count: 6 },   // 1MB x 6
                 { bytes: 10000000, count: 4 },  // 10MB x 4
                 { bytes: 25000000, count: 2 },  // 25MB x 2
+                { bytes: 50000000, count: 1 },  // 50MB x 1
             ];
 
             const downloadSpeeds: number[] = [];
@@ -295,6 +296,7 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                 { bytes: 100000, count: 4 },    // 100KB x 4
                 { bytes: 500000, count: 4 },    // 500KB x 4
                 { bytes: 1000000, count: 2 },   // 1MB x 2
+                { bytes: 5000000, count: 1 },   // 5MB x 1
             ];
 
             const uploadSpeeds: number[] = [];
