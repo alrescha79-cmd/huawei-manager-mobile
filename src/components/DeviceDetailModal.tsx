@@ -44,6 +44,30 @@ const formatLeaseTime = (seconds: string): string => {
     return `${minutes}m`;
 };
 
+// Helper to parse IPv4 and IPv6 from combined IP string
+// Format can be: "192.168.8.100" or "192.168.8.100;fe80::..." or just "fe80::..."
+const parseIpAddresses = (ipString: string): { ipv4: string | null; ipv6: string | null } => {
+    if (!ipString) return { ipv4: null, ipv6: null };
+
+    // Split by semicolon
+    const parts = ipString.split(';').map(ip => ip.trim()).filter(ip => ip);
+
+    let ipv4: string | null = null;
+    let ipv6: string | null = null;
+
+    for (const ip of parts) {
+        // Check if IPv6 (contains ::  or multiple colons)
+        if (ip.includes('::') || (ip.match(/:/g) || []).length > 1) {
+            ipv6 = ip;
+        } else if (ip.includes('.')) {
+            // IPv4 contains dots
+            ipv4 = ip;
+        }
+    }
+
+    return { ipv4, ipv6 };
+};
+
 export function DeviceDetailModal({
     visible,
     onClose,
@@ -149,13 +173,38 @@ export function DeviceDetailModal({
                         />
                     </View>
 
-                    {/* IP Address (Read-only) */}
-                    <View style={styles.infoRow}>
-                        <Text style={[typography.body, { color: colors.textSecondary }]}>IP</Text>
-                        <Text style={[typography.body, { color: colors.text, fontFamily: 'monospace' }]}>
-                            {device.ipAddress}
-                        </Text>
-                    </View>
+                    {/* IPv4 Address (Read-only) */}
+                    {(() => {
+                        const { ipv4, ipv6 } = parseIpAddresses(device.ipAddress);
+                        return (
+                            <>
+                                {ipv4 && (
+                                    <View style={styles.infoRow}>
+                                        <Text style={[typography.body, { color: colors.textSecondary }]}>IPv4</Text>
+                                        <Text style={[typography.body, { color: colors.text, fontFamily: 'monospace' }]}>
+                                            {ipv4}
+                                        </Text>
+                                    </View>
+                                )}
+                                {ipv6 && (
+                                    <View style={styles.infoRow}>
+                                        <Text style={[typography.body, { color: colors.textSecondary }]}>IPv6</Text>
+                                        <Text style={[typography.body, { color: colors.text, fontFamily: 'monospace', fontSize: 12 }]} numberOfLines={1} ellipsizeMode="middle">
+                                            {ipv6}
+                                        </Text>
+                                    </View>
+                                )}
+                                {!ipv4 && !ipv6 && (
+                                    <View style={styles.infoRow}>
+                                        <Text style={[typography.body, { color: colors.textSecondary }]}>IP</Text>
+                                        <Text style={[typography.body, { color: colors.text, fontFamily: 'monospace' }]}>
+                                            {device.ipAddress || '-'}
+                                        </Text>
+                                    </View>
+                                )}
+                            </>
+                        );
+                    })()}
 
                     {/* MAC Address (Read-only) */}
                     <View style={styles.infoRow}>

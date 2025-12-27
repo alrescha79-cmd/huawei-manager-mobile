@@ -196,6 +196,8 @@
     "wifiDisabled": "WiFi disabled",
     "disableWifiTitle": "Turn Off WiFi?",
     "disableWifiWarning": "Turning off WiFi will disconnect all wireless devices. You will need to use ethernet cable or physical button to reconnect. Are you sure?",
+    "wifiDisabledConnectionLost": "WiFi has been disabled. Connection was lost as expected.",
+    "useWebInterface": "Currently, it is only available via the web interface.",
     "guestWifiEnabled": "Guest WiFi enabled",
     "guestWifiDisabled": "Guest WiFi disabled",
     "editSettings": "Edit WiFi Settings",

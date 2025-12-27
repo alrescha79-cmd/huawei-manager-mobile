@@ -61,6 +61,7 @@ export default function WiFiScreen() {
   const [formSecurityMode, setFormSecurityMode] = useState('WPA2PSK');
   const [showSecurityDropdown, setShowSecurityDropdown] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Guest WiFi state
   const [guestWifiEnabled, setGuestWifiEnabled] = useState(false);
@@ -114,12 +115,17 @@ export default function WiFiScreen() {
   const [selectedDevice, setSelectedDevice] = useState<ConnectedDevice | null>(null);
   const [showDeviceDetailModal, setShowDeviceDetailModal] = useState(false);
 
-  // Initialize form when settings load
+  // Initialize form when settings load (only first time)
+  const isFormInitialized = React.useRef(false);
+
   useEffect(() => {
-    if (wifiSettings) {
+    // Only initialize form once when wifiSettings first loads
+    // This prevents resetting user edits during auto-refresh
+    if (wifiSettings && !isFormInitialized.current) {
       setFormSsid(wifiSettings.ssid || '');
       setFormPassword(wifiSettings.password || '');
       setFormSecurityMode(wifiSettings.securityMode || 'WPA2PSK');
+      isFormInitialized.current = true;
     }
   }, [wifiSettings]);
 
@@ -211,15 +217,14 @@ export default function WiFiScreen() {
 
   const handleRefresh = () => {
     if (wifiService) {
+      // Reset form initialization flag so form can be updated from API
+      isFormInitialized.current = false;
       loadData(wifiService);
     }
   };
 
   const handleToggleWiFi = async (enabled: boolean) => {
-    console.log('[WiFi UI] handleToggleWiFi called, enabled:', enabled);
-    console.log('[WiFi UI] wifiService:', wifiService);
     if (!wifiService) {
-      console.log('[WiFi UI] wifiService is null, returning');
       return;
     }
 
@@ -248,14 +253,22 @@ export default function WiFiScreen() {
     if (!wifiService) return;
 
     try {
-      console.log('[WiFi UI] Calling wifiService.toggleWiFi...');
       await wifiService.toggleWiFi(enabled);
-      console.log('[WiFi UI] toggleWiFi completed successfully');
       ThemedAlertHelper.alert(t('common.success'), enabled ? t('wifi.wifiEnabled') : t('wifi.wifiDisabled'));
       handleRefresh();
     } catch (error) {
-      console.error('[WiFi UI] toggleWiFi error:', error);
-      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleWifi'));
+      console.error('[WiFi] toggleWiFi error:', error);
+
+      // If we're turning OFF WiFi and got an error, it's likely due to connection loss
+      // The command probably succeeded but we lost connection before getting response
+      if (!enabled) {
+        ThemedAlertHelper.alert(
+          t('common.success'),
+          t('wifi.wifiDisabledConnectionLost')
+        );
+      } else {
+        ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleWifi'));
+      }
     }
   };
 
@@ -357,28 +370,17 @@ export default function WiFiScreen() {
   };
 
   const handleSaveSettings = async () => {
-    console.log('[WiFi UI] handleSaveSettings called');
-    console.log('[WiFi UI] wifiService:', wifiService);
-    console.log('[WiFi UI] hasChanges:', hasChanges);
-    console.log('[WiFi UI] isSaving:', isSaving);
-    console.log('[WiFi UI] formSsid:', formSsid);
-    console.log('[WiFi UI] formPassword:', formPassword);
-    console.log('[WiFi UI] formSecurityMode:', formSecurityMode);
-
     if (!wifiService || !hasChanges || isSaving) {
-      console.log('[WiFi UI] Early return - conditions not met');
       return;
     }
 
     setIsSaving(true);
     try {
-      console.log('[WiFi UI] Calling wifiService.setWiFiSettings...');
       await wifiService.setWiFiSettings({
         ssid: formSsid,
         password: formPassword,
         securityMode: formSecurityMode,
       });
-      console.log('[WiFi UI] setWiFiSettings completed successfully');
       ThemedAlertHelper.alert(t('common.success'), t('wifi.settingsSaved'));
       handleRefresh();
     } catch (error) {
@@ -821,69 +823,67 @@ export default function WiFiScreen() {
                 />
               </View>
 
-              {/* Security Mode Dropdown */}
-              <View style={styles.formGroup}>
+              {/* Security Mode Dropdown - DISABLED (encryption not supported yet) */}
+              <View style={[styles.formGroup, { opacity: 0.5 }]}>
                 <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
                   {t('wifi.securityMode')}
                 </Text>
-                <TouchableOpacity
+                <View
                   style={[styles.dropdown, {
                     backgroundColor: colors.card,
                     borderColor: colors.border
                   }]}
-                  onPress={() => setShowSecurityDropdown(!showSecurityDropdown)}
                 >
                   <Text style={[typography.body, { color: colors.text }]}>
                     {getSecurityModeLabel(formSecurityMode)}
                   </Text>
-                  <Text style={{ color: colors.textSecondary }}>▼</Text>
-                </TouchableOpacity>
-
-                {showSecurityDropdown && (
-                  <View style={[styles.dropdownMenu, {
-                    backgroundColor: colors.card,
-                    borderColor: colors.border
-                  }]}>
-                    {SECURITY_MODES.map((mode) => (
-                      <TouchableOpacity
-                        key={mode.value}
-                        style={[styles.dropdownItem, {
-                          backgroundColor: formSecurityMode === mode.value ? colors.primary + '20' : 'transparent'
-                        }]}
-                        onPress={() => {
-                          setFormSecurityMode(mode.value);
-                          setShowSecurityDropdown(false);
-                        }}
-                      >
-                        <Text style={[typography.body, {
-                          color: formSecurityMode === mode.value ? colors.primary : colors.text
-                        }]}>
-                          {t(mode.labelKey)}
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                )}
+                  <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
+                </View>
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, fontStyle: 'italic' }]}>
+                  {t('wifi.useWebInterface')}
+                </Text>
               </View>
 
-              {/* Password Input */}
+              {/* Password Input - DISABLED (encryption not supported yet) */}
               {formSecurityMode !== 'OPEN' && (
-                <View style={styles.formGroup}>
+                <View style={[styles.formGroup, { opacity: 0.5 }]}>
                   <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
                     {t('wifi.password')}
                   </Text>
-                  <TextInput
-                    style={[styles.input, {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                      color: colors.text
-                    }]}
-                    value={formPassword}
-                    onChangeText={setFormPassword}
-                    placeholder={t('wifi.passwordPlaceholder')}
-                    placeholderTextColor={colors.textSecondary}
-                    secureTextEntry
-                  />
+                  <View style={{ position: 'relative' }}>
+                    <TextInput
+                      style={[styles.input, {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                        color: colors.text,
+                        paddingRight: 48
+                      }]}
+                      value={formPassword}
+                      editable={false}
+                      placeholder="********"
+                      placeholderTextColor={colors.textSecondary}
+                      secureTextEntry={true}
+                    />
+                    <View
+                      style={{
+                        position: 'absolute',
+                        right: 12,
+                        top: 0,
+                        bottom: 0,
+                        justifyContent: 'center',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <MaterialIcons
+                        name="lock"
+                        size={22}
+                        color={colors.textSecondary}
+                      />
+                    </View>
+                  </View>
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, fontStyle: 'italic' }]}>
+                    {t('wifi.useWebInterface')}
+                  </Text>
                 </View>
               )}
 
