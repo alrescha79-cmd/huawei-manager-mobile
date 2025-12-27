@@ -1,15 +1,18 @@
 name: Update Download Stats
 
-on:
+on:  
   schedule:
-    - cron: "0 0 * * *"   # 07:00 WIB
+    - cron: "0 1 * * *"
   workflow_dispatch:
 
-jobs:
+jobs:  
   stats:
     runs-on: ubuntu-latest
-
-    steps:
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps: 
       - uses: actions/checkout@v4
 
       - name: Ensure stats directory exists
@@ -36,50 +39,84 @@ jobs:
 
       - name: Generate chart (SVG)
         run: |
-          sudo apt-get update
-          sudo apt-get install -y gnuplot
-
-          gnuplot <<'EOF'
+          sudo apt install -y gnuplot
+          gnuplot <<EOF
+          # Terminal settings
           set terminal svg size 800,400 dynamic enhanced font 'Arial,12'
           set output "stats/chart.svg"
-
+          
+          # Data settings
           set datafile separator ","
           set xdata time
           set timefmt "%Y-%m-%d %H:%M"
           set format x "%d %b"
-
+          
+          # Colors for dark mode compatibility (light gray/white text)
           set border linecolor rgb "#a0a0a0" linewidth 1.5
           set grid linecolor rgb "#404040" linewidth 0.5
-          set title "Total Downloads Over Time" font ",16"
-          set xlabel "Date"
-          set ylabel "Total Downloads"
-
+          set title "📊 Total Downloads Over Time" textcolor rgb "#e0e0e0" font ",16"
+          set xlabel "Date" textcolor rgb "#b0b0b0" font ",11"
+          set ylabel "Total Downloads" textcolor rgb "#b0b0b0" font ",11"
+          
+          # Axis tick colors
+          set xtics textcolor rgb "#b0b0b0" font ",10"
+          set ytics textcolor rgb "#b0b0b0" font ",10"
+          
+          # Legend/Key styling
+          set key right top textcolor rgb "#e0e0e0" box linecolor rgb "#606060"
+          
+          # Y-axis starts from 0 for better visualization
           set yrange [0:*]
+          
+          # Enable grid
           set grid xtics ytics
-
+          
+          # Plot with line and points for better visibility
           plot "stats/history.csv" using 1:2 with linespoints \
-            linecolor rgb "#00d4aa" linewidth 2.5 pointtype 7 pointsize 1.2 \
-            title "Downloads"
+               linecolor rgb "#00d4aa" linewidth 2.5 pointtype 7 pointsize 1.2 \
+               title "Downloads"
           EOF
 
-      - name: Commit stats to branch
+      - name: Check for changes
+        id: changes
         run: |
-          git config user.name "github-actions"
-          git config user.email "actions@github.com"
-
-          git checkout -B chore/update-download-stats
           git add stats/
-          git commit -m "chore: update download stats" || exit 0
-          git push -u origin chore/update-download-stats
+          if git diff --cached --quiet; then
+            echo "has_changes=false" >> $GITHUB_OUTPUT
+          else
+            echo "has_changes=true" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Create Pull Request & Enable Auto Merge
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: chore/update-download-stats
-          base: main
-          title: "chore: update download stats"
-          body: "Auto-generated daily download statistics"
-          commit-message: "chore: update download stats"
-          merge-method: squash
-          enable-auto-merge: true
+      - name: Create branch and PR
+        if: steps.changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Setup git
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # Create unique branch name with timestamp
+          BRANCH="chore/update-stats-$(date +%Y%m%d-%H%M%S)"
+          
+          # Create and push branch
+          git checkout -b "$BRANCH"
+          git commit -m "chore: update download stats [skip ci]"
+          git push origin "$BRANCH"
+          
+          # Create PR with auto-merge enabled
+          PR_URL=$(gh pr create \
+            --title "chore: update download stats" \
+            --body "🤖 Automated PR to update download statistics.
+
+          This PR was created by the scheduled workflow.
+
+          ---
+          _This PR will be auto-merged if all checks pass._" \
+            --base main \
+            --head "$BRANCH")
+          
+          echo "Created PR: $PR_URL"
+          
+          # Enable auto-merge (squash)
+          gh pr merge "$PR_URL" --auto --squash --delete-branch

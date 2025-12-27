@@ -59,7 +59,7 @@
 
 > **⚡ Built with Expo SDK 54**
 
-> **📡 Tested on Huawei B312-929 (Orbit Star 2)**
+> **📡 Tested on Huawei B312-929 (Orbit Star 2) and Android 15 (Iqoo Z7)**
 
 > [!NOTE]
 > **⚠️ Known Issue / Masalah yang Diketahui** 
