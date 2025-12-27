@@ -82,24 +82,24 @@
 ## 📸 Screenshots
 
 <p align="center">
-  <em>Dark Mode | 🇬🇧 EN</em>
+  <em>Light Mode | 🇬🇧 EN</em>
 </p>
 
 
 
 | Home | WiFi | SMS | Sett |
 |:---------:|:----:|:---:|:--------:|
-| ![home](https://github.com/user-attachments/assets/26599904-d63a-42ed-a45b-e13c0ac23d43) | ![wifi](https://github.com/user-attachments/assets/a42b5ef0-2d1e-4f44-b1f6-a6c6f39ee722) | ![sms](https://github.com/user-attachments/assets/02051333-b094-4c52-9baf-a6d0f491cdf9) | ![settings](https://github.com/user-attachments/assets/185a3edf-af6a-47b3-88d2-1fe56fddb0a1) |
+| ![home](https://github.com/user-attachments/assets/6e9ac40f-022b-4cc9-ab23-45a3a1c0cdc5) | ![wifi](https://github.com/user-attachments/assets/40b126bc-aa33-4813-af4a-8e17fa4687c3) | ![sms](https://github.com/user-attachments/assets/6b8c2297-8369-452e-9fa9-cd77a1fa4d3c) | ![setings](https://github.com/user-attachments/assets/8e3983b9-96f1-4c0d-82a3-a01e9626f788) |
 
 <p align="center">
-  <em>Light Mode| 🇮🇩 ID</em>
+  <em>Mode gelap | 🇮🇩 ID</em>
 </p>
 
 
 
 | Home | WiFi | SMS | Sett |
 |:---------:|:----:|:---:|:--------:|
-| ![home](https://github.com/user-attachments/assets/eff4fd91-d750-4aac-9c37-9e7af39f34ef) | ![wifi](https://github.com/user-attachments/assets/40b126bc-aa33-4813-af4a-8e17fa4687c3) | ![sms](https://github.com/user-attachments/assets/6b8c2297-8369-452e-9fa9-cd77a1fa4d3c) | ![settings](https://github.com/user-attachments/assets/60eb10a8-19ae-4cac-a06f-f07ce9eabbbb) |
+| ![home](https://github.com/user-attachments/assets/13966fe5-092f-4845-b85d-27097222f92a) | ![wifi](https://github.com/user-attachments/assets/a42b5ef0-2d1e-4f44-b1f6-a6c6f39ee722) | ![sms](https://github.com/user-attachments/assets/02051333-b094-4c52-9baf-a6d0f491cdf9) | ![settings](https://github.com/user-attachments/assets/95f5e59a-c060-4477-9bb9-08d71caf82e7) |
 
 ---
 

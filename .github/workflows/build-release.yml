@@ -347,8 +347,12 @@ jobs:
           tag_name: ${{ github.event.inputs.version }}
           name: Huawei Manager ${{ github.event.inputs.version }}
           body: |
-            > ℹ️ **Files are available in the Assets section below ↓**
-            > ℹ️ **File download berada di bagian Assets di bawah ↓**
+            > [!WARNING]
+            > **🇬🇧 EN** 
+            > **Files are available in the Assets section below ↓**
+            >
+            > **🇮🇩 ID**
+            > **File download berada di bagian Assets di bawah ↓**
 
             ## Huawei Manager ${{ github.event.inputs.version }}
             
