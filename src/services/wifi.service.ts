@@ -1,6 +1,7 @@
 import { ModemAPIClient } from './api.service';
 import { ConnectedDevice, WiFiSettings } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
+import * as Crypto from 'expo-crypto';
 
 export class WiFiService {
   private apiClient: ModemAPIClient;
@@ -94,32 +95,196 @@ export class WiFiService {
     }
   }
 
-  async setWiFiSettings(settings: Partial<WiFiSettings>): Promise<boolean> {
-    console.log('[WiFi] setWiFiSettings called with settings:', settings);
+  /**
+   * Encrypt WiFi password using modem's RSA public key with PKCS#1 v1.5 padding
+   * Note: This encryption is not currently working with all Huawei modems
+   */
+  private async encryptWifiPassword(password: string): Promise<string> {
     try {
-      const settingsData = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          ${settings.ssid ? `<WifiSsid>${settings.ssid}</WifiSsid>` : ''}
-          ${settings.password ? `<WifiWpaPreSharedKey>${settings.password}</WifiWpaPreSharedKey>` : ''}
-          ${settings.wifiEnable !== undefined ? `<WifiEnable>${settings.wifiEnable ? '1' : '0'}</WifiEnable>` : ''}
-          ${settings.channel ? `<WifiChannel>${settings.channel}</WifiChannel>` : ''}
-          ${settings.band ? `<WifiBand>${settings.band}</WifiBand>` : ''}
-          ${settings.maxAssoc ? `<WifiMaxassoc>${settings.maxAssoc}</WifiMaxassoc>` : ''}
-          ${settings.securityMode ? `<WifiAuthmode>${settings.securityMode}</WifiAuthmode>` : ''}
-        </request>`;
+      // Get RSA public key from modem
+      const pubkeyResponse = await this.apiClient.get('/api/webserver/publickey');
+      const encPubKeyE = parseXMLValue(pubkeyResponse, 'encpubkeye') || '010001';
+      const encPubKeyN = parseXMLValue(pubkeyResponse, 'encpubkeyn') || '';
 
-      console.log('[WiFi] Sending settings to /api/wlan/basic-settings');
-      console.log('[WiFi] Request data:', settingsData);
+      if (!encPubKeyN) {
+        return password;
+      }
 
-      const response = await this.apiClient.post('/api/wlan/basic-settings', settingsData);
-      console.log('[WiFi] setWiFiSettings response:', response);
+      // RSA key is 2048 bits = 256 bytes
+      const keySize = 256;
+
+      // Base64 encode the password first (as per Python library)
+      const b64Password = btoa(password);
+
+      // Convert base64 string to bytes
+      const dataBytes = new TextEncoder().encode(b64Password);
+
+      // PKCS#1 v1.5 padding: 0x00 || 0x02 || PS (random non-zero, >= 8 bytes) || 0x00 || M
+      const paddingLength = keySize - 3 - dataBytes.length;
+      if (paddingLength < 8) {
+        return password;
+      }
+
+      // Build padded message
+      const paddedMessage = new Uint8Array(keySize);
+      paddedMessage[0] = 0x00;
+      paddedMessage[1] = 0x02;
+
+      // Generate random non-zero padding bytes
+      for (let i = 2; i < 2 + paddingLength; i++) {
+        paddedMessage[i] = Math.floor(Math.random() * 255) + 1;
+      }
+
+      paddedMessage[2 + paddingLength] = 0x00;
+      paddedMessage.set(dataBytes, 3 + paddingLength);
+
+      // Convert to hex
+      const dataHex = Array.from(paddedMessage).map(b =>
+        b.toString(16).padStart(2, '0')
+      ).join('');
+
+      // RSA modular exponentiation
+      const n = BigInt('0x' + encPubKeyN);
+      const e = BigInt('0x' + encPubKeyE);
+      const m = BigInt('0x' + dataHex);
+
+      const modPow = (base: bigint, exp: bigint, mod: bigint): bigint => {
+        let result = 1n;
+        base = base % mod;
+        while (exp > 0n) {
+          if (exp % 2n === 1n) {
+            result = (result * base) % mod;
+          }
+          exp = exp / 2n;
+          base = (base * base) % mod;
+        }
+        return result;
+      };
+
+      const cipher = modPow(m, e, n);
+      return cipher.toString(16).padStart(512, '0');
+    } catch (error) {
+      console.error('[WiFi] Error encrypting password:', error);
+      return password;
+    }
+  }
+
+  async setWiFiSettings(settings: Partial<WiFiSettings>): Promise<boolean> {
+    try {
+      // Get current settings from multi-basic-settings
+      const currentResponse = await this.apiClient.get('/api/wlan/multi-basic-settings');
+
+      // Parse the first Ssid block (main WiFi, Index 0)
+      const ssidMatch = currentResponse.match(/<Ssid>([\s\S]*?)<\/Ssid>/);
+      if (!ssidMatch) {
+        throw new Error('Could not parse current WiFi settings');
+      }
+
+      const currentSsid = ssidMatch[0];
+
+      // Parse current values
+      const currentIndex = parseXMLValue(currentSsid, 'Index') || '0';
+      const currentWifiMac = parseXMLValue(currentSsid, 'WifiMac') || '';
+      const currentID = parseXMLValue(currentSsid, 'ID') || 'InternetGatewayDevice.X_Config.Wifi.Radio.1.Ssid.1.';
+      const currentBroadcast = parseXMLValue(currentSsid, 'WifiBroadcast') || '0';
+      const currentEnable = parseXMLValue(currentSsid, 'WifiEnable') || '1';
+      const currentWepKeyIndex = parseXMLValue(currentSsid, 'WifiWepKeyIndex') || '1';
+      const currentGuestNetwork = parseXMLValue(currentSsid, 'wifiisguestnetwork') || '0';
+      const currentGuestOffTime = parseXMLValue(currentSsid, 'wifiguestofftime') || '4';
+
+      // Map security mode from form value to API value
+      const securityModeMap: Record<string, string> = {
+        'WPA2PSK': 'WPA2-PSK',
+        'WPAPSK': 'WPA-PSK',
+        'WPA': 'WPA-PSK',
+        'WPA2': 'WPA2-PSK',
+        'OPEN': 'OPEN',
+        'WPA2-PSK': 'WPA2-PSK',
+        'WPA-PSK': 'WPA-PSK',
+      };
+
+      // Use new values if provided, otherwise keep current
+      const newSsid = settings.ssid || parseXMLValue(currentSsid, 'WifiSsid') || '';
+      const rawAuthMode = settings.securityMode || parseXMLValue(currentSsid, 'WifiAuthmode') || 'WPA2-PSK';
+      const newAuthMode = securityModeMap[rawAuthMode] || rawAuthMode;
+      const newWpaEncryption = parseXMLValue(currentSsid, 'WifiWpaencryptionmodes') || 'AES';
+
+      // Build the request based on auth mode
+      let requestBody: string;
+
+      if (newAuthMode === 'OPEN') {
+        // For OPEN auth mode, use WifiBasicencryptionmodes=NONE
+        requestBody = `<?xml version="1.0" encoding="UTF-8"?>
+          <request>
+            <Ssids>
+              <Ssid>
+                <WifiWep128Key1></WifiWep128Key1>
+                <Index>${currentIndex}</Index>
+                <WifiAuthmode>OPEN</WifiAuthmode>
+                <WifiWepKeyIndex>${currentWepKeyIndex}</WifiWepKeyIndex>
+                <WifiBroadcast>${currentBroadcast}</WifiBroadcast>
+                <WifiWep128Key3></WifiWep128Key3>
+                <WifiMac>${currentWifiMac}</WifiMac>
+                <WifiSsid>${newSsid}</WifiSsid>
+                <wifiisguestnetwork>${currentGuestNetwork}</wifiisguestnetwork>
+                <wifiguestofftime>${currentGuestOffTime}</wifiguestofftime>
+                <WifiWep128Key4></WifiWep128Key4>
+                <ID>${currentID}</ID>
+                <wifisupportsecmodelist></wifisupportsecmodelist>
+                <WifiEnable>${currentEnable}</WifiEnable>
+                <WifiWep128Key2></WifiWep128Key2>
+                <WifiBasicencryptionmodes>NONE</WifiBasicencryptionmodes>
+              </Ssid>
+            </Ssids>
+            <WifiRestart>1</WifiRestart>
+          </request>`;
+      } else {
+        // For WPA2-PSK and other auth modes - encrypt password if provided
+        let encryptedPsk = '';
+
+        if (settings.password && settings.password.length >= 8) {
+          encryptedPsk = await this.encryptWifiPassword(settings.password);
+        }
+
+        // Build password fields - only include if we have an encrypted password
+        const pskFields = encryptedPsk ? `
+                <MixWifiWpapsk>${encryptedPsk}</MixWifiWpapsk>
+                <WifiWpapsk>${encryptedPsk}</WifiWpapsk>` : '';
+
+        requestBody = `<?xml version="1.0" encoding="UTF-8"?>
+          <request>
+            <Ssids>
+              <Ssid>
+                <WifiWep128Key1></WifiWep128Key1>
+                <Index>${currentIndex}</Index>
+                <WifiAuthmode>${newAuthMode}</WifiAuthmode>
+                <WifiWepKeyIndex>${currentWepKeyIndex}</WifiWepKeyIndex>
+                <WifiWpaencryptionmodes>${newWpaEncryption}</WifiWpaencryptionmodes>
+                <WifiBroadcast>${currentBroadcast}</WifiBroadcast>
+                <WifiWep128Key3></WifiWep128Key3>${pskFields}
+                <WifiMac>${currentWifiMac}</WifiMac>
+                <WifiSsid>${newSsid}</WifiSsid>
+                <wifiisguestnetwork>${currentGuestNetwork}</wifiisguestnetwork>
+                <wifiguestofftime>${currentGuestOffTime}</wifiguestofftime>
+                <WifiWep128Key4></WifiWep128Key4>
+                <ID>${currentID}</ID>
+                <wifisupportsecmodelist></wifisupportsecmodelist>
+                <WifiEnable>${currentEnable}</WifiEnable>
+                <WifiWep128Key2></WifiWep128Key2>
+              </Ssid>
+            </Ssids>
+            <WifiRestart>1</WifiRestart>
+          </request>`;
+      }
+
+      const response = await this.apiClient.post('/api/wlan/multi-basic-settings', requestBody);
 
       // Check for error in response
       const errorCode = parseXMLValue(response, 'code');
       if (errorCode && errorCode !== '0') {
-        console.log('[WiFi] setWiFiSettings returned error code:', errorCode);
         throw new Error(`API error: ${errorCode}`);
       }
+
       return true;
     } catch (error) {
       console.error('[WiFi] Error setting WiFi settings:', error);
@@ -389,72 +554,25 @@ ${guestPassword ? `<WifiWpapsk>${guestPassword}</WifiWpapsk>` : ''}
   }
 
   async toggleWiFi(enable: boolean): Promise<boolean> {
-    console.log('[WiFi] toggleWiFi called with enable:', enable);
     try {
-      // Method based on huawei-lte-api Python library:
-      // 1. GET current settings from multi-basic-settings
-      // 2. Build minimal Ssid structure with essential fields only
-      // 3. POST back to multi-basic-settings
-
-      console.log('[WiFi] Getting current settings from multi-basic-settings...');
-      const response = await this.apiClient.get('/api/wlan/multi-basic-settings');
-      console.log('[WiFi] Current multi-basic-settings response:', response);
-
-      // Parse Ssid blocks from response
-      const ssidMatches = response.match(/<Ssid>([\s\S]*?)<\/Ssid>/g);
-      console.log('[WiFi] Found Ssid blocks:', ssidMatches?.length || 0);
-
-      if (!ssidMatches || ssidMatches.length === 0) {
-        throw new Error('No SSID settings found');
-      }
-
-      // Build minimal Ssid structure with only essential fields (based on Python to_dict)
-      const ssidList: string[] = [];
-      for (const ssidBlock of ssidMatches) {
-        const index = parseXMLValue(ssidBlock, 'Index') || '0';
-        const ssid = parseXMLValue(ssidBlock, 'WifiSsid') || '';
-        const broadcast = parseXMLValue(ssidBlock, 'WifiBroadcast') || '0';
-        const authMode = parseXMLValue(ssidBlock, 'WifiAuthmode') || 'WPA2-PSK';
-        const wpaEncryption = parseXMLValue(ssidBlock, 'WifiWpaencryptionmodes') || 'AES';
-        const wepKeyIndex = parseXMLValue(ssidBlock, 'WifiWepKeyIndex') || '1';
-        const guestOffTime = parseXMLValue(ssidBlock, 'wifiguestofftime') || '4';
-        const isGuestNetwork = parseXMLValue(ssidBlock, 'wifiisguestnetwork') || '0';
-
-        // Only toggle the main WiFi (Index 0), not guest network
-        const wifiEnable = index === '0'
-          ? (enable ? '1' : '0')
-          : parseXMLValue(ssidBlock, 'WifiEnable') || '0';
-
-        // Build minimal Ssid based on Python to_dict()
-        const minimalSsid = `<Ssid>
-          <Index>${index}</Index>
-          <WifiEnable>${wifiEnable}</WifiEnable>
-          <WifiSsid>${ssid}</WifiSsid>
-          <WifiBroadcast>${broadcast}</WifiBroadcast>
-          <WifiAuthmode>${authMode}</WifiAuthmode>
-          <WifiWpaencryptionmodes>${wpaEncryption}</WifiWpaencryptionmodes>
-          <WifiWepKeyIndex>${wepKeyIndex}</WifiWepKeyIndex>
-          <wifiguestofftime>${guestOffTime}</wifiguestofftime>
-        </Ssid>`;
-
-        ssidList.push(minimalSsid);
-      }
-
-      // Build request with Ssids wrapper and WifiRestart
+      // Endpoint: /api/wlan/status-switch-settings
       const postData = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
-          <Ssids>${ssidList.join('')}</Ssids>
+          <radios>
+            <radio>
+              <wifienable>${enable ? '1' : '0'}</wifienable>
+              <index>0</index>
+              <ID>InternetGatewayDevice.X_Config.Wifi.Radio.1.</ID>
+            </radio>
+          </radios>
           <WifiRestart>1</WifiRestart>
         </request>`;
 
-      console.log('[WiFi] Posting minimal settings to multi-basic-settings:', postData);
-      const postResponse = await this.apiClient.post('/api/wlan/multi-basic-settings', postData);
-      console.log('[WiFi] Post response:', postResponse);
+      const response = await this.apiClient.post('/api/wlan/status-switch-settings', postData);
 
-      // Check for error
-      const errorCode = parseXMLValue(postResponse, 'code');
+      // Check for error code in response
+      const errorCode = parseXMLValue(response, 'code');
       if (errorCode && errorCode !== '0') {
-        console.log('[WiFi] Post returned error code:', errorCode);
         throw new Error(`API error: ${errorCode}`);
       }
 

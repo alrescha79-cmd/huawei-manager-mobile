@@ -196,6 +196,8 @@
     "wifiDisabled": "WiFi dinonaktifkan",
     "disableWifiTitle": "Matikan WiFi?",
     "disableWifiWarning": "Mematikan WiFi akan memutuskan semua perangkat nirkabel. Anda perlu menggunakan kabel ethernet atau tombol fisik untuk menyambung kembali. Yakin ingin melanjutkan?",
+    "wifiDisabledConnectionLost": "WiFi telah dinonaktifkan. Koneksi terputus seperti yang diharapkan.",
+    "useWebInterface": "Saat ini hanya tersedia via antarmuka web",
     "guestWifiEnabled": "WiFi Tamu diaktifkan",
     "guestWifiDisabled": "WiFi Tamu dinonaktifkan",
     "editSettings": "Edit Pengaturan WiFi",

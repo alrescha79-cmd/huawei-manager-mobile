@@ -36,12 +36,14 @@
 
 ---
 
-> [!WARNING] 
-> **Beberapa fitur mungkin belum sepenuhnya berfungsi pada device Anda**
+> [!WARNING]
+> **EN:**  
+> Login currently still uses WebView, and changing the WiFi password is not yet functional due to limited information about the encryption method used by the latest Huawei firmware.
+>
+> **ID:**  
+> Saat ini proses login masih menggunakan WebView, dan fitur ganti password WiFi belum berfungsi karena keterbatasan informasi mengenai metode enkripsi yang digunakan oleh firmware Huawei terbaru.
 
-> **⚡ Built with Expo SDK 54**
 
-> **📡 Tested on Huawei B312-929 (Orbit Star 2)**
 
 > [!TIP]
 > ![Latest Version](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen)
@@ -55,6 +57,9 @@
 >
 >**universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
 
+> **⚡ Built with Expo SDK 54**
+
+> **📡 Tested on Huawei B312-929 (Orbit Star 2)**
 ---
 
 ## ✨ Fitur Utama
