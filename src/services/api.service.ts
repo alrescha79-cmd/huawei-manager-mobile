@@ -596,8 +596,12 @@ export class ModemAPIClient {
       }
 
       return response.data;
-    } catch (error) {
-      console.error(`POST error to ${endpoint}:`, error);
+    } catch (error: any) {
+      // Don't log session errors - they're handled silently by the app
+      const isSessionError = error?.message?.includes('125003') || error?.message?.includes('125002');
+      if (!isSessionError) {
+        console.error(`POST error to ${endpoint}:`, error);
+      }
       throw error;
     }
   }

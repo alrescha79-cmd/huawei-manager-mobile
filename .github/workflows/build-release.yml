@@ -296,10 +296,10 @@ jobs:
           body: |
             > [!WARNING]
             > **🇬🇧 EN** 
-            > **Files are available in the Assets section below ↓**
+            > **Files are available in the `Assets` section below 👇**
             >
             > **🇮🇩 ID**
-            > **File download berada di bagian Assets di bawah ↓**
+            > **File download berada di bagian `Assets` di bawah 👇**
 
             ## Huawei Manager v${{ needs.build-arm64.outputs.version }}
             
@@ -352,6 +352,14 @@ jobs:
             1. Download APK yang sesuai dengan perangkat Anda (arm64 direkomendasikan).
             2. Aktifkan "Install from unknown sources" (Instal dari sumber tidak dikenal) di Pengaturan.
             3. Buka file APK untuk menginstall.
+
+            ### 💡 Notes / Catatan
+            
+            > **EN**
+            > We appreciate your understanding and feedback to help improve Huawei Manager.
+            >
+            > **ID**
+            > Terima kasih atas pengertian dan masukan Anda untuk membantu pengembangan Huawei Manager.
           files: apks/*.apk
           draft: false
           prerelease: false
@@ -367,10 +375,10 @@ jobs:
           body: |
             > [!WARNING]
             > **🇬🇧 EN** 
-            > **Files are available in the Assets section below ↓**
+            > **Files are available in the `Assets` section below 👇**
             >
             > **🇮🇩 ID**
-            > **File download berada di bagian Assets di bawah ↓**
+            > **File download berada di bagian `Assets` di bawah 👇**
 
             ## Huawei Manager ${{ github.event.inputs.version }}
             
@@ -423,6 +431,14 @@ jobs:
             1. Download APK yang sesuai dengan perangkat Anda (arm64 direkomendasikan).
             2. Aktifkan "Install from unknown sources" (Instal dari sumber tidak dikenal) di Pengaturan.
             3. Buka file APK untuk menginstall.
+
+            ### 💡 Notes / Catatan
+
+            > **EN**
+            > We appreciate your understanding and feedback to help improve Huawei Manager.
+            >
+            > **ID**
+            > Terima kasih atas pengertian dan masukan Anda untuk membantu pengembangan Huawei Manager.
           files: apks/*.apk
           draft: false
           prerelease: false

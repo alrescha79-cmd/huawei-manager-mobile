@@ -38,6 +38,7 @@ export default function SMSScreen() {
   const [newPhone, setNewPhone] = useState('');
   const [newMessage, setNewMessage] = useState('');
   const [isSending, setIsSending] = useState(false);
+  const [smsSupported, setSmsSupported] = useState(true);
 
   // Detail view state
   const [selectedMessage, setSelectedMessage] = useState<SMSMessage | null>(null);
@@ -74,9 +75,12 @@ export default function SMSScreen() {
 
       setMessages(messagesList);
       setSMSCount(count);
+      setSmsSupported(true);
 
-    } catch (error) {
-      console.error('Error loading SMS data:', error);
+    } catch (error: any) {
+      // Any error means SMS is not supported or session issue
+      // Just mark as unsupported and show the message - no error logging
+      setSmsSupported(false);
     } finally {
       setIsRefreshing(false);
     }
@@ -92,9 +96,11 @@ export default function SMSScreen() {
 
       setMessages(messagesList);
       setSMSCount(count);
+      setSmsSupported(true);
 
-    } catch (error) {
-      console.error('Error in background SMS update:', error);
+    } catch (error: any) {
+      // Silently ignore errors in background refresh
+      // If SMS was working before, keep showing the data
     }
   };
 
@@ -244,7 +250,7 @@ export default function SMSScreen() {
         )}
 
         {/* Messages List */}
-        {messages.length === 0 ? (
+        {!smsSupported || messages.length === 0 ? (
           <Card>
             <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.xl }]}>
               {isRefreshing ? t('sms.loadingMessages') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}

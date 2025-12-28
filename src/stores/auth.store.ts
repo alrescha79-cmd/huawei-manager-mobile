@@ -8,6 +8,8 @@ interface AuthState {
   credentials: ModemCredentials | null;
   isLoading: boolean;
   isAutoLogging: boolean;
+  isRelogging: boolean; // Flag to prevent multiple re-login attempts
+  sessionExpired: boolean; // Flag to indicate session needs re-login
   error: string | null;
 
   login: (credentials: ModemCredentials) => Promise<void>;
@@ -15,6 +17,9 @@ interface AuthState {
   loadCredentials: () => Promise<void>;
   autoLogin: () => Promise<boolean>;
   setError: (error: string | null) => void;
+  requestRelogin: () => void; // Request re-login from any tab
+  setRelogging: (value: boolean) => void; // Set re-logging state
+  clearSessionExpired: () => void; // Clear session expired flag
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -22,6 +27,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   credentials: null,
   isLoading: false,
   isAutoLogging: false,
+  isRelogging: false,
+  sessionExpired: false,
   error: null,
 
   login: async (credentials: ModemCredentials) => {
@@ -35,7 +42,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         isAuthenticated: true,
         credentials: credentialsWithTimestamp,
-        isLoading: false
+        isLoading: false,
+        sessionExpired: false,
+        isRelogging: false,
       });
     } catch (error) {
       set({
@@ -53,7 +62,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         isAuthenticated: false,
         credentials: null,
-        isLoading: false
+        isLoading: false,
+        sessionExpired: false,
+        isRelogging: false,
       });
     } catch (error) {
       set({
@@ -85,6 +96,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ error });
   },
 
+  requestRelogin: () => {
+    const { isRelogging } = get();
+    // Only set sessionExpired if not already relogging
+    if (!isRelogging) {
+      set({ sessionExpired: true });
+    }
+  },
+
+  setRelogging: (value: boolean) => {
+    set({ isRelogging: value });
+  },
+
+  clearSessionExpired: () => {
+    set({ sessionExpired: false });
+  },
+
   autoLogin: async () => {
     const { credentials } = get();
     if (!credentials) {
@@ -107,3 +134,4 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 }));
+
