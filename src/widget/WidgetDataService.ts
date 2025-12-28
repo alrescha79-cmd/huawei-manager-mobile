@@ -2,14 +2,25 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface WidgetData {
-    downloadSpeed: number;
-    uploadSpeed: number;
-    sessionDownload: number;
-    sessionUpload: number;
+    // Speed data (realtime)
+    currentDownloadRate: number;
+    currentUploadRate: number;
+    // Session data
+    currentDownload: number;
+    currentUpload: number;
+    currentConnectTime: number;
+    // Monthly data
     monthDownload: number;
     monthUpload: number;
+    monthDuration: number;
+    // Daily data
+    dayUsed: number;
+    dayDuration: number;
+    // Total data
     totalDownload: number;
     totalUpload: number;
+    totalConnectTime: number;
+    // Connection info
     connectionStatus: string;
     networkType: string;
     signalStrength: string;
@@ -18,10 +29,10 @@ export interface WidgetData {
 }
 
 export interface SpeedData {
-    downloadSpeed: number;
-    uploadSpeed: number;
-    sessionDownload: number;
-    sessionUpload: number;
+    currentDownloadRate: number;
+    currentUploadRate: number;
+    currentDownload: number;
+    currentUpload: number;
 }
 
 const CACHE_KEY = 'widget_data_cache';
@@ -79,12 +90,16 @@ async function getCachedWidgetData(): Promise<WidgetData | null> {
 /**
  * Fetch ONLY speed data - fast, for realtime updates
  * Only fetches traffic-statistics endpoint (fastest)
+ * 
+ * IMPORTANT: This endpoint does NOT require authentication!
+ * The modem allows read access to traffic statistics without login.
  */
 export async function fetchSpeedData(): Promise<SpeedData> {
     const modemIp = await getModemIp();
     const baseURL = `http://${modemIp}`;
 
     try {
+        // No authentication needed - traffic-statistics is public
         const response = await axios.get(`${baseURL}/api/monitoring/traffic-statistics`, {
             timeout: 2000, // Fast timeout for realtime
             headers: {
@@ -96,17 +111,17 @@ export async function fetchSpeedData(): Promise<SpeedData> {
         const data = response.data;
 
         return {
-            downloadSpeed: safeParseInt(parseXMLValue(data, 'CurrentDownloadRate')),
-            uploadSpeed: safeParseInt(parseXMLValue(data, 'CurrentUploadRate')),
-            sessionDownload: safeParseInt(parseXMLValue(data, 'CurrentDownload')),
-            sessionUpload: safeParseInt(parseXMLValue(data, 'CurrentUpload')),
+            currentDownloadRate: safeParseInt(parseXMLValue(data, 'CurrentDownloadRate')),
+            currentUploadRate: safeParseInt(parseXMLValue(data, 'CurrentUploadRate')),
+            currentDownload: safeParseInt(parseXMLValue(data, 'CurrentDownload')),
+            currentUpload: safeParseInt(parseXMLValue(data, 'CurrentUpload')),
         };
     } catch {
         return {
-            downloadSpeed: 0,
-            uploadSpeed: 0,
-            sessionDownload: 0,
-            sessionUpload: 0,
+            currentDownloadRate: 0,
+            currentUploadRate: 0,
+            currentDownload: 0,
+            currentUpload: 0,
         };
     }
 }
@@ -114,6 +129,12 @@ export async function fetchSpeedData(): Promise<SpeedData> {
 /**
  * Fetch ALL widget data - slower, for full updates
  * Fetches multiple endpoints
+ * 
+ * IMPORTANT: These endpoints do NOT require authentication!
+ * The modem allows read access to monitoring data without login:
+ * - /api/monitoring/traffic-statistics (speeds, session, total traffic)
+ * - /api/monitoring/month_statistics (monthly and daily usage)
+ * - /api/monitoring/status (connection status, network type, signal)
  */
 export async function fetchWidgetData(): Promise<WidgetData> {
     const modemIp = await getModemIp();
@@ -121,7 +142,7 @@ export async function fetchWidgetData(): Promise<WidgetData> {
     const timeout = 5000;
 
     try {
-        // Fetch traffic statistics (no login required)
+        // Fetch traffic statistics (NO LOGIN REQUIRED)
         const trafficResponse = await axios.get(`${baseURL}/api/monitoring/traffic-statistics`, {
             timeout,
             headers: {
@@ -135,6 +156,9 @@ export async function fetchWidgetData(): Promise<WidgetData> {
         // Fetch monthly statistics
         let monthDownload = 0;
         let monthUpload = 0;
+        let monthDuration = 0;
+        let dayUsed = 0;
+        let dayDuration = 0;
         try {
             const monthResponse = await axios.get(`${baseURL}/api/monitoring/month_statistics`, {
                 timeout,
@@ -144,6 +168,8 @@ export async function fetchWidgetData(): Promise<WidgetData> {
                 },
             });
             const monthData = monthResponse.data;
+            
+            // Monthly download/upload
             monthDownload = safeParseInt(
                 parseXMLValue(monthData, 'CurrentMonthDownload') ||
                 parseXMLValue(monthData, 'monthDownload') ||
@@ -153,6 +179,27 @@ export async function fetchWidgetData(): Promise<WidgetData> {
                 parseXMLValue(monthData, 'CurrentMonthUpload') ||
                 parseXMLValue(monthData, 'monthUpload') ||
                 parseXMLValue(monthData, 'MonthUpload')
+            );
+            
+            // Monthly duration
+            monthDuration = safeParseInt(
+                parseXMLValue(monthData, 'CurrentMonthDuration') ||
+                parseXMLValue(monthData, 'monthDuration') ||
+                parseXMLValue(monthData, 'MonthDuration')
+            );
+            
+            // Daily usage (combined download + upload)
+            dayUsed = safeParseInt(
+                parseXMLValue(monthData, 'CurrentDayUsed') ||
+                parseXMLValue(monthData, 'dayUsed') ||
+                parseXMLValue(monthData, 'DayUsed')
+            );
+            
+            // Daily duration
+            dayDuration = safeParseInt(
+                parseXMLValue(monthData, 'CurrentDayDuration') ||
+                parseXMLValue(monthData, 'dayDuration') ||
+                parseXMLValue(monthData, 'DayDuration')
             );
         } catch {
             // Monthly stats not available
@@ -179,14 +226,25 @@ export async function fetchWidgetData(): Promise<WidgetData> {
         }
 
         const widgetData: WidgetData = {
-            downloadSpeed: safeParseInt(parseXMLValue(trafficData, 'CurrentDownloadRate')),
-            uploadSpeed: safeParseInt(parseXMLValue(trafficData, 'CurrentUploadRate')),
-            sessionDownload: safeParseInt(parseXMLValue(trafficData, 'CurrentDownload')),
-            sessionUpload: safeParseInt(parseXMLValue(trafficData, 'CurrentUpload')),
+            // Speed data
+            currentDownloadRate: safeParseInt(parseXMLValue(trafficData, 'CurrentDownloadRate')),
+            currentUploadRate: safeParseInt(parseXMLValue(trafficData, 'CurrentUploadRate')),
+            // Session data
+            currentDownload: safeParseInt(parseXMLValue(trafficData, 'CurrentDownload')),
+            currentUpload: safeParseInt(parseXMLValue(trafficData, 'CurrentUpload')),
+            currentConnectTime: safeParseInt(parseXMLValue(trafficData, 'CurrentConnectTime')),
+            // Monthly data
             monthDownload,
             monthUpload,
+            monthDuration,
+            // Daily data
+            dayUsed,
+            dayDuration,
+            // Total data
             totalDownload: safeParseInt(parseXMLValue(trafficData, 'TotalDownload')),
             totalUpload: safeParseInt(parseXMLValue(trafficData, 'TotalUpload')),
+            totalConnectTime: safeParseInt(parseXMLValue(trafficData, 'TotalConnectTime')),
+            // Connection info
             connectionStatus,
             networkType,
             signalStrength,
@@ -209,14 +267,19 @@ export async function fetchWidgetData(): Promise<WidgetData> {
 
         // Return empty data with error
         return {
-            downloadSpeed: 0,
-            uploadSpeed: 0,
-            sessionDownload: 0,
-            sessionUpload: 0,
+            currentDownloadRate: 0,
+            currentUploadRate: 0,
+            currentDownload: 0,
+            currentUpload: 0,
+            currentConnectTime: 0,
             monthDownload: 0,
             monthUpload: 0,
+            monthDuration: 0,
+            dayUsed: 0,
+            dayDuration: 0,
             totalDownload: 0,
             totalUpload: 0,
+            totalConnectTime: 0,
             connectionStatus: 'Disconnected',
             networkType: '',
             signalStrength: '0',

@@ -118,6 +118,7 @@ export default function HomeScreen() {
   // Clear history state
   const [isClearingHistory, setIsClearingHistory] = useState(false);
   const [lastClearedDate, setLastClearedDate] = useState<string | null>(null);
+  const [previousTotalTraffic, setPreviousTotalTraffic] = useState<number>(0);
 
   // Load last cleared date from storage
   useEffect(() => {
@@ -125,6 +126,10 @@ export default function HomeScreen() {
       try {
         const date = await AsyncStorage.getItem('lastClearedTrafficDate');
         if (date) setLastClearedDate(date);
+        
+        // Load previous total traffic for comparison
+        const prevTotal = await AsyncStorage.getItem('previousTotalTraffic');
+        if (prevTotal) setPreviousTotalTraffic(parseInt(prevTotal));
       } catch (error) {
         // Ignore error
       }
@@ -179,6 +184,22 @@ export default function HomeScreen() {
       setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
+
+      // Auto-detect if traffic history was cleared
+      const currentTotal = traffic.totalDownload + traffic.totalUpload;
+      if (previousTotalTraffic > 1024 * 1024 * 100 && currentTotal < previousTotalTraffic * 0.1) {
+        // Total traffic dropped significantly (less than 10% of previous, and previous was > 100MB)
+        // This indicates history was cleared from modem web interface or other app
+        const now = new Date().toISOString();
+        await AsyncStorage.setItem('lastClearedTrafficDate', now);
+        setLastClearedDate(now);
+      }
+      
+      // Save current total for next comparison (only if significant)
+      if (currentTotal > 1024 * 1024) { // Only save if > 1MB
+        setPreviousTotalTraffic(currentTotal);
+        await AsyncStorage.setItem('previousTotalTraffic', currentTotal.toString());
+      }
 
       // Check if data is empty (session expired returns empty values)
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
@@ -367,6 +388,9 @@ export default function HomeScreen() {
                 const now = new Date().toISOString();
                 await AsyncStorage.setItem('lastClearedTrafficDate', now);
                 setLastClearedDate(now);
+                // Reset previous total traffic
+                setPreviousTotalTraffic(0);
+                await AsyncStorage.setItem('previousTotalTraffic', '0');
                 // Reload traffic data
                 loadData(modemService);
                 ThemedAlertHelper.alert(t('common.success'), t('home.historyClearedSuccess'));

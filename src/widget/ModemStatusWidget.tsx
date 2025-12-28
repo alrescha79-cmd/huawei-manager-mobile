@@ -156,7 +156,7 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
     const networkType = getNetworkTypeName(data.networkType);
     const signalStrength = parseInt(data.signalStrength || '0', 10);
 
-    const sessionTotal = data.sessionDownload + data.sessionUpload;
+    const sessionTotal = data.currentDownload + data.currentUpload;
     const monthTotal = data.monthDownload + data.monthUpload;
     const total = data.totalDownload + data.totalUpload;
 
@@ -258,7 +258,7 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                     {/* Download Speed */}
                     <SpeedCard
                         icon="↓"
-                        speed={formatSpeed(data.downloadSpeed)}
+                        speed={formatSpeed(data.currentDownloadRate)}
                         label="Download"
                         iconColor={colors.blue}
                         iconBg={colors.blueBg}
@@ -267,7 +267,7 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                     {/* Upload Speed - Same style as Download */}
                     <SpeedCard
                         icon="↑"
-                        speed={formatSpeed(data.uploadSpeed)}
+                        speed={formatSpeed(data.currentUploadRate)}
                         label="Upload"
                         iconColor={colors.orange}
                         iconBg={colors.orangeBg}
@@ -290,33 +290,33 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                         valueColor={colors.textPrimary}
                     />
                     <UsageRow
+                        icon="◐"
+                        label="Daily"
+                        value={formatBytes(data.dayUsed)}
+                        valueColor={colors.orange}
+                    />
+                    <UsageRow
                         icon="▦"
                         label="Monthly"
                         value={formatBytes(monthTotal)}
                         valueColor={colors.yellow}
                     />
-                    <UsageRow
-                        icon="⬡"
-                        label="Total"
-                        value={formatBytes(total)}
-                        valueColor={colors.textSecondary}
-                    />
 
-                    {/* Progress Bar */}
+                    {/* Progress Bar - show monthly usage percentage */}
                     <FlexWidget
                         style={{
                             height: 6,
                             backgroundColor: colors.cardBg,
                             borderRadius: 3,
-                            marginTop: 4,
+                            marginTop: 6,
                             width: 'match_parent',
                         }}
                     >
                         <FlexWidget
                             style={{
-                                width: 70,
+                                width: `${Math.min((monthTotal / (50 * 1024 * 1024 * 1024)) * 100, 100)}%`,
                                 height: 6,
-                                backgroundColor: colors.blue,
+                                backgroundColor: monthTotal > 40 * 1024 * 1024 * 1024 ? colors.orange : colors.blue,
                                 borderRadius: 3,
                             }}
                         />

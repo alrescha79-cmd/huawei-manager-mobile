@@ -4,9 +4,53 @@ import { parseXMLValue } from '@/utils/helpers';
 
 export class SMSService {
   private apiClient: ModemAPIClient;
+  private _smsSupportCache: boolean | null = null;
 
   constructor(modemIp: string) {
     this.apiClient = new ModemAPIClient(modemIp);
+  }
+
+  /**
+   * Check if SMS is supported by the modem
+   * Reference: https://github.com/Salamek/huawei-lte-api/blob/master/huawei_lte_api/api/Sms.py
+   * Uses sms-feature-switch endpoint to check support
+   */
+  async isSMSSupported(): Promise<boolean> {
+    // Return cached result if available
+    if (this._smsSupportCache !== null) {
+      return this._smsSupportCache;
+    }
+
+    try {
+      const response = await this.apiClient.get('/api/sms/sms-feature-switch');
+      
+      // Check if we got a valid response (not an error)
+      // If the endpoint returns error 404 or similar, SMS is not supported
+      if (!response || response.includes('<error>')) {
+        this._smsSupportCache = false;
+        return false;
+      }
+
+      // If we get here, SMS is supported
+      this._smsSupportCache = true;
+      return true;
+    } catch (error: any) {
+      // Check if it's a session error - those should be re-thrown
+      if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+        throw error; // Re-throw session errors so they trigger re-login
+      }
+
+      // Any other error (404, etc) means SMS is not supported
+      this._smsSupportCache = false;
+      return false;
+    }
+  }
+
+  /**
+   * Reset SMS support cache (call this after re-login)
+   */
+  resetSMSCache(): void {
+    this._smsSupportCache = null;
   }
 
   async getSMSList(page: number = 1, count: number = 20, boxType: number = 1): Promise<SMSMessage[]> {
@@ -51,8 +95,13 @@ export class SMSService {
       }
 
       return messages;
-    } catch (error) {
-      // Return empty array instead of throwing - SMS not supported or session issue
+    } catch (error: any) {
+      // Re-throw session errors so the app can handle re-login
+      if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+        throw error;
+      }
+
+      // For other errors, return empty array - SMS not supported
       return [];
     }
   }
@@ -76,8 +125,13 @@ export class SMSService {
         localMax: parseInt(parseXMLValue(response, 'LocalMax')) || 0,
         simMax: parseInt(parseXMLValue(response, 'SimMax')) || 0,
       };
-    } catch (error) {
-      // Return default values instead of throwing - SMS not supported
+    } catch (error: any) {
+      // Re-throw session errors so the app can handle re-login
+      if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+        throw error;
+      }
+
+      // For other errors, return default values - SMS not supported
       return {
         localUnread: 0,
         localInbox: 0,
