@@ -52,8 +52,8 @@ export class SMSService {
 
       return messages;
     } catch (error) {
-      console.error('Error getting SMS list:', error);
-      throw error;
+      // Return empty array instead of throwing - SMS not supported or session issue
+      return [];
     }
   }
 
@@ -62,23 +62,37 @@ export class SMSService {
       const response = await this.apiClient.get('/api/sms/sms-count');
 
       return {
-        localUnread: parseInt(parseXMLValue(response, 'LocalUnread')),
-        localInbox: parseInt(parseXMLValue(response, 'LocalInbox')),
-        localOutbox: parseInt(parseXMLValue(response, 'LocalOutbox')),
-        localDraft: parseInt(parseXMLValue(response, 'LocalDraft')),
-        simUnread: parseInt(parseXMLValue(response, 'SimUnread')),
-        simInbox: parseInt(parseXMLValue(response, 'SimInbox')),
-        simOutbox: parseInt(parseXMLValue(response, 'SimOutbox')),
-        simDraft: parseInt(parseXMLValue(response, 'SimDraft')),
-        newMsg: parseInt(parseXMLValue(response, 'NewMsg')),
-        localDeleted: parseInt(parseXMLValue(response, 'LocalDeleted')),
-        simDeleted: parseInt(parseXMLValue(response, 'SimDeleted')),
-        localMax: parseInt(parseXMLValue(response, 'LocalMax')),
-        simMax: parseInt(parseXMLValue(response, 'SimMax')),
+        localUnread: parseInt(parseXMLValue(response, 'LocalUnread')) || 0,
+        localInbox: parseInt(parseXMLValue(response, 'LocalInbox')) || 0,
+        localOutbox: parseInt(parseXMLValue(response, 'LocalOutbox')) || 0,
+        localDraft: parseInt(parseXMLValue(response, 'LocalDraft')) || 0,
+        simUnread: parseInt(parseXMLValue(response, 'SimUnread')) || 0,
+        simInbox: parseInt(parseXMLValue(response, 'SimInbox')) || 0,
+        simOutbox: parseInt(parseXMLValue(response, 'SimOutbox')) || 0,
+        simDraft: parseInt(parseXMLValue(response, 'SimDraft')) || 0,
+        newMsg: parseInt(parseXMLValue(response, 'NewMsg')) || 0,
+        localDeleted: parseInt(parseXMLValue(response, 'LocalDeleted')) || 0,
+        simDeleted: parseInt(parseXMLValue(response, 'SimDeleted')) || 0,
+        localMax: parseInt(parseXMLValue(response, 'LocalMax')) || 0,
+        simMax: parseInt(parseXMLValue(response, 'SimMax')) || 0,
       };
     } catch (error) {
-      console.error('Error getting SMS count:', error);
-      throw error;
+      // Return default values instead of throwing - SMS not supported
+      return {
+        localUnread: 0,
+        localInbox: 0,
+        localOutbox: 0,
+        localDraft: 0,
+        simUnread: 0,
+        simInbox: 0,
+        simOutbox: 0,
+        simDraft: 0,
+        newMsg: 0,
+        localDeleted: 0,
+        simDeleted: 0,
+        localMax: 0,
+        simMax: 0,
+      };
     }
   }
 

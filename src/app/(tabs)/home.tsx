@@ -55,7 +55,16 @@ const getSignalQuality = (
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
-  const { credentials, logout, login } = useAuthStore();
+  const {
+    credentials,
+    logout,
+    login,
+    sessionExpired: authSessionExpired,
+    isRelogging,
+    setRelogging,
+    clearSessionExpired,
+    requestRelogin
+  } = useAuthStore();
   const { t } = useTranslation();
 
   // Duration units for i18n-aware formatting
@@ -89,7 +98,6 @@ export default function HomeScreen() {
   const [isTogglingData, setIsTogglingData] = useState(false);
   const [isChangingIp, setIsChangingIp] = useState(false);
   const [showReloginWebView, setShowReloginWebView] = useState(false);
-  const [sessionExpired, setSessionExpired] = useState(false);
   const [reloginAttempts, setReloginAttempts] = useState(0);
   const [selectedBands, setSelectedBands] = useState<string[]>([]);
   const [showBandModal, setShowBandModal] = useState(false);
@@ -157,13 +165,16 @@ export default function HomeScreen() {
       // Check if data is empty (session expired returns empty values)
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
+      console.log('[DEBUG] loadData - isDataEmpty:', isDataEmpty, 'reloginAttempts:', reloginAttempts, 'showReloginWebView:', showReloginWebView);
+
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        setSessionExpired(true);
+        console.log('[DEBUG] loadData - TRIGGERING RELOGIN due to empty data');
+        requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       } else if (!isDataEmpty) {
         // Session is valid, reset expired state
-        setSessionExpired(false);
+        clearSessionExpired();
         setReloginAttempts(0);
       }
 
@@ -177,9 +188,12 @@ export default function HomeScreen() {
         errorMessage.includes('login') ||
         !signalInfo; // No signal data might indicate session issue
 
+      console.log('[DEBUG] loadData ERROR - isSessionError:', isSessionError, 'errorMessage:', errorMessage);
+
       if (isSessionError && credentials && reloginAttempts < 3) {
         // Session expired, trigger silent re-login via WebView
-        setSessionExpired(true);
+        console.log('[DEBUG] loadData ERROR - TRIGGERING RELOGIN due to session error');
+        requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       } else {
@@ -215,13 +229,16 @@ export default function HomeScreen() {
       // Check if data is empty (session expired returns empty values)
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
+      console.log('[DEBUG] loadDataSilent - isDataEmpty:', isDataEmpty, 'reloginAttempts:', reloginAttempts, 'showReloginWebView:', showReloginWebView);
+
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        setSessionExpired(true);
+        console.log('[DEBUG] loadDataSilent - TRIGGERING RELOGIN due to empty data');
+        requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       } else if (!isDataEmpty) {
         // Session is valid
-        setSessionExpired(false);
+        clearSessionExpired();
         setReloginAttempts(0);
       }
 
@@ -232,8 +249,11 @@ export default function HomeScreen() {
         errorMessage.includes('session') ||
         !signalInfo;
 
+      console.log('[DEBUG] loadDataSilent ERROR - isSessionError:', isSessionError, 'errorMessage:', errorMessage, 'signalInfo:', !!signalInfo);
+
       if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        setSessionExpired(true);
+        console.log('[DEBUG] loadDataSilent ERROR - TRIGGERING RELOGIN');
+        requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       }
@@ -302,7 +322,8 @@ export default function HomeScreen() {
   // Handle successful re-login from WebView
   const handleReloginSuccess = async () => {
     setShowReloginWebView(false);
-    setSessionExpired(false);
+    setRelogging(false);
+    clearSessionExpired();
 
     // Re-save credentials with new timestamp
     if (credentials) {
@@ -323,34 +344,38 @@ export default function HomeScreen() {
     if (!modemService || isTogglingData) return;
 
     const newState = !mobileDataStatus?.dataswitch;
-    const actionText = newState ? t('home.enableData') : t('home.disableData');
-    const confirmMessage = newState ? t('home.confirmEnableData') : t('home.confirmDisableData');
 
-    ThemedAlertHelper.alert(
-      actionText,
-      confirmMessage,
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.confirm'),
-          onPress: async () => {
-            setIsTogglingData(true);
-            try {
-              await modemService.toggleMobileData(newState);
-              // Refresh data after toggle
-              const dataStatus = await modemService.getMobileDataStatus();
-              setMobileDataStatus(dataStatus);
-              ThemedAlertHelper.alert(t('common.success'), newState ? t('home.dataEnabled') : t('home.dataDisabled'));
-            } catch (error) {
-              console.error('Error toggling mobile data:', error);
-              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
-            } finally {
-              setIsTogglingData(false);
-            }
-          },
-        },
-      ]
-    );
+    // Helper function to perform the toggle
+    const performToggle = async () => {
+      setIsTogglingData(true);
+      try {
+        await modemService.toggleMobileData(newState);
+        // Refresh data after toggle
+        const dataStatus = await modemService.getMobileDataStatus();
+        setMobileDataStatus(dataStatus);
+        ThemedAlertHelper.alert(t('common.success'), newState ? t('home.dataEnabled') : t('home.dataDisabled'));
+      } catch (error) {
+        console.error('Error toggling mobile data:', error);
+        ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
+      } finally {
+        setIsTogglingData(false);
+      }
+    };
+
+    // Only show confirmation when disabling data
+    if (!newState) {
+      ThemedAlertHelper.alert(
+        t('home.disableData'),
+        t('home.confirmDisableData'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.confirm'), onPress: performToggle },
+        ]
+      );
+    } else {
+      // Enable data directly without confirmation
+      performToggle();
+    }
   };
 
   const handleChangeIp = async () => {
@@ -400,6 +425,15 @@ export default function HomeScreen() {
   const handleDiagnosis = async () => {
     if (!modemService || isRunningDiagnosis) return;
 
+    // Check if mobile data is enabled first
+    if (!mobileDataStatus?.dataswitch) {
+      ThemedAlertHelper.alert(
+        t('common.error'),
+        t('alerts.mobileDataRequired')
+      );
+      return;
+    }
+
     setIsRunningDiagnosis(true);
     try {
       // Try google.com first
@@ -417,8 +451,14 @@ export default function HomeScreen() {
       ]);
       setDiagnosisSummary(result.success ? t('home.connectionOk') || 'Connection is working!' : t('home.connectionFailed') || 'Could not reach server');
       setShowDiagnosisModal(true);
-    } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), 'Diagnosis failed');
+    } catch (error: any) {
+      console.error('Error running diagnosis ping:', error);
+      // Check if it's a network error
+      if (error?.message?.includes('Network Error') || error?.code === 'ERR_NETWORK') {
+        ThemedAlertHelper.alert(t('common.error'), t('alerts.networkError'));
+      } else {
+        ThemedAlertHelper.alert(t('common.error'), t('alerts.diagnosisFailed'));
+      }
     } finally {
       setIsRunningDiagnosis(false);
     }
@@ -426,6 +466,15 @@ export default function HomeScreen() {
 
   const handleOneClickCheck = async () => {
     if (!modemService || isRunningCheck) return;
+
+    // Check if mobile data is enabled first
+    if (!mobileDataStatus?.dataswitch) {
+      ThemedAlertHelper.alert(
+        t('common.error'),
+        t('alerts.mobileDataRequired')
+      );
+      return;
+    }
 
     setIsRunningCheck(true);
     try {
@@ -441,8 +490,14 @@ export default function HomeScreen() {
       ]);
       setDiagnosisSummary(t(`home.${result.summaryKey}`));
       setShowDiagnosisModal(true);
-    } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), 'Check failed');
+    } catch (error: any) {
+      console.error('Error running one click check:', error);
+      // Check if it's a network error
+      if (error?.message?.includes('Network Error') || error?.code === 'ERR_NETWORK') {
+        ThemedAlertHelper.alert(t('common.error'), t('alerts.networkError'));
+      } else {
+        ThemedAlertHelper.alert(t('common.error'), t('alerts.checkFailed'));
+      }
     } finally {
       setIsRunningCheck(false);
     }
@@ -950,7 +1005,7 @@ export default function HomeScreen() {
         onClose={() => {
           setShowReloginWebView(false);
           // If user cancels re-login, show error
-          if (sessionExpired) {
+          if (authSessionExpired) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.sessionExpired'));
           }
         }}
@@ -958,7 +1013,7 @@ export default function HomeScreen() {
         onTimeout={async () => {
           // Session re-login timed out, redirect to login screen
           setShowReloginWebView(false);
-          setSessionExpired(true);
+          requestRelogin();
           await logout();
           router.replace('/login');
         }}

@@ -26,7 +26,7 @@ interface SpeedtestResult {
     jitter: number; // in ms
 }
 
-// Speedometer gauge component with smooth animation
+// Speedometer gauge component with smooth needle animation
 const SpeedometerGauge: React.FC<{
     speed: number;
     maxSpeed: number;
@@ -35,74 +35,101 @@ const SpeedometerGauge: React.FC<{
     isActive: boolean;
 }> = ({ speed, maxSpeed, color, label, isActive }) => {
     const { colors, typography, spacing } = useTheme();
-    const animatedValue = useRef(new Animated.Value(0)).current;
-    const pulseAnim = useRef(new Animated.Value(1)).current;
+    const needleAnim = useRef(new Animated.Value(0)).current;
+    const glowAnim = useRef(new Animated.Value(0)).current;
 
+    // Animate needle with spring effect for more realistic movement
     useEffect(() => {
-        Animated.timing(animatedValue, {
-            toValue: Math.min(speed / maxSpeed, 1),
-            duration: 800,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: false,
+        const targetValue = Math.min(speed / maxSpeed, 1);
+        Animated.spring(needleAnim, {
+            toValue: targetValue,
+            tension: 50,
+            friction: 8,
+            useNativeDriver: true,
         }).start();
     }, [speed, maxSpeed]);
 
+    // Glow animation when active
     useEffect(() => {
         if (isActive) {
             Animated.loop(
                 Animated.sequence([
-                    Animated.timing(pulseAnim, {
-                        toValue: 1.1,
-                        duration: 500,
-                        useNativeDriver: true,
-                    }),
-                    Animated.timing(pulseAnim, {
+                    Animated.timing(glowAnim, {
                         toValue: 1,
-                        duration: 500,
-                        useNativeDriver: true,
+                        duration: 800,
+                        useNativeDriver: false,
+                    }),
+                    Animated.timing(glowAnim, {
+                        toValue: 0.3,
+                        duration: 800,
+                        useNativeDriver: false,
                     }),
                 ])
             ).start();
         } else {
-            pulseAnim.setValue(1);
+            glowAnim.setValue(0);
         }
     }, [isActive]);
 
-    const rotation = animatedValue.interpolate({
+    // Needle rotation: -135deg (0 speed) to +135deg (max speed)
+    const needleRotation = needleAnim.interpolate({
         inputRange: [0, 1],
         outputRange: ['-135deg', '135deg'],
     });
 
+    // Dynamic glow opacity
+    const glowOpacity = glowAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0.2, 0.6],
+    });
+
+    // Speed marks for visual reference
+    const speedMarks = [0, 25, 50, 75, 100].map(percent => {
+        const displayValue = Math.round((percent / 100) * maxSpeed);
+        return displayValue;
+    });
+
     return (
         <View style={gaugeStyles.container}>
-            <View style={[gaugeStyles.gaugeOuter, { borderColor: colors.border }]}>
+            {/* Outer ring with glow effect when active */}
+            <Animated.View style={[
+                gaugeStyles.gaugeOuter,
+                {
+                    borderColor: isActive ? color : colors.border,
+                    shadowColor: color,
+                    shadowOpacity: isActive ? 0.5 : 0,
+                    shadowRadius: 10,
+                    elevation: isActive ? 8 : 0,
+                }
+            ]}>
+                {/* Background arc gradient effect */}
+                <View style={[gaugeStyles.arcBackground, { borderColor: color + '30' }]} />
+
+                {/* Needle */}
                 <Animated.View
                     style={[
-                        gaugeStyles.indicator,
-                        {
-                            backgroundColor: color,
-                            transform: [{ rotate: rotation }],
-                        },
-                    ]}
-                />
-                <Animated.View
-                    style={[
-                        gaugeStyles.centerCircle,
-                        {
-                            backgroundColor: colors.card,
-                            borderColor: color,
-                            transform: [{ scale: pulseAnim }],
-                        },
+                        gaugeStyles.needleContainer,
+                        { transform: [{ rotate: needleRotation }] }
                     ]}
                 >
-                    <Text style={[typography.title1, { color: colors.text, fontWeight: '700' }]}>
+                    <View style={[gaugeStyles.needle, { backgroundColor: color }]} />
+                    <View style={[gaugeStyles.needleTip, {
+                        borderBottomColor: color,
+                    }]} />
+                </Animated.View>
+
+                {/* Speed display in center */}
+                <View style={[gaugeStyles.centerCircle, { backgroundColor: colors.card }]}>
+                    <Text style={[typography.title1, { color: colors.text, fontWeight: '700', fontSize: 28 }]}>
                         {speed.toFixed(1)}
                     </Text>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: -2 }]}>
                         Mbps
                     </Text>
-                </Animated.View>
-            </View>
+                </View>
+            </Animated.View>
+
+            {/* Label */}
             <Text style={[typography.body, { color: colors.text, marginTop: spacing.sm, fontWeight: '600' }]}>
                 {label}
             </Text>
@@ -116,29 +143,58 @@ const gaugeStyles = StyleSheet.create({
         flex: 1,
     },
     gaugeOuter: {
-        width: 130,
-        height: 130,
-        borderRadius: 65,
-        borderWidth: 8,
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        borderWidth: 6,
         justifyContent: 'center',
         alignItems: 'center',
-        overflow: 'hidden',
+        overflow: 'visible',
     },
-    indicator: {
+    arcBackground: {
+        position: 'absolute',
+        width: 120,
+        height: 120,
+        borderRadius: 60,
+        borderWidth: 4,
+    },
+    needleContainer: {
         position: 'absolute',
         width: 4,
-        height: 50,
-        borderRadius: 2,
-        top: 15,
+        height: 70,
+        alignItems: 'center',
+        top: 0,
         transformOrigin: 'bottom center',
     },
+    needle: {
+        width: 4,
+        height: 45,
+        borderRadius: 2,
+    },
+    needleTip: {
+        width: 0,
+        height: 0,
+        borderLeftWidth: 6,
+        borderRightWidth: 6,
+        borderBottomWidth: 12,
+        borderLeftColor: 'transparent',
+        borderRightColor: 'transparent',
+        marginTop: -2,
+    },
+    centerHub: {
+        position: 'absolute',
+        width: 16,
+        height: 16,
+        borderRadius: 8,
+        zIndex: 10,
+    },
     centerCircle: {
-        width: 90,
-        height: 90,
-        borderRadius: 45,
-        borderWidth: 3,
+        width: 80,
+        height: 80,
+        borderRadius: 40,
         justifyContent: 'center',
         alignItems: 'center',
+        position: 'absolute',
     },
 });
 
@@ -171,7 +227,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
     }, [progress]);
 
     const runSpeedtest = async () => {
-        console.log('[SPEEDTEST] === Starting Cloudflare Speed Test ===');
         setIsRunning(true);
         setProgress(0);
         setResult({ downloadSpeed: 0, uploadSpeed: 0, latency: 0, jitter: 0 });
@@ -181,7 +236,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
 
         try {
             // Phase 1: Latency test using Cloudflare
-            console.log('[SPEEDTEST] Phase 1: Latency test...');
             setPhase('latency');
 
             const latencyResults: number[] = [];
@@ -202,10 +256,8 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                     });
                     const latency = performance.now() - start;
                     latencyResults.push(latency);
-                    console.log(`[SPEEDTEST] Ping ${i + 1}: ${latency.toFixed(0)}ms`);
                 } catch (e: any) {
                     if (e.name !== 'AbortError') {
-                        console.log(`[SPEEDTEST] Ping ${i + 1} failed`);
                     }
                 }
                 setProgress((i + 1));
@@ -218,12 +270,10 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
             const avg = validLatency.reduce((a, b) => a + b, 0) / validLatency.length;
             const jitter = Math.sqrt(validLatency.reduce((s, l) => s + Math.pow(l - avg, 2), 0) / validLatency.length);
 
-            console.log(`[SPEEDTEST] Latency: ${median.toFixed(0)}ms, Jitter: ${jitter.toFixed(1)}ms`);
             setResult(prev => ({ ...prev, latency: median, jitter }));
             setProgress(20);
 
             // Phase 2: Download test using Cloudflare
-            console.log('[SPEEDTEST] Phase 2: Download test (Cloudflare)...');
             setPhase('download');
 
             // Download sizes in bytes (ramp up like Cloudflare does)
@@ -233,7 +283,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                 { bytes: 1000000, count: 6 },   // 1MB x 6
                 { bytes: 10000000, count: 4 },  // 10MB x 4
                 { bytes: 25000000, count: 2 },  // 25MB x 2
-                { bytes: 50000000, count: 1 },  // 50MB x 1
             ];
 
             const downloadSpeeds: number[] = [];
@@ -261,15 +310,12 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                         const speedMbps = speedBps / 1000000;
 
                         downloadSpeeds.push(speedMbps);
-                        console.log(`[SPEEDTEST] Downloaded ${(transferSize / 1024 / 1024).toFixed(2)}MB in ${duration.toFixed(2)}s = ${speedMbps.toFixed(2)} Mbps`);
 
-                        // Update with current best speed
-                        const currentMax = Math.max(...downloadSpeeds);
-                        setResult(prev => ({ ...prev, downloadSpeed: currentMax }));
+                        // Update with CURRENT speed (real-time display)
+                        setResult(prev => ({ ...prev, downloadSpeed: speedMbps }));
 
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
-                            console.log(`[SPEEDTEST] Download failed: ${e.message}`);
                         }
                     }
 
@@ -283,12 +329,10 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
             const p90Index = Math.floor(sortedSpeeds.length * 0.9);
             const downloadP90 = sortedSpeeds[p90Index] || sortedSpeeds[sortedSpeeds.length - 1] || 0;
 
-            console.log(`[SPEEDTEST] Download complete: ${downloadP90.toFixed(2)} Mbps (90th percentile)`);
             setResult(prev => ({ ...prev, downloadSpeed: downloadP90 }));
             setProgress(60);
 
             // Phase 3: Upload test (using postman-echo since CF __up has CORS issues in RN)
-            console.log('[SPEEDTEST] Phase 3: Upload test...');
             setPhase('upload');
 
             // Upload sizes in bytes - smaller sizes for faster results
@@ -332,14 +376,12 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                         const speedMbps = speedBps / 1000000;
 
                         uploadSpeeds.push(speedMbps);
-                        console.log(`[SPEEDTEST] Uploaded ${(bytes / 1024).toFixed(0)}KB in ${duration.toFixed(2)}s = ${speedMbps.toFixed(2)} Mbps`);
 
-                        const currentMax = Math.max(...uploadSpeeds);
-                        setResult(prev => ({ ...prev, uploadSpeed: currentMax }));
+                        // Update with CURRENT speed (real-time display)
+                        setResult(prev => ({ ...prev, uploadSpeed: speedMbps }));
 
                     } catch (e: any) {
                         if (e.name !== 'AbortError') {
-                            console.log(`[SPEEDTEST] Upload failed: ${e.message}`);
                         }
                     }
 
@@ -353,12 +395,9 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
             const uploadP90Index = Math.floor(sortedUploadSpeeds.length * 0.9);
             const uploadP90 = sortedUploadSpeeds[uploadP90Index] || sortedUploadSpeeds[sortedUploadSpeeds.length - 1] || 0;
 
-            console.log(`[SPEEDTEST] Upload complete: ${uploadP90.toFixed(2)} Mbps (90th percentile)`);
             setResult(prev => ({ ...prev, uploadSpeed: uploadP90 }));
             setProgress(100);
 
-            console.log('[SPEEDTEST] === Test Complete ===');
-            console.log(`[SPEEDTEST] Results: DL ${downloadP90.toFixed(2)} Mbps, UL ${uploadP90.toFixed(2)} Mbps, Ping ${median.toFixed(0)}ms`);
             setPhase('complete');
         } catch (error: any) {
             if (error.message !== 'Aborted') {
