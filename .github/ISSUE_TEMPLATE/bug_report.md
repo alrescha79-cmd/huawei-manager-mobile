@@ -1,46 +1,27 @@
 ---
 name: Bug Report
-about: Create a report to help us improve
+about: Report a bug to help us improve / Laporkan bug untuk membantu kami memperbaiki
 title: '[BUG] '
 labels: bug
 assignees: alrescha79-cmd
 ---
 
-## 🐛 Deskripsi Bug
-<!-- Jelaskan bug yang ditemukan secara singkat dan jelas -->
+## 🐛 Bug Description / Deskripsi Bug
+<!-- Describe what went wrong / Jelaskan apa yang salah -->
 
 
-## 📋 Langkah Reproduksi
-<!-- Langkah-langkah untuk mereproduksi bug -->
-1. Buka '...'
-2. Klik '...'
-3. Scroll ke '...'
-4. Lihat error
+## 📱 Your Device / Perangkat Anda
+- **Phone model / Model HP:** (e.g. Samsung Galaxy A52)
+- **Android version / Versi Android:** (e.g. Android 13)
+- **App version / Versi aplikasi:** (e.g. 1.0.25)
+- **Modem model / Model modem:** (e.g. Huawei B312-929)
 
-## ✅ Perilaku yang Diharapkan
-<!-- Jelaskan apa yang seharusnya terjadi -->
+## 📋 Steps to Reproduce / Langkah Reproduksi
+<!-- How can we recreate this bug? / Bagaimana kami bisa mereproduksi bug ini? -->
+1. Buka tab ...
+2. Saat ingin ...
+3. bug terjadi ...
 
+## 📸 Screenshot
+<!-- Add screenshots if helpful / Tambahkan screenshot jika membantu -->
 
-## ❌ Perilaku Aktual
-<!-- Jelaskan apa yang sebenarnya terjadi -->
-
-
-## 📸 Screenshots
-<!-- Jika memungkinkan, tambahkan screenshot untuk membantu menjelaskan masalah -->
-
-
-## 📱 Informasi Device
-- **Device:** [e.g. Samsung Galaxy A52]
-- **OS:** [e.g. Android 13]
-- **App Version:** [e.g. 1.0.25]
-- **Modem:** [e.g. Huawei B312-929]
-
-## 📝 Informasi Tambahan
-<!-- Tambahkan konteks lain tentang bug di sini -->
-
-
-## 📋 Logs (Optional)
-<!-- Jika ada error logs, tambahkan di sini -->
-```
-Paste logs here
-```

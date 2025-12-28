@@ -718,5 +718,23 @@ export class ModemService {
       };
     }
   }
+
+  /**
+   * Clear traffic history and reset all statistics to 0
+   */
+  async clearTrafficHistory(): Promise<boolean> {
+    try {
+      const requestData = `<?xml version="1.0" encoding="UTF-8"?>
+<request>
+<ClearTraffic>1</ClearTraffic>
+</request>`;
+
+      await this.apiClient.post('/api/monitoring/clear-traffic', requestData);
+      return true;
+    } catch (error) {
+      console.error('Error clearing traffic history:', error);
+      return false;
+    }
+  }
 }
 

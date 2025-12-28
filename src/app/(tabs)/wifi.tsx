@@ -12,6 +12,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Modal,
+  Linking,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -839,9 +840,11 @@ export default function WiFiScreen() {
                   </Text>
                   <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
                 </View>
-                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, fontStyle: 'italic' }]}>
-                  {t('wifi.useWebInterface')}
-                </Text>
+                <TouchableOpacity onPress={() => Linking.openURL(`http://${credentials?.modemIp || '192.168.8.1'}`)}>
+                  <Text style={[typography.caption1, { color: colors.primary, marginTop: 4, fontStyle: 'italic' }]}>
+                    {t('wifi.useWebInterface')} →
+                  </Text>
+                </TouchableOpacity>
               </View>
 
               {/* Password Input - DISABLED (encryption not supported yet) */}
@@ -881,9 +884,11 @@ export default function WiFiScreen() {
                       />
                     </View>
                   </View>
-                  <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, fontStyle: 'italic' }]}>
-                    {t('wifi.useWebInterface')}
-                  </Text>
+                  <TouchableOpacity onPress={() => Linking.openURL(`http://${credentials?.modemIp || '192.168.8.1'}`)}>
+                    <Text style={[typography.caption1, { color: colors.primary, marginTop: 4, fontStyle: 'italic' }]}>
+                      {t('wifi.useWebInterface')} →
+                    </Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
