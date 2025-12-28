@@ -2044,6 +2044,25 @@ export default function SettingsScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Bug Report Button */}
+        <TouchableOpacity
+          style={[styles.settingRow, { marginTop: spacing.sm }]}
+          onPress={() => Linking.openURL('https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?template=bug_report.md')}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+            <MaterialIcons name="bug-report" size={18} color={colors.error} style={{ marginRight: 8 }} />
+            <View style={{ flex: 1 }}>
+              <Text style={[typography.body, { color: colors.text }]}>
+                {t('settings.bugReport')}
+              </Text>
+              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                {t('settings.bugReportHint')}
+              </Text>
+            </View>
+          </View>
+          <MaterialIcons name="open-in-new" size={16} color={colors.textSecondary} />
+        </TouchableOpacity>
+
         <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
           © 2025 Anggun Caksono
         </Text>

@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal } from '@/components';
@@ -114,6 +115,23 @@ export default function HomeScreen() {
   // Speedtest modal state
   const [showSpeedtestModal, setShowSpeedtestModal] = useState(false);
 
+  // Clear history state
+  const [isClearingHistory, setIsClearingHistory] = useState(false);
+  const [lastClearedDate, setLastClearedDate] = useState<string | null>(null);
+
+  // Load last cleared date from storage
+  useEffect(() => {
+    const loadLastClearedDate = async () => {
+      try {
+        const date = await AsyncStorage.getItem('lastClearedTrafficDate');
+        if (date) setLastClearedDate(date);
+      } catch (error) {
+        // Ignore error
+      }
+    };
+    loadLastClearedDate();
+  }, []);
+
   // Auto-refresh interval (fast for speed, slower for other data)
   useEffect(() => {
     if (credentials?.modemIp) {
@@ -165,10 +183,7 @@ export default function HomeScreen() {
       // Check if data is empty (session expired returns empty values)
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
-      console.log('[DEBUG] loadData - isDataEmpty:', isDataEmpty, 'reloginAttempts:', reloginAttempts, 'showReloginWebView:', showReloginWebView);
-
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        console.log('[DEBUG] loadData - TRIGGERING RELOGIN due to empty data');
         requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
@@ -188,11 +203,9 @@ export default function HomeScreen() {
         errorMessage.includes('login') ||
         !signalInfo; // No signal data might indicate session issue
 
-      console.log('[DEBUG] loadData ERROR - isSessionError:', isSessionError, 'errorMessage:', errorMessage);
 
       if (isSessionError && credentials && reloginAttempts < 3) {
         // Session expired, trigger silent re-login via WebView
-        console.log('[DEBUG] loadData ERROR - TRIGGERING RELOGIN due to session error');
         requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
@@ -229,10 +242,7 @@ export default function HomeScreen() {
       // Check if data is empty (session expired returns empty values)
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
-      console.log('[DEBUG] loadDataSilent - isDataEmpty:', isDataEmpty, 'reloginAttempts:', reloginAttempts, 'showReloginWebView:', showReloginWebView);
-
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        console.log('[DEBUG] loadDataSilent - TRIGGERING RELOGIN due to empty data');
         requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
@@ -249,10 +259,8 @@ export default function HomeScreen() {
         errorMessage.includes('session') ||
         !signalInfo;
 
-      console.log('[DEBUG] loadDataSilent ERROR - isSessionError:', isSessionError, 'errorMessage:', errorMessage, 'signalInfo:', !!signalInfo);
 
       if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        console.log('[DEBUG] loadDataSilent ERROR - TRIGGERING RELOGIN');
         requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
@@ -338,6 +346,42 @@ export default function HomeScreen() {
     if (modemService) {
       loadData(modemService);
     }
+  };
+
+  // Handle clear traffic history
+  const handleClearHistory = () => {
+    ThemedAlertHelper.alert(
+      t('home.clearHistory'),
+      t('home.clearHistoryConfirm'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.confirm'),
+          style: 'destructive',
+          onPress: async () => {
+            if (!modemService) return;
+            setIsClearingHistory(true);
+            try {
+              const success = await modemService.clearTrafficHistory();
+              if (success) {
+                const now = new Date().toISOString();
+                await AsyncStorage.setItem('lastClearedTrafficDate', now);
+                setLastClearedDate(now);
+                // Reload traffic data
+                loadData(modemService);
+                ThemedAlertHelper.alert(t('common.success'), t('home.historyClearedSuccess'));
+              } else {
+                ThemedAlertHelper.alert(t('common.error'), t('home.clearHistoryFailed'));
+              }
+            } catch (error) {
+              ThemedAlertHelper.alert(t('common.error'), t('home.clearHistoryFailed'));
+            } finally {
+              setIsClearingHistory(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const handleToggleMobileData = async () => {
@@ -992,6 +1036,42 @@ export default function HomeScreen() {
             color="amber"
             icon="data-usage"
           />
+
+          {/* Divider */}
+          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+          {/* Clear History Section */}
+          <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
+            {lastClearedDate && (
+              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                {t('home.lastCleared')}: {new Date(lastClearedDate).toLocaleDateString()}
+              </Text>
+            )}
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingVertical: spacing.sm,
+                paddingHorizontal: spacing.md,
+                backgroundColor: colors.error + '15',
+                borderRadius: 8,
+                opacity: isClearingHistory ? 0.6 : 1,
+              }}
+              onPress={handleClearHistory}
+              disabled={isClearingHistory}
+            >
+              {isClearingHistory ? (
+                <ActivityIndicator size="small" color={colors.error} />
+              ) : (
+                <>
+                  <MaterialIcons name="delete-outline" size={18} color={colors.error} />
+                  <Text style={[typography.caption1, { color: colors.error, marginLeft: 6, fontWeight: '600' }]}>
+                    {t('home.clearHistory')}
+                  </Text>
+                </>
+              )}
+            </TouchableOpacity>
+          </View>
         </Card>
       )}
 
