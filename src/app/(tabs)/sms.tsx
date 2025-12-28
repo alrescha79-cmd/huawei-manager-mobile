@@ -52,7 +52,10 @@ export default function SMSScreen() {
       const service = new SMSService(credentials.modemIp);
       setSMSService(service);
 
-      // Initial load
+      // Reset SMS cache when credentials change (happens after re-login)
+      service.resetSMSCache();
+
+      // Initial load with SMS support check
       loadData(service);
 
       // Setup auto-refresh interval
@@ -68,19 +71,62 @@ export default function SMSScreen() {
     try {
       setIsRefreshing(true);
 
-      const [messagesList, count] = await Promise.all([
-        service.getSMSList(),
-        service.getSMSCount(),
-      ]);
+      // First, check if SMS is supported on this modem
+      let isSupported = false;
+      try {
+        isSupported = await service.isSMSSupported();
+      } catch (error: any) {
+        // Session error during support check - trigger re-login
+        if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+          const { requestRelogin } = useAuthStore.getState();
+          requestRelogin();
+        }
+        setSmsSupported(false);
+        return;
+      }
 
-      setMessages(messagesList);
-      setSMSCount(count);
-      setSmsSupported(true);
+      // If SMS is not supported, just show unsupported message
+      if (!isSupported) {
+        setSmsSupported(false);
+        setMessages([]);
+        setSMSCount({
+          localUnread: 0,
+          localInbox: 0,
+          localOutbox: 0,
+          localDraft: 0,
+          simUnread: 0,
+          simInbox: 0,
+          simOutbox: 0,
+          simDraft: 0,
+          newMsg: 0,
+          localDeleted: 0,
+          simDeleted: 0,
+          localMax: 0,
+          simMax: 0,
+        });
+        return;
+      }
 
-    } catch (error: any) {
-      // Any error means SMS is not supported or session issue
-      // Just mark as unsupported and show the message - no error logging
-      setSmsSupported(false);
+      // SMS is supported, load the data
+      try {
+        const [messagesList, count] = await Promise.all([
+          service.getSMSList(),
+          service.getSMSCount(),
+        ]);
+
+        setMessages(messagesList);
+        setSMSCount(count);
+        setSmsSupported(true);
+      } catch (error: any) {
+        // Check if this is a session error
+        if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+          const { requestRelogin } = useAuthStore.getState();
+          requestRelogin();
+        } else {
+          // Some other error - mark SMS as unsupported rather than crashing
+          setSmsSupported(false);
+        }
+      }
     } finally {
       setIsRefreshing(false);
     }
@@ -89,18 +135,36 @@ export default function SMSScreen() {
   // Silent background refresh
   const loadDataSilent = async (service: SMSService) => {
     try {
-      const [messagesList, count] = await Promise.all([
-        service.getSMSList(),
-        service.getSMSCount(),
-      ]);
+      // Check if SMS is still supported
+      const isSupported = await service.isSMSSupported();
+      if (!isSupported) {
+        setSmsSupported(false);
+        return;
+      }
 
-      setMessages(messagesList);
-      setSMSCount(count);
-      setSmsSupported(true);
+      // Load SMS data silently
+      try {
+        const [messagesList, count] = await Promise.all([
+          service.getSMSList(),
+          service.getSMSCount(),
+        ]);
 
+        setMessages(messagesList);
+        setSMSCount(count);
+      } catch (error: any) {
+        // Check for session errors - trigger re-login silently
+        if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+          const { requestRelogin } = useAuthStore.getState();
+          requestRelogin();
+        }
+        // Otherwise silently ignore - keep showing existing data
+      }
     } catch (error: any) {
-      // Silently ignore errors in background refresh
-      // If SMS was working before, keep showing the data
+      // Support check failed - silently ignore in background
+      if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+        const { requestRelogin } = useAuthStore.getState();
+        requestRelogin();
+      }
     }
   };
 
