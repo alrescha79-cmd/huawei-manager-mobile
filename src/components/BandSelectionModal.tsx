@@ -5,49 +5,52 @@ import {
     ScrollView,
     TouchableOpacity,
     StyleSheet,
+    Modal,
+    TextInput,
+    SafeAreaView,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { PageSheetModal } from './PageSheetModal';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { ModemService } from '@/services/modem.service';
 
 // LTE Band definitions - Comprehensive FDD and TDD bands
+// Added type property for filtering/rendering
 const LTE_BANDS = [
     // === FDD Bands ===
-    { bit: 0, name: 'B1', freq: '2100 MHz', region: 'Global' },
-    { bit: 1, name: 'B2', freq: '1900 MHz', region: 'Americas' },
-    { bit: 2, name: 'B3', freq: '1800 MHz', region: 'Global' },
-    { bit: 3, name: 'B4', freq: '1700/2100 MHz', region: 'Americas' },
-    { bit: 4, name: 'B5', freq: '850 MHz', region: 'Americas/Asia' },
-    { bit: 6, name: 'B7', freq: '2600 MHz', region: 'Global' },
-    { bit: 7, name: 'B8', freq: '900 MHz', region: 'Europe/Asia' },
-    { bit: 11, name: 'B12', freq: '700 MHz', region: 'Americas' },
-    { bit: 12, name: 'B13', freq: '700 MHz', region: 'Americas' },
-    { bit: 16, name: 'B17', freq: '700 MHz', region: 'Americas' },
-    { bit: 17, name: 'B18', freq: '850 MHz', region: 'Japan' },
-    { bit: 18, name: 'B19', freq: '850 MHz', region: 'Japan' },
-    { bit: 19, name: 'B20', freq: '800 MHz', region: 'Europe' },
-    { bit: 20, name: 'B21', freq: '1500 MHz', region: 'Japan' },
-    { bit: 24, name: 'B25', freq: '1900 MHz', region: 'Americas' },
-    { bit: 25, name: 'B26', freq: '850 MHz', region: 'Americas' },
-    { bit: 27, name: 'B28', freq: '700 MHz', region: 'Asia Pacific' },
-    { bit: 28, name: 'B29', freq: '700 MHz SDL', region: 'Americas' },
-    { bit: 29, name: 'B30', freq: '2300 MHz', region: 'Americas' },
-    { bit: 31, name: 'B32', freq: '1500 MHz SDL', region: 'Europe' },
-    { bit: 65, name: 'B66', freq: '1700/2100 MHz', region: 'Americas' },
-    { bit: 70, name: 'B71', freq: '600 MHz', region: 'Americas' },
+    { bit: 0, name: 'B1', freq: '2100 MHz', region: 'Global', type: 'FDD' },
+    { bit: 1, name: 'B2', freq: '1900 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 2, name: 'B3', freq: '1800 MHz', region: 'Global', type: 'FDD' },
+    { bit: 3, name: 'B4', freq: '1700/2100 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 4, name: 'B5', freq: '850 MHz', region: 'Americas/Asia', type: 'FDD' },
+    { bit: 6, name: 'B7', freq: '2600 MHz', region: 'Global', type: 'FDD' },
+    { bit: 7, name: 'B8', freq: '900 MHz', region: 'Europe/Asia', type: 'FDD' },
+    { bit: 11, name: 'B12', freq: '700 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 12, name: 'B13', freq: '700 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 16, name: 'B17', freq: '700 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 17, name: 'B18', freq: '850 MHz', region: 'Japan', type: 'FDD' },
+    { bit: 18, name: 'B19', freq: '850 MHz', region: 'Japan', type: 'FDD' },
+    { bit: 19, name: 'B20', freq: '800 MHz', region: 'Europe', type: 'FDD' },
+    { bit: 20, name: 'B21', freq: '1500 MHz', region: 'Japan', type: 'FDD' },
+    { bit: 24, name: 'B25', freq: '1900 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 25, name: 'B26', freq: '850 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 27, name: 'B28', freq: '700 MHz', region: 'Asia Pacific', type: 'FDD' },
+    { bit: 28, name: 'B29', freq: '700 MHz SDL', region: 'Americas', type: 'FDD' },
+    { bit: 29, name: 'B30', freq: '2300 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 31, name: 'B32', freq: '1500 MHz SDL', region: 'Europe', type: 'FDD' },
+    { bit: 65, name: 'B66', freq: '1700/2100 MHz', region: 'Americas', type: 'FDD' },
+    { bit: 70, name: 'B71', freq: '600 MHz', region: 'Americas', type: 'FDD' },
     // === TDD Bands ===
-    { bit: 33, name: 'B34', freq: '2010 MHz TDD', region: 'China' },
-    { bit: 37, name: 'B38', freq: '2600 MHz TDD', region: 'Global' },
-    { bit: 38, name: 'B39', freq: '1900 MHz TDD', region: 'China' },
-    { bit: 39, name: 'B40', freq: '2300 MHz TDD', region: 'Global' },
-    { bit: 40, name: 'B41', freq: '2500 MHz TDD', region: 'Global' },
-    { bit: 41, name: 'B42', freq: '3500 MHz TDD', region: 'Global' },
-    { bit: 42, name: 'B43', freq: '3700 MHz TDD', region: 'Global' },
-    { bit: 45, name: 'B46', freq: '5200 MHz LAA', region: 'Global' },
-    { bit: 47, name: 'B48', freq: '3600 MHz CBRS', region: 'Americas' },
+    { bit: 33, name: 'B34', freq: '2010 MHz', region: 'China', type: 'TDD' },
+    { bit: 37, name: 'B38', freq: '2600 MHz', region: 'Global', type: 'TDD' },
+    { bit: 38, name: 'B39', freq: '1900 MHz', region: 'China', type: 'TDD' },
+    { bit: 39, name: 'B40', freq: '2300 MHz', region: 'Global', type: 'TDD' },
+    { bit: 40, name: 'B41', freq: '2500 MHz', region: 'Global', type: 'TDD' },
+    { bit: 41, name: 'B42', freq: '3500 MHz', region: 'Global', type: 'TDD' },
+    { bit: 42, name: 'B43', freq: '3700 MHz', region: 'Global', type: 'TDD' },
+    { bit: 45, name: 'B46', freq: '5200 MHz', region: 'Global', type: 'LAA' },
+    { bit: 47, name: 'B48', freq: '3600 MHz', region: 'Americas', type: 'CBRS' },
 ];
 
 interface BandSelectionModalProps {
@@ -63,11 +66,13 @@ export function BandSelectionModal({
     modemService,
     onSaved,
 }: BandSelectionModalProps) {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography } = useTheme();
     const { t } = useTranslation();
 
     const [selectedBandBits, setSelectedBandBits] = useState<number[]>([]);
     const [isSaving, setIsSaving] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filterType, setFilterType] = useState<'ALL' | 'TDD' | 'FDD'>('ALL');
 
     // Load current band settings when modal opens
     useEffect(() => {
@@ -117,16 +122,11 @@ export function BandSelectionModal({
             }
             const lteBandHex = lteBandValue.toString(16).toUpperCase();
 
-            // Save band settings
             await modemService.setBandSettings('3FFFFFFF', lteBandHex);
-
-            // Show success and close modal
             ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
             onClose();
             onSaved?.();
         } catch (error: any) {
-            console.error('Error saving band settings:', error);
-            // Show more specific error message
             const errorMessage = error?.message || t('alerts.failedSaveBands');
             ThemedAlertHelper.alert(t('common.error'), errorMessage);
         } finally {
@@ -134,92 +134,325 @@ export function BandSelectionModal({
         }
     };
 
-    return (
-        <PageSheetModal
-            visible={visible}
-            onClose={onClose}
-            title={t('settings.lteBands')}
-            onSave={handleSave}
-            isSaving={isSaving}
-            saveText={t('common.save')}
-            cancelText={t('common.cancel')}
-        >
-            <ScrollView style={styles.content}>
-                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.md, textAlign: 'center' }]}>
-                    {t('settings.selectBands')}
-                </Text>
+    const handleSelectAll = () => {
+        // If items are filtered, only select visible items? 
+        // Or select absolutely all? Usually select all visible in list.
+        const visibleBits = filteredBands.map(b => b.bit);
+        // Check if all visible are selected
+        const allVisibleSelected = visibleBits.every(bit => selectedBandBits.includes(bit));
 
-                {/* Select All / Deselect All */}
-                <View style={{ flexDirection: 'row', justifyContent: 'center', marginBottom: spacing.md, gap: spacing.sm }}>
-                    <TouchableOpacity
-                        style={[styles.selectAllButton, { backgroundColor: colors.primary + '20', borderColor: colors.primary }]}
-                        onPress={() => setSelectedBandBits(LTE_BANDS.map(b => b.bit))}
-                    >
-                        <Text style={[typography.caption1, { color: colors.primary }]}>{t('settings.selectAll')}</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.selectAllButton, { backgroundColor: colors.card, borderColor: colors.border }]}
-                        onPress={() => setSelectedBandBits([])}
-                    >
-                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('settings.deselectAll')}</Text>
+        if (allVisibleSelected) {
+            // Deselect visible
+            setSelectedBandBits(prev => prev.filter(bit => !visibleBits.includes(bit)));
+        } else {
+            // Select all visible
+            const newSelected = new Set([...selectedBandBits, ...visibleBits]);
+            setSelectedBandBits(Array.from(newSelected));
+        }
+    };
+
+    const filteredBands = LTE_BANDS.filter(band => {
+        const matchesSearch =
+            band.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            band.freq.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            band.region.toLowerCase().includes(searchQuery.toLowerCase());
+
+        let matchesType = true;
+        if (filterType === 'TDD') {
+            matchesType = (band.type === 'TDD' || band.type === 'LAA' || band.type === 'CBRS');
+        } else if (filterType === 'FDD') {
+            matchesType = (band.type === 'FDD' || band.type === 'SDL');
+        }
+
+        return matchesSearch && matchesType;
+    });
+
+    return (
+        <Modal
+            visible={visible}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={onClose}
+        >
+            <View style={[styles.container, { backgroundColor: colors.background }]}>
+                {/* Header */}
+                <View style={styles.header}>
+                    <View>
+                        <Text style={[styles.title, { color: colors.text }]}>{t('settings.lteBandSelection') || 'Select Bands'}</Text>
+                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('settings.selectedCount', { count: selectedBandBits.length })}</Text>
+                    </View>
+                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                        <Ionicons name="close-circle" size={32} color={colors.primary} />
                     </TouchableOpacity>
                 </View>
 
-                {/* Band List */}
-                {LTE_BANDS.map((band) => (
-                    <TouchableOpacity
-                        key={band.bit}
-                        style={[styles.bandItem, {
-                            backgroundColor: selectedBandBits.includes(band.bit) ? colors.primary + '15' : colors.card,
-                            borderColor: selectedBandBits.includes(band.bit) ? colors.primary : colors.border
-                        }]}
-                        onPress={() => toggleBand(band.bit)}
-                    >
-                        <View style={{ flex: 1 }}>
-                            <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
-                                {band.name}
-                            </Text>
-                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                                {band.freq} • {band.region}
-                            </Text>
-                        </View>
-                        <MaterialIcons
-                            name={selectedBandBits.includes(band.bit) ? 'check-circle' : 'radio-button-unchecked'}
-                            size={24}
-                            color={selectedBandBits.includes(band.bit) ? colors.primary : colors.textSecondary}
+                {/* Search Bar */}
+                <View style={styles.searchContainer}>
+                    <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <Ionicons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                        <TextInput
+                            style={[styles.searchInput, { color: colors.text }]}
+                            placeholder={t('settings.searchPlaceholder')}
+                            placeholderTextColor={colors.textSecondary}
+                            value={searchQuery}
+                            onChangeText={setSearchQuery}
                         />
+                    </View>
+                </View>
+
+                {/* Filter Chips */}
+                <View style={styles.filterContainer}>
+                    <TouchableOpacity
+                        style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.card }, filterType === 'ALL' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        onPress={() => setFilterType('ALL')}
+                    >
+                        <Text style={[styles.filterText, { color: colors.textSecondary }, filterType === 'ALL' && { color: '#FFF' }]}>{t('settings.allBands')}</Text>
                     </TouchableOpacity>
-                ))}
-            </ScrollView>
-        </PageSheetModal>
+                    <TouchableOpacity
+                        style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.card }, filterType === 'TDD' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        onPress={() => setFilterType('TDD')}
+                    >
+                        <Text style={[styles.filterText, { color: colors.textSecondary }, filterType === 'TDD' && { color: '#FFF' }]}>{t('settings.tddOnly')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.card }, filterType === 'FDD' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        onPress={() => setFilterType('FDD')}
+                    >
+                        <Text style={[styles.filterText, { color: colors.textSecondary }, filterType === 'FDD' && { color: '#FFF' }]}>{t('settings.fddOnly')}</Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* Count & Select All */}
+                <View style={styles.listHeader}>
+                    <Text style={[styles.countText, { color: colors.textSecondary }]}>{t('settings.bandsFound', { count: filteredBands.length })}</Text>
+                    <TouchableOpacity onPress={handleSelectAll}>
+                        <Text style={[styles.selectAllText, { color: colors.primary }]}>
+                            {filteredBands.every(b => selectedBandBits.includes(b.bit)) && filteredBands.length > 0 ? t('settings.deselectAll') : t('settings.selectAll')}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+
+                {/* List */}
+                <ScrollView contentContainerStyle={styles.listContent}>
+                    {filteredBands.map((band) => {
+                        const isSelected = selectedBandBits.includes(band.bit);
+                        return (
+                            <TouchableOpacity
+                                key={band.bit}
+                                style={[
+                                    styles.bandItem,
+                                    { backgroundColor: colors.card },
+                                    isSelected && { borderColor: colors.primary, borderWidth: 1 }
+                                ]}
+                                onPress={() => toggleBand(band.bit)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.bandLeft}>
+                                    <View style={[styles.bandTag, { backgroundColor: colors.border }, isSelected && { backgroundColor: colors.primary }]}>
+                                        <Text style={styles.bandTagName}>{band.name}</Text>
+                                    </View>
+                                    <View>
+                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                            <Text style={[styles.freqText, { color: colors.text }]}>{band.freq}</Text>
+                                            <View style={[styles.typeTag, { borderColor: colors.textSecondary }]}>
+                                                <Text style={[styles.typeText, { color: colors.textSecondary }]}>{band.type}</Text>
+                                            </View>
+                                        </View>
+                                        <Text style={[styles.regionText, { color: colors.textSecondary }]}>{band.region}</Text>
+                                    </View>
+                                </View>
+
+                                <Ionicons
+                                    name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+                                    size={28}
+                                    color={isSelected ? colors.primary : colors.textSecondary}
+                                />
+                            </TouchableOpacity>
+                        );
+                    })}
+                    <View style={{ height: 100 }} />
+                </ScrollView>
+
+                {/* Footer Button - Floating */}
+                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                    <TouchableOpacity
+                        style={[styles.applyButton, { backgroundColor: colors.primary }, isSaving && { opacity: 0.7 }]}
+                        onPress={handleSave}
+                        disabled={isSaving}
+                    >
+                        <Text style={styles.applyButtonText}>
+                            {isSaving ? t('common.saving') || 'Saving...' : t('settings.applyConfiguration')}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    content: {
+    container: {
         flex: 1,
-        padding: 16,
+        paddingTop: 20,
     },
-    selectAllButton: {
-        paddingVertical: 8,
-        paddingHorizontal: 16,
-        borderRadius: 8,
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingBottom: 16,
+    },
+    title: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#FFF',
+    },
+    subtitle: {
+        fontSize: 14,
+        color: '#888',
+        marginTop: 2,
+    },
+    closeButton: {
+        padding: 4,
+    },
+    searchContainer: {
+        paddingHorizontal: 20,
+        marginBottom: 16,
+    },
+    searchBar: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: '#1E1E1E', // Slightly lighter than bg
+        borderRadius: 12,
+        paddingHorizontal: 12,
+        height: 44,
         borderWidth: 1,
+        borderColor: '#333',
+    },
+    searchInput: {
+        flex: 1,
+        color: '#FFF',
+        fontSize: 15,
+    },
+    filterContainer: {
+        flexDirection: 'row',
+        paddingHorizontal: 20,
+        gap: 12,
+        marginBottom: 20,
+    },
+    filterChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#333',
+        backgroundColor: '#1E1E1E',
+    },
+    filterText: {
+        color: '#AAA',
+        fontWeight: '600',
+        fontSize: 13,
+    },
+    listHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        marginBottom: 12,
+    },
+    countText: {
+        color: '#666',
+        fontSize: 12,
+        fontWeight: 'bold',
+        letterSpacing: 1,
+    },
+    selectAllText: {
+        color: '#007AFF', // Blue
+        fontSize: 14,
+        fontWeight: '600',
+    },
+    listContent: {
+        paddingHorizontal: 20,
+        paddingBottom: 100,
     },
     bandItem: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
+        backgroundColor: '#1C1C1E', // Card bg
         padding: 16,
-        borderRadius: 12,
+        borderRadius: 16,
+        marginBottom: 12,
         borderWidth: 1,
-        marginBottom: 8,
+        borderColor: 'transparent',
+    },
+    bandLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 16,
+    },
+    bandTag: {
+        width: 40,
+        height: 40,
+        borderRadius: 10,
+        backgroundColor: '#333',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    bandTagName: {
+        color: '#FFF',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
+    freqText: {
+        color: '#FFF',
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    typeTag: {
+        borderWidth: 1,
+        borderColor: '#666',
+        borderRadius: 4,
+        paddingHorizontal: 4,
+        paddingVertical: 1,
+    },
+    typeText: {
+        color: '#AAA',
+        fontSize: 10,
+        fontWeight: 'bold',
+    },
+    regionText: {
+        color: '#888',
+        fontSize: 13,
+        marginTop: 2,
+    },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 20,
+        paddingBottom: 40, // Extra padding for safe area
+        backgroundColor: '#121212', // Match bg
+        borderTopWidth: 1,
+        borderTopColor: '#222',
+    },
+    applyButton: {
+        backgroundColor: '#007AFF',
+        borderRadius: 14,
+        height: 56,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    applyButtonText: {
+        color: '#FFF',
+        fontSize: 17,
+        fontWeight: 'bold',
     },
 });
 
-// Helper function to get selected bands as display string
 export function getSelectedBandsDisplay(lteBandHex: string): string[] {
     try {
-        // Use BigInt for handling large bit positions (like bit 65 for B66)
         const lteBandValue = BigInt('0x' + lteBandHex);
         const activeBands: string[] = [];
         for (const band of LTE_BANDS) {

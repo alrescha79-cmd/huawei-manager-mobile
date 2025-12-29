@@ -214,6 +214,21 @@ export class ModemService {
     }
   }
 
+  async resetFactorySettings(): Promise<boolean> {
+    try {
+      const resetData = `<?xml version="1.0" encoding="UTF-8"?>
+        <request>
+          <Control>2</Control>
+        </request>`;
+
+      await this.apiClient.post('/api/device/control', resetData);
+      return true;
+    } catch (error) {
+      console.error('Error resetting modem:', error);
+      throw error;
+    }
+  }
+
   async getWanInfo(): Promise<WanInfo> {
     try {
       // Use /api/device/information endpoint for WAN IP

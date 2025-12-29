@@ -28,13 +28,29 @@ const TIMEZONES = [
 
 const formatModemTime = (time: string) => {
     if (!time) return '...';
-    // Expecting "YYYY/MM/DD HH:MM:SS" or "DD/MM/YYYY HH.MM.SS" or similar
-    // Try to normalize to YYYY-MM-DD HH:MM:SS
     try {
-        // Remove comma if present
-        let cleaned = time.replace(',', '');
+        // Handle ISO-like strings (e.g., 2025-12-29T13:04:25.23Z)
+        if (time.includes('T')) {
+            const dateObj = new Date(time);
+            if (!isNaN(dateObj.getTime())) {
+                const year = dateObj.getFullYear();
+                const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const hours = String(dateObj.getHours()).padStart(2, '0');
+                const minutes = String(dateObj.getMinutes()).padStart(2, '0');
+                const seconds = String(dateObj.getSeconds()).padStart(2, '0');
+                return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+            }
+            // Fallback for weirdly formatted ISO strings if Date parse fails but includes T
+            // Try to just take the part before T and part after T (stripping Z)
+            const parts = time.split('T');
+            const datePart = parts[0];
+            const timePart = parts[1]?.split('.')[0].replace('Z', '');
+            return `${datePart} ${timePart}`;
+        }
 
-        // Split date and time
+        // Standard logic for other formats
+        let cleaned = time.replace(',', '');
         const parts = cleaned.split(' ');
         if (parts.length < 2) return time.replace(/\//g, '-');
 
@@ -47,11 +63,10 @@ const formatModemTime = (time: string) => {
         // Fix date part: DD/MM/YYYY -> YYYY-MM-DD
         if (datePart.includes('/')) {
             const dateSegments = datePart.split('/');
-            // If year is last (DD/MM/YYYY)
             if (dateSegments[2].length === 4) {
+                // DD/MM/YYYY
                 datePart = `${dateSegments[2]}-${dateSegments[1]}-${dateSegments[0]}`;
             } else {
-                // Assume YYYY/MM/DD
                 datePart = datePart.replace(/\//g, '-');
             }
         }
@@ -203,6 +218,30 @@ export default function SystemSettingsScreen() {
         );
     };
 
+    const handleReset = async () => {
+        ThemedAlertHelper.alert(
+            t('settings.resetFactory'),
+            t('settings.resetConfirm'),
+            [
+                { text: t('common.cancel'), style: 'cancel' },
+                {
+                    text: t('settings.resetFactory'),
+                    style: 'destructive',
+                    onPress: async () => {
+                        if (modemService) {
+                            try {
+                                await modemService.resetFactorySettings();
+                                ThemedAlertHelper.alert(t('common.success'), t('settings.resetSuccess'));
+                            } catch (e) {
+                                ThemedAlertHelper.alert(t('common.error'), t('alerts.failedReset'));
+                            }
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     return (
         <ScrollView
             style={[styles.container, { backgroundColor: colors.background }]}
@@ -235,62 +274,12 @@ export default function SystemSettingsScreen() {
                 />
             </SettingsSection>
 
-            {/* App Settings */}
-            <SettingsSection title={t('settings.appSettings')}>
-                <View style={styles.customRow}>
-                    <Text style={[typography.body, { color: colors.text }]}>{t('settings.theme')}</Text>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                        {['light', 'dark', 'system'].map(mode => (
-                            <TouchableOpacity
-                                key={mode}
-                                style={[
-                                    styles.segmentedBtn,
-                                    {
-                                        backgroundColor: themeMode === mode ? colors.primary : 'transparent',
-                                        borderColor: colors.border,
-                                        borderWidth: 1
-                                    }
-                                ]}
-                                onPress={() => setThemeMode(mode as any)}
-                            >
-                                <MaterialIcons
-                                    name={mode === 'light' ? 'light-mode' : mode === 'dark' ? 'dark-mode' : 'brightness-auto'}
-                                    size={18}
-                                    color={themeMode === mode ? '#fff' : colors.textSecondary}
-                                />
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-                <View style={[styles.customRow, { borderBottomWidth: 0 }]}>
-                    <Text style={[typography.body, { color: colors.text }]}>{t('settings.language')}</Text>
-                    <View style={{ flexDirection: 'row', gap: 8 }}>
-                        {['en', 'id'].map(lang => (
-                            <TouchableOpacity
-                                key={lang}
-                                style={[
-                                    styles.segmentedBtn,
-                                    {
-                                        backgroundColor: language === lang ? colors.primary : 'transparent',
-                                        borderColor: colors.border,
-                                        borderWidth: 1,
-                                        width: 40
-                                    }
-                                ]}
-                                onPress={() => setLanguage(lang as any)}
-                            >
-                                <Text style={{ color: language === lang ? '#fff' : colors.textSecondary, fontWeight: '600', fontSize: 12 }}>
-                                    {lang.toUpperCase()}
-                                </Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                </View>
-            </SettingsSection>
-
             {/* Connection Credentials */}
             <SettingsSection title={t('settings.modemControl')}>
                 <View style={[styles.innerContent]}>
+                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 16, fontStyle: 'italic' }]}>
+                        {t('settings.modemControlNote')}
+                    </Text>
                     <View style={styles.inputGroup}>
                         <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.modemIpLabel')}</Text>
                         <TextInput
@@ -337,29 +326,22 @@ export default function SystemSettingsScreen() {
 
             {/* Actions */}
             <SettingsSection title={t('settings.actions')}>
-                <View style={styles.actionButtonsContainer}>
-                    <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.border }]}
-                        onPress={handleReboot}
-                        activeOpacity={0.7}
-                    >
-                        <MaterialIcons name="restart-alt" size={24} color={colors.error} />
-                        <Text style={[typography.subheadline, styles.actionButtonText, { color: colors.error }]}>
-                            {t('settings.rebootModem')}
-                        </Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                        style={[styles.actionButton, { backgroundColor: colors.background, borderColor: colors.border }]}
-                        onPress={handleLogout}
-                        activeOpacity={0.7}
-                    >
-                        <MaterialIcons name="logout" size={24} color={colors.error} />
-                        <Text style={[typography.subheadline, styles.actionButtonText, { color: colors.error }]}>
-                            {t('settings.logout')}
-                        </Text>
-                    </TouchableOpacity>
-                </View>
+                <SettingsItem
+                    icon="restart-alt"
+                    title={t('settings.rebootModem')}
+                    onPress={handleReboot}
+                />
+                <SettingsItem
+                    icon="restore"
+                    title={t('settings.resetFactory')}
+                    onPress={handleReset}
+                />
+                <SettingsItem
+                    icon="logout"
+                    title={t('settings.logout')}
+                    onPress={handleLogout}
+                    isLast
+                />
             </SettingsSection>
 
             {/* Timezone Modal */}
@@ -400,22 +382,6 @@ export default function SystemSettingsScreen() {
 
 const styles = StyleSheet.create({
     container: { flex: 1 },
-    customRow: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        paddingLeft: 16, // Check SettingsItem padding
-        borderBottomWidth: StyleSheet.hairlineWidth,
-        borderColor: '#eee' // Will be overridden
-    },
-    segmentedBtn: {
-        padding: 8,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center'
-    },
     innerContent: {
         padding: 16,
     },
@@ -442,26 +408,5 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         padding: 16,
-    },
-    actionButtonsContainer: {
-        flexDirection: 'row',
-        padding: 16,
-        gap: 12,
-    },
-    actionButton: {
-        flex: 1,
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 12, // Reduced from 16
-        paddingHorizontal: 8,
-        borderRadius: 12,
-        borderWidth: 1,
-        gap: 4, // Reduced from 8
-    },
-    actionButtonText: {
-        textAlign: 'center',
-        fontWeight: '600',
-        fontSize: 12, // Slightly smaller text
     },
 });
