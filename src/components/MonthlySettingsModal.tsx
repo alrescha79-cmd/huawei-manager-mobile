@@ -8,9 +8,11 @@ import {
     Switch,
     TextInput,
     ScrollView,
+    Platform,
+    StatusBar,
     ActivityIndicator,
 } from 'react-native';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 
@@ -42,15 +44,16 @@ export function MonthlySettingsModal({
     onSave,
     initialSettings,
 }: MonthlySettingsModalProps) {
-    const { colors } = useTheme();
+    const { colors, typography, spacing } = useTheme();
     const { t } = useTranslation();
 
     const [enabled, setEnabled] = useState(false);
     const [startDay, setStartDay] = useState(1);
     const [dataLimit, setDataLimit] = useState('');
     const [dataLimitUnit, setDataLimitUnit] = useState<'MB' | 'GB'>('GB');
-    const [monthThreshold, setMonthThreshold] = useState(90);
+    const [monthThreshold, setMonthThreshold] = useState('90');
     const [isSaving, setIsSaving] = useState(false);
+    const [showDayDropdown, setShowDayDropdown] = useState(false);
     const [showUnitDropdown, setShowUnitDropdown] = useState(false);
 
     // Load initial settings when modal opens
@@ -60,7 +63,7 @@ export function MonthlySettingsModal({
             setStartDay(initialSettings.startDay);
             setDataLimit(initialSettings.dataLimit > 0 ? initialSettings.dataLimit.toString() : '');
             setDataLimitUnit(initialSettings.dataLimitUnit);
-            setMonthThreshold(initialSettings.monthThreshold);
+            setMonthThreshold(initialSettings.monthThreshold.toString());
         }
     }, [visible, initialSettings]);
 
@@ -72,7 +75,7 @@ export function MonthlySettingsModal({
                 startDay,
                 dataLimit: parseInt(dataLimit) || 0,
                 dataLimitUnit,
-                monthThreshold,
+                monthThreshold: parseInt(monthThreshold) || 90,
             });
             onClose();
         } catch (error) {
@@ -81,8 +84,6 @@ export function MonthlySettingsModal({
             setIsSaving(false);
         }
     };
-
-    const [sliderWidth, setSliderWidth] = useState(0);
 
     return (
         <Modal
@@ -93,61 +94,79 @@ export function MonthlySettingsModal({
         >
             <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
                 {/* Header */}
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                    <Text style={[styles.title, { color: colors.text }]}>
-                        {t('home.monthlySettings') || 'Usage Limit'}
-                    </Text>
+                <View style={[styles.modalHeader, {
+                    borderBottomColor: colors.border,
+                    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
+                }]}>
                     <TouchableOpacity onPress={onClose}>
-                        <Ionicons name="close-circle" size={32} color={colors.primary} />
+                        <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
+                    </TouchableOpacity>
+                    <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+                        {t('home.monthlySettings')}
+                    </Text>
+                    <TouchableOpacity onPress={handleSave} disabled={isSaving}>
+                        {isSaving ? (
+                            <ActivityIndicator color={colors.primary} size="small" />
+                        ) : (
+                            <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('common.save')}</Text>
+                        )}
                     </TouchableOpacity>
                 </View>
 
-                <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 100 }}>
-
-                    {/* Enable Toggle Box */}
-                    <View style={[styles.toggleBox, { borderColor: colors.primary }]}>
-                        <Text style={[styles.label, { color: colors.text, fontSize: 16 }]}>
-                            {t('home.enableMonthlyLimit')}
-                        </Text>
+                <ScrollView style={styles.modalContent}>
+                    {/* Enable Toggle */}
+                    <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
+                        <View style={{ flex: 1 }}>
+                            <Text style={[typography.body, { color: colors.text }]}>{t('home.enableMonthlyLimit')}</Text>
+                        </View>
                         <Switch
                             value={enabled}
                             onValueChange={setEnabled}
-                            trackColor={{ false: '#333', true: colors.primary }}
-                            thumbColor={'#FFF'}
+                            trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                            thumbColor={enabled ? colors.primary : colors.textSecondary}
                         />
                     </View>
 
-                    {/* Cycle Start Date */}
-                    <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.startDate')}</Text>
-                        <View style={[styles.dateCard, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                            <Text style={[styles.dateHeaderStr, { color: colors.text }]}>
-                                {t('home.everyDate')} <Text style={{ color: colors.primary }}>{startDay}</Text>
-                            </Text>
-                            <View style={styles.daysGrid}>
-                                {DAYS.map((day) => (
-                                    <TouchableOpacity
-                                        key={day}
-                                        style={[
-                                            styles.dayItem,
-                                            { borderColor: colors.border },
-                                            startDay === day && { backgroundColor: colors.primary, borderColor: colors.primary }
-                                        ]}
-                                        onPress={() => setStartDay(day)}
-                                    >
-                                        <Text style={[styles.dayText, { color: startDay === day ? '#FFF' : colors.text }]}>
-                                            {day}
-                                        </Text>
-                                    </TouchableOpacity>
-                                ))}
+                    {/* Start Date Dropdown */}
+                    <View style={styles.formGroup}>
+                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                            {t('home.startDate')}
+                        </Text>
+                        <TouchableOpacity
+                            style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                            onPress={() => { setShowDayDropdown(!showDayDropdown); setShowUnitDropdown(false); }}
+                        >
+                            <Text style={[typography.body, { color: colors.text }]}>{startDay}</Text>
+                            <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                        {showDayDropdown && (
+                            <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                                <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
+                                    {DAYS.map((day) => (
+                                        <TouchableOpacity
+                                            key={day}
+                                            style={[styles.dropdownItem, startDay === day && { backgroundColor: colors.primary + '20' }]}
+                                            onPress={() => {
+                                                setStartDay(day);
+                                                setShowDayDropdown(false);
+                                            }}
+                                        >
+                                            <Text style={[typography.body, { color: startDay === day ? colors.primary : colors.text }]}>
+                                                {day}
+                                            </Text>
+                                        </TouchableOpacity>
+                                    ))}
+                                </ScrollView>
                             </View>
-                        </View>
+                        )}
                     </View>
 
                     {/* Monthly Data Plan Input */}
-                    <View style={styles.section}>
-                        <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.monthlyDataPlan')}</Text>
-                        <View style={{ flexDirection: 'row', gap: 12 }}>
+                    <View style={styles.formGroup}>
+                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                            {t('home.monthlyDataPlan')}
+                        </Text>
+                        <View style={{ flexDirection: 'row', gap: spacing.sm }}>
                             <TextInput
                                 style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, flex: 1 }]}
                                 value={dataLimit}
@@ -158,77 +177,51 @@ export function MonthlySettingsModal({
                             />
                             <TouchableOpacity
                                 style={[styles.unitDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-                                onPress={() => setShowUnitDropdown(!showUnitDropdown)}
+                                onPress={() => { setShowUnitDropdown(!showUnitDropdown); setShowDayDropdown(false); }}
                             >
-                                <Text style={[styles.unitText, { color: colors.text }]}>{dataLimitUnit}</Text>
-                                <MaterialIcons name="arrow-drop-down" size={24} color={colors.text} />
+                                <Text style={[typography.body, { color: colors.text }]}>{dataLimitUnit}</Text>
+                                <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
                         {showUnitDropdown && (
-                            <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                            <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border, position: 'relative', marginTop: spacing.xs }]}>
                                 {(['MB', 'GB'] as const).map((unit) => (
                                     <TouchableOpacity
                                         key={unit}
-                                        style={[styles.dropdownItem, dataLimitUnit === unit && { backgroundColor: colors.primary + '30' }]}
+                                        style={[styles.dropdownItem, dataLimitUnit === unit && { backgroundColor: colors.primary + '20' }]}
                                         onPress={() => {
                                             setDataLimitUnit(unit);
                                             setShowUnitDropdown(false);
                                         }}
                                     >
-                                        <Text style={{ color: colors.text }}>{unit}</Text>
+                                        <Text style={[typography.body, { color: dataLimitUnit === unit ? colors.primary : colors.text }]}>
+                                            {unit}
+                                        </Text>
                                     </TouchableOpacity>
                                 ))}
                             </View>
                         )}
                     </View>
 
-                    {/* Threshold Slider */}
-                    <View style={styles.section}>
-                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.threshold').replace(' (%)', '')}</Text>
-                            <View style={[styles.badge, { borderColor: colors.primary }]}>
-                                <Text style={{ color: colors.primary, fontWeight: 'bold' }}>{monthThreshold} %</Text>
-                            </View>
-                        </View>
-
-                        {/* Custom Slider Bar */}
-                        <View
-                            style={[styles.sliderTrack, { backgroundColor: '#333' }]}
-                            onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
-                            onTouchEnd={(e) => {
-                                if (sliderWidth > 0) {
-                                    const x = e.nativeEvent.locationX;
-                                    const percent = Math.min(100, Math.max(0, Math.round((x / sliderWidth) * 100)));
-                                    setMonthThreshold(percent);
-                                }
-                            }}
-                        >
-                            <View style={[styles.sliderFill, { width: `${monthThreshold}%`, backgroundColor: colors.primary }]}>
-                                <View style={styles.sliderKnob} />
-                            </View>
-                        </View>
-
-                        <Text style={[styles.description, { color: colors.textSecondary }]}>
-                            {t('home.thresholdDesc').replace('{{value}}', monthThreshold.toString())}
+                    {/* Threshold Input */}
+                    <View style={styles.formGroup}>
+                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                            {t('home.threshold')}
                         </Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <TextInput
+                                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, flex: 1 }]}
+                                value={monthThreshold}
+                                onChangeText={setMonthThreshold}
+                                placeholder="90"
+                                placeholderTextColor={colors.textSecondary}
+                                keyboardType="numeric"
+                                maxLength={3}
+                            />
+                            <Text style={[typography.body, { color: colors.text, marginLeft: spacing.sm }]}>%</Text>
+                        </View>
                     </View>
-
                 </ScrollView>
-
-                {/* Footer Button */}
-                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-                    <TouchableOpacity
-                        style={[styles.applyButton, { backgroundColor: colors.primary }]}
-                        onPress={handleSave}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <ActivityIndicator color="#FFF" />
-                        ) : (
-                            <Text style={styles.applyButtonText}>{t('settings.applyConfiguration')}</Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
             </View>
         </Modal>
     );
@@ -237,155 +230,65 @@ export function MonthlySettingsModal({
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
-        paddingTop: 20,
     },
     modalHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 20,
+        paddingHorizontal: 16,
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
     modalContent: {
         flex: 1,
-        padding: 20,
+        padding: 16,
     },
-    toggleBox: {
+    settingRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 1,
-        marginBottom: 24,
+        paddingVertical: 16,
+        borderBottomWidth: 1,
+        marginBottom: 16,
     },
-    label: {
-        fontWeight: '600',
+    formGroup: {
+        marginBottom: 20,
     },
-    section: {
-        marginBottom: 24,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        marginBottom: 12,
-    },
-    dateCard: {
-        borderWidth: 1,
-        borderRadius: 12,
-        padding: 16,
-    },
-    dateHeaderStr: {
-        textAlign: 'center',
-        fontSize: 14,
-        marginBottom: 12,
-    },
-    daysGrid: {
+    dropdown: {
         flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        justifyContent: 'center',
-    },
-    dayItem: {
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        borderWidth: 1,
         alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dayText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    input: {
-        height: 50,
-        borderRadius: 12,
+        justifyContent: 'space-between',
         paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 10,
         borderWidth: 1,
-        fontSize: 16,
     },
     unitDropdown: {
-        height: 50,
-        width: 100,
-        borderRadius: 12,
-        borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'center',
-    },
-    unitText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginRight: 4,
+        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 10,
+        borderWidth: 1,
+        minWidth: 90,
     },
     dropdownMenu: {
-        marginTop: 8,
-        borderRadius: 12,
+        borderRadius: 10,
         borderWidth: 1,
-        alignSelf: 'flex-end',
-        width: 100,
-        position: 'absolute',
-        top: 60,
-        right: 0,
-        zIndex: 100,
+        marginTop: 4,
+        overflow: 'hidden',
     },
     dropdownItem: {
-        padding: 12,
-        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
     },
-    badge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
+    input: {
+        paddingHorizontal: 16,
+        paddingVertical: 14,
+        borderRadius: 10,
         borderWidth: 1,
-    },
-    sliderTrack: {
-        height: 32,
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginBottom: 8,
-    },
-    sliderFill: {
-        height: '100%',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-    },
-    sliderKnob: {
-        width: 4,
-        height: 20,
-        backgroundColor: '#FFF',
-        borderRadius: 2,
-        marginRight: 6,
-    },
-    description: {
-        fontSize: 12,
-        marginTop: 8,
-    },
-    footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        padding: 20,
-        paddingBottom: 40,
-        borderTopWidth: 1,
-    },
-    applyButton: {
-        height: 50,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    applyButtonText: {
-        color: '#FFF',
         fontSize: 16,
-        fontWeight: 'bold',
     },
 });
 

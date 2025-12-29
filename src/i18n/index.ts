@@ -30,7 +30,7 @@ const translations: Record<string, typeof en> = {
 export function useTranslation() {
     const { language } = useThemeStore();
 
-    const t = (key: string, options?: Record<string, string | number>): string => {
+    const t = (key: string): string => {
         const keys = key.split('.');
         const translation = translations[language] || translations.en;
 
@@ -52,15 +52,7 @@ export function useTranslation() {
             }
         }
 
-        let text = typeof result === 'string' ? result : key;
-
-        if (options) {
-            Object.entries(options).forEach(([k, v]) => {
-                text = text.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
-            });
-        }
-
-        return text;
+        return typeof result === 'string' ? result : key;
     };
 
     return { t, language };

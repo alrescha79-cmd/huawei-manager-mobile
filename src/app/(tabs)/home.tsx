@@ -8,8 +8,6 @@ import {
   TouchableOpacity,
   Switch,
   ActivityIndicator,
-  Platform,
-  StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -599,10 +597,7 @@ export default function HomeScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
-      ]}
+      contentContainerStyle={[styles.content, { paddingTop: 8 }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}
@@ -774,7 +769,6 @@ export default function HomeScreen() {
                 {selectedBands.length > 0 ? selectedBands.join(', ') : t('common.loading')}
               </Text>
             </View>
-            <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
           </TouchableOpacity>
 
           {/* Change IP Button */}

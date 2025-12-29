@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, SettingsSection, SettingsItem, SelectionModal } from '@/components';
+import { ThemedAlertHelper, SettingsSection, SettingsItem } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const ANTENNA_MODES = [
@@ -27,7 +27,6 @@ export default function ModemSettingsScreen() {
 
     const [modemService, setModemService] = useState<ModemService | null>(null);
     const [antennaMode, setAntennaMode] = useState('auto');
-    const [showAntennaModal, setShowAntennaModal] = useState(false);
     const [isChangingAntenna, setIsChangingAntenna] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -104,29 +103,29 @@ export default function ModemSettingsScreen() {
             </SettingsSection>
 
             <SettingsSection title={t('settings.antennaSettings')}>
-                <SettingsItem
-                    title={t('settings.antennaSettings')}
-                    value={t(ANTENNA_MODES.find(m => m.value === antennaMode)?.labelKey || 'settings.antennaAuto')}
-                    onPress={() => setShowAntennaModal(true)}
-                    isLast
-                    rightElement={isChangingAntenna ? <ActivityIndicator size="small" color={colors.primary} /> : undefined}
-                />
-            </SettingsSection>
+                {ANTENNA_MODES.map((mode, index) => {
+                    const isActive = antennaMode === mode.value;
+                    const isProcessing = isChangingAntenna && isActive;
 
-            <SelectionModal
-                visible={showAntennaModal}
-                title={t('settings.antennaSettings')}
-                options={ANTENNA_MODES.map(mode => ({
-                    label: t(mode.labelKey),
-                    value: mode.value
-                }))}
-                selectedValue={antennaMode}
-                onSelect={(val) => {
-                    setShowAntennaModal(false);
-                    handleAntennaChange(val);
-                }}
-                onClose={() => setShowAntennaModal(false)}
-            />
+                    return (
+                        <SettingsItem
+                            key={mode.value}
+                            icon={mode.icon}
+                            title={t(mode.labelKey)}
+                            onPress={() => handleAntennaChange(mode.value as any)}
+                            showChevron={false}
+                            rightElement={
+                                isProcessing ? (
+                                    <ActivityIndicator size="small" color={colors.primary} />
+                                ) : isActive ? (
+                                    <MaterialIcons name="check" size={20} color={colors.primary} />
+                                ) : undefined
+                            }
+                            isLast={index === ANTENNA_MODES.length - 1}
+                        />
+                    );
+                })}
+            </SettingsSection>
         </ScrollView>
     );
 }

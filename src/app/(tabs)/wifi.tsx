@@ -559,10 +559,7 @@ export default function WiFiScreen() {
   return (
     <ScrollView
       style={[styles.container, { backgroundColor: colors.background }]}
-      contentContainerStyle={[
-        styles.content,
-        { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
-      ]}
+      contentContainerStyle={[styles.content, { paddingTop: 8 }]}
       refreshControl={
         <RefreshControl
           refreshing={isRefreshing}

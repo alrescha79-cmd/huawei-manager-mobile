@@ -302,7 +302,7 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                         valueColor={colors.yellow}
                     />
 
-                    {/* Progress Bar - show monthly usage percentage using weights */}
+                    {/* Progress Bar - show monthly usage percentage */}
                     <FlexWidget
                         style={{
                             height: 6,
@@ -310,21 +310,14 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                             borderRadius: 3,
                             marginTop: 6,
                             width: 'match_parent',
-                            flexDirection: 'row',
                         }}
                     >
                         <FlexWidget
                             style={{
+                                width: `${Math.min((monthTotal / (50 * 1024 * 1024 * 1024)) * 100, 100)}%`,
                                 height: 6,
                                 backgroundColor: monthTotal > 40 * 1024 * 1024 * 1024 ? colors.orange : colors.blue,
                                 borderRadius: 3,
-                                flex: Math.min((monthTotal / (50 * 1024 * 1024 * 1024)) * 100, 100) || 1,
-                            }}
-                        />
-                        <FlexWidget
-                            style={{
-                                height: 6,
-                                flex: 100 - (Math.min((monthTotal / (50 * 1024 * 1024 * 1024)) * 100, 100) || 1),
                             }}
                         />
                     </FlexWidget>
