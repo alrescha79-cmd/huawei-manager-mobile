@@ -126,7 +126,7 @@ export default function HomeScreen() {
       try {
         const date = await AsyncStorage.getItem('lastClearedTrafficDate');
         if (date) setLastClearedDate(date);
-        
+
         // Load previous total traffic for comparison
         const prevTotal = await AsyncStorage.getItem('previousTotalTraffic');
         if (prevTotal) setPreviousTotalTraffic(parseInt(prevTotal));
@@ -194,7 +194,7 @@ export default function HomeScreen() {
         await AsyncStorage.setItem('lastClearedTrafficDate', now);
         setLastClearedDate(now);
       }
-      
+
       // Save current total for next comparison (only if significant)
       if (currentTotal > 1024 * 1024) { // Only save if > 1MB
         setPreviousTotalTraffic(currentTotal);
@@ -952,9 +952,6 @@ export default function HomeScreen() {
           {/* Header with gear icon - centered title */}
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm }}>
             <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{t('home.trafficStats')}</Text>
-            <TouchableOpacity onPress={() => setShowMonthlySettingsModal(true)} style={{ position: 'absolute', right: 0 }}>
-              <MaterialIcons name="data-saver-on" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
           </View>
 
           {/* Divider below header */}
@@ -1064,19 +1061,16 @@ export default function HomeScreen() {
           {/* Divider */}
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-          {/* Clear History Section */}
-          <View style={{ marginTop: spacing.md, alignItems: 'center' }}>
-            {lastClearedDate && (
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-                {t('home.lastCleared')}: {new Date(lastClearedDate).toLocaleDateString()}
-              </Text>
-            )}
+          {/* Actions: Clear History + Monthly Settings */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md, gap: 12 }}>
+            {/* Clear History Button */}
             <TouchableOpacity
               style={{
+                flex: 1,
                 flexDirection: 'row',
                 alignItems: 'center',
+                justifyContent: 'center',
                 paddingVertical: spacing.sm,
-                paddingHorizontal: spacing.md,
                 backgroundColor: colors.error + '15',
                 borderRadius: 8,
                 opacity: isClearingHistory ? 0.6 : 1,
@@ -1095,7 +1089,33 @@ export default function HomeScreen() {
                 </>
               )}
             </TouchableOpacity>
+
+            {/* Monthly Settings Button */}
+            <TouchableOpacity
+              style={{
+                flex: 1,
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'center',
+                paddingVertical: spacing.sm,
+                backgroundColor: colors.primary + '15',
+                borderRadius: 8,
+              }}
+              onPress={() => setShowMonthlySettingsModal(true)}
+            >
+              <MaterialIcons name="data-saver-on" size={18} color={colors.primary} />
+              <Text style={[typography.caption1, { color: colors.primary, marginLeft: 6, fontWeight: '600' }]}>
+                {t('home.monthlySettings') || 'Monthly Limit'}
+              </Text>
+            </TouchableOpacity>
           </View>
+
+          {/* Last Cleared Text */}
+          {lastClearedDate && (
+            <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
+              {t('home.lastCleared')}: {new Date(lastClearedDate).toLocaleDateString()}
+            </Text>
+          )}
         </Card>
       )}
 

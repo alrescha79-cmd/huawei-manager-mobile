@@ -78,11 +78,9 @@ async function updateWidgetWithSpeed(): Promise<void> {
         });
 
         if (updateCount % 10 === 0) {
-            console.log(`[Widget] Speed update #${updateCount}: ${(speedData.currentDownloadRate / 1024 / 1024).toFixed(2)} MB/s down, ${(speedData.currentUploadRate / 1024 / 1024).toFixed(2)} MB/s up`);
         }
     } catch (error) {
         if (updateCount % 10 === 0) {
-            console.log('[Widget] Speed update failed:', error);
         }
     } finally {
         isUpdating = false;
@@ -108,9 +106,7 @@ async function updateWidgetWithFullData(): Promise<void> {
             widgetNotExist: 'ignore', // Don't throw error if widget doesn't exist
         });
 
-        console.log('[Widget] Full data update complete');
     } catch (error) {
-        console.log('[Widget] Full data update failed:', error);
     }
 }
 
@@ -132,7 +128,6 @@ export async function updateModemWidget(): Promise<void> {
  * @returns Function to stop updates
  */
 export function startRealtimeWidgetUpdates(): () => void {
-    console.log('[Widget] Starting realtime updates...');
     stopRealtimeWidgetUpdates();
     
     // Reset counter and flag
@@ -155,7 +150,6 @@ export function startRealtimeWidgetUpdates(): () => void {
         updateWidgetWithFullData();
     }, FULL_UPDATE_INTERVAL);
 
-    console.log(`[Widget] Updates started: speed every ${SPEED_UPDATE_INTERVAL}ms, full every ${FULL_UPDATE_INTERVAL}ms`);
 
     return stopRealtimeWidgetUpdates;
 }
@@ -164,12 +158,10 @@ export function stopRealtimeWidgetUpdates(): void {
     if (speedIntervalId) {
         clearInterval(speedIntervalId);
         speedIntervalId = null;
-        console.log('[Widget] Speed updates stopped');
     }
 
     if (fullDataIntervalId) {
         clearInterval(fullDataIntervalId);
         fullDataIntervalId = null;
-        console.log('[Widget] Full updates stopped');
     }
 }

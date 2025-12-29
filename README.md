@@ -70,6 +70,30 @@
 
 ---
 
+## 📸 Screenshots
+
+<p align="center">
+  <em>Light Mode | 🇬🇧 EN</em>
+</p>
+
+
+
+| Home | WiFi | SMS | Sett |
+|:---------:|:----:|:---:|:--------:|
+| ![home](https://github.com/user-attachments/assets/8b1aff22-dcf2-4ff7-9886-8260cf1a52ab) | ![wifi](https://github.com/user-attachments/assets/15e11a76-e501-41aa-86bf-c17ee8c9555e) | ![sms](https://github.com/user-attachments/assets/d569df27-5145-4bef-9767-c972e28a22ef) | ![sett](https://github.com/user-attachments/assets/1f53d370-836c-4e34-9be7-dd6c067861d8) |
+
+<p align="center">
+  <em>Mode gelap | 🇮🇩 ID</em>
+</p>
+
+
+
+| Home | WiFi | SMS | Sett |
+|:---------:|:----:|:---:|:--------:|
+| ![dark_home](https://github.com/user-attachments/assets/575730c6-62cf-44bd-b407-8bfb865e0772) | ![dark_wifi](https://github.com/user-attachments/assets/de1cee1e-f1a6-4470-b59f-114e1ea4a807) | ![dark_sms](https://github.com/user-attachments/assets/0fbb6bb4-6639-4e2e-ab46-eb072bb8edf0) | ![dark_sett](https://github.com/user-attachments/assets/a706b51e-7e25-4d5f-90b0-71a6babebbd9) |
+
+---
+
 ## ✨ Fitur Utama
 
 | Feature | Description |
@@ -84,30 +108,6 @@
 | 📟 **Widget** | Widget untuk monitoring signal, traffic, dan status koneksi |
 | 🌙 **Dark Mode** | Support light dan dark theme |
 | 🔤 **Language** | Pilih bahasa (Bahasa Indonesia dan Bahasa Inggris) |
-
----
-
-## 📸 Screenshots
-
-<p align="center">
-  <em>Light Mode | 🇬🇧 EN</em>
-</p>
-
-
-
-| Home | WiFi | SMS | Sett |
-|:---------:|:----:|:---:|:--------:|
-| ![home](https://github.com/user-attachments/assets/6e9ac40f-022b-4cc9-ab23-45a3a1c0cdc5) | ![wifi](https://github.com/user-attachments/assets/40b126bc-aa33-4813-af4a-8e17fa4687c3) | ![sms](https://github.com/user-attachments/assets/6b8c2297-8369-452e-9fa9-cd77a1fa4d3c) | ![setings](https://github.com/user-attachments/assets/8e3983b9-96f1-4c0d-82a3-a01e9626f788) |
-
-<p align="center">
-  <em>Mode gelap | 🇮🇩 ID</em>
-</p>
-
-
-
-| Home | WiFi | SMS | Sett |
-|:---------:|:----:|:---:|:--------:|
-| ![home](https://github.com/user-attachments/assets/13966fe5-092f-4845-b85d-27097222f92a) | ![wifi](https://github.com/user-attachments/assets/a42b5ef0-2d1e-4f44-b1f6-a6c6f39ee722) | ![sms](https://github.com/user-attachments/assets/02051333-b094-4c52-9baf-a6d0f491cdf9) | ![settings](https://github.com/user-attachments/assets/95f5e59a-c060-4477-9bb9-08d71caf82e7) |
 
 ---
 
