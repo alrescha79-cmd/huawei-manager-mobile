@@ -74,7 +74,6 @@ async function updateWidgetWithSpeed(): Promise<void> {
         await requestWidgetUpdate({
             widgetName: WIDGET_NAME,
             renderWidget: () => <ModemStatusWidget data={mergedData} />,
-            widgetNotExist: 'ignore', // Don't throw error if widget doesn't exist
         });
 
         if (updateCount % 10 === 0) {
@@ -103,7 +102,6 @@ async function updateWidgetWithFullData(): Promise<void> {
         await requestWidgetUpdate({
             widgetName: WIDGET_NAME,
             renderWidget: () => <ModemStatusWidget data={cachedFullData!} />,
-            widgetNotExist: 'ignore', // Don't throw error if widget doesn't exist
         });
 
     } catch (error) {
@@ -129,11 +127,11 @@ export async function updateModemWidget(): Promise<void> {
  */
 export function startRealtimeWidgetUpdates(): () => void {
     stopRealtimeWidgetUpdates();
-    
+
     // Reset counter and flag
     updateCount = 0;
     isUpdating = false;
-    
+
     // Initial full update
     updateWidgetWithFullData();
 

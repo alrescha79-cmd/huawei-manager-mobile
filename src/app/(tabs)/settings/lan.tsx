@@ -15,7 +15,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem } from '@/components';
+import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal } from '@/components';
 
 const ETHERNET_MODES = [
     { value: 'auto', labelKey: 'networkSettings.modeAuto' },
@@ -36,7 +36,7 @@ export default function LanSettingsScreen() {
     const [ethernetMode, setEthernetMode] = useState<'auto' | 'lan_only' | 'pppoe' | 'dynamic_ip' | 'pppoe_dynamic'>('auto');
     const [ethernetStatus, setEthernetStatus] = useState<any>({ connected: false });
     const [isChangingEthernet, setIsChangingEthernet] = useState(false);
-    const [showEthernetDropdown, setShowEthernetDropdown] = useState(false);
+    const [showEthernetModal, setShowEthernetModal] = useState(false);
 
     // DHCP
     const [dhcpSettings, setDhcpSettings] = useState({
@@ -109,7 +109,7 @@ export default function LanSettingsScreen() {
     const handleEthernetModeChange = async (mode: typeof ethernetMode) => {
         if (!networkSettingsService || isChangingEthernet) return;
         setIsChangingEthernet(true);
-        setShowEthernetDropdown(false);
+        // Modal is closed by onSelect
         try {
             await networkSettingsService.setEthernetConnectionMode(mode);
             setEthernetMode(mode);
@@ -253,39 +253,35 @@ export default function LanSettingsScreen() {
                 <SettingsItem
                     title={t('networkSettings.connectionMode')}
                     value={(() => { const mode = ETHERNET_MODES.find(m => m.value === ethernetMode); return mode ? t(mode.labelKey) : t('networkSettings.modeAuto'); })()}
-                    onPress={() => setShowEthernetDropdown(!showEthernetDropdown)}
-                    showChevron={false}
+                    onPress={() => setShowEthernetModal(true)}
                     rightElement={
-                        isChangingEthernet ? <ActivityIndicator size="small" color={colors.primary} /> : <MaterialIcons name={showEthernetDropdown ? "expand-less" : "expand-more"} size={24} color={colors.primary} />
+                        isChangingEthernet ? <ActivityIndicator size="small" color={colors.primary} /> : undefined
                     }
-                    isLast={!showEthernetDropdown && !ethernetStatus.connected}
+                    isLast={!ethernetStatus.connected}
                 />
 
-                {showEthernetDropdown && (
-                    <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }}>
-                        {ETHERNET_MODES.map((mode, index) => (
-                            <TouchableOpacity
-                                key={mode.value}
-                                style={[styles.dropdownItem, {
-                                    backgroundColor: ethernetMode === mode.value ? colors.primary + '10' : 'transparent',
-                                    borderBottomWidth: (index === ETHERNET_MODES.length - 1) && !ethernetStatus.connected ? 0 : StyleSheet.hairlineWidth
-                                }]}
-                                onPress={() => handleEthernetModeChange(mode.value as any)}
-                            >
-                                <Text style={{ color: ethernetMode === mode.value ? colors.primary : colors.text }}>{t(mode.labelKey)}</Text>
-                                {ethernetMode === mode.value && <MaterialIcons name="check" size={18} color={colors.primary} />}
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-                )}
-
                 {ethernetStatus.connected && (
-                    <View style={{ padding: 16, borderTopWidth: showEthernetDropdown ? StyleSheet.hairlineWidth : 1, borderTopColor: colors.border }}>
+                    <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
                         <InfoRow label={t('networkSettings.ipAddress')} value={ethernetStatus.ipAddress} />
                         <InfoRow label={t('networkSettings.gateway')} value={ethernetStatus.gateway} />
                     </View>
                 )}
             </SettingsSection>
+
+            <SelectionModal
+                visible={showEthernetModal}
+                title={t('networkSettings.connectionMode')}
+                options={ETHERNET_MODES.map(mode => ({
+                    label: t(mode.labelKey),
+                    value: mode.value
+                }))}
+                selectedValue={ethernetMode}
+                onSelect={(val) => {
+                    setShowEthernetModal(false);
+                    handleEthernetModeChange(val);
+                }}
+                onClose={() => setShowEthernetModal(false)}
+            />
 
             {/* DHCP Section */}
             <SettingsSection title={t('networkSettings.dhcpSettings')}>

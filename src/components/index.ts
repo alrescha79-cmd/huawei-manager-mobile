@@ -18,3 +18,4 @@ export { DeviceDetailModal } from './DeviceDetailModal';
 export { DiagnosisResultModal } from './DiagnosisResultModal';
 export { SpeedtestModal } from './SpeedtestModal';
 export { SettingsSection, SettingsItem } from './SettingsList';
+export { SelectionModal } from './SelectionModal';

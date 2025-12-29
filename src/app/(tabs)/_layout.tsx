@@ -19,10 +19,7 @@ const StatusBarHeader = () => {
         backgroundColor={colors.background}
         translucent={false}
       />
-      <View style={{
-        height: statusBarHeight,
-        backgroundColor: colors.background
-      }} />
+      {/* Spacer removed provided screens handle their own safe area */}
     </>
   );
 };
