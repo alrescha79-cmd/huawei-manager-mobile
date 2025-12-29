@@ -3,20 +3,44 @@ import {
     StyleSheet,
     ScrollView,
     Linking,
+    View,
+    Text,
+    TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { SettingsSection, SettingsItem } from '@/components';
+import { SettingsSection, SettingsItem, SelectionModal } from '@/components';
+import { useThemeStore } from '@/stores/theme.store';
 
 export default function SettingsIndex() {
     const router = useRouter();
-    const { colors } = useTheme();
+    const { colors, typography } = useTheme();
     const { t } = useTranslation();
+    const { themeMode, setThemeMode, language, setLanguage } = useThemeStore();
+
+    const [showThemeModal, setShowThemeModal] = React.useState(false);
+    const [showLanguageModal, setShowLanguageModal] = React.useState(false);
 
     const handleOpenGitHub = () => {
         Linking.openURL('https://github.com/alrescha79-cmd');
+    };
+
+    const getThemeLabel = (mode: string) => {
+        switch (mode) {
+            case 'light': return t('settings.themeLight') || 'Light';
+            case 'dark': return t('settings.themeDark') || 'Dark';
+            default: return t('settings.themeSystem') || 'System';
+        }
+    };
+
+    const getLanguageLabel = (lang: string) => {
+        switch (lang) {
+            case 'id': return 'Bahasa Indonesia';
+            default: return 'English';
+        }
     };
 
     return (
@@ -47,12 +71,49 @@ export default function SettingsIndex() {
             </SettingsSection>
 
             <SettingsSection title={t('settings.general')}>
+                {/* System Settings First */}
                 <SettingsItem
                     icon="settings"
                     title={t('settings.system')}
                     subtitle={t('settings.systemSubtitle') || 'Time, Reboot, Reset'}
                     onPress={() => router.push('/settings/system')}
+                />
+
+                {/* Theme Settings */}
+                <SettingsItem
+                    icon="brightness-6"
+                    title={t('settings.theme')}
+                    onPress={() => setShowThemeModal(true)}
+                    rightElement={
+                        <TouchableOpacity
+                            style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
+                            onPress={() => setShowThemeModal(true)}
+                        >
+                            <Text style={[styles.dropdownText, { color: colors.text }]}>
+                                {getThemeLabel(themeMode)}
+                            </Text>
+                            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                    }
+                />
+
+                {/* Language Settings */}
+                <SettingsItem
+                    icon="translate"
+                    title={t('settings.language')}
+                    onPress={() => setShowLanguageModal(true)}
                     isLast
+                    rightElement={
+                        <TouchableOpacity
+                            style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
+                            onPress={() => setShowLanguageModal(true)}
+                        >
+                            <Text style={[styles.dropdownText, { color: colors.text }]}>
+                                {language.toUpperCase()}
+                            </Text>
+                            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                    }
                 />
             </SettingsSection>
 
@@ -84,6 +145,39 @@ export default function SettingsIndex() {
                     isLast
                 />
             </SettingsSection>
+
+            {/* Theme Modal */}
+            <SelectionModal
+                visible={showThemeModal}
+                title={t('settings.theme')}
+                options={[
+                    { label: getThemeLabel('light'), value: 'light' },
+                    { label: getThemeLabel('dark'), value: 'dark' },
+                    { label: getThemeLabel('system'), value: 'system' },
+                ]}
+                selectedValue={themeMode}
+                onSelect={(val) => {
+                    setThemeMode(val);
+                    setShowThemeModal(false);
+                }}
+                onClose={() => setShowThemeModal(false)}
+            />
+
+            {/* Language Modal */}
+            <SelectionModal
+                visible={showLanguageModal}
+                title={t('settings.language')}
+                options={[
+                    { label: getLanguageLabel('en'), value: 'en' },
+                    { label: getLanguageLabel('id'), value: 'id' },
+                ]}
+                selectedValue={language}
+                onSelect={(val) => {
+                    setLanguage(val);
+                    setShowLanguageModal(false);
+                }}
+                onClose={() => setShowLanguageModal(false)}
+            />
         </ScrollView>
     );
 }
@@ -91,5 +185,18 @@ export default function SettingsIndex() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
+    },
+    dropdownTrigger: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 8,
+        borderWidth: 1,
+        gap: 4,
+    },
+    dropdownText: {
+        fontSize: 12,
+        fontWeight: '600',
     },
 });

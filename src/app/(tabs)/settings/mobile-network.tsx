@@ -5,7 +5,6 @@ import {
     Switch,
     ActivityIndicator,
     View, // Added View
-    Modal,
     TouchableOpacity,
     Text,
 } from 'react-native';
@@ -13,7 +12,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem } from '@/components';
+import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const NETWORK_MODES = [
@@ -49,6 +48,16 @@ export default function MobileNetworkSettingsScreen() {
     const [showBandModal, setShowBandModal] = useState(false);
     const [selectedBandsDisplay, setSelectedBandsDisplay] = useState<string[]>([]);
 
+    // Monthly Settings
+    const [showMonthlyModal, setShowMonthlyModal] = useState(false);
+    const [monthlySettings, setMonthlySettings] = useState({
+        enabled: false,
+        startDay: 1,
+        dataLimit: 0,
+        dataLimitUnit: 'GB' as 'MB' | 'GB',
+        monthThreshold: 90,
+    });
+
     useEffect(() => {
         if (credentials?.modemIp) {
             const service = new ModemService(credentials.modemIp);
@@ -59,12 +68,13 @@ export default function MobileNetworkSettingsScreen() {
 
     const loadSettings = async (service: ModemService) => {
         try {
-            const [mobileData, roaming, autoNetwork, netMode, bandSettings] = await Promise.all([
+            const [mobileData, roaming, autoNetwork, netMode, bandSettings, mSettings] = await Promise.all([
                 service.getMobileDataStatus(),
                 service.getDataRoamingStatus(),
                 service.getAutoNetworkStatus(),
                 service.getNetworkMode(),
                 service.getBandSettings(),
+                service.getMonthlyDataSettings(),
             ]);
 
             setMobileDataEnabled(mobileData.dataswitch);
@@ -75,8 +85,28 @@ export default function MobileNetworkSettingsScreen() {
             if (bandSettings?.lteBand) {
                 setSelectedBandsDisplay(getSelectedBandsDisplay(bandSettings.lteBand));
             }
+
+            setMonthlySettings({
+                enabled: mSettings.enabled,
+                startDay: mSettings.startDay,
+                dataLimit: mSettings.dataLimit,
+                dataLimitUnit: mSettings.dataLimitUnit,
+                monthThreshold: mSettings.monthThreshold,
+            });
+
         } catch (error) {
             console.error('Error loading mobile network settings:', error);
+        }
+    };
+
+    const handleSaveMonthlySettings = async (settings: any) => {
+        if (!modemService) return;
+        try {
+            await modemService.setMonthlyDataSettings(settings);
+            setMonthlySettings(settings);
+            ThemedAlertHelper.alert(t('common.success'), t('home.monthlySettingsSaved'));
+        } catch (error) {
+            ThemedAlertHelper.alert(t('common.error'), t('home.failedSaveMonthlySettings'));
         }
     };
 
@@ -241,41 +271,32 @@ export default function MobileNetworkSettingsScreen() {
                 />
             </SettingsSection>
 
+            {/* Monthly Usage Settings */}
+            <SettingsSection title={t('home.monthlySettings')}>
+                <SettingsItem
+                    title={t('home.monthlySettings')}
+                    subtitle={monthlySettings.enabled
+                        ? `${monthlySettings.dataLimit} ${monthlySettings.dataLimitUnit} | ${monthlySettings.monthThreshold}%`
+                        : t('common.disabled')}
+                    onPress={() => setShowMonthlyModal(true)}
+                    isLast
+                />
+            </SettingsSection>
+
             {/* Network Mode Modal */}
-            <Modal
+            {/* Network Mode Modal */}
+            {/* Network Mode Modal */}
+            <SelectionModal
                 visible={showNetworkModeModal}
-                animationType="fade"
-                transparent={true}
-                onRequestClose={() => setShowNetworkModeModal(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                            <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{t('settings.preferredNetwork')}</Text>
-                            <TouchableOpacity style={styles.closeButton} onPress={() => setShowNetworkModeModal(false)}>
-                                <MaterialIcons name="close" size={24} color={colors.textSecondary} />
-                            </TouchableOpacity>
-                        </View>
-                        <ScrollView style={{ maxHeight: 300 }}>
-                            {NETWORK_MODES.map((mode, index) => (
-                                <TouchableOpacity
-                                    key={mode.value}
-                                    style={[
-                                        styles.modalItem,
-                                        { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }
-                                    ]}
-                                    onPress={() => handleNetworkModeChange(mode.value)}
-                                >
-                                    <Text style={{ color: networkMode === mode.value ? colors.primary : colors.text, fontSize: 16 }}>
-                                        {t(mode.labelKey)}
-                                    </Text>
-                                    {networkMode === mode.value && <MaterialIcons name="check" size={20} color={colors.primary} />}
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
+                title={t('settings.preferredNetwork')}
+                options={NETWORK_MODES.map(mode => ({
+                    label: t(mode.labelKey),
+                    value: mode.value
+                }))}
+                selectedValue={networkMode}
+                onSelect={(val) => handleNetworkModeChange(val)}
+                onClose={() => setShowNetworkModeModal(false)}
+            />
 
             <BandSelectionModal
                 visible={showBandModal}
@@ -285,6 +306,14 @@ export default function MobileNetworkSettingsScreen() {
                     if (modemService) loadSettings(modemService);
                 }}
             />
+
+            {/* Monthly Settings Modal */}
+            <MonthlySettingsModal
+                visible={showMonthlyModal}
+                onClose={() => setShowMonthlyModal(false)}
+                onSave={handleSaveMonthlySettings}
+                initialSettings={monthlySettings}
+            />
         </ScrollView>
     );
 }
@@ -292,40 +321,5 @@ export default function MobileNetworkSettingsScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
-        justifyContent: 'center',
-        padding: 20,
-    },
-    modalContent: {
-        borderRadius: 16,
-        overflow: 'hidden',
-        maxHeight: 400,
-        width: '85%', // restrict width for better popup feel
-        borderWidth: 1,
-        borderColor: 'rgba(150, 150, 150, 0.2)', // Subtle border
-        alignSelf: 'center', // Ensure it's centered in the overlay
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'center', // Center title
-        alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-        position: 'relative', // For absolute positioning of close button if needed
-    },
-    closeButton: {
-        position: 'absolute',
-        right: 16,
-        top: 16,
-        zIndex: 1,
-    },
-    modalItem: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
     },
 });
