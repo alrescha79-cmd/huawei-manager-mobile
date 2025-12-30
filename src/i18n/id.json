@@ -304,7 +304,6 @@
     "network2gOnly": "2G Saja",
     "network4g3g": "4G/3G",
     "lteBands": "LTE Bands",
-    "allBands": "Semua band",
     "bandsSelected": "band dipilih",
     "configureBands": "Konfigurasi",
     "selectBands": "Pilih LTE band yang akan digunakan. Menonaktifkan band dapat meningkatkan sinyal pada band tertentu.",
@@ -388,9 +387,7 @@
     "allBands": "Semua Frekuensi",
     "tddOnly": "Hanya TDD",
     "fddOnly": "Hanya FDD",
-    "bandsFound": "{{count}} DITEMUKAN",
-    "deselectAll": "Batalkan Semua",
-    "selectAll": "Pilih Semua"
+    "bandsFound": "{{count}} DITEMUKAN"
   },
   "webViewLogin": {
     "title": "Login Modem",

@@ -401,50 +401,84 @@ export default function LanSettingsScreen() {
                 presentationStyle="pageSheet"
                 onRequestClose={() => setShowApnModal(false)}
             >
-                <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                    <View style={styles.modalHeader}>
+                <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: 20 }]}>
+                    <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                        <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
+                            {editingApn ? t('networkSettings.editApn') : t('networkSettings.addApn')}
+                        </Text>
                         <TouchableOpacity onPress={() => setShowApnModal(false)}>
-                            <Text style={{ color: colors.primary, fontSize: 17 }}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
-                        <Text style={[typography.headline, { color: colors.text }]}>{editingApn ? t('networkSettings.editApn') : t('networkSettings.addApn')}</Text>
-                        <TouchableOpacity onPress={handleSaveApnProfile} disabled={isSavingApn}>
-                            {isSavingApn ? <ActivityIndicator color={colors.primary} /> : <Text style={{ color: colors.primary, fontSize: 17, fontWeight: '600' }}>{t('common.save')}</Text>}
+                            <MaterialIcons name="close" size={28} color={colors.primary} />
                         </TouchableOpacity>
                     </View>
 
-                    <ScrollView style={{ padding: 16 }}>
-                        <View style={[styles.formGroup, { backgroundColor: colors.card, borderRadius: 10, padding: 16 }]}>
+                    <ScrollView
+                        style={{ flex: 1, padding: 20 }}
+                        contentContainerStyle={{ paddingBottom: 100 }}
+                    >
+                        {/* Profile Name */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('networkSettings.profileName')}</Text>
                             <TextInput
                                 placeholder={t('networkSettings.profileName')}
                                 placeholderTextColor={colors.textSecondary}
-                                style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]}
+                                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
                                 value={apnName}
                                 onChangeText={setApnName}
                             />
+                        </View>
+
+                        {/* APN */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>APN</Text>
                             <TextInput
                                 placeholder="APN"
                                 placeholderTextColor={colors.textSecondary}
-                                style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]}
+                                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
                                 value={apnApn}
                                 onChangeText={setApnApn}
                             />
+                        </View>
+
+                        {/* Username */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.usernameLabel')}</Text>
                             <TextInput
                                 placeholder={t('settings.usernameLabel')}
                                 placeholderTextColor={colors.textSecondary}
-                                style={[styles.input, { color: colors.text, borderBottomColor: colors.border }]}
+                                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
                                 value={apnUsername}
                                 onChangeText={setApnUsername}
                             />
+                        </View>
+
+                        {/* Password */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.passwordLabel')}</Text>
                             <TextInput
                                 placeholder={t('settings.passwordLabel')}
                                 placeholderTextColor={colors.textSecondary}
-                                style={[styles.input, { color: colors.text, borderBottomColor: 'transparent' }]}
+                                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
                                 secureTextEntry
                                 value={apnPassword}
                                 onChangeText={setApnPassword}
                             />
                         </View>
                     </ScrollView>
+
+                    {/* Footer Button */}
+                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                        <TouchableOpacity
+                            style={[styles.saveButton, { backgroundColor: colors.primary }]}
+                            onPress={handleSaveApnProfile}
+                            disabled={isSavingApn}
+                        >
+                            {isSavingApn ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>{t('common.save')}</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </Modal>
 
@@ -480,10 +514,17 @@ const styles = StyleSheet.create({
     modalContainer: { flex: 1 },
     modalHeader: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        padding: 16, borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: '#ccc'
+        paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1
     },
     formGroup: { marginBottom: 24 },
     input: {
-        paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth, fontSize: 16
+        height: 50, borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, fontSize: 16
+    },
+    footer: {
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        padding: 20, paddingBottom: 40, borderTopWidth: 1
+    },
+    saveButton: {
+        height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center'
     }
 });

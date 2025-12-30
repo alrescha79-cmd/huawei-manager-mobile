@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal } from '@/components';
+import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal } from '@/components';
 import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -1147,36 +1147,31 @@ export default function WiFiScreen() {
         )}
       </Card>
 
-      {/* Parental Control Profile Modal */}
       <Modal
         visible={showProfileModal}
         animationType="slide"
         presentationStyle="pageSheet"
         onRequestClose={() => setShowProfileModal(false)}
       >
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: 20 }]}>
           <View style={[styles.modalHeader, {
             borderBottomColor: colors.border,
-            paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
+            // Header styling updated to match new pattern
           }]}>
-            <TouchableOpacity onPress={() => setShowProfileModal(false)}>
-              <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
-            </TouchableOpacity>
-            <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+            <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
               {editingProfile ? t('parentalControl.editProfile') : t('parentalControl.addProfile')}
             </Text>
-            <TouchableOpacity onPress={handleSaveProfile} disabled={isSavingProfile}>
-              {isSavingProfile ? (
-                <ActivityIndicator color={colors.primary} size="small" />
-              ) : (
-                <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{t('common.save')}</Text>
-              )}
+            <TouchableOpacity onPress={() => setShowProfileModal(false)}>
+              <MaterialIcons name="close" size={28} color={colors.primary} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContentScroll}>
+          <ScrollView
+            style={styles.modalContentScroll}
+            contentContainerStyle={{ paddingBottom: 100 }}
+          >
             {/* Profile Name */}
-            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>
+            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
               {t('parentalControl.profileName')}
             </Text>
             <TextInput
@@ -1195,7 +1190,7 @@ export default function WiFiScreen() {
               {/* Start Time Picker */}
               <TouchableOpacity
                 style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => { setShowStartTimePicker(!showStartTimePicker); setShowEndTimePicker(false); }}
+                onPress={() => setShowStartTimePicker(true)}
               >
                 <MaterialIcons name="schedule" size={20} color={colors.primary} />
                 <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
@@ -1209,7 +1204,7 @@ export default function WiFiScreen() {
               {/* End Time Picker */}
               <TouchableOpacity
                 style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
-                onPress={() => { setShowEndTimePicker(!showEndTimePicker); setShowStartTimePicker(false); }}
+                onPress={() => setShowEndTimePicker(true)}
               >
                 <MaterialIcons name="schedule" size={20} color={colors.primary} />
                 <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
@@ -1219,59 +1214,29 @@ export default function WiFiScreen() {
               </TouchableOpacity>
             </View>
 
-            {/* Start Time Dropdown */}
-            {showStartTimePicker && (
-              <View style={[styles.timePickerDropdown, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: spacing.md }]}>
-                <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-                  {TIME_OPTIONS.map((time) => (
-                    <TouchableOpacity
-                      key={`start-${time}`}
-                      style={[styles.timePickerItem, {
-                        backgroundColor: profileStartTime === time ? colors.primary + '20' : 'transparent'
-                      }]}
-                      onPress={() => { setProfileStartTime(time); setShowStartTimePicker(false); }}
-                    >
-                      <Text style={[typography.body, {
-                        color: profileStartTime === time ? colors.primary : colors.text,
-                        fontWeight: profileStartTime === time ? '600' : '400'
-                      }]}>
-                        {time}
-                      </Text>
-                      {profileStartTime === time && (
-                        <MaterialIcons name="check" size={20} color={colors.primary} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+            <SelectionModal
+              visible={showStartTimePicker}
+              title={t('parentalControl.startTime')}
+              options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
+              selectedValue={profileStartTime}
+              onSelect={(val) => {
+                setProfileStartTime(val);
+                setShowStartTimePicker(false);
+              }}
+              onClose={() => setShowStartTimePicker(false)}
+            />
 
-            {/* End Time Dropdown */}
-            {showEndTimePicker && (
-              <View style={[styles.timePickerDropdown, { backgroundColor: colors.card, borderColor: colors.border, marginBottom: spacing.md }]}>
-                <ScrollView style={{ maxHeight: 200 }} nestedScrollEnabled>
-                  {TIME_OPTIONS.map((time) => (
-                    <TouchableOpacity
-                      key={`end-${time}`}
-                      style={[styles.timePickerItem, {
-                        backgroundColor: profileEndTime === time ? colors.primary + '20' : 'transparent'
-                      }]}
-                      onPress={() => { setProfileEndTime(time); setShowEndTimePicker(false); }}
-                    >
-                      <Text style={[typography.body, {
-                        color: profileEndTime === time ? colors.primary : colors.text,
-                        fontWeight: profileEndTime === time ? '600' : '400'
-                      }]}>
-                        {time}
-                      </Text>
-                      {profileEndTime === time && (
-                        <MaterialIcons name="check" size={20} color={colors.primary} />
-                      )}
-                    </TouchableOpacity>
-                  ))}
-                </ScrollView>
-              </View>
-            )}
+            <SelectionModal
+              visible={showEndTimePicker}
+              title={t('parentalControl.endTime')}
+              options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
+              selectedValue={profileEndTime}
+              onSelect={(val) => {
+                setProfileEndTime(val);
+                setShowEndTimePicker(false);
+              }}
+              onClose={() => setShowEndTimePicker(false)}
+            />
 
 
             {/* Active Days */}
@@ -1360,6 +1325,24 @@ export default function WiFiScreen() {
               />
             </View>
           </ScrollView>
+
+          {/* Footer Button */}
+          <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+            <TouchableOpacity
+              style={[styles.saveButtonFull, { backgroundColor: colors.primary }]}
+              onPress={handleSaveProfile}
+              disabled={isSavingProfile}
+            >
+              {isSavingProfile ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={[typography.body, { color: '#FFFFFF', fontWeight: 'bold' }]}>
+                  {t('common.save')}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
+
         </View>
       </Modal>
 
@@ -1454,12 +1437,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
     borderBottomWidth: 1,
   },
   modalContentScroll: {
     flex: 1,
-    padding: 16,
+    padding: 20,
   },
   dayButton: {
     paddingVertical: 10,
@@ -1497,5 +1481,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingVertical: 12,
     paddingHorizontal: 16,
+  },
+  footer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 20,
+    paddingBottom: 40,
+    borderTopWidth: 1,
+  },
+  saveButtonFull: {
+    height: 50,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });
