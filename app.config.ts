@@ -46,6 +46,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             },
         ],
         'expo-localization',
+        'expo-font',
         ['react-native-android-widget', widgetConfig],
     ],
     splash: {

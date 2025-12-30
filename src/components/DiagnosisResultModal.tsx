@@ -8,6 +8,7 @@ import {
     Platform,
     StatusBar,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
@@ -31,7 +32,7 @@ export function DiagnosisResultModal({
     results,
     summary,
 }: DiagnosisResultModalProps) {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
     return (
@@ -42,7 +43,19 @@ export function DiagnosisResultModal({
             onRequestClose={onClose}
         >
             <View style={styles.overlay}>
-                <View style={[styles.modalContainer, { backgroundColor: colors.card }]}>
+                <BlurView
+                    intensity={glassmorphism.blur.card}
+                    tint={isDark ? 'dark' : 'light'}
+                    experimentalBlurMethod='dimezisBlurView'
+                    style={[
+                        styles.modalContainer,
+                        {
+                            backgroundColor: isDark ? glassmorphism.background.dark.alert : glassmorphism.background.light.alert,
+                            borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                            borderWidth: 1,
+                        }
+                    ]}
+                >
                     {/* Header */}
                     <View style={[styles.header, { borderBottomColor: colors.border }]}>
                         <MaterialIcons name="fact-check" size={28} color={colors.primary} />
@@ -83,7 +96,7 @@ export function DiagnosisResultModal({
 
                     {/* Summary */}
                     {summary && (
-                        <View style={[styles.summaryContainer, { backgroundColor: colors.background }]}>
+                        <View style={[styles.summaryContainer, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                             <Text style={[typography.body, { color: colors.text, textAlign: 'center' }]}>
                                 {summary}
                             </Text>
@@ -99,7 +112,7 @@ export function DiagnosisResultModal({
                             {t('common.ok')}
                         </Text>
                     </TouchableOpacity>
-                </View>
+                </BlurView>
             </View>
         </Modal>
     );

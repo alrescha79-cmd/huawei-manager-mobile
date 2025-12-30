@@ -33,7 +33,7 @@ export function PageSheetModal({
     cancelText = 'Cancel',
     children,
 }: PageSheetModalProps) {
-    const { colors, typography, isDark } = useTheme();
+    const { colors, typography, glassmorphism, isDark } = useTheme();
 
     return (
         <Modal
@@ -44,12 +44,12 @@ export function PageSheetModal({
             onRequestClose={onClose}
         >
             <BlurView
-                intensity={50} // Higher intensity for full screen sheet
+                intensity={glassmorphism.blur.modal}
                 tint={isDark ? 'dark' : 'light'}
                 experimentalBlurMethod='dimezisBlurView'
                 style={[
                     styles.container,
-                    { backgroundColor: isDark ? 'rgba(10, 10, 10, 0.6)' : 'rgba(255, 255, 255, 0.6)' }
+                    { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }
                 ]}
             >
                 <View style={[styles.header, {

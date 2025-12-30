@@ -34,7 +34,7 @@ const SpeedometerGauge: React.FC<{
     label: string;
     isActive: boolean;
 }> = ({ speed, maxSpeed, color, label, isActive }) => {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
     const needleAnim = useRef(new Animated.Value(0)).current;
     const glowAnim = useRef(new Animated.Value(0)).current;
 
@@ -203,7 +203,7 @@ const CF_DOWNLOAD_URL = 'https://speed.cloudflare.com/__down';
 const CF_UPLOAD_URL = 'https://speed.cloudflare.com/__up';
 
 export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose }) => {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
     const [isRunning, setIsRunning] = useState(false);
@@ -450,8 +450,13 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
             onRequestClose={handleClose}
         >
             <View style={styles.overlay}>
-                <BlurView intensity={Platform.OS === 'ios' ? 40 : 100} style={styles.blurContainer}>
-                    <View style={[styles.modalContent, { backgroundColor: colors.card + 'EE' }]}>
+                <BlurView
+                    intensity={glassmorphism.blur.overlay}
+                    tint={isDark ? 'dark' : 'light'}
+                    experimentalBlurMethod='dimezisBlurView'
+                    style={styles.blurContainer}
+                >
+                    <View style={[styles.modalContent, { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }]}>
                         {/* Header */}
                         <View style={styles.header}>
                             <Text style={[typography.title2, { color: colors.text, fontWeight: '700' }]}>
@@ -499,7 +504,7 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
 
                         {/* Latency & Jitter */}
                         <View style={[styles.statsRow, { marginTop: spacing.lg }]}>
-                            <View style={[styles.statItem, { backgroundColor: colors.background }]}>
+                            <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                                 <MaterialIcons name="timer" size={20} color={colors.primary} />
                                 <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
                                     {t('home.latency')}
@@ -508,7 +513,7 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                                     {result.latency.toFixed(0)} ms
                                 </Text>
                             </View>
-                            <View style={[styles.statItem, { backgroundColor: colors.background }]}>
+                            <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                                 <MaterialIcons name="trending-up" size={20} color={colors.success} />
                                 <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
                                     {t('home.jitter')}

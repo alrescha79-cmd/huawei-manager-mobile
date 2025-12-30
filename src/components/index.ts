@@ -22,3 +22,4 @@ export * from './SettingsList';
 export * from './SelectionModal';
 export * from './CustomTabBar';
 export * from './PageTransition';
+export * from './DailyUsageCard';

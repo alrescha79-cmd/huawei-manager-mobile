@@ -8,7 +8,9 @@ import {
     Modal,
     TextInput,
     SafeAreaView,
+    Keyboard,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
@@ -66,7 +68,7 @@ export function BandSelectionModal({
     modemService,
     onSaved,
 }: BandSelectionModalProps) {
-    const { colors, typography } = useTheme();
+    const { colors, typography, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
     const [selectedBandBits, setSelectedBandBits] = useState<number[]>([]);
@@ -108,6 +110,7 @@ export function BandSelectionModal({
     };
 
     const handleSave = async () => {
+        Keyboard.dismiss(); // Dismiss keyboard first
         if (!modemService || isSaving) return;
         setIsSaving(true);
         try {
@@ -174,7 +177,15 @@ export function BandSelectionModal({
             presentationStyle="pageSheet"
             onRequestClose={onClose}
         >
-            <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <BlurView
+                intensity={glassmorphism.blur.modal}
+                tint={isDark ? 'dark' : 'light'}
+                experimentalBlurMethod='dimezisBlurView'
+                style={[
+                    styles.container,
+                    { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }
+                ]}
+            >
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
@@ -188,7 +199,7 @@ export function BandSelectionModal({
 
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
-                    <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <View style={[styles.searchBar, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, borderColor: colors.border }]}>
                         <Ionicons name="search" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
                         <TextInput
                             style={[styles.searchInput, { color: colors.text }]}
@@ -232,49 +243,61 @@ export function BandSelectionModal({
                     </TouchableOpacity>
                 </View>
 
-                {/* List */}
-                <ScrollView contentContainerStyle={styles.listContent}>
-                    {filteredBands.map((band) => {
-                        const isSelected = selectedBandBits.includes(band.bit);
-                        return (
-                            <TouchableOpacity
-                                key={band.bit}
-                                style={[
-                                    styles.bandItem,
-                                    { backgroundColor: colors.card },
-                                    isSelected && { borderColor: colors.primary, borderWidth: 1 }
-                                ]}
-                                onPress={() => toggleBand(band.bit)}
-                                activeOpacity={0.7}
-                            >
-                                <View style={styles.bandLeft}>
-                                    <View style={[styles.bandTag, { backgroundColor: colors.border }, isSelected && { backgroundColor: colors.primary }]}>
-                                        <Text style={styles.bandTagName}>{band.name}</Text>
-                                    </View>
-                                    <View>
-                                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                            <Text style={[styles.freqText, { color: colors.text }]}>{band.freq}</Text>
-                                            <View style={[styles.typeTag, { borderColor: colors.textSecondary }]}>
-                                                <Text style={[styles.typeText, { color: colors.textSecondary }]}>{band.type}</Text>
-                                            </View>
+                {/* Scrollable content area with margin to stop above footer */}
+                <View style={{ flex: 1, marginBottom: 116, backgroundColor: 'transparent' }}>
+                    <ScrollView
+                        showsVerticalScrollIndicator={true}
+                        contentContainerStyle={styles.listContent}
+                    >
+                        {filteredBands.map((band) => {
+                            const isSelected = selectedBandBits.includes(band.bit);
+                            return (
+                                <TouchableOpacity
+                                    key={band.bit}
+                                    style={[
+                                        styles.bandItem,
+                                        { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light },
+                                        isSelected && { borderColor: colors.primary, borderWidth: 1 }
+                                    ]}
+                                    onPress={() => toggleBand(band.bit)}
+                                    activeOpacity={0.7}
+                                >
+                                    <View style={styles.bandLeft}>
+                                        <View style={[styles.bandTag, { backgroundColor: colors.border }, isSelected && { backgroundColor: colors.primary }]}>
+                                            <Text style={styles.bandTagName}>{band.name}</Text>
                                         </View>
-                                        <Text style={[styles.regionText, { color: colors.textSecondary }]}>{band.region}</Text>
+                                        <View>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                <Text style={[styles.freqText, { color: colors.text }]}>{band.freq}</Text>
+                                                <View style={[styles.typeTag, { borderColor: colors.textSecondary }]}>
+                                                    <Text style={[styles.typeText, { color: colors.textSecondary }]}>{band.type}</Text>
+                                                </View>
+                                            </View>
+                                            <Text style={[styles.regionText, { color: colors.textSecondary }]}>{band.region}</Text>
+                                        </View>
                                     </View>
-                                </View>
 
-                                <Ionicons
-                                    name={isSelected ? "checkmark-circle" : "ellipse-outline"}
-                                    size={28}
-                                    color={isSelected ? colors.primary : colors.textSecondary}
-                                />
-                            </TouchableOpacity>
-                        );
-                    })}
-                    <View style={{ height: 100 }} />
-                </ScrollView>
+                                    <Ionicons
+                                        name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+                                        size={28}
+                                        color={isSelected ? colors.primary : colors.textSecondary}
+                                    />
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                </View>
 
-                {/* Footer Button - Floating */}
-                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                {/* Footer Button - Floating with transparent glassmorphism */}
+                <BlurView
+                    intensity={20}
+                    tint={isDark ? 'dark' : 'light'}
+                    experimentalBlurMethod='dimezisBlurView'
+                    style={[styles.footer, {
+                        backgroundColor: isDark ? 'rgba(10, 10, 10, 0.1)' : 'rgba(255, 255, 255, 0.1)',  // Very transparent
+                        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                    }]}
+                >
                     <TouchableOpacity
                         style={[styles.applyButton, { backgroundColor: colors.primary }, isSaving && { opacity: 0.7 }]}
                         onPress={handleSave}
@@ -284,8 +307,8 @@ export function BandSelectionModal({
                             {isSaving ? t('common.saving') || 'Saving...' : t('settings.applyConfiguration')}
                         </Text>
                     </TouchableOpacity>
-                </View>
-            </View>
+                </BlurView>
+            </BlurView>
         </Modal>
     );
 }

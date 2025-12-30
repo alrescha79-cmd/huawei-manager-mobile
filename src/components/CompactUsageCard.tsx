@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, StyleProp } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
+import { useTranslation } from '@/i18n';
 import { formatDuration } from '@/utils/helpers';
 import { Card } from './Card';
 
@@ -43,7 +44,8 @@ const formatBytesWithUnit = (bytes: number): { value: string; unit: string } => 
 };
 
 export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardProps) {
-    const { colors, typography, isDark } = useTheme();
+    const { colors, typography, glassmorphism, isDark } = useTheme();
+    const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<TabType>('monthly'); // Default to Monthly as in image
 
     // Highlight Colors
@@ -59,21 +61,21 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                     download: stats.currentDownload,
                     upload: stats.currentUpload,
                     duration: stats.currentConnectTime,
-                    label: 'Current Session'
+                    label: t('home.currentSession')
                 };
             case 'monthly':
                 return {
                     download: stats.monthDownload > 0 ? stats.monthDownload : stats.totalDownload, // Fallback logic from home.tsx
                     upload: stats.monthUpload > 0 ? stats.monthUpload : stats.totalUpload,
                     duration: stats.monthDuration,
-                    label: 'This Month'
+                    label: t('home.thisMonth')
                 };
             case 'total':
                 return {
                     download: stats.totalDownload,
                     upload: stats.totalUpload,
                     duration: stats.totalConnectTime,
-                    label: 'All Time'
+                    label: t('home.allTime')
                 };
         }
     };
@@ -101,52 +103,61 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
         <Card style={[styles.container, style]}>
             {/* Header: Title + Tabs */}
             <View style={styles.header}>
-                <Text style={[typography.headline, { color: colors.text, fontWeight: '800', fontSize: 13, letterSpacing: 0.5 }]}>
-                    DATA STATISTICS
-                </Text>
+                <View>
+                    <Text style={[typography.headline, { color: colors.text, fontWeight: '800', fontSize: 13, letterSpacing: 0.5 }]}>
+                        {t('home.dataStatistics')}
+                    </Text>
+                    {/* Duration Display */}
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
+                        <MaterialIcons name="access-time" size={12} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                        <Text style={[typography.caption1, { color: colors.textSecondary, fontSize: 11, fontFamily: 'monospace' }]}>
+                            {durationText}
+                        </Text>
+                    </View>
+                </View>
 
                 {/* Tabs */}
-                <View style={[styles.tabsContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                    {(['session', 'monthly', 'total'] as TabType[]).map((tab) => (
-                        <TouchableOpacity
-                            key={tab}
-                            onPress={() => setActiveTab(tab)}
-                            style={[
-                                styles.tabItem,
-                                activeTab === tab && { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.15)' }
-                            ]}
-                        >
-                            <Text style={[
-                                styles.tabText,
-                                { color: activeTab === tab ? blueColor : colors.textSecondary }
-                            ]}>
-                                {tab === 'total' ? 'All Time' : tab.charAt(0).toUpperCase() + tab.slice(1)}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
+                <View style={[styles.tabsContainer, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
+                    {(['session', 'monthly', 'total'] as TabType[]).map((tab) => {
+                        let tabLabel = '';
+                        switch (tab) {
+                            case 'session': tabLabel = t('home.session'); break;
+                            case 'monthly': tabLabel = t('home.monthly'); break;
+                            case 'total': tabLabel = t('home.allTime'); break;
+                        }
+
+                        return (
+                            <TouchableOpacity
+                                key={tab}
+                                onPress={() => setActiveTab(tab)}
+                                style={[
+                                    styles.tabItem,
+                                    activeTab === tab && { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.15)' }
+                                ]}
+                            >
+                                <Text style={[
+                                    styles.tabText,
+                                    { color: activeTab === tab ? blueColor : colors.textSecondary }
+                                ]}>
+                                    {tabLabel}
+                                </Text>
+                            </TouchableOpacity>
+                        );
+                    })}
                 </View>
             </View>
 
             {/* Main Stats Area */}
             <View style={styles.mainStatsRow}>
-                {/* Left Side: Usage Value + Duration Badge */}
+                {/* Left Side: Usage Value + Unit/Label */}
                 <View style={styles.leftStatsGroup}>
                     <Text style={[styles.mainValue, { color: blueColor }]}>
                         {totalFormatted.value}
                     </Text>
 
-                    <View style={styles.badgeContainer}>
-                        {/* Badge */}
-                        <View style={[styles.durationBadge, { borderColor: colors.border }]}>
-                            <Text style={[typography.caption1, { color: colors.textSecondary, fontSize: 10, fontFamily: 'monospace' }]}>
-                                {durationText}
-                            </Text>
-                        </View>
-                        {/* Label */}
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
-                            {totalFormatted.unit} {currentStats.label}
-                        </Text>
-                    </View>
+                    <Text style={[styles.mainUnitLabel, { color: colors.textSecondary }]}>
+                        {totalFormatted.unit} {currentStats.label}
+                    </Text>
                 </View>
 
                 {/* Right Side: Progress Info (Monthly Only) */}
@@ -158,7 +169,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                             </Text>
                         </View>
                         <Text style={[typography.caption2, { color: colors.textSecondary, fontSize: 10, textAlign: 'right', marginTop: 2 }]}>
-                            of {limitFormatted.value} {limitFormatted.unit}
+                            {t('home.of')} {limitFormatted.value} {limitFormatted.unit}
                         </Text>
                     </View>
                 )}
@@ -166,7 +177,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
 
             {/* Progress Bar (Full Width if Monthly) */}
             {showProgress && (
-                <View style={[styles.progressBarTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', marginBottom: 20 }]}>
+                <View style={[styles.progressBarTrack, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, marginBottom: 20 }]}>
                     <View
                         style={[
                             styles.progressBarFill,
@@ -185,12 +196,12 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
             {/* Footer Grid */}
             <View style={styles.footerGrid}>
                 {/* Download */}
-                <View style={[styles.detailCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                     <View style={[styles.iconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
                         <MaterialIcons name="arrow-downward" size={16} color={greenColor} />
                     </View>
                     <View>
-                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>DOWNLOAD</Text>
+                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('home.download').toUpperCase()}</Text>
                         <Text style={[styles.detailValue, { color: colors.text }]}>
                             {dlFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{dlFormatted.unit}</Text>
                         </Text>
@@ -198,12 +209,12 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                 </View>
 
                 {/* Upload */}
-                <View style={[styles.detailCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                     <View style={[styles.iconCircle, { backgroundColor: 'rgba(168, 85, 247, 0.2)' }]}>
                         <MaterialIcons name="arrow-upward" size={16} color={purpleColor} />
                     </View>
                     <View>
-                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>UPLOAD</Text>
+                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('home.upload').toUpperCase()}</Text>
                         <Text style={[styles.detailValue, { color: colors.text }]}>
                             {ulFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{ulFormatted.unit}</Text>
                         </Text>
@@ -314,5 +325,11 @@ const styles = StyleSheet.create({
     detailValue: {
         fontSize: 16,
         fontWeight: '700',
+    },
+    mainUnitLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginLeft: 8,
+        marginTop: 12, // Align roughly with baseline of big number
     },
 });

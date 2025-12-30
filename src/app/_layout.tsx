@@ -13,259 +13,268 @@ import { ThemedAlert, setAlertListener, ThemedAlertHelper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import * as NavigationBar from 'expo-navigation-bar';
+import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
 
 interface AlertButton {
-  text: string;
-  onPress?: () => void;
-  style?: 'default' | 'cancel' | 'destructive';
+    text: string;
+    onPress?: () => void;
+    style?: 'default' | 'cancel' | 'destructive';
 }
 
 interface AlertState {
-  visible: boolean;
-  title: string;
-  message?: string;
-  buttons?: AlertButton[];
+    visible: boolean;
+    title: string;
+    message?: string;
+    buttons?: AlertButton[];
 }
 
 // Version comparison helper
 const compareVersions = (v1: string, v2: string): number => {
-  const parts1 = v1.split('.').map(Number);
-  const parts2 = v2.split('.').map(Number);
+    const parts1 = v1.split('.').map(Number);
+    const parts2 = v2.split('.').map(Number);
 
-  for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-    const p1 = parts1[i] || 0;
-    const p2 = parts2[i] || 0;
-    if (p1 > p2) return 1;
-    if (p1 < p2) return -1;
-  }
-  return 0;
+    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
+        const p1 = parts1[i] || 0;
+        const p2 = parts2[i] || 0;
+        if (p1 > p2) return 1;
+        if (p1 < p2) return -1;
+    }
+    return 0;
 };
 
 export default function RootLayout() {
-  const { colors, isDark } = useTheme();
-  const { isAuthenticated, loadCredentials, autoLogin } = useAuthStore();
-  const { initializeLanguage } = useThemeStore();
-  const { t } = useTranslation();
-  const segments = useSegments();
-  const router = useRouter();
-
-  // Handle Android Navigation Bar Colors
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      const configureNavBar = async () => {
-        try {
-          // Enable edge-to-edge (draw behind nav bar) - Handled by app.json edgeToEdgeEnabled: true
-          // await NavigationBar.setPositionAsync('absolute'); // Causes warning
-          // Make nav bar transparent so app background shows through
-          // await NavigationBar.setBackgroundColorAsync('#00000000'); // Causes warning
-
-          // Set icons to be visible (opposite of theme)
-          await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
-        } catch (e) {
-          console.warn('Failed to configure navigation bar:', e);
-        }
-      };
-      configureNavBar();
-    }
-  }, [isDark]);
-
-  // Global alert state
-  const [alertState, setAlertState] = useState<AlertState>({
-    visible: false,
-    title: '',
-    message: '',
-    buttons: [],
-  });
-
-  // Check for updates from GitHub releases
-  const checkForUpdates = async () => {
-    try {
-      const response = await fetch(
-        'https://api.github.com/repos/alrescha79-cmd/huawei-manager-mobile/releases/latest'
-      );
-
-      if (!response.ok) return;
-
-      const data = await response.json();
-      const latestVersion = data.tag_name?.replace(/^v/, '') || '';
-      const currentVersion = Constants.expoConfig?.version || '1.0.0';
-
-      // Check if update is available
-      if (compareVersions(latestVersion, currentVersion) > 0) {
-        const downloadUrl = data.html_url || 'https://github.com/alrescha79-cmd/huawei-manager-mobile/releases';
-
-        ThemedAlertHelper.alert(
-          t('settings.updateAvailable') + ` v${latestVersion}`,
-          t('alerts.newVersionAvailable'),
-          [
-            { text: t('common.cancel'), style: 'cancel' },
-            {
-              text: t('settings.downloadUpdate'),
-              onPress: () => Linking.openURL(downloadUrl)
-            },
-          ]
-        );
-      }
-    } catch (error) {
-      // Silently fail - don't interrupt user experience
-    }
-  };
-
-  // Show star request alert once per version (after install/update)
-  const STAR_ALERT_VERSION_KEY = 'star_alert_shown_version';
-  const GITHUB_REPO_URL = 'https://github.com/alrescha79-cmd/huawei-manager-mobile';
-
-  const checkAndShowStarRequest = async () => {
-    try {
-      const currentVersion = Constants.expoConfig?.version || '1.0.0';
-      const shownVersion = await AsyncStorage.getItem(STAR_ALERT_VERSION_KEY);
-
-      // Only show if this version hasn't been shown yet
-      if (shownVersion !== currentVersion) {
-        // Delay to show after app is fully loaded
-        setTimeout(() => {
-          ThemedAlertHelper.alert(
-            t('alerts.enjoyingApp'),
-            t('alerts.starRequest'),
-            [
-              {
-                text: t('common.later'),
-                style: 'cancel',
-                onPress: async () => {
-                  // Don't save version - will ask again next time
-                }
-              },
-              {
-                text: '⭐ ' + t('alerts.giveStars'),
-                onPress: async () => {
-                  await AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
-                  Linking.openURL(GITHUB_REPO_URL);
-                }
-              },
-            ]
-          );
-          // Save version after showing (won't show again for this version)
-          AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
-        }, 2000); // 2 second delay
-      }
-    } catch (error) {
-      // Silently fail
-    }
-  };
-
-  useEffect(() => {
-    const initializeApp = async () => {
-      // Auto-detect device language on first install
-      initializeLanguage();
-
-      // Check for app updates
-      checkForUpdates();
-
-      // Show star request alert (once per version)
-      checkAndShowStarRequest();
-
-      // Load auth credentials
-      await loadCredentials();
-      // Auto-login if credentials exist
-      const credentials = useAuthStore.getState().credentials;
-      if (credentials) {
-        await autoLogin();
-      }
-    };
-    initializeApp();
-  }, []);
-
-  // Set up global alert listener
-  useEffect(() => {
-    setAlertListener((config) => {
-      setAlertState(config);
+    const [fontsLoaded] = useFonts({
+        Doto_700Bold,
     });
-  }, []);
 
-  // Start realtime widget updates when app is active (Android only)
-  useEffect(() => {
-    if (Platform.OS !== 'android') return;
+    const { colors, isDark } = useTheme();
+    const { isAuthenticated, loadCredentials, autoLogin } = useAuthStore();
+    const { initializeLanguage } = useThemeStore();
+    const { t } = useTranslation();
+    const segments = useSegments();
+    const router = useRouter();
 
-    let stopUpdates: (() => void) | null = null;
+    // Handle Android Navigation Bar Colors
+    useEffect(() => {
+        if (Platform.OS === 'android') {
+            const configureNavBar = async () => {
+                try {
+                    // Enable edge-to-edge (draw behind nav bar) - Handled by app.json edgeToEdgeEnabled: true
+                    // await NavigationBar.setPositionAsync('absolute'); // Causes warning
+                    // Make nav bar transparent so app background shows through
+                    // await NavigationBar.setBackgroundColorAsync('#00000000'); // Causes warning
 
-    const handleAppStateChange = (nextAppState: AppStateStatus) => {
-      if (nextAppState === 'active') {
-        // App is in foreground - start realtime updates
-        stopUpdates = startRealtimeWidgetUpdates();
-      } else {
-        // App is in background - stop updates
-        if (stopUpdates) {
-          stopUpdates();
-          stopUpdates = null;
+                    // Set icons to be visible (opposite of theme)
+                    await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+                } catch (e) {
+                    console.warn('Failed to configure navigation bar:', e);
+                }
+            };
+            configureNavBar();
         }
-        stopRealtimeWidgetUpdates();
-      }
+    }, [isDark]);
+
+    // Global alert state
+    const [alertState, setAlertState] = useState<AlertState>({
+        visible: false,
+        title: '',
+        message: '',
+        buttons: [],
+    });
+
+    // Check for updates from GitHub releases
+    const checkForUpdates = async () => {
+        try {
+            const response = await fetch(
+                'https://api.github.com/repos/alrescha79-cmd/huawei-manager-mobile/releases/latest'
+            );
+
+            if (!response.ok) return;
+
+            const data = await response.json();
+            const latestVersion = data.tag_name?.replace(/^v/, '') || '';
+            const currentVersion = Constants.expoConfig?.version || '1.0.0';
+
+            // Check if update is available
+            if (compareVersions(latestVersion, currentVersion) > 0) {
+                const downloadUrl = data.html_url || 'https://github.com/alrescha79-cmd/huawei-manager-mobile/releases';
+
+                ThemedAlertHelper.alert(
+                    t('settings.updateAvailable') + ` v${latestVersion}`,
+                    t('alerts.newVersionAvailable'),
+                    [
+                        { text: t('common.cancel'), style: 'cancel' },
+                        {
+                            text: t('settings.downloadUpdate'),
+                            onPress: () => Linking.openURL(downloadUrl)
+                        },
+                    ]
+                );
+            }
+        } catch (error) {
+            // Silently fail - don't interrupt user experience
+        }
     };
 
-    // Start updates immediately since app is launching
-    stopUpdates = startRealtimeWidgetUpdates();
+    // Show star request alert once per version (after install/update)
+    const STAR_ALERT_VERSION_KEY = 'star_alert_shown_version';
+    const GITHUB_REPO_URL = 'https://github.com/alrescha79-cmd/huawei-manager-mobile';
 
-    // Listen for app state changes
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    const checkAndShowStarRequest = async () => {
+        try {
+            const currentVersion = Constants.expoConfig?.version || '1.0.0';
+            const shownVersion = await AsyncStorage.getItem(STAR_ALERT_VERSION_KEY);
 
-    return () => {
-      subscription.remove();
-      if (stopUpdates) {
-        stopUpdates();
-      }
-      stopRealtimeWidgetUpdates();
+            // Only show if this version hasn't been shown yet
+            if (shownVersion !== currentVersion) {
+                // Delay to show after app is fully loaded
+                setTimeout(() => {
+                    ThemedAlertHelper.alert(
+                        t('alerts.enjoyingApp'),
+                        t('alerts.starRequest'),
+                        [
+                            {
+                                text: t('common.later'),
+                                style: 'cancel',
+                                onPress: async () => {
+                                    // Don't save version - will ask again next time
+                                }
+                            },
+                            {
+                                text: '⭐ ' + t('alerts.giveStars'),
+                                onPress: async () => {
+                                    await AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
+                                    Linking.openURL(GITHUB_REPO_URL);
+                                }
+                            },
+                        ]
+                    );
+                    // Save version after showing (won't show again for this version)
+                    AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
+                }, 2000); // 2 second delay
+            }
+        } catch (error) {
+            // Silently fail
+        }
     };
-  }, []);
 
-  const dismissAlert = () => {
-    setAlertState({ ...alertState, visible: false });
-  };
+    useEffect(() => {
+        const initializeApp = async () => {
+            // Auto-detect device language on first install
+            initializeLanguage();
 
-  useEffect(() => {
-    const inAuthGroup = segments[0] === '(tabs)';
+            // Check for app updates
+            checkForUpdates();
 
-    if (!isAuthenticated && inAuthGroup) {
-      // Redirect to login if not authenticated
-      router.replace('/login');
-    } else if (isAuthenticated && !inAuthGroup) {
-      // Redirect to home if authenticated
-      router.replace('/(tabs)/home');
+            // Show star request alert (once per version)
+            checkAndShowStarRequest();
+
+            // Load auth credentials
+            await loadCredentials();
+            // Auto-login if credentials exist
+            const credentials = useAuthStore.getState().credentials;
+            if (credentials) {
+                await autoLogin();
+            }
+        };
+        initializeApp();
+    }, []);
+
+    // Set up global alert listener
+    useEffect(() => {
+        setAlertListener((config) => {
+            setAlertState(config);
+        });
+    }, []);
+
+    // Start realtime widget updates when app is active (Android only)
+    useEffect(() => {
+        if (Platform.OS !== 'android') return;
+
+        let stopUpdates: (() => void) | null = null;
+
+        const handleAppStateChange = (nextAppState: AppStateStatus) => {
+            if (nextAppState === 'active') {
+                // App is in foreground - start realtime updates
+                stopUpdates = startRealtimeWidgetUpdates();
+            } else {
+                // App is in background - stop updates
+                if (stopUpdates) {
+                    stopUpdates();
+                    stopUpdates = null;
+                }
+                stopRealtimeWidgetUpdates();
+            }
+        };
+
+        // Start updates immediately since app is launching
+        stopUpdates = startRealtimeWidgetUpdates();
+
+        // Listen for app state changes
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+        return () => {
+            subscription.remove();
+            if (stopUpdates) {
+                stopUpdates();
+            }
+            stopRealtimeWidgetUpdates();
+        };
+    }, []);
+
+    const dismissAlert = () => {
+        setAlertState({ ...alertState, visible: false });
+    };
+
+    useEffect(() => {
+        const inAuthGroup = segments[0] === '(tabs)';
+
+        if (!isAuthenticated && inAuthGroup) {
+            // Redirect to login if not authenticated
+            router.replace('/login');
+        } else if (isAuthenticated && !inAuthGroup) {
+            // Redirect to home if authenticated
+            router.replace('/(tabs)/home');
+        }
+    }, [isAuthenticated, segments]);
+
+    if (!fontsLoaded) {
+        return null;
     }
-  }, [isAuthenticated, segments]);
 
-  return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
-      <Stack
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: colors.background,
-          },
-          headerTintColor: colors.text,
-          headerShadowVisible: false,
-        }}
-      >
-        <Stack.Screen
-          name="login"
-          options={{
-            headerShown: false,
-          }}
-        />
-        <Stack.Screen
-          name="(tabs)"
-          options={{
-            headerShown: false,
-          }}
-        />
-      </Stack>
+    return (
+        <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+            <Stack
+                screenOptions={{
+                    headerStyle: {
+                        backgroundColor: colors.background,
+                    },
+                    headerTintColor: colors.text,
+                    headerShadowVisible: false,
+                }}
+            >
+                <Stack.Screen
+                    name="login"
+                    options={{
+                        headerShown: false,
+                    }}
+                />
+                <Stack.Screen
+                    name="(tabs)"
+                    options={{
+                        headerShown: false,
+                    }}
+                />
+            </Stack>
 
-      {/* Global Themed Alert */}
-      <ThemedAlert
-        visible={alertState.visible}
-        title={alertState.title}
-        message={alertState.message}
-        buttons={alertState.buttons}
-        onDismiss={dismissAlert}
-      />
-    </GestureHandlerRootView>
-  );
+            {/* Global Themed Alert */}
+            <ThemedAlert
+                visible={alertState.visible}
+                title={alertState.title}
+                message={alertState.message}
+                buttons={alertState.buttons}
+                onDismiss={dismissAlert}
+            />
+        </GestureHandlerRootView>
+    );
 }

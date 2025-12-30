@@ -45,7 +45,7 @@ export function UsageCard({
     style,
     totalOnly = false
 }: UsageCardProps) {
-    const { colors, typography, isDark } = useTheme();
+    const { colors, typography, glassmorphism, isDark } = useTheme();
 
     // Calculate totals
     const total = download + upload;
@@ -97,7 +97,7 @@ export function UsageCard({
             {variant === 'monthly' && (
                 <View style={styles.progressSection}>
                     {/* Progress Bar Track */}
-                    <View style={[styles.progressBarTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                    <View style={[styles.progressBarTrack, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View
                             style={[
                                 styles.progressBarFill,
@@ -127,7 +127,7 @@ export function UsageCard({
             {!totalOnly && (
                 <View style={styles.footerGrid}>
                     {/* Download Item */}
-                    <View style={[styles.detailCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                    <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View style={[styles.iconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
                             <MaterialIcons name="arrow-downward" size={16} color="#22c55e" />
                         </View>
@@ -140,7 +140,7 @@ export function UsageCard({
                     </View>
 
                     {/* Upload Item */}
-                    <View style={[styles.detailCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                    <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View style={[styles.iconCircle, { backgroundColor: 'rgba(168, 85, 247, 0.2)' }]}>
                             <MaterialIcons name="arrow-upward" size={16} color="#a855f7" />
                         </View>

@@ -31,7 +31,7 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
     buttons = [{ text: 'OK' }],
     onDismiss,
 }) => {
-    const { colors, typography, isDark } = useTheme();
+    const { colors, typography, glassmorphism, isDark } = useTheme();
 
     const handleButtonPress = (button: AlertButton) => {
         button.onPress?.();
@@ -58,14 +58,14 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
         >
             <View style={styles.overlay}>
                 <BlurView
-                    intensity={30}
+                    intensity={glassmorphism.blur.alert}
                     tint={isDark ? 'dark' : 'light'}
                     experimentalBlurMethod='dimezisBlurView'
                     style={[
                         styles.alertContainer,
                         {
-                            backgroundColor: isDark ? 'rgba(10, 10, 10, 0.92)' : 'rgba(255, 255, 255, 0.92)',
-                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            backgroundColor: isDark ? glassmorphism.background.dark.alert : glassmorphism.background.light.alert,
+                            borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
                             borderWidth: 1,
                         }
                     ]}
