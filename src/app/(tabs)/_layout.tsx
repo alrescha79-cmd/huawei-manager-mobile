@@ -6,11 +6,11 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { useTranslation } from '@/i18n';
+import { CustomTabBar } from '@/components';
 
 // Status bar header component for Android
 const StatusBarHeader = () => {
   const { colors, isDark } = useTheme();
-  const statusBarHeight = Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0;
 
   return (
     <>
@@ -19,14 +19,12 @@ const StatusBarHeader = () => {
         backgroundColor={colors.background}
         translucent={false}
       />
-      {/* Spacer removed provided screens handle their own safe area */}
     </>
   );
 };
 
 // Tab icon component using Material Icons
 const TabIcon = ({ name, color, focused }: { name: string; color: string; focused: boolean }) => {
-  // Material Icons mapping
   const iconNames: { [key: string]: keyof typeof MaterialIcons.glyphMap } = {
     home: 'home',
     wifi: 'wifi',
@@ -37,7 +35,7 @@ const TabIcon = ({ name, color, focused }: { name: string; color: string; focuse
   const iconName = iconNames[name] || 'circle';
 
   return (
-    <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+    <View style={styles.iconContainer}>
       <MaterialIcons
         name={iconName}
         size={focused ? 26 : 24}
@@ -48,51 +46,33 @@ const TabIcon = ({ name, color, focused }: { name: string; color: string; focuse
 };
 
 export default function TabLayout() {
-  const { colors, isDark } = useTheme();
+  const { colors } = useTheme();
   const router = useRouter();
   const { isAuthenticated, credentials } = useAuthStore();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
-  // Protect tabs - redirect to login if not authenticated
   useEffect(() => {
     if (!isAuthenticated || !credentials) {
-      // Not authenticated, redirect to login
       router.replace('/login');
     }
   }, [isAuthenticated, credentials]);
 
-  // Note: Navigation bar styling in edge-to-edge mode is handled automatically by the system
-
-  // Don't render tabs if not authenticated
   if (!isAuthenticated || !credentials) {
     return null;
   }
-
-  // Calculate bottom padding: use safe area inset for gesture nav, or minimum padding for 3-button nav
-  const bottomPadding = Math.max(insets.bottom, 8);
-  const tabBarHeight = 52 + bottomPadding;
 
   return (
     <>
       <StatusBarHeader />
       <Tabs
+        tabBar={(props) => <CustomTabBar {...props} />}
+        // @ts-ignore: sceneContainerStyle is valid for BottomTabNavigator but missing in Expo Router types
+        sceneContainerStyle={{ backgroundColor: colors.background }}
         screenOptions={{
+          headerShown: false,
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
-          tabBarStyle: {
-            backgroundColor: colors.tabBar,
-            borderTopColor: colors.border,
-            borderTopWidth: 1,
-            height: tabBarHeight,
-            paddingBottom: bottomPadding,
-            paddingTop: 8,
-          },
-          headerShown: false, // Hide headers for fullscreen
-          tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '500',
-          },
         }}
       >
         <Tabs.Screen
@@ -143,8 +123,5 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 16,
-  },
-  iconContainerActive: {
-    backgroundColor: 'rgba(0, 122, 255, 0.1)',
   },
 });

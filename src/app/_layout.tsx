@@ -12,6 +12,7 @@ import { useTheme } from '@/theme';
 import { ThemedAlert, setAlertListener, ThemedAlertHelper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
+import * as NavigationBar from 'expo-navigation-bar';
 
 interface AlertButton {
   text: string;
@@ -41,12 +42,32 @@ const compareVersions = (v1: string, v2: string): number => {
 };
 
 export default function RootLayout() {
-  const { colors } = useTheme();
+  const { colors, isDark } = useTheme();
   const { isAuthenticated, loadCredentials, autoLogin } = useAuthStore();
   const { initializeLanguage } = useThemeStore();
   const { t } = useTranslation();
   const segments = useSegments();
   const router = useRouter();
+
+  // Handle Android Navigation Bar Colors
+  useEffect(() => {
+    if (Platform.OS === 'android') {
+      const configureNavBar = async () => {
+        try {
+          // Enable edge-to-edge (draw behind nav bar) - Handled by app.json edgeToEdgeEnabled: true
+          // await NavigationBar.setPositionAsync('absolute'); // Causes warning
+          // Make nav bar transparent so app background shows through
+          // await NavigationBar.setBackgroundColorAsync('#00000000'); // Causes warning
+
+          // Set icons to be visible (opposite of theme)
+          await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
+        } catch (e) {
+          console.warn('Failed to configure navigation bar:', e);
+        }
+      };
+      configureNavBar();
+    }
+  }, [isDark]);
 
   // Global alert state
   const [alertState, setAlertState] = useState<AlertState>({
@@ -213,7 +234,7 @@ export default function RootLayout() {
   }, [isAuthenticated, segments]);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack
         screenOptions={{
           headerStyle: {

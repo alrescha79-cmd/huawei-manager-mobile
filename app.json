@@ -34,7 +34,11 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.alrescha79.hmmobile"
+      "package": "com.alrescha79.hmmobile",
+      "navigationBar": {
+        "backgroundColor": "#00000000",
+        "visible": "visible"
+      }
     },
     "web": {
       "favicon": "./assets/logo.png"
