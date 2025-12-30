@@ -12,6 +12,8 @@ interface ThemeState {
   isLanguageInitialized: boolean; // Track if language was auto-detected
 
   setThemeMode: (mode: ThemeMode) => void;
+  usageCardStyle: 'split' | 'compact';
+  setUsageCardStyle: (style: 'split' | 'compact') => void;
   setRefreshInterval: (interval: number) => void;
   setLanguage: (language: string) => void;
   initializeLanguage: () => void; // Auto-detect device language on first install
@@ -28,6 +30,8 @@ export const useThemeStore = create<ThemeState>()(
       setThemeMode: (mode) => {
         set({ themeMode: mode });
       },
+      usageCardStyle: 'split',
+      setUsageCardStyle: (style) => set({ usageCardStyle: style }),
       setRefreshInterval: (interval) => set({ refreshInterval: interval }),
       setLanguage: (language) => set({ language }),
 

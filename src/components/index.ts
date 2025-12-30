@@ -11,6 +11,7 @@ export * from './WebViewLogin';
 export * from './ThemedAlert';
 export * from './PageSheetModal';
 export * from './BandSelectionModal';
+export * from './CompactUsageCard';
 export * from './UsageCard';
 export * from './SignalCard';
 export * from './MonthlySettingsModal';

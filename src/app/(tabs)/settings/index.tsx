@@ -19,10 +19,11 @@ export default function SettingsIndex() {
     const router = useRouter();
     const { colors, typography } = useTheme();
     const { t } = useTranslation();
-    const { themeMode, setThemeMode, language, setLanguage } = useThemeStore();
+    const { themeMode, setThemeMode, language, setLanguage, usageCardStyle, setUsageCardStyle } = useThemeStore();
 
     const [showThemeModal, setShowThemeModal] = React.useState(false);
     const [showLanguageModal, setShowLanguageModal] = React.useState(false);
+    const [showUsageModal, setShowUsageModal] = React.useState(false);
 
     const handleOpenGitHub = () => {
         Linking.openURL('https://github.com/alrescha79-cmd');
@@ -77,6 +78,24 @@ export default function SettingsIndex() {
                     title={t('settings.system')}
                     subtitle={t('settings.systemSubtitle') || 'Time, Reboot, Reset'}
                     onPress={() => router.push('/settings/system')}
+                />
+
+                {/* Data Usage View */}
+                <SettingsItem
+                    icon="data-usage"
+                    title="Data Usage View"
+                    onPress={() => setShowUsageModal(true)}
+                    rightElement={
+                        <TouchableOpacity
+                            style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
+                            onPress={() => setShowUsageModal(true)}
+                        >
+                            <Text style={[styles.dropdownText, { color: colors.text }]}>
+                                {usageCardStyle === 'compact' ? 'Compact' : 'Split'}
+                            </Text>
+                            <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
+                    }
                 />
 
                 {/* Theme Settings */}
@@ -177,6 +196,22 @@ export default function SettingsIndex() {
                     setShowLanguageModal(false);
                 }}
                 onClose={() => setShowLanguageModal(false)}
+            />
+
+            {/* Usage View Modal */}
+            <SelectionModal
+                visible={showUsageModal}
+                title="Data Usage View"
+                options={[
+                    { label: 'Split View (Default)', value: 'split' },
+                    { label: 'Compact View', value: 'compact' },
+                ]}
+                selectedValue={usageCardStyle}
+                onSelect={(val) => {
+                    setUsageCardStyle(val as 'split' | 'compact');
+                    setShowUsageModal(false);
+                }}
+                onClose={() => setShowUsageModal(false)}
             />
         </ScrollView>
     );

@@ -8,8 +8,11 @@ import {
     ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
+
+// ... (keep interface SelectionOption)
 
 export interface SelectionOption {
     label: string;
@@ -33,7 +36,7 @@ export function SelectionModal({
     onSelect,
     onClose,
 }: SelectionModalProps) {
-    const { colors, typography } = useTheme();
+    const { colors, typography, isDark } = useTheme();
     const { t } = useTranslation();
 
     return (
@@ -44,7 +47,19 @@ export function SelectionModal({
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                <View style={[styles.modalContent, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                <BlurView
+                    intensity={30}
+                    tint={isDark ? 'dark' : 'light'}
+                    experimentalBlurMethod='dimezisBlurView'
+                    style={[
+                        styles.modalContent,
+                        {
+                            backgroundColor: isDark ? 'rgba(10, 10, 10, 0.8)' : 'rgba(255, 255, 255, 0.8)',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            borderWidth: 1,
+                        }
+                    ]}
+                >
                     <View style={styles.modalHeader}>
                         <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
                     </View>
@@ -94,7 +109,7 @@ export function SelectionModal({
                             <Text style={styles.buttonText}>{t('common.cancel')}</Text>
                         </TouchableOpacity>
                     </View>
-                </View>
+                </BlurView>
             </View>
         </Modal>
     );
