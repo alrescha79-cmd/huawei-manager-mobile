@@ -82,7 +82,7 @@ export const SettingsItem = ({
                 ]}>
                     <View style={styles.textContainer}>
                         <Text style={[
-                            typography.subheadline,
+                            typography.body,  // Changed from subheadline to body for consistency
                             { color: destructive ? colors.error : colors.text, fontWeight: '500' }
                         ]}>
                             {title}
@@ -99,7 +99,7 @@ export const SettingsItem = ({
                     ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             {value && (
-                                <Text style={[typography.subheadline, { color: colors.textSecondary, marginRight: showChevron ? 4 : 0 }]}>
+                                <Text style={[typography.body, { color: colors.textSecondary, marginRight: showChevron ? 4 : 0 }]}>
                                     {value}
                                 </Text>
                             )}
@@ -117,7 +117,7 @@ export const SettingsItem = ({
 
 const styles = StyleSheet.create({
     sectionWrapper: {
-        marginBottom: 24,
+        marginBottom: 16,  // Changed from 24 to match Card spacing
         marginHorizontal: 16,
     },
     sectionTitle: {
@@ -127,11 +127,20 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     sectionContent: {
-        borderRadius: 12,
+        borderRadius: 16,  // Changed from 12 to match Card borderRadius.lg
         overflow: 'hidden',
+        // Add shadow to match Card component
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 8,
+        elevation: 3,
     },
     itemTouchable: {
-        minHeight: 50, // Increased touch target slightly
+        minHeight: 50,
     },
     itemContainer: {
         flexDirection: 'row',

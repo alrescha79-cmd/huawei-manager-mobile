@@ -9,7 +9,9 @@ import {
     Platform,
     StatusBar,
     ActivityIndicator,
+    Keyboard,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ConnectedDevice } from '@/types';
@@ -75,7 +77,7 @@ export function DeviceDetailModal({
     onSaveName,
     onBlock,
 }: DeviceDetailModalProps) {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
     const [deviceName, setDeviceName] = useState('');
@@ -98,7 +100,8 @@ export function DeviceDetailModal({
     }, [deviceName, device]);
 
     const handleSave = async () => {
-        if (!device || !hasChanges) return;
+        Keyboard.dismiss(); // Dismiss keyboard first
+        if (!deviceName.trim()) return;
 
         setIsSaving(true);
         try {
@@ -128,7 +131,15 @@ export function DeviceDetailModal({
             presentationStyle="pageSheet"
             onRequestClose={onClose}
         >
-            <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+            <BlurView
+                intensity={glassmorphism.blur.modal}
+                tint={isDark ? 'dark' : 'light'}
+                experimentalBlurMethod='dimezisBlurView'
+                style={[
+                    styles.modalContainer,
+                    { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }
+                ]}
+            >
                 {/* Header */}
                 <View style={[styles.modalHeader, {
                     borderBottomColor: colors.border,
@@ -232,7 +243,7 @@ export function DeviceDetailModal({
                         </Text>
                     </TouchableOpacity>
                 </View>
-            </View>
+            </BlurView>
         </Modal>
     );
 }

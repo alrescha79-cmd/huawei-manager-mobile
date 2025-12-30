@@ -89,14 +89,15 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                 <Svg width={layout.width} height={TAB_HEIGHT + 100 + SVG_TOP_OFFSET} style={styles.svg}>
                     <AnimatedPath
                         animatedProps={animatedPathProps}
-                        fill={colors.card} // Or white/background
-                    // drop shadow simulation using stroke or duplicate path
+                        fill={colors.card}
+                        stroke="none"
                     />
                     <AnimatedCircle
                         animatedProps={animatedCircleProps}
                         cy={12 + SVG_TOP_OFFSET}
                         r={23}
                         fill={colors.primary}
+                        stroke="none"
                     />
                 </Svg>
             </View>

@@ -36,7 +36,7 @@ export function SelectionModal({
     onSelect,
     onClose,
 }: SelectionModalProps) {
-    const { colors, typography, isDark } = useTheme();
+    const { colors, typography, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
     return (
@@ -48,14 +48,14 @@ export function SelectionModal({
         >
             <View style={styles.modalOverlay}>
                 <BlurView
-                    intensity={30}
+                    intensity={glassmorphism.blur.card}
                     tint={isDark ? 'dark' : 'light'}
                     experimentalBlurMethod='dimezisBlurView'
                     style={[
                         styles.modalContent,
                         {
-                            backgroundColor: isDark ? 'rgba(10, 10, 10, 0.8)' : 'rgba(255, 255, 255, 0.8)',
-                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            backgroundColor: isDark ? glassmorphism.background.dark.overlay : glassmorphism.background.light.overlay,
+                            borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
                             borderWidth: 1,
                         }
                     ]}

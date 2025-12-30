@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -974,15 +974,11 @@ export default function HomeScreen() {
           {/* Divider */}
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-          {/* Daily Usage Card - API returns combined download+upload as CurrentDayUsed */}
-          <UsageCard
-            title={t('home.dailyUsage')}
-            badge={formatDuration(trafficStats.dayDuration, durationUnits)}
-            download={trafficStats.dayUsed}
-            upload={0}
-            color="amber"
-            icon="today"
-            totalOnly={true}
+          {/* Daily Usage Card */}
+          <DailyUsageCard
+            usage={trafficStats.dayUsed}
+            duration={trafficStats.dayDuration}
+            style={{ marginBottom: spacing.md }}
           />
 
           {usageCardStyle === 'compact' ? (

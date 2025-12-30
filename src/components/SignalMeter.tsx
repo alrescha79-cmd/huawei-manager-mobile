@@ -30,7 +30,7 @@ export function SignalMeter({
     thresholds,
     reverseScale = true,
 }: SignalMeterProps) {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography, spacing, isDark } = useTheme();
 
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
 
@@ -94,7 +94,15 @@ export function SignalMeter({
                 />
                 {/* Value indicator on bar */}
                 <View style={[styles.barValueContainer, { left: `${Math.min(percentage, 85)}%` }]}>
-                    <Text style={[styles.barValueText, { color: '#FFFFFF' }]}>
+                    <Text style={[
+                        styles.barValueText,
+                        {
+                            color: '#FFFFFF',
+                            textShadowColor: isDark ? 'rgba(0,0,0,0.3)' : 'transparent',
+                            textShadowOffset: { width: 0, height: 1 },
+                            textShadowRadius: isDark ? 2 : 0,
+                        }
+                    ]}>
                         {quality.label}
                     </Text>
                 </View>
@@ -150,9 +158,6 @@ const styles = StyleSheet.create({
     barValueText: {
         fontSize: 11,
         fontWeight: '600',
-        textShadowColor: 'rgba(0,0,0,0.3)',
-        textShadowOffset: { width: 0, height: 1 },
-        textShadowRadius: 2,
     },
     scaleRow: {
         flexDirection: 'row',

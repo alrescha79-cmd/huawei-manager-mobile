@@ -51,6 +51,42 @@ export const BorderRadius = {
   round: 999,
 };
 
+export const Glassmorphism = {
+  blur: {
+    card: 40,
+    modal: 50,
+    overlay: 40,
+    alert: 75,
+    light: 25,
+    heavy: 60,
+  },
+  // Background opacity for glassmorphism effect
+  background: {
+    dark: {
+      card: 'rgba(10, 10, 10, 0.4)',
+      modal: 'rgba(10, 10, 10, 0.6)',
+      overlay: 'rgba(10, 10, 10, 0.5)',
+      alert: 'rgba(28, 28, 30, 0.98)',
+    },
+    light: {
+      card: 'rgba(255, 255, 255, 0.4)',
+      modal: 'rgba(255, 255, 255, 0.6)',
+      overlay: 'rgba(255, 255, 255, 0.5)',
+      alert: 'rgba(255, 255, 255, 0.98)',
+    },
+  },
+  // Border opacity for subtle borders
+  border: {
+    dark: 'rgba(255, 255, 255, 0.1)',
+    light: 'rgba(0, 0, 0, 0.05)',
+  },
+  // Inner element backgrounds 
+  innerBackground: {
+    dark: 'rgba(255, 255, 255, 0.05)',
+    light: 'rgba(0, 0, 0, 0.03)',
+  },
+};
+
 export const Typography = {
   largeTitle: {
     fontSize: 34,
@@ -126,6 +162,7 @@ export const useTheme = () => {
     spacing: Spacing,
     borderRadius: BorderRadius,
     typography: Typography,
+    glassmorphism: Glassmorphism,
     isDark,
     themeMode,
   };
