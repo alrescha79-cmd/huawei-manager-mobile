@@ -15,9 +15,10 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
+import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
 import {
   formatBytes,
@@ -58,6 +59,7 @@ const getSignalQuality = (
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing } = useTheme();
+  const { usageCardStyle } = useThemeStore();
   const {
     credentials,
     logout,
@@ -983,86 +985,43 @@ export default function HomeScreen() {
             totalOnly={true}
           />
 
-          {/* Current Session Card */}
-          <UsageCard
-            title={t('home.currentSession')}
-            badge={formatDuration(trafficStats.currentConnectTime, durationUnits)}
-            download={trafficStats.currentDownload}
-            upload={trafficStats.currentUpload}
-            color="cyan"
-            icon="schedule"
-          />
-
-          {/* Monthly Usage Card with Progress Bar */}
-          <View>
-            <UsageCard
-              title={t('home.monthlyUsage')}
-              badge={trafficStats.monthDuration > 0
-                ? formatDuration(trafficStats.monthDuration, durationUnits)
-                : new Date().toLocaleDateString(undefined, { month: 'short' }).toUpperCase()}
-              download={trafficStats.monthDownload}
-              upload={trafficStats.monthUpload}
-              color="emerald"
-              icon="calendar-month"
+          {usageCardStyle === 'compact' ? (
+            <CompactUsageCard
+              stats={trafficStats}
+              dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
             />
-            {/* Progress bar when monthly limit is enabled */}
-            {monthlySettings?.enabled && monthlySettings.dataLimit > 0 && (
-              <View style={{ marginTop: -4, marginBottom: spacing.md, paddingHorizontal: 4 }}>
-                {(() => {
-                  const totalUsed = trafficStats.monthDownload + trafficStats.monthUpload;
-                  const limitBytes = monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1024 * 1024 * 1024 : 1024 * 1024);
-                  const percentage = Math.min((totalUsed / limitBytes) * 100, 100);
+          ) : (
+            <>
+              {/* Session Usage Card */}
+              <UsageCard
+                title={t('home.session') || "Session"}
+                download={trafficStats.currentDownload}
+                upload={trafficStats.currentUpload}
+                duration={trafficStats.currentConnectTime}
+                variant="session"
+                style={{ marginBottom: spacing.md }}
+              />
 
-                  // Gradient color based on percentage: green < 50%, yellow 50-80%, red > 80%
-                  let barColor = '#22C55E'; // Green
-                  let textColor = colors.text;
-                  if (percentage >= 80) {
-                    barColor = '#EF4444'; // Red
-                    textColor = '#EF4444';
-                  } else if (percentage >= 50) {
-                    barColor = '#F59E0B'; // Yellow/Amber
-                    textColor = '#F59E0B';
-                  }
+              {/* Monthly Usage Card */}
+              <UsageCard
+                title={t('home.monthlyUsage') || "Monthly Usage"}
+                download={trafficStats.monthDownload || trafficStats.totalDownload}
+                upload={trafficStats.monthUpload || trafficStats.totalUpload}
+                duration={trafficStats.monthDuration}
+                variant="monthly"
+                dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
+              />
 
-                  return (
-                    <View>
-                      <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 }}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                          {t('home.usageProgress')}
-                        </Text>
-                        <Text style={[typography.caption1, { color: textColor, fontWeight: '600' }]}>
-                          {percentage.toFixed(1)}%
-                        </Text>
-                      </View>
-                      <View style={{ height: 8, backgroundColor: colors.border, borderRadius: 4, overflow: 'hidden' }}>
-                        <View
-                          style={{
-                            height: '100%',
-                            width: `${percentage}%`,
-                            backgroundColor: barColor,
-                            borderRadius: 4,
-                          }}
-                        />
-                      </View>
-                      <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, textAlign: 'right' }]}>
-                        {formatBytes(totalUsed)} / {monthlySettings.dataLimit} {monthlySettings.dataLimitUnit}
-                      </Text>
-                    </View>
-                  );
-                })()}
-              </View>
-            )}
-          </View>
-
-          {/* Total Traffic Card */}
-          <UsageCard
-            title={t('home.totalUsage')}
-            badge={formatDuration(trafficStats.totalConnectTime, durationUnits)}
-            download={trafficStats.totalDownload}
-            upload={trafficStats.totalUpload}
-            color="amber"
-            icon="data-usage"
-          />
+              {/* Total Usage Card */}
+              <UsageCard
+                title={t('home.totalUsage') || "Total Usage"}
+                badge={formatDuration(trafficStats.totalConnectTime, durationUnits)}
+                download={trafficStats.totalDownload}
+                upload={trafficStats.totalUpload}
+                icon="data-usage"
+              />
+            </>
+          )}
 
           {/* Divider */}
           <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />

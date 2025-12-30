@@ -7,6 +7,7 @@ import {
     StyleSheet,
     Dimensions,
 } from 'react-native';
+import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 
 interface AlertButton {
@@ -30,7 +31,7 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
     buttons = [{ text: 'OK' }],
     onDismiss,
 }) => {
-    const { colors, typography } = useTheme();
+    const { colors, typography, isDark } = useTheme();
 
     const handleButtonPress = (button: AlertButton) => {
         button.onPress?.();
@@ -56,8 +57,28 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
             onRequestClose={onDismiss}
         >
             <View style={styles.overlay}>
-                <View style={[styles.alertContainer, { backgroundColor: colors.card }]}>
-                    <Text style={[typography.headline, styles.title, { color: colors.text }]}>
+                <BlurView
+                    intensity={30}
+                    tint={isDark ? 'dark' : 'light'}
+                    experimentalBlurMethod='dimezisBlurView'
+                    style={[
+                        styles.alertContainer,
+                        {
+                            backgroundColor: isDark ? 'rgba(10, 10, 10, 0.92)' : 'rgba(255, 255, 255, 0.92)',
+                            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                            borderWidth: 1,
+                        }
+                    ]}
+                >
+                    <Text style={[
+                        typography.headline,
+                        styles.title,
+                        {
+                            color: colors.text,
+                            textShadowColor: 'transparent',
+                            textShadowRadius: 0
+                        }
+                    ]}>
                         {title}
                     </Text>
 
@@ -90,7 +111,7 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
                             </TouchableOpacity>
                         ))}
                     </View>
-                </View>
+                </BlurView>
             </View>
         </Modal>
     );

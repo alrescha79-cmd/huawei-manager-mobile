@@ -1,157 +1,166 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { formatDuration } from '@/utils/helpers';
+import { Card } from './Card';
+import { LinearGradient } from 'expo-linear-gradient';
 
 interface UsageCardProps {
     title: string;
-    badge?: string;
+    badge?: string; // e.g., "1d 2h 32m"
     download: number;
     upload: number;
-    duration?: number;
-    color: 'cyan' | 'emerald' | 'amber' | 'fuchsia';
-    icon: keyof typeof MaterialIcons.glyphMap;
-    totalOnly?: boolean;  // Hide download/upload breakdown, show only total
+    duration?: number; // In seconds
+    icon?: keyof typeof MaterialIcons.glyphMap;
+    // New props for layout variant
+    variant?: 'session' | 'monthly';
+    dataLimit?: number; // Total quota in bytes
+    color?: string; // Keep for compatibility but might override
+    style?: StyleProp<ViewStyle>;
+    totalOnly?: boolean;
 }
 
-// Helper to format bytes with separate value and unit
+// Helper to format bytes
 const formatBytesWithUnit = (bytes: number): { value: string; unit: string } => {
     if (!bytes || isNaN(bytes) || bytes === 0) return { value: '0', unit: 'B' };
-
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-
     return {
-        value: (bytes / Math.pow(k, i)).toFixed(1),
+        value: (bytes / Math.pow(k, i)).toFixed(2), // 2 decimal places as per image "500.20"
         unit: sizes[i],
     };
 };
 
-/**
- * Modern usage card with glassmorphism style
- */
 export function UsageCard({
     title,
     badge,
     download,
     upload,
     duration,
-    color,
     icon,
+    variant = 'session',
+    dataLimit,
+    style,
     totalOnly = false
 }: UsageCardProps) {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography, isDark } = useTheme();
 
-    // Color themes
-    const colorThemes = {
-        cyan: {
-            primary: '#22d3ee',
-            secondary: '#0e7490',
-            border: 'rgba(34, 211, 238, 0.3)',
-            bg: 'rgba(34, 211, 238, 0.1)',
-        },
-        emerald: {
-            primary: '#34d399',
-            secondary: '#059669',
-            border: 'rgba(52, 211, 153, 0.3)',
-            bg: 'rgba(52, 211, 153, 0.1)',
-        },
-        amber: {
-            primary: '#fbbf24',
-            secondary: '#d97706',
-            border: 'rgba(251, 191, 36, 0.3)',
-            bg: 'rgba(251, 191, 36, 0.1)',
-        },
-        fuchsia: {
-            primary: '#e879f9',
-            secondary: '#a21caf',
-            border: 'rgba(232, 121, 249, 0.3)',
-            bg: 'rgba(232, 121, 249, 0.1)',
-        },
-    };
-
-    const theme = colorThemes[color];
+    // Calculate totals
     const total = download + upload;
     const totalFormatted = formatBytesWithUnit(total);
     const dlFormatted = formatBytesWithUnit(download);
     const ulFormatted = formatBytesWithUnit(upload);
 
+    // Calculate percentage if monthly
+    let percent = 0;
+    let limitFormatted = { value: '0', unit: 'GB' };
+    if (variant === 'monthly' && dataLimit && dataLimit > 0) {
+        percent = Math.min(Math.round((total / dataLimit) * 100), 100);
+        limitFormatted = formatBytesWithUnit(dataLimit);
+    }
+
+    // Badge text (Duration or fallback)
+    const badgeText = badge || (duration ? formatDuration(duration) : '');
+
+    // Highlight color (Blue for Usage as per image)
+    const highlightColor = '#3b82f6'; // Tailwind blue-500
+
     return (
-        <View style={[
-            styles.container,
-            {
-                backgroundColor: colors.card,
-                borderTopColor: theme.border,
-            }
-        ]}>
-            {/* Header */}
+        <Card style={[styles.container, style]}>
+            {/* Header: Title + Badge */}
             <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <MaterialIcons name={icon} size={18} color={theme.primary} />
-                    <Text style={[styles.title, { color: theme.primary }]}>
-                        {title}
-                    </Text>
-                </View>
-                {badge && (
-                    <View style={[styles.badge, { backgroundColor: theme.bg, borderColor: theme.border }]}>
-                        <Text style={[styles.badgeText, { color: theme.primary }]}>
-                            {badge}
+                <Text style={[typography.headline, { color: colors.text, fontWeight: '700' }]}>
+                    {title}
+                </Text>
+                {badgeText ? (
+                    <View style={[styles.badgeContainer, { borderColor: colors.border }]}>
+                        <Text style={[typography.caption1, { color: colors.textSecondary, fontFamily: 'monospace' }]}>
+                            {badgeText}
                         </Text>
                     </View>
-                )}
+                ) : null}
             </View>
 
-            {/* Main Value */}
-            <View style={styles.mainValueContainer}>
-                <Text style={[styles.mainValue, { color: colors.text }]}>
+            {/* Main Stat: Large Number + Unit */}
+            <View style={styles.mainStatContainer}>
+                <Text style={[styles.mainValue, { color: highlightColor }]}>
                     {totalFormatted.value}
                 </Text>
-                <Text style={[styles.mainUnit, { color: theme.primary }]}>
+                <Text style={[styles.mainUnit, { color: colors.textSecondary }]}>
                     {totalFormatted.unit}
                 </Text>
             </View>
 
-            {duration !== undefined && (
-                <Text style={[styles.subtitle, { color: theme.secondary }]}>
-                    Duration: {formatDuration(duration)}
-                </Text>
+            {/* Monthly Variant: Progress Bar */}
+            {variant === 'monthly' && (
+                <View style={styles.progressSection}>
+                    {/* Progress Bar Track */}
+                    <View style={[styles.progressBarTrack, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                        <View
+                            style={[
+                                styles.progressBarFill,
+                                {
+                                    width: `${percent}%`,
+                                    backgroundColor: highlightColor
+                                }
+                            ]}
+                        />
+                    </View>
+
+                    {/* Percentage Info */}
+                    <View style={styles.progressInfo}>
+                        <View style={[styles.percentBadge, { borderColor: highlightColor, borderWidth: 1 }]}>
+                            <Text style={[typography.caption2, { color: highlightColor, fontWeight: 'bold' }]}>
+                                {percent}%
+                            </Text>
+                        </View>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                            of {limitFormatted.value} {limitFormatted.unit}
+                        </Text>
+                    </View>
+                </View>
             )}
 
-            {/* Stats Grid - hidden when totalOnly */}
+            {/* Footer: Download / Upload Details */}
             {!totalOnly && (
-                <View style={[styles.statsGrid, { borderTopColor: colors.border }]}>
-                    <View style={styles.statItem}>
-                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Download</Text>
-                        <View style={styles.statValue}>
-                            <MaterialIcons name="arrow-downward" size={12} color="#22d3ee" />
-                            <Text style={[styles.statText, { color: '#22d3ee' }]}>
-                                {dlFormatted.value} {dlFormatted.unit}
+                <View style={styles.footerGrid}>
+                    {/* Download Item */}
+                    <View style={[styles.detailCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                        <View style={[styles.iconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
+                            <MaterialIcons name="arrow-downward" size={16} color="#22c55e" />
+                        </View>
+                        <View>
+                            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>DOWNLOAD</Text>
+                            <Text style={[styles.detailValue, { color: colors.text }]}>
+                                {dlFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{dlFormatted.unit}</Text>
                             </Text>
                         </View>
                     </View>
-                    <View style={styles.statItem}>
-                        <Text style={[styles.statLabel, { color: colors.textSecondary }]}>Upload</Text>
-                        <View style={styles.statValue}>
-                            <MaterialIcons name="arrow-upward" size={12} color="#e879f9" />
-                            <Text style={[styles.statText, { color: '#e879f9' }]}>
-                                {ulFormatted.value} {ulFormatted.unit}
+
+                    {/* Upload Item */}
+                    <View style={[styles.detailCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                        <View style={[styles.iconCircle, { backgroundColor: 'rgba(168, 85, 247, 0.2)' }]}>
+                            <MaterialIcons name="arrow-upward" size={16} color="#a855f7" />
+                        </View>
+                        <View>
+                            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>UPLOAD</Text>
+                            <Text style={[styles.detailValue, { color: colors.text }]}>
+                                {ulFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{ulFormatted.unit}</Text>
                             </Text>
                         </View>
                     </View>
                 </View>
             )}
-        </View>
+        </Card>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
-        borderRadius: 16,
-        padding: 16,
-        borderTopWidth: 2,
-        marginBottom: 12,
+        padding: 20,
+        marginBottom: 16,
     },
     header: {
         flexDirection: 'row',
@@ -159,75 +168,81 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
     },
-    headerLeft: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    title: {
-        fontSize: 14,
-        fontWeight: '700',
-        letterSpacing: 1,
-        textTransform: 'uppercase',
-    },
-    badge: {
-        paddingHorizontal: 8,
+    badgeContainer: {
+        paddingHorizontal: 10,
         paddingVertical: 4,
-        borderRadius: 4,
+        borderRadius: 8,
         borderWidth: 1,
     },
-    badgeText: {
-        fontSize: 10,
-        fontWeight: '500',
-        fontFamily: 'monospace',
-    },
-    mainValueContainer: {
+    mainStatContainer: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        gap: 6,
-        marginBottom: 4,
+        marginBottom: 20,
     },
     mainValue: {
-        fontSize: 42,
-        fontWeight: '700',
-        fontFamily: 'monospace',
+        fontSize: 48,
+        fontWeight: 'bold',
+        letterSpacing: -1,
     },
     mainUnit: {
         fontSize: 18,
-        fontWeight: '500',
-        fontFamily: 'monospace',
+        fontWeight: '600',
+        marginLeft: 8,
     },
-    subtitle: {
-        fontSize: 11,
-        fontFamily: 'monospace',
-        letterSpacing: 1,
-        marginBottom: 12,
-    },
-    statsGrid: {
-        flexDirection: 'row',
-        borderTopWidth: 1,
-        paddingTop: 12,
-        marginTop: 4,
-    },
-    statItem: {
-        flex: 1,
-    },
-    statLabel: {
-        fontSize: 10,
-        color: '#6b7280',
-        textTransform: 'uppercase',
-        marginBottom: 4,
-    },
-    statValue: {
+    progressSection: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 4,
+        marginBottom: 20,
+        gap: 12,
     },
-    statText: {
-        fontSize: 13,
-        fontWeight: '500',
-        fontFamily: 'monospace',
+    progressBarTrack: {
+        flex: 1,
+        height: 12,
+        borderRadius: 6,
+        overflow: 'hidden',
+    },
+    progressBarFill: {
+        height: '100%',
+        borderRadius: 6,
+    },
+    progressInfo: {
+        alignItems: 'flex-end',
+    },
+    percentBadge: {
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 12,
+        marginBottom: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    footerGrid: {
+        flexDirection: 'row',
+        gap: 12,
+    },
+    detailCard: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        borderRadius: 12,
+        gap: 12,
+    },
+    iconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    detailLabel: {
+        fontSize: 10,
+        fontWeight: '600',
+        letterSpacing: 0.5,
+        marginBottom: 2,
+    },
+    detailValue: {
+        fontSize: 16,
+        fontWeight: '700',
     },
 });
-
-export default UsageCard;

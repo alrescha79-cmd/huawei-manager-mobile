@@ -10,6 +10,7 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@/theme';
+import { BlurView } from 'expo-blur';
 
 interface PageSheetModalProps {
     visible: boolean;
@@ -32,16 +33,25 @@ export function PageSheetModal({
     cancelText = 'Cancel',
     children,
 }: PageSheetModalProps) {
-    const { colors, typography } = useTheme();
+    const { colors, typography, isDark } = useTheme();
 
     return (
         <Modal
             visible={visible}
             animationType="slide"
-            presentationStyle="pageSheet"
+            presentationStyle="overFullScreen"
+            transparent
             onRequestClose={onClose}
         >
-            <View style={[styles.container, { backgroundColor: colors.background }]}>
+            <BlurView
+                intensity={50} // Higher intensity for full screen sheet
+                tint={isDark ? 'dark' : 'light'}
+                experimentalBlurMethod='dimezisBlurView'
+                style={[
+                    styles.container,
+                    { backgroundColor: isDark ? 'rgba(10, 10, 10, 0.6)' : 'rgba(255, 255, 255, 0.6)' }
+                ]}
+            >
                 <View style={[styles.header, {
                     borderBottomColor: colors.border,
                     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
@@ -65,7 +75,7 @@ export function PageSheetModal({
                     )}
                 </View>
                 {children}
-            </View>
+            </BlurView>
         </Modal>
     );
 }
