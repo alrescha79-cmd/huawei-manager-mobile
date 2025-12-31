@@ -23,7 +23,7 @@ export class SMSService {
 
     try {
       const response = await this.apiClient.get('/api/sms/sms-feature-switch');
-      
+
       // Check if we got a valid response (not an error)
       // If the endpoint returns error 404 or similar, SMS is not supported
       if (!response || response.includes('<error>')) {
@@ -82,7 +82,8 @@ export class SMSService {
             .replace(/&gt;/g, '>')
             .replace(/&amp;/g, '&')
             .replace(/&quot;/g, '"')
-            .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)));
+            .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
+            .replace(/&#x([0-9A-Fa-f]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)));
 
           messages.push({
             index: parseXMLValue(messageXML, 'Index'),

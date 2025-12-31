@@ -288,7 +288,9 @@
     "messageSent": "Message sent",
     "fillAllFields": "Please fill in all fields",
     "compose": "Compose",
-    "reply": "Reply"
+    "reply": "Reply",
+    "yesterday": "Yesterday",
+    "to": "To"
   },
   "settings": {
     "modemInfo": "Modem Information",
