@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
+import { ModalMeshGradient } from './ModalMeshGradient';
 
 interface SpeedtestModalProps {
     visible: boolean;
@@ -457,6 +458,7 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                     style={styles.blurContainer}
                 >
                     <View style={[styles.modalContent, { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }]}>
+                        <ModalMeshGradient />
                         {/* Header */}
                         <View style={styles.header}>
                             <Text style={[typography.title2, { color: colors.text, fontWeight: '700' }]}>
@@ -559,7 +561,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.7)',
     },
     blurContainer: {
         borderRadius: 24,

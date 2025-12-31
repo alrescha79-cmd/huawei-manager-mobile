@@ -23,3 +23,7 @@ export * from './SelectionModal';
 export * from './CustomTabBar';
 export * from './PageTransition';
 export * from './DailyUsageCard';
+export * from './GradientBackground';
+export * from './MeshGradientBackground';
+export * from './PageHeader';
+export * from './ModalMeshGradient';

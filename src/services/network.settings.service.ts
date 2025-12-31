@@ -55,6 +55,7 @@ export class NetworkSettingsService {
                             parseXMLValue(profileXML, 'PdpType')),
                         isDefault: parseXMLValue(profileXML, 'IsDefault') === '1' ||
                             parseXMLValue(profileXML, 'Default') === '1',
+                        readOnly: parseXMLValue(profileXML, 'ReadOnly') === '1',
                     };
                     profiles.push(profile);
                 });
@@ -68,11 +69,20 @@ export class NetworkSettingsService {
 
     async getActiveAPNProfile(): Promise<string> {
         try {
-            const response = await this.apiClient.get('/api/dialup/connection');
+            let response: string;
+            try {
+                response = await this.apiClient.get('/api/dialup/profiles');
+            } catch {
+                try {
+                    response = await this.apiClient.get('/api/dialup/profile-list');
+                } catch {
+                    // Fallback to connection endpoint
+                    response = await this.apiClient.get('/api/dialup/connection');
+                }
+            }
             const activeId = parseXMLValue(response, 'CurrentProfile') || '0';
             return activeId;
         } catch (error) {
-            console.error('Error getting active APN profile:', error);
             return '0';
         }
     }
@@ -122,6 +132,7 @@ export class NetworkSettingsService {
 
             return true;
         } catch (error) {
+            console.error('Error creating APN profile:', error);
             throw error;
         }
     }
@@ -129,67 +140,108 @@ export class NetworkSettingsService {
     async updateAPNProfile(profile: APNProfile): Promise<boolean> {
         try {
             const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Delete>0</Delete>
-          <SetDefault>0</SetDefault>
-          <Modify>1</Modify>
-          <Profile>
-            <Index>${profile.id}</Index>
-            <IsValid>1</IsValid>
-            <Name>${profile.name}</Name>
-            <ApnName>${profile.apn}</ApnName>
-            <Username>${profile.username}</Username>
-            <Password>${profile.password}</Password>
-            <AuthMode>${this.authTypeToValue(profile.authType)}</AuthMode>
-            <IpType>${this.ipTypeToValue(profile.ipType)}</IpType>
-            <IsDefault>${profile.isDefault ? '1' : '0'}</IsDefault>
-          </Profile>
-        </request>`;
+<request>
+<SetDefault>${profile.isDefault ? profile.id : 0}</SetDefault>
+<Delete>0</Delete>
+<Modify>2</Modify>
+<Profile>
+<Index>${profile.id}</Index>
+<IsValid>1</IsValid>
+<Name>${profile.name}</Name>
+<ApnIsStatic>1</ApnIsStatic>
+<ApnName>${profile.apn}</ApnName>
+<DialupNum>*99#</DialupNum>
+<Username>${profile.username || ''}</Username>
+<Password>${profile.password || ''}</Password>
+<AuthMode>${this.authTypeToValue(profile.authType)}</AuthMode>
+<IpIsStatic></IpIsStatic>
+<IpAddress></IpAddress>
+<DnsIsStatic></DnsIsStatic>
+<PrimaryDns></PrimaryDns>
+<SecondaryDns></SecondaryDns>
+<ReadOnly>0</ReadOnly>
+<iptype>${this.ipTypeToValue(profile.ipType)}</iptype>
+</Profile>
+</request>`;
 
-            await this.apiClient.post('/api/dialup/profiles', data);
+            const response = await this.apiClient.post('/api/dialup/profiles', data);
+
+            // Check if response indicates success
+            if (response.includes('<response>OK</response>') || response.includes('OK')) {
+                return true;
+            }
+
+            // Check for error
+            if (response.includes('<error>')) {
+                const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+                console.error('[APN] Update failed with error code:', errorCode);
+                throw new Error(`APN update failed with error code: ${errorCode}`);
+            }
+
             return true;
         } catch (error) {
-            console.error('Error updating APN profile:', error);
+            console.error('[APN] Error updating APN profile:', error);
             throw error;
         }
     }
 
     async deleteAPNProfile(profileId: string): Promise<boolean> {
         try {
+            // Based on huawei-lte-api: Delete should be the index value directly
             const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Delete>1</Delete>
-          <SetDefault>0</SetDefault>
-          <Modify>0</Modify>
-          <Profile>
-            <Index>${profileId}</Index>
-          </Profile>
-        </request>`;
+<request>
+<SetDefault>0</SetDefault>
+<Delete>${profileId}</Delete>
+<Modify>0</Modify>
+</request>`;
 
-            await this.apiClient.post('/api/dialup/profiles', data);
+            const response = await this.apiClient.post('/api/dialup/profiles', data);
+            // Check if response indicates success
+            if (response.includes('<response>OK</response>') || response.includes('OK')) {
+                return true;
+            }
+
+            // Check for error
+            if (response.includes('<error>')) {
+                const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+                console.error('[APN] Delete failed with error code:', errorCode);
+                throw new Error(`APN delete failed with error code: ${errorCode}`);
+            }
+
             return true;
         } catch (error) {
-            console.error('Error deleting APN profile:', error);
+            console.error('[APN] Error deleting APN profile:', error);
             throw error;
         }
     }
 
     async setActiveAPNProfile(profileId: string): Promise<boolean> {
         try {
+            // Based on huawei-lte-api: SetDefault should be the index value directly
             const data = `<?xml version="1.0" encoding="UTF-8"?>
-        <request>
-          <Delete>0</Delete>
-          <SetDefault>1</SetDefault>
-          <Modify>0</Modify>
-          <Profile>
-            <Index>${profileId}</Index>
-          </Profile>
-        </request>`;
+<request>
+<SetDefault>${profileId}</SetDefault>
+<Delete>0</Delete>
+<Modify>0</Modify>
+</request>`;
 
-            await this.apiClient.post('/api/dialup/profiles', data);
+            const response = await this.apiClient.post('/api/dialup/profiles', data);
+
+            // Check if response indicates success
+            if (response.includes('<response>OK</response>') || response.includes('OK')) {
+                return true;
+            }
+
+            // Check for error
+            if (response.includes('<error>')) {
+                const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
+                console.error('[APN] Switch failed with error code:', errorCode);
+                throw new Error(`Set active APN failed with error code: ${errorCode}`);
+            }
+
             return true;
         } catch (error) {
-            console.error('Error setting active APN profile:', error);
+            console.error('[APN] Error setting active APN profile:', error);
             throw error;
         }
     }

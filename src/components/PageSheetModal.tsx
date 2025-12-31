@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { BlurView } from 'expo-blur';
+import { ModalMeshGradient } from './ModalMeshGradient';
 
 interface PageSheetModalProps {
     visible: boolean;
@@ -52,6 +53,7 @@ export function PageSheetModal({
                     { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }
                 ]}
             >
+                <ModalMeshGradient />
                 <View style={[styles.header, {
                     borderBottomColor: colors.border,
                     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16

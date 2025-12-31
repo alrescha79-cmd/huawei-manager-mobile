@@ -4,8 +4,9 @@ import { useThemeStore } from '@/stores/theme.store';
 export const Colors = {
   light: {
     primary: '#007AFF',
-    background: '#F2F2F7',
-    card: '#FFFFFF',
+    background: '#E8E8F0',  // Fallback solid color
+    backgroundGradient: ['#E8E8F0', '#D4D4E8', '#E0E0F0'],  // Subtle purple-gray gradient
+    card: 'rgba(255, 255, 255, 0.40)',
     text: '#000000',
     textSecondary: '#8E8E93',
     border: '#C6C6C8',
@@ -19,8 +20,9 @@ export const Colors = {
   },
   dark: {
     primary: '#0A84FF',
-    background: '#000000',
-    card: '#1C1C1E',
+    background: '#0D0D18',  // Fallback solid color
+    backgroundGradient: ['#0D0D18', '#1A1A2E', '#16213E'],  // Deep purple-navy gradient (more visible)
+    card: 'rgba(28, 28, 30, 0.40)',
     text: '#FFFFFF',
     textSecondary: '#8E8E93',
     border: '#38383A',
@@ -56,7 +58,7 @@ export const Glassmorphism = {
     card: 40,
     modal: 50,
     overlay: 40,
-    alert: 75,
+    alert: 40,  // Reduced for better readability
     light: 25,
     heavy: 60,
   },
@@ -66,7 +68,7 @@ export const Glassmorphism = {
       card: 'rgba(10, 10, 10, 0.4)',
       modal: 'rgba(10, 10, 10, 0.6)',
       overlay: 'rgba(10, 10, 10, 0.5)',
-      alert: 'rgba(28, 28, 30, 0.98)',
+      alert: 'rgba(28, 28, 30, 1.0)',  // Fully opaque for dark mode readability
     },
     light: {
       card: 'rgba(255, 255, 255, 0.4)',

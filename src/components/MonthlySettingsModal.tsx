@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -16,6 +16,7 @@ import {
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
+import { MeshGradientBackground } from './MeshGradientBackground';
 
 interface MonthlySettingsModalProps {
     visible: boolean;
@@ -45,7 +46,7 @@ export function MonthlySettingsModal({
     onSave,
     initialSettings,
 }: MonthlySettingsModalProps) {
-    const { colors } = useTheme();
+    const { colors, isDark } = useTheme();
     const { t } = useTranslation();
 
     const [enabled, setEnabled] = useState(false);
@@ -55,6 +56,7 @@ export function MonthlySettingsModal({
     const [monthThreshold, setMonthThreshold] = useState(90);
     const [isSaving, setIsSaving] = useState(false);
     const [showUnitDropdown, setShowUnitDropdown] = useState(false);
+    const [hasChanges, setHasChanges] = useState(false);
 
     // Load initial settings when modal opens
     useEffect(() => {
@@ -64,8 +66,22 @@ export function MonthlySettingsModal({
             setDataLimit(initialSettings.dataLimit > 0 ? initialSettings.dataLimit.toString() : '');
             setDataLimitUnit(initialSettings.dataLimitUnit);
             setMonthThreshold(initialSettings.monthThreshold);
+            setHasChanges(false);
         }
     }, [visible, initialSettings]);
+
+    // Track changes
+    useEffect(() => {
+        if (initialSettings) {
+            const changed =
+                enabled !== initialSettings.enabled ||
+                startDay !== initialSettings.startDay ||
+                (parseInt(dataLimit) || 0) !== initialSettings.dataLimit ||
+                dataLimitUnit !== initialSettings.dataLimitUnit ||
+                monthThreshold !== initialSettings.monthThreshold;
+            setHasChanges(changed);
+        }
+    }, [enabled, startDay, dataLimit, dataLimitUnit, monthThreshold, initialSettings]);
 
     const handleSave = async () => {
         Keyboard.dismiss(); // Dismiss keyboard first to prevent double-click issue
@@ -95,7 +111,7 @@ export function MonthlySettingsModal({
             presentationStyle="pageSheet"
             onRequestClose={onClose}
         >
-            <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+            <MeshGradientBackground style={styles.modalContainer}>
                 {/* Header */}
                 <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                     <Text style={[styles.title, { color: colors.text }]}>
@@ -113,7 +129,7 @@ export function MonthlySettingsModal({
                     <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
 
                         {/* Enable Toggle Box */}
-                        <View style={[styles.toggleBox, { borderColor: colors.primary }]}>
+                        <View style={[styles.toggleBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
                             <Text style={[styles.label, { color: colors.text, fontSize: 16 }]}>
                                 {t('home.enableMonthlyLimit')}
                             </Text>
@@ -130,25 +146,40 @@ export function MonthlySettingsModal({
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.startDate')}</Text>
                             <View style={[styles.dateCard, { borderColor: colors.border, backgroundColor: colors.background }]}>
                                 <Text style={[styles.dateHeaderStr, { color: colors.text }]}>
-                                    {t('home.everyDate')} <Text style={{ color: colors.primary }}>{startDay}</Text>
+                                    {t('home.everyDate')} <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 18 }}>{startDay}</Text>
                                 </Text>
-                                <View style={styles.daysGrid}>
-                                    {DAYS.map((day) => (
-                                        <TouchableOpacity
-                                            key={day}
-                                            style={[
-                                                styles.dayItem,
-                                                { borderColor: colors.border },
-                                                startDay === day && { backgroundColor: colors.primary, borderColor: colors.primary }
-                                            ]}
-                                            onPress={() => setStartDay(day)}
-                                        >
-                                            <Text style={[styles.dayText, { color: startDay === day ? '#FFF' : colors.text }]}>
-                                                {day}
-                                            </Text>
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
+
+                                {/* Horizontal Scroll Date Picker */}
+                                <ScrollView
+                                    horizontal
+                                    showsHorizontalScrollIndicator={false}
+                                    contentContainerStyle={styles.dateScrollContainer}
+                                >
+                                    {DAYS.map((day) => {
+                                        const isSelected = startDay === day;
+                                        return (
+                                            <TouchableOpacity
+                                                key={day}
+                                                style={[
+                                                    styles.dateScrollItem,
+                                                    isSelected && styles.dateScrollItemSelected,
+                                                    isSelected && { backgroundColor: colors.primary },
+                                                    !isSelected && { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+                                                ]}
+                                                onPress={() => setStartDay(day)}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Text style={[
+                                                    styles.dateScrollText,
+                                                    isSelected && styles.dateScrollTextSelected,
+                                                    { color: isSelected ? '#FFF' : colors.textSecondary }
+                                                ]}>
+                                                    {day}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        );
+                                    })}
+                                </ScrollView>
                             </View>
                         </View>
 
@@ -227,18 +258,20 @@ export function MonthlySettingsModal({
                 {/* Footer Button */}
                 <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                     <TouchableOpacity
-                        style={[styles.applyButton, { backgroundColor: colors.primary }]}
-                        onPress={handleSave}
+                        style={[styles.applyButton, { backgroundColor: hasChanges ? colors.primary : colors.textSecondary }]}
+                        onPress={hasChanges ? handleSave : onClose}
                         disabled={isSaving}
                     >
                         {isSaving ? (
                             <ActivityIndicator color="#FFF" />
                         ) : (
-                            <Text style={styles.applyButtonText}>{t('settings.applyConfiguration')}</Text>
+                            <Text style={styles.applyButtonText}>
+                                {hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
+                            </Text>
                         )}
                     </TouchableOpacity>
                 </View>
-            </View>
+            </MeshGradientBackground>
         </Modal>
     );
 }
@@ -270,7 +303,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         padding: 16,
         borderRadius: 12,
-        borderWidth: 1,
         marginBottom: 24,
     },
     label: {
@@ -311,6 +343,33 @@ const styles = StyleSheet.create({
     dayText: {
         fontSize: 14,
         fontWeight: '500',
+    },
+    // Horizontal scroll date picker styles
+    dateScrollContainer: {
+        paddingVertical: 8,
+        paddingHorizontal: 4,
+        gap: 8,
+    },
+    dateScrollItem: {
+        width: 44,
+        height: 44,
+        borderRadius: 22,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    dateScrollItemSelected: {
+        width: 52,
+        height: 52,
+        borderRadius: 26,
+        transform: [{ scale: 1.1 }],
+    },
+    dateScrollText: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    dateScrollTextSelected: {
+        fontSize: 16,
+        fontWeight: 'bold',
     },
     input: {
         height: 50,

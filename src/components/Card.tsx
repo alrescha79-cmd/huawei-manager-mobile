@@ -53,14 +53,7 @@ export const Card: React.FC<CardProps> = ({
           borderRadius: borderRadius.lg,
           borderWidth: 1,
           borderColor: colors.border,
-          shadowColor: colors.shadow,
-          shadowOffset: {
-            width: 0,
-            height: 2,
-          },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 3,
+          // No shadow - keep clean look
         },
         style,
       ]}

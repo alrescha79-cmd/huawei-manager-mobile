@@ -2,7 +2,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { View, StyleSheet, LayoutChangeEvent, Dimensions, Platform, TouchableOpacity, Text } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import Svg, { Path, Circle } from 'react-native-svg';
+import Svg, { Path, Circle, Defs, LinearGradient, RadialGradient, Stop, Rect, Line } from 'react-native-svg';
 import Animated, {
     useAnimatedProps,
     useDerivedValue,
@@ -44,7 +44,7 @@ const getPath = (width: number, tabWidth: number, currentX: number) => {
 };
 
 export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
-    const { colors, typography } = useTheme();
+    const { colors, typography, isDark } = useTheme();
     const { bottom } = useSafeAreaInsets();
     const [layout, setLayout] = useState({ width: Dimensions.get('window').width, height: 0 });
 
@@ -87,11 +87,43 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
             {/* The SVG Background */}
             <View style={styles.svgContainer} pointerEvents="none">
                 <Svg width={layout.width} height={TAB_HEIGHT + 100 + SVG_TOP_OFFSET} style={styles.svg}>
+                    {/* Gradient Definitions */}
+                    <Defs>
+                        <LinearGradient id="tabBarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <Stop offset="0%" stopColor={isDark ? '#1A1A2E' : '#E8E8F0'} stopOpacity="1" />
+                            <Stop offset="50%" stopColor={isDark ? '#16213E' : '#D4D4E8'} stopOpacity="1" />
+                            <Stop offset="100%" stopColor={isDark ? '#0D0D18' : '#E0E0F0'} stopOpacity="1" />
+                        </LinearGradient>
+                        <RadialGradient id="tabBarBlob1" cx="20%" cy="30%" rx="40%" ry="60%">
+                            <Stop offset="0%" stopColor={isDark ? '#2A1A4E' : '#C8D4F0'} stopOpacity={isDark ? '0.4' : '0.5'} />
+                            <Stop offset="100%" stopColor={isDark ? '#2A1A4E' : '#C8D4F0'} stopOpacity="0" />
+                        </RadialGradient>
+                        <RadialGradient id="tabBarBlob2" cx="80%" cy="50%" rx="35%" ry="50%">
+                            <Stop offset="0%" stopColor={isDark ? '#0A84FF' : '#D0D8F8'} stopOpacity={isDark ? '0.2' : '0.4'} />
+                            <Stop offset="100%" stopColor={isDark ? '#0A84FF' : '#D0D8F8'} stopOpacity="0" />
+                        </RadialGradient>
+                    </Defs>
+
+                    {/* Base gradient */}
                     <AnimatedPath
                         animatedProps={animatedPathProps}
-                        fill={colors.card}
+                        fill="url(#tabBarGradient)"
                         stroke="none"
                     />
+                    {/* Mesh blob overlays */}
+                    <Rect x="0" y={SVG_TOP_OFFSET} width={layout.width} height={TAB_HEIGHT + 100} fill="url(#tabBarBlob1)" />
+                    <Rect x="0" y={SVG_TOP_OFFSET} width={layout.width} height={TAB_HEIGHT + 100} fill="url(#tabBarBlob2)" />
+
+                    {/* Top border line */}
+                    <Line
+                        x1="0"
+                        y1={SVG_TOP_OFFSET}
+                        x2={layout.width}
+                        y2={SVG_TOP_OFFSET}
+                        stroke={isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}
+                        strokeWidth="0.5"
+                    />
+
                     <AnimatedCircle
                         animatedProps={animatedCircleProps}
                         cy={12 + SVG_TOP_OFFSET}
