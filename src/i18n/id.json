@@ -288,7 +288,9 @@
     "messageSent": "Pesan terkirim",
     "fillAllFields": "Mohon isi semua kolom",
     "compose": "Tulis",
-    "reply": "Balas"
+    "reply": "Balas",
+    "yesterday": "Kemarin",
+    "to": "Kepada"
   },
   "settings": {
     "modemInfo": "Informasi Modem",

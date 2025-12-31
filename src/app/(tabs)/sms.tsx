@@ -9,6 +9,8 @@ import {
   TouchableOpacity,
   StatusBar,
   Platform,
+  TextInput,
+  ActivityIndicator,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
@@ -265,7 +267,7 @@ export default function SMSScreen() {
           style={[styles.container, { backgroundColor: 'transparent' }]}
           contentContainerStyle={[
             styles.content,
-            { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
+            { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0), paddingBottom: 80 }
           ]}
           refreshControl={
             <RefreshControl
@@ -275,14 +277,6 @@ export default function SMSScreen() {
             />
           }
         >
-          <View style={styles.headerRow}>
-            <View />
-            <Button
-              title={`+ ${t('sms.newMessage')}`}
-              onPress={() => setShowCompose(true)}
-              style={styles.newButton}
-            />
-          </View>
 
           {/* SMS Count Card */}
           {smsCount && (
@@ -319,56 +313,112 @@ export default function SMSScreen() {
 
           {/* Messages List */}
           {!smsSupported || messages.length === 0 ? (
-            <Card>
-              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.xl }]}>
+            <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
+              <MaterialIcons name="sms" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
                 {isRefreshing ? t('sms.loadingMessages') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
               </Text>
-            </Card>
+            </View>
           ) : (
-            messages.map((message) => (
-              <TouchableOpacity
-                key={message.index}
-                onPress={() => handleOpenDetail(message)}
-                activeOpacity={0.7}
-              >
-                <Card style={{ marginBottom: spacing.md }}>
-                  <View style={styles.messageHeader}>
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                      {/* Unread indicator */}
-                      {message.smstat === '0' && (
-                        <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
-                      )}
-                      <View style={{ flex: 1 }}>
+            <View style={[styles.messagesList, { backgroundColor: colors.card }]}>
+              {messages.map((message, index) => {
+                // Get initials from phone number (last 2 digits)
+                const initials = message.phone.slice(-2);
+                // Format relative time
+                const messageDate = dayjs(message.date);
+                const now = dayjs();
+                let timeDisplay = '';
+                if (now.diff(messageDate, 'day') === 0) {
+                  timeDisplay = messageDate.format('h:mm A');
+                } else if (now.diff(messageDate, 'day') === 1) {
+                  timeDisplay = t('sms.yesterday') || 'Yesterday';
+                } else if (now.diff(messageDate, 'day') < 7) {
+                  timeDisplay = messageDate.format('ddd');
+                } else {
+                  timeDisplay = messageDate.format('MMM D');
+                }
+                const isUnread = message.smstat === '0';
+                const isLast = index === messages.length - 1;
+
+                return (
+                  <TouchableOpacity
+                    key={message.index}
+                    onPress={() => handleOpenDetail(message)}
+                    activeOpacity={0.6}
+                    style={[
+                      styles.messageItem,
+                      !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border }
+                    ]}
+                  >
+                    {/* Avatar */}
+                    <View style={[
+                      styles.avatar,
+                      { backgroundColor: isUnread ? colors.primary : colors.textSecondary }
+                    ]}>
+                      <Text style={styles.avatarText}>{initials}</Text>
+                    </View>
+
+                    {/* Content */}
+                    <View style={styles.messageContent}>
+                      <View style={styles.messageTopRow}>
                         <Text style={[
                           typography.headline,
                           {
                             color: colors.text,
-                            fontWeight: message.smstat === '0' ? '700' : '600'
+                            fontWeight: isUnread ? '700' : '500',
+                            flex: 1,
                           }
-                        ]}>
+                        ]} numberOfLines={1}>
                           {message.phone}
                         </Text>
-                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                          {dayjs(message.date).format('MMM D, YYYY h:mm A')}
+                        <Text style={[
+                          typography.caption1,
+                          {
+                            color: isUnread ? colors.primary : colors.textSecondary,
+                            fontWeight: isUnread ? '600' : '400',
+                            marginLeft: 8,
+                          }
+                        ]}>
+                          {timeDisplay}
                         </Text>
                       </View>
+                      <Text
+                        style={[
+                          typography.body,
+                          {
+                            color: isUnread ? colors.text : colors.textSecondary,
+                            fontWeight: isUnread ? '500' : '400',
+                            marginTop: 2,
+                          }
+                        ]}
+                        numberOfLines={1}
+                      >
+                        {message.content}
+                      </Text>
                     </View>
-                    <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
-                  </View>
-                  <Text
-                    style={[
-                      typography.body,
-                      { color: colors.textSecondary, marginTop: spacing.sm }
-                    ]}
-                    numberOfLines={2}
-                  >
-                    {message.content}
-                  </Text>
-                </Card>
-              </TouchableOpacity>
-            ))
+
+                    {/* Unread indicator */}
+                    {isUnread && (
+                      <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]} />
+                    )}
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
           )}
         </ScrollView>
+
+        {/* Floating Action Button for New Message */}
+        <TouchableOpacity
+          style={[
+            styles.fab,
+            { backgroundColor: colors.primary }
+          ]}
+          onPress={() => setShowCompose(true)}
+          activeOpacity={0.8}
+        >
+          <MaterialIcons name="add" size={28} color="#FFF" />
+        </TouchableOpacity>
       </MeshGradientBackground>
 
       {/* Compose Modal */}
@@ -379,50 +429,73 @@ export default function SMSScreen() {
         onRequestClose={() => setShowCompose(false)}
       >
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          {/* Header */}
           <View style={[
-            styles.modalHeader,
+            styles.composeHeader,
             {
               borderBottomColor: colors.border,
               paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 12 : 16
             }
           ]}>
-            <TouchableOpacity onPress={() => setShowCompose(false)}>
-              <Text style={[typography.body, { color: colors.primary }]}>
-                {t('common.cancel')}
-              </Text>
+            <TouchableOpacity
+              onPress={() => setShowCompose(false)}
+              style={styles.headerButton}
+            >
+              <MaterialIcons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
-            <Text style={[typography.headline, { color: colors.text }]}>
+            <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]}>
               {t('sms.newMessage')}
             </Text>
-            <View style={{ width: 60 }} />
+            <View style={styles.headerButton} />
           </View>
 
-          <ScrollView style={styles.modalContent}>
-            <Input
-              label={t('sms.phoneNumber')}
-              value={newPhone}
-              onChangeText={setNewPhone}
-              placeholder="+1234567890"
-              keyboardType="phone-pad"
-            />
+          {/* Content */}
+          <View style={{ flex: 1 }}>
+            {/* To Field */}
+            <View style={[styles.composeField, { borderBottomColor: colors.border }]}>
+              <Text style={[typography.body, { color: colors.textSecondary, marginRight: 12 }]}>
+                {t('sms.to')}:
+              </Text>
+              <TextInput
+                style={[typography.body, { flex: 1, color: colors.text, padding: 0 }]}
+                value={newPhone}
+                onChangeText={setNewPhone}
+                placeholder={t('sms.phoneNumberPlaceholder') || '+1234567890'}
+                placeholderTextColor={colors.textSecondary}
+                keyboardType="phone-pad"
+              />
+            </View>
+          </View>
 
-            <Input
-              label={t('sms.message')}
+          {/* Send Bar */}
+          <View style={[styles.composeSendBar, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
+            <TextInput
+              style={[
+                styles.composeSendInput,
+                { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }
+              ]}
               value={newMessage}
               onChangeText={setNewMessage}
               placeholder={t('sms.typeMessage')}
+              placeholderTextColor={colors.textSecondary}
               multiline
-              numberOfLines={6}
-              style={{ height: 120 }}
+              maxLength={160}
             />
-
-            <Button
-              title={t('sms.send')}
+            <TouchableOpacity
+              style={[
+                styles.sendButton,
+                { backgroundColor: (newPhone && newMessage) ? colors.primary : colors.textSecondary }
+              ]}
               onPress={handleSend}
-              loading={isSending}
               disabled={isSending || !newPhone || !newMessage}
-            />
-          </ScrollView>
+            >
+              {isSending ? (
+                <ActivityIndicator color="#FFF" size="small" />
+              ) : (
+                <MaterialIcons name="send" size={20} color="#FFF" />
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
       </Modal>
 
@@ -464,15 +537,21 @@ export default function SMSScreen() {
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={styles.modalContent}>
+          <ScrollView style={[styles.modalContent, { backgroundColor: colors.background }]}>
             {selectedMessage && (
               <>
-                <View style={[styles.detailContent, { backgroundColor: colors.card }]}>
-                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                {/* Chat bubble */}
+                <View style={{ alignItems: 'flex-start', marginBottom: spacing.lg }}>
+                  <View style={[
+                    styles.chatBubble,
+                    { backgroundColor: colors.card }
+                  ]}>
+                    <Text style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
+                      {selectedMessage.content}
+                    </Text>
+                  </View>
+                  <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: 4, marginLeft: 4 }]}>
                     {dayjs(selectedMessage.date).format('dddd, MMMM D, YYYY • h:mm A')}
-                  </Text>
-                  <Text style={[typography.body, { color: colors.text, lineHeight: 24 }]}>
-                    {selectedMessage.content}
                   </Text>
                 </View>
 
@@ -529,6 +608,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     minHeight: 36,
   },
+  fab: {
+    position: 'absolute',
+    bottom: 24,
+    right: 24,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+  },
   countRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
@@ -537,11 +631,50 @@ const styles = StyleSheet.create({
   countItem: {
     alignItems: 'center',
   },
-  messageHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+  // New Android-style message list
+  messagesList: {
+    borderRadius: 16,
+    overflow: 'hidden',
   },
+  messageItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+  },
+  avatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  messageContent: {
+    flex: 1,
+  },
+  messageTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  unreadBadge: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    marginLeft: 8,
+  },
+  emptyState: {
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  // Modal styles
   modalContainer: {
     flex: 1,
   },
@@ -557,20 +690,62 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 16,
   },
-  unreadDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginRight: 8,
-  },
-  detailContent: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
+  // Chat bubble style for detail
+  chatBubble: {
+    maxWidth: '85%',
+    padding: 12,
+    borderRadius: 16,
+    borderTopLeftRadius: 4,
   },
   replyContainer: {
     marginTop: 'auto',
     paddingTop: 16,
     borderTopWidth: 1,
+  },
+  // Compose modal styles
+  composeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  composeField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+  },
+  composeMessageContainer: {
+    flex: 1,
+  },
+  composeSendBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    padding: 12,
+    borderTopWidth: 1,
+  },
+  composeSendInput: {
+    flex: 1,
+    maxHeight: 100,
+    borderRadius: 20,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  sendButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });
