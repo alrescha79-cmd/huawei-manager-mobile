@@ -6,15 +6,17 @@ import {
     Modal,
     TouchableOpacity,
     TextInput,
-    Platform,
-    StatusBar,
+    ScrollView,
     ActivityIndicator,
     Keyboard,
+    KeyboardAvoidingView,
+    Platform,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
+import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ConnectedDevice } from '@/types';
+import { MeshGradientBackground } from './MeshGradientBackground';
 
 interface DeviceDetailModalProps {
     visible: boolean;
@@ -27,7 +29,6 @@ interface DeviceDetailModalProps {
 // Helper to format MAC address
 const formatMacAddress = (mac: string): string => {
     if (!mac) return '';
-    // Remove existing separators and format with colons
     const cleanMac = mac.replace(/[:-]/g, '').toUpperCase();
     return cleanMac.match(/.{1,2}/g)?.join(':') || mac;
 };
@@ -47,22 +48,18 @@ const formatLeaseTime = (seconds: string): string => {
 };
 
 // Helper to parse IPv4 and IPv6 from combined IP string
-// Format can be: "192.168.8.100" or "192.168.8.100;fe80::..." or just "fe80::..."
 const parseIpAddresses = (ipString: string): { ipv4: string | null; ipv6: string | null } => {
     if (!ipString) return { ipv4: null, ipv6: null };
 
-    // Split by semicolon
     const parts = ipString.split(';').map(ip => ip.trim()).filter(ip => ip);
 
     let ipv4: string | null = null;
     let ipv6: string | null = null;
 
     for (const ip of parts) {
-        // Check if IPv6 (contains ::  or multiple colons)
         if (ip.includes('::') || (ip.match(/:/g) || []).length > 1) {
             ipv6 = ip;
         } else if (ip.includes('.')) {
-            // IPv4 contains dots
             ipv4 = ip;
         }
     }
@@ -77,14 +74,13 @@ export function DeviceDetailModal({
     onSaveName,
     onBlock,
 }: DeviceDetailModalProps) {
-    const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
+    const { colors, isDark } = useTheme();
     const { t } = useTranslation();
 
     const [deviceName, setDeviceName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
 
-    // Load device name when modal opens
     useEffect(() => {
         if (visible && device) {
             setDeviceName(device.hostName || '');
@@ -92,7 +88,6 @@ export function DeviceDetailModal({
         }
     }, [visible, device]);
 
-    // Track changes
     useEffect(() => {
         if (device) {
             setHasChanges(deviceName !== (device.hostName || ''));
@@ -100,14 +95,14 @@ export function DeviceDetailModal({
     }, [deviceName, device]);
 
     const handleSave = async () => {
-        Keyboard.dismiss(); // Dismiss keyboard first
-        if (!deviceName.trim()) return;
+        Keyboard.dismiss();
+        if (!device || !hasChanges) return;
 
         setIsSaving(true);
         try {
             await onSaveName(device.id, deviceName);
             setHasChanges(false);
-            onClose(); // Close modal after successful save
+            onClose();
         } catch (error) {
             // Error handled by parent
         } finally {
@@ -124,6 +119,8 @@ export function DeviceDetailModal({
 
     if (!device) return null;
 
+    const { ipv4, ipv6 } = parseIpAddresses(device.ipAddress);
+
     return (
         <Modal
             visible={visible}
@@ -131,119 +128,122 @@ export function DeviceDetailModal({
             presentationStyle="pageSheet"
             onRequestClose={onClose}
         >
-            <BlurView
-                intensity={glassmorphism.blur.modal}
-                tint={isDark ? 'dark' : 'light'}
-                experimentalBlurMethod='dimezisBlurView'
-                style={[
-                    styles.modalContainer,
-                    { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }
-                ]}
-            >
-                {/* Header */}
-                <View style={[styles.modalHeader, {
-                    borderBottomColor: colors.border,
-                    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
-                }]}>
-                    <TouchableOpacity onPress={onClose} style={{ width: 60 }}>
-                        <Text style={[typography.body, { color: colors.primary }]}>{t('common.cancel')}</Text>
-                    </TouchableOpacity>
-                    <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+            <MeshGradientBackground style={styles.modalContainer}>
+                {/* Header - Same style as MonthlySettingsModal */}
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                    <Text style={[styles.title, { color: colors.text }]}>
                         {t('wifi.deviceDetails')}
                     </Text>
-                    <TouchableOpacity
-                        onPress={handleSave}
-                        disabled={!hasChanges || isSaving}
-                        style={{ width: 60, alignItems: 'flex-end' }}
-                    >
-                        {isSaving ? (
-                            <ActivityIndicator color={colors.primary} size="small" />
-                        ) : (
-                            <Text style={[typography.body, {
-                                color: hasChanges ? colors.primary : colors.textSecondary,
-                                fontWeight: '600'
-                            }]}>
-                                {t('common.save')}
-                            </Text>
-                        )}
+                    <TouchableOpacity onPress={onClose}>
+                        <Ionicons name="close-circle" size={32} color={colors.primary} />
                     </TouchableOpacity>
                 </View>
 
-                <View style={styles.modalContent}>
-                    {/* Device Name (Editable) */}
-                    <View style={styles.formGroup}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-                            {t('wifi.deviceName')}
-                        </Text>
-                        <TextInput
-                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                            value={deviceName}
-                            onChangeText={setDeviceName}
-                            placeholder={t('wifi.deviceName')}
-                            placeholderTextColor={colors.textSecondary}
-                        />
-                    </View>
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                >
+                    <ScrollView
+                        style={styles.modalContent}
+                        contentContainerStyle={{ paddingBottom: 120 }}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Device Name Section */}
+                        <View style={styles.section}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                                {t('wifi.deviceName')}
+                            </Text>
+                            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                                <TextInput
+                                    style={[styles.input, { color: colors.text }]}
+                                    value={deviceName}
+                                    onChangeText={setDeviceName}
+                                    placeholder={t('wifi.deviceName')}
+                                    placeholderTextColor={colors.textSecondary}
+                                />
+                            </View>
+                        </View>
 
-                    {/* IPv4 Address (Read-only) */}
-                    {(() => {
-                        const { ipv4, ipv6 } = parseIpAddresses(device.ipAddress);
-                        return (
-                            <>
+                        {/* Network Info Section */}
+                        <View style={styles.section}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                                {t('wifi.networkInfo') || 'Network Information'}
+                            </Text>
+                            <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                                {/* IPv4 */}
                                 {ipv4 && (
-                                    <View style={styles.infoRow}>
-                                        <Text style={[typography.body, { color: colors.textSecondary }]}>IPv4</Text>
-                                        <Text style={[typography.body, { color: colors.text, fontFamily: 'monospace' }]}>
-                                            {ipv4}
-                                        </Text>
+                                    <View style={[styles.infoRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
+                                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>IPv4</Text>
+                                        <Text style={[styles.infoValue, { color: colors.text }]}>{ipv4}</Text>
                                     </View>
                                 )}
+
+                                {/* IPv6 */}
                                 {ipv6 && (
-                                    <View style={styles.infoRow}>
-                                        <Text style={[typography.body, { color: colors.textSecondary }]}>IPv6</Text>
-                                        <Text style={[typography.body, { color: colors.text, fontFamily: 'monospace', fontSize: 12 }]} numberOfLines={1} ellipsizeMode="middle">
+                                    <View style={[styles.infoRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
+                                        <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>IPv6</Text>
+                                        <Text style={[styles.infoValue, { color: colors.text, fontSize: 11 }]} numberOfLines={1} ellipsizeMode="middle">
                                             {ipv6}
                                         </Text>
                                     </View>
                                 )}
-                                {!ipv4 && !ipv6 && (
-                                    <View style={styles.infoRow}>
-                                        <Text style={[typography.body, { color: colors.textSecondary }]}>IP</Text>
-                                        <Text style={[typography.body, { color: colors.text, fontFamily: 'monospace' }]}>
-                                            {device.ipAddress || '-'}
-                                        </Text>
-                                    </View>
-                                )}
-                            </>
-                        );
-                    })()}
 
-                    {/* MAC Address (Read-only) */}
-                    <View style={styles.infoRow}>
-                        <Text style={[typography.body, { color: colors.textSecondary }]}>MAC</Text>
-                        <Text style={[typography.body, { color: colors.text, fontFamily: 'monospace' }]}>
-                            {formatMacAddress(device.macAddress)}
-                        </Text>
-                    </View>
+                                {/* MAC Address */}
+                                <View style={[styles.infoRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
+                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>MAC</Text>
+                                    <Text style={[styles.infoValue, { color: colors.text }]}>
+                                        {formatMacAddress(device.macAddress)}
+                                    </Text>
+                                </View>
 
-                    {/* Lease Time (Read-only) */}
-                    <View style={styles.infoRow}>
-                        <Text style={[typography.body, { color: colors.textSecondary }]}>{t('wifi.leaseTime')}</Text>
-                        <Text style={[typography.body, { color: colors.text }]}>
-                            {formatLeaseTime(device.associatedTime)}
-                        </Text>
-                    </View>
+                                {/* Lease Time */}
+                                <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
+                                    <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{t('wifi.leaseTime')}</Text>
+                                    <Text style={[styles.infoValue, { color: colors.text }]}>
+                                        {formatLeaseTime(device.associatedTime)}
+                                    </Text>
+                                </View>
+                            </View>
+                        </View>
 
-                    {/* Block Button */}
+                        {/* Actions Section */}
+                        <View style={styles.section}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+                                {t('settings.actions') || 'Actions'}
+                            </Text>
+                            <TouchableOpacity
+                                style={[styles.dangerButton, { backgroundColor: isDark ? 'rgba(255,59,48,0.15)' : 'rgba(255,59,48,0.1)' }]}
+                                onPress={handleBlock}
+                            >
+                                <MaterialIcons name="block" size={20} color={colors.error} />
+                                <Text style={[styles.dangerButtonText, { color: colors.error }]}>
+                                    {t('wifi.blockDevice')}
+                                </Text>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+
+                {/* Footer - Fixed at bottom, same as MonthlySettingsModal */}
+                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                     <TouchableOpacity
-                        style={[styles.blockButton, { backgroundColor: colors.error }]}
-                        onPress={handleBlock}
+                        style={[
+                            styles.saveButton,
+                            { backgroundColor: hasChanges ? colors.primary : colors.textSecondary },
+                        ]}
+                        onPress={hasChanges ? handleSave : onClose}
+                        disabled={isSaving}
                     >
-                        <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-                            {t('wifi.blockDevice')}
-                        </Text>
+                        {isSaving ? (
+                            <ActivityIndicator color="#FFF" />
+                        ) : (
+                            <Text style={styles.saveButtonText}>
+                                {hasChanges ? t('common.save') : t('common.cancel')}
+                            </Text>
+                        )}
                     </TouchableOpacity>
                 </View>
-            </BlurView>
+            </MeshGradientBackground>
         </Modal>
     );
 }
@@ -256,43 +256,86 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
+        paddingHorizontal: 20,
+        paddingTop: 20,
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
+    title: {
+        fontSize: 22,
+        fontWeight: 'bold',
+    },
     modalContent: {
         flex: 1,
-        padding: 16,
+        padding: 20,
     },
-    formGroup: {
+    section: {
         marginBottom: 24,
+    },
+    sectionTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 12,
+        marginLeft: 4,
+    },
+    card: {
+        borderRadius: 16,
+        borderWidth: 1,
+        overflow: 'hidden',
     },
     input: {
         paddingHorizontal: 16,
         paddingVertical: 14,
-        borderRadius: 10,
-        borderWidth: 1,
         fontSize: 16,
     },
     infoRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 14,
+        paddingHorizontal: 16,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(0,0,0,0.1)',
+    },
+    infoLabel: {
+        fontSize: 15,
+        fontWeight: '500',
+    },
+    infoValue: {
+        fontSize: 15,
+        fontFamily: 'monospace',
+        maxWidth: '60%',
+    },
+    dangerButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        borderRadius: 12,
+        gap: 8,
+    },
+    dangerButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    footer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        padding: 20,
+        paddingBottom: 40,
+        borderTopWidth: 1,
     },
     saveButton: {
-        paddingVertical: 14,
-        borderRadius: 10,
+        borderRadius: 14,
+        height: 56,
         alignItems: 'center',
-        marginTop: 24,
+        justifyContent: 'center',
     },
-    blockButton: {
-        paddingVertical: 14,
-        borderRadius: 10,
-        alignItems: 'center',
-        marginTop: 16,
+    saveButtonText: {
+        color: '#FFF',
+        fontSize: 17,
+        fontWeight: 'bold',
     },
 });
 

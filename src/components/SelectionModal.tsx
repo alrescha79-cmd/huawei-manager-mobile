@@ -11,6 +11,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
+import { ModalMeshGradient } from './ModalMeshGradient';
 
 // ... (keep interface SelectionOption)
 
@@ -47,19 +48,22 @@ export function SelectionModal({
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
+                {/* Dark mode: BlurView with low intensity + solid dark background for readability */}
+                {/* Light mode: BlurView with glassmorphism effect */}
                 <BlurView
-                    intensity={glassmorphism.blur.card}
+                    intensity={isDark ? 80 : glassmorphism.blur.card}  // Higher intensity for dark mode = more solid
                     tint={isDark ? 'dark' : 'light'}
                     experimentalBlurMethod='dimezisBlurView'
                     style={[
                         styles.modalContent,
                         {
-                            backgroundColor: isDark ? glassmorphism.background.dark.overlay : glassmorphism.background.light.overlay,
-                            borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                            backgroundColor: isDark ? 'rgba(20, 20, 22, 0.92)' : glassmorphism.background.light.overlay,
+                            borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : glassmorphism.border.light,
                             borderWidth: 1,
                         }
                     ]}
                 >
+                    <ModalMeshGradient />
                     <View style={styles.modalHeader}>
                         <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
                     </View>
@@ -118,7 +122,7 @@ export function SelectionModal({
 const styles = StyleSheet.create({
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.5)',
+        backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'center',
         padding: 20,
     },

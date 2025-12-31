@@ -19,7 +19,7 @@ export const SettingsSection = ({ title, children, style }: SettingsSectionProps
                     {title}
                 </Text>
             )}
-            <View style={[styles.sectionContent, { backgroundColor: colors.card }]}>
+            <View style={[styles.sectionContent, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}>
                 {children}
             </View>
         </View>
@@ -127,17 +127,9 @@ const styles = StyleSheet.create({
         letterSpacing: 0.5,
     },
     sectionContent: {
-        borderRadius: 16,  // Changed from 12 to match Card borderRadius.lg
+        borderRadius: 16,
         overflow: 'hidden',
-        // Add shadow to match Card component
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
-        elevation: 3,
+        // No shadow - keep clean look
     },
     itemTouchable: {
         minHeight: 50,

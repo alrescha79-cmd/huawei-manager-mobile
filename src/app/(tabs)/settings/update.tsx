@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Alert } from 'react-native';
-import { Stack, useRouter } from 'expo-router'; // Add useRouter
+import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import Constants from 'expo-constants';
+import { MeshGradientBackground, PageHeader } from '@/components';
 
 export default function UpdateScreen() {
     const { colors, typography, spacing } = useTheme();
@@ -42,56 +43,59 @@ export default function UpdateScreen() {
     };
 
     return (
-        <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <Stack.Screen options={{ title: t('settings.checkUpdate') }} />
+        <MeshGradientBackground>
+            <PageHeader title={t('settings.checkUpdate')} showBackButton />
+            <View style={[styles.container, { backgroundColor: 'transparent' }]}>
+                <Stack.Screen options={{ title: t('settings.checkUpdate') }} />
 
-            <View style={styles.content}>
-                <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
-                    <MaterialIcons
-                        name={checking ? "sync" : (updateAvailable ? "system-update" : "check-circle")}
-                        size={64}
-                        color={checking ? colors.primary : (updateAvailable ? colors.primary : colors.success)}
-                    />
+                <View style={styles.content}>
+                    <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
+                        <MaterialIcons
+                            name={checking ? "sync" : (updateAvailable ? "system-update" : "check-circle")}
+                            size={64}
+                            color={checking ? colors.primary : (updateAvailable ? colors.primary : colors.success)}
+                        />
+                    </View>
+
+                    {checking ? (
+                        <Text style={[typography.body, { color: colors.textSecondary }]}>
+                            {t('settings.checkNow')}...
+                        </Text>
+                    ) : (
+                        <>
+                            <Text style={[typography.headline, { color: colors.text, marginBottom: 8, textAlign: 'center' }]}>
+                                {updateAvailable ? t('settings.updateAvailable') : t('settings.appUpToDate')}
+                            </Text>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 24 }]}>
+                                {t('settings.appVersion')}: v{Constants.expoConfig?.version}
+                            </Text>
+
+                            {updateAvailable && (
+                                <TouchableOpacity
+                                    style={[styles.button, { backgroundColor: colors.primary }]}
+                                    onPress={handleDownload}
+                                >
+                                    <Text style={[typography.body, { color: '#FFF', fontWeight: '600' }]}>
+                                        {t('settings.downloadUpdate')}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+
+                            {!updateAvailable && (
+                                <TouchableOpacity
+                                    style={[styles.button, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+                                    onPress={checkUpdate}
+                                >
+                                    <Text style={[typography.body, { color: colors.text }]}>
+                                        {t('settings.checkNow')}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
+                        </>
+                    )}
                 </View>
-
-                {checking ? (
-                    <Text style={[typography.body, { color: colors.textSecondary }]}>
-                        {t('settings.checkNow')}...
-                    </Text>
-                ) : (
-                    <>
-                        <Text style={[typography.headline, { color: colors.text, marginBottom: 8, textAlign: 'center' }]}>
-                            {updateAvailable ? t('settings.updateAvailable') : t('settings.appUpToDate')}
-                        </Text>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 24 }]}>
-                            {t('settings.appVersion')}: v{Constants.expoConfig?.version}
-                        </Text>
-
-                        {updateAvailable && (
-                            <TouchableOpacity
-                                style={[styles.button, { backgroundColor: colors.primary }]}
-                                onPress={handleDownload}
-                            >
-                                <Text style={[typography.body, { color: '#FFF', fontWeight: '600' }]}>
-                                    {t('settings.downloadUpdate')}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-
-                        {!updateAvailable && (
-                            <TouchableOpacity
-                                style={[styles.button, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
-                                onPress={checkUpdate}
-                            >
-                                <Text style={[typography.body, { color: colors.text }]}>
-                                    {t('settings.checkNow')}
-                                </Text>
-                            </TouchableOpacity>
-                        )}
-                    </>
-                )}
             </View>
-        </View>
+        </MeshGradientBackground>
     );
 }
 

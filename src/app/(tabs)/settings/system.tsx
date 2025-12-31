@@ -17,7 +17,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, SettingsSection, SettingsItem } from '@/components';
+import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader } from '@/components';
 
 const TIMEZONES = [
     'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5',
@@ -243,140 +243,143 @@ export default function SystemSettingsScreen() {
     };
 
     return (
-        <ScrollView
-            style={[styles.container, { backgroundColor: colors.background }]}
-            contentContainerStyle={{ paddingBottom: 40 }}
-        >
-            {/* Time Settings */}
-            <SettingsSection title={t('timeSettings.title')}>
-                <SettingsItem
-                    title={t('timeSettings.currentTime')}
-                    value={formatModemTime(currentTime)}
-                    showChevron={false}
-                />
-                <SettingsItem
-                    title={t('timeSettings.sntpServer')}
-                    showChevron={false}
-                    rightElement={isTogglingSntp ? <ActivityIndicator size="small" color={colors.primary} /> : (
-                        <Switch
-                            value={sntpEnabled}
-                            onValueChange={handleToggleSntp}
-                            trackColor={{ false: colors.border, true: colors.primary }}
-                            thumbColor={'#FFFFFF'}
-                        />
-                    )}
-                />
-                <SettingsItem
-                    title={t('timeSettings.timeZone')}
-                    value={timezone}
-                    onPress={() => setShowTimezoneModal(true)}
-                    isLast
-                />
-            </SettingsSection>
-
-            {/* Connection Credentials */}
-            <SettingsSection title={t('settings.modemControl')}>
-                <View style={[styles.innerContent]}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 16, fontStyle: 'italic' }]}>
-                        {t('settings.modemControlNote')}
-                    </Text>
-                    <View style={styles.inputGroup}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.modemIpLabel')}</Text>
-                        <TextInput
-                            value={modemIp}
-                            onChangeText={setModemIp}
-                            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                            keyboardType="numeric"
-                        />
-                    </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.usernameLabel')}</Text>
-                        <TextInput
-                            value={modemUsername}
-                            onChangeText={setModemUsername}
-                            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                            autoCapitalize="none"
-                        />
-                    </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.passwordLabel')}</Text>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <TextInput
-                                value={modemPassword}
-                                onChangeText={setModemPassword}
-                                secureTextEntry={!showPassword}
-                                style={[styles.input, { color: colors.text, borderColor: colors.border, flex: 1 }]}
+        <MeshGradientBackground>
+            <PageHeader title={t('settings.system')} showBackButton />
+            <ScrollView
+                style={[styles.container, { backgroundColor: 'transparent' }]}
+                contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
+            >
+                {/* Time Settings */}
+                <SettingsSection title={t('timeSettings.title')}>
+                    <SettingsItem
+                        title={t('timeSettings.currentTime')}
+                        value={formatModemTime(currentTime)}
+                        showChevron={false}
+                    />
+                    <SettingsItem
+                        title={t('timeSettings.sntpServer')}
+                        showChevron={false}
+                        rightElement={isTogglingSntp ? <ActivityIndicator size="small" color={colors.primary} /> : (
+                            <Switch
+                                value={sntpEnabled}
+                                onValueChange={handleToggleSntp}
+                                trackColor={{ false: colors.border, true: colors.primary }}
+                                thumbColor={'#FFFFFF'}
                             />
-                            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ marginLeft: 8, padding: 4 }}>
-                                <MaterialIcons name={showPassword ? "visibility-off" : "visibility"} size={24} color={colors.textSecondary} />
+                        )}
+                    />
+                    <SettingsItem
+                        title={t('timeSettings.timeZone')}
+                        value={timezone}
+                        onPress={() => setShowTimezoneModal(true)}
+                        isLast
+                    />
+                </SettingsSection>
+
+                {/* Connection Credentials */}
+                <SettingsSection title={t('settings.modemControl')}>
+                    <View style={[styles.innerContent]}>
+                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 16, fontStyle: 'italic' }]}>
+                            {t('settings.modemControlNote')}
+                        </Text>
+                        <View style={styles.inputGroup}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.modemIpLabel')}</Text>
+                            <TextInput
+                                value={modemIp}
+                                onChangeText={setModemIp}
+                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+                                keyboardType="numeric"
+                            />
+                        </View>
+                        <View style={styles.inputGroup}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.usernameLabel')}</Text>
+                            <TextInput
+                                value={modemUsername}
+                                onChangeText={setModemUsername}
+                                style={[styles.input, { color: colors.text, borderColor: colors.border }]}
+                                autoCapitalize="none"
+                            />
+                        </View>
+                        <View style={styles.inputGroup}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.passwordLabel')}</Text>
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <TextInput
+                                    value={modemPassword}
+                                    onChangeText={setModemPassword}
+                                    secureTextEntry={!showPassword}
+                                    style={[styles.input, { color: colors.text, borderColor: colors.border, flex: 1 }]}
+                                />
+                                <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ marginLeft: 8, padding: 4 }}>
+                                    <MaterialIcons name={showPassword ? "visibility-off" : "visibility"} size={24} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+
+                        {hasCredentialsChanges && (
+                            <Button
+                                title={t('common.save')}
+                                onPress={handleSaveCredentials}
+                                loading={isSavingCredentials}
+                                style={{ marginTop: 8 }}
+                            />
+                        )}
+                    </View>
+                </SettingsSection>
+
+                {/* Actions */}
+                <SettingsSection title={t('settings.actions')}>
+                    <SettingsItem
+                        icon="restart-alt"
+                        title={t('settings.rebootModem')}
+                        onPress={handleReboot}
+                    />
+                    <SettingsItem
+                        icon="restore"
+                        title={t('settings.resetFactory')}
+                        onPress={handleReset}
+                    />
+                    <SettingsItem
+                        icon="logout"
+                        title={t('settings.logout')}
+                        onPress={handleLogout}
+                        isLast
+                    />
+                </SettingsSection>
+
+                {/* Timezone Modal */}
+                <Modal
+                    visible={showTimezoneModal}
+                    animationType="slide"
+                    presentationStyle="pageSheet"
+                    onRequestClose={() => setShowTimezoneModal(false)}
+                >
+                    <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                            <Text style={[typography.headline, { color: colors.text }]}>{t('timeSettings.timeZone')}</Text>
+                            <TouchableOpacity onPress={() => setShowTimezoneModal(false)}>
+                                <Text style={{ color: colors.primary, fontSize: 17 }}>{t('common.done')}</Text>
                             </TouchableOpacity>
                         </View>
+                        <ScrollView>
+                            {TIMEZONES.map((tz, index) => (
+                                <TouchableOpacity
+                                    key={tz}
+                                    style={[
+                                        styles.modalItem,
+                                        { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }
+                                    ]}
+                                    onPress={() => handleTimezoneChange(tz)}
+                                >
+                                    <Text style={{ color: timezone === tz ? colors.primary : colors.text, fontSize: 16 }}>{tz}</Text>
+                                    {timezone === tz && <MaterialIcons name="check" size={20} color={colors.primary} />}
+                                </TouchableOpacity>
+                            ))}
+                        </ScrollView>
                     </View>
+                </Modal>
 
-                    {hasCredentialsChanges && (
-                        <Button
-                            title={t('common.save')}
-                            onPress={handleSaveCredentials}
-                            loading={isSavingCredentials}
-                            style={{ marginTop: 8 }}
-                        />
-                    )}
-                </View>
-            </SettingsSection>
-
-            {/* Actions */}
-            <SettingsSection title={t('settings.actions')}>
-                <SettingsItem
-                    icon="restart-alt"
-                    title={t('settings.rebootModem')}
-                    onPress={handleReboot}
-                />
-                <SettingsItem
-                    icon="restore"
-                    title={t('settings.resetFactory')}
-                    onPress={handleReset}
-                />
-                <SettingsItem
-                    icon="logout"
-                    title={t('settings.logout')}
-                    onPress={handleLogout}
-                    isLast
-                />
-            </SettingsSection>
-
-            {/* Timezone Modal */}
-            <Modal
-                visible={showTimezoneModal}
-                animationType="slide"
-                presentationStyle="pageSheet"
-                onRequestClose={() => setShowTimezoneModal(false)}
-            >
-                <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                    <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                        <Text style={[typography.headline, { color: colors.text }]}>{t('timeSettings.timeZone')}</Text>
-                        <TouchableOpacity onPress={() => setShowTimezoneModal(false)}>
-                            <Text style={{ color: colors.primary, fontSize: 17 }}>{t('common.done')}</Text>
-                        </TouchableOpacity>
-                    </View>
-                    <ScrollView>
-                        {TIMEZONES.map((tz, index) => (
-                            <TouchableOpacity
-                                key={tz}
-                                style={[
-                                    styles.modalItem,
-                                    { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }
-                                ]}
-                                onPress={() => handleTimezoneChange(tz)}
-                            >
-                                <Text style={{ color: timezone === tz ? colors.primary : colors.text, fontSize: 16 }}>{tz}</Text>
-                                {timezone === tz && <MaterialIcons name="check" size={20} color={colors.primary} />}
-                            </TouchableOpacity>
-                        ))}
-                    </ScrollView>
-                </View>
-            </Modal>
-
-        </ScrollView>
+            </ScrollView>
+        </MeshGradientBackground>
     );
 }
 

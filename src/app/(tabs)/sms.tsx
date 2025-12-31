@@ -13,7 +13,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Input, Button, ThemedAlertHelper } from '@/components';
+import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
@@ -260,114 +260,116 @@ export default function SMSScreen() {
 
   return (
     <>
-      <ScrollView
-        style={[styles.container, { backgroundColor: colors.background }]}
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
-        ]}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <View style={styles.headerRow}>
-          <View />
-          <Button
-            title={`+ ${t('sms.newMessage')}`}
-            onPress={() => setShowCompose(true)}
-            style={styles.newButton}
-          />
-        </View>
+      <MeshGradientBackground>
+        <ScrollView
+          style={[styles.container, { backgroundColor: 'transparent' }]}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          <View style={styles.headerRow}>
+            <View />
+            <Button
+              title={`+ ${t('sms.newMessage')}`}
+              onPress={() => setShowCompose(true)}
+              style={styles.newButton}
+            />
+          </View>
 
-        {/* SMS Count Card */}
-        {smsCount && (
-          <Card style={{ marginBottom: spacing.md }}>
-            <CardHeader title={t('sms.smsCount')} />
-            <View style={styles.countRow}>
-              <View style={styles.countItem}>
-                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  {t('sms.unread')}
-                </Text>
-                <Text style={[typography.title2, { color: colors.primary }]}>
-                  {smsCount.localUnread}
-                </Text>
-              </View>
-              <View style={styles.countItem}>
-                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  {t('sms.inbox')}
-                </Text>
-                <Text style={[typography.title2, { color: colors.text }]}>
-                  {smsCount.localInbox}
-                </Text>
-              </View>
-              <View style={styles.countItem}>
-                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  {t('sms.sent')}
-                </Text>
-                <Text style={[typography.title2, { color: colors.text }]}>
-                  {smsCount.localOutbox}
-                </Text>
-              </View>
-            </View>
-          </Card>
-        )}
-
-        {/* Messages List */}
-        {!smsSupported || messages.length === 0 ? (
-          <Card>
-            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.xl }]}>
-              {isRefreshing ? t('sms.loadingMessages') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
-            </Text>
-          </Card>
-        ) : (
-          messages.map((message) => (
-            <TouchableOpacity
-              key={message.index}
-              onPress={() => handleOpenDetail(message)}
-              activeOpacity={0.7}
-            >
-              <Card style={{ marginBottom: spacing.md }}>
-                <View style={styles.messageHeader}>
-                  <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
-                    {/* Unread indicator */}
-                    {message.smstat === '0' && (
-                      <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
-                    )}
-                    <View style={{ flex: 1 }}>
-                      <Text style={[
-                        typography.headline,
-                        {
-                          color: colors.text,
-                          fontWeight: message.smstat === '0' ? '700' : '600'
-                        }
-                      ]}>
-                        {message.phone}
-                      </Text>
-                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                        {dayjs(message.date).format('MMM D, YYYY h:mm A')}
-                      </Text>
-                    </View>
-                  </View>
-                  <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
+          {/* SMS Count Card */}
+          {smsCount && (
+            <Card style={{ marginBottom: spacing.md }}>
+              <CardHeader title={t('sms.smsCount')} />
+              <View style={styles.countRow}>
+                <View style={styles.countItem}>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('sms.unread')}
+                  </Text>
+                  <Text style={[typography.title2, { color: colors.primary }]}>
+                    {smsCount.localUnread}
+                  </Text>
                 </View>
-                <Text
-                  style={[
-                    typography.body,
-                    { color: colors.textSecondary, marginTop: spacing.sm }
-                  ]}
-                  numberOfLines={2}
-                >
-                  {message.content}
-                </Text>
-              </Card>
-            </TouchableOpacity>
-          ))
-        )}
-      </ScrollView>
+                <View style={styles.countItem}>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('sms.inbox')}
+                  </Text>
+                  <Text style={[typography.title2, { color: colors.text }]}>
+                    {smsCount.localInbox}
+                  </Text>
+                </View>
+                <View style={styles.countItem}>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('sms.sent')}
+                  </Text>
+                  <Text style={[typography.title2, { color: colors.text }]}>
+                    {smsCount.localOutbox}
+                  </Text>
+                </View>
+              </View>
+            </Card>
+          )}
+
+          {/* Messages List */}
+          {!smsSupported || messages.length === 0 ? (
+            <Card>
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.xl }]}>
+                {isRefreshing ? t('sms.loadingMessages') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
+              </Text>
+            </Card>
+          ) : (
+            messages.map((message) => (
+              <TouchableOpacity
+                key={message.index}
+                onPress={() => handleOpenDetail(message)}
+                activeOpacity={0.7}
+              >
+                <Card style={{ marginBottom: spacing.md }}>
+                  <View style={styles.messageHeader}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                      {/* Unread indicator */}
+                      {message.smstat === '0' && (
+                        <View style={[styles.unreadDot, { backgroundColor: colors.primary }]} />
+                      )}
+                      <View style={{ flex: 1 }}>
+                        <Text style={[
+                          typography.headline,
+                          {
+                            color: colors.text,
+                            fontWeight: message.smstat === '0' ? '700' : '600'
+                          }
+                        ]}>
+                          {message.phone}
+                        </Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                          {dayjs(message.date).format('MMM D, YYYY h:mm A')}
+                        </Text>
+                      </View>
+                    </View>
+                    <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
+                  </View>
+                  <Text
+                    style={[
+                      typography.body,
+                      { color: colors.textSecondary, marginTop: spacing.sm }
+                    ]}
+                    numberOfLines={2}
+                  >
+                    {message.content}
+                  </Text>
+                </Card>
+              </TouchableOpacity>
+            ))
+          )}
+        </ScrollView>
+      </MeshGradientBackground>
 
       {/* Compose Modal */}
       <Modal

@@ -159,6 +159,7 @@ export interface APNProfile {
   authType: 'none' | 'pap' | 'chap' | 'pap_chap';
   ipType: 'ipv4' | 'ipv6' | 'ipv4v6';
   isDefault: boolean;
+  readOnly: boolean; // Carrier preset profiles that cannot be edited/deleted
 }
 
 export interface EthernetSettings {

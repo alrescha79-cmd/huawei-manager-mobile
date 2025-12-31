@@ -16,6 +16,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { ModemService } from '@/services/modem.service';
+import { ModalMeshGradient } from './ModalMeshGradient';
 
 // LTE Band definitions - Comprehensive FDD and TDD bands
 // Added type property for filtering/rendering
@@ -72,9 +73,13 @@ export function BandSelectionModal({
     const { t } = useTranslation();
 
     const [selectedBandBits, setSelectedBandBits] = useState<number[]>([]);
+    const [initialBandBits, setInitialBandBits] = useState<number[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'ALL' | 'TDD' | 'FDD'>('ALL');
+
+    // Check if there are changes
+    const hasChanges = JSON.stringify([...selectedBandBits].sort()) !== JSON.stringify([...initialBandBits].sort());
 
     // Load current band settings when modal opens
     useEffect(() => {
@@ -97,6 +102,7 @@ export function BandSelectionModal({
                     }
                 }
                 setSelectedBandBits(activeBits);
+                setInitialBandBits(activeBits);  // Store initial state
             }
         } catch (error) {
             // Silent fail
@@ -178,14 +184,15 @@ export function BandSelectionModal({
             onRequestClose={onClose}
         >
             <BlurView
-                intensity={glassmorphism.blur.modal}
+                intensity={isDark ? 80 : glassmorphism.blur.modal}  // Higher intensity for dark mode = more solid
                 tint={isDark ? 'dark' : 'light'}
                 experimentalBlurMethod='dimezisBlurView'
                 style={[
                     styles.container,
-                    { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }
+                    { backgroundColor: isDark ? 'rgba(20, 20, 22, 0.92)' : glassmorphism.background.light.modal }
                 ]}
             >
+                <ModalMeshGradient />
                 {/* Header */}
                 <View style={styles.header}>
                     <View>
@@ -244,7 +251,7 @@ export function BandSelectionModal({
                 </View>
 
                 {/* Scrollable content area with margin to stop above footer */}
-                <View style={{ flex: 1, marginBottom: 116, backgroundColor: 'transparent' }}>
+                <View style={{ flex: 1, marginBottom: 60, backgroundColor: 'transparent' }}>
                     <ScrollView
                         showsVerticalScrollIndicator={true}
                         contentContainerStyle={styles.listContent}
@@ -299,12 +306,12 @@ export function BandSelectionModal({
                     }]}
                 >
                     <TouchableOpacity
-                        style={[styles.applyButton, { backgroundColor: colors.primary }, isSaving && { opacity: 0.7 }]}
-                        onPress={handleSave}
+                        style={[styles.applyButton, { backgroundColor: hasChanges ? colors.primary : colors.textSecondary }, isSaving && { opacity: 0.7 }]}
+                        onPress={hasChanges ? handleSave : onClose}
                         disabled={isSaving}
                     >
                         <Text style={styles.applyButtonText}>
-                            {isSaving ? t('common.saving') || 'Saving...' : t('settings.applyConfiguration')}
+                            {isSaving ? t('common.saving') || 'Saving...' : hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
                         </Text>
                     </TouchableOpacity>
                 </BlurView>

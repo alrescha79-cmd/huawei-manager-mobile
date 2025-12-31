@@ -9,57 +9,16 @@ export default function SettingsLayout() {
     return (
         <Stack
             screenOptions={{
-                headerStyle: { backgroundColor: colors.background },
-                headerTintColor: colors.text,
-                headerTitleStyle: { color: colors.text },
-                headerShadowVisible: false,
-                contentStyle: { backgroundColor: colors.background },
-                headerTitleAlign: 'center',
+                headerShown: false,  // Hide all headers for consistency
+                contentStyle: { backgroundColor: 'transparent' },
             }}
         >
-            <Stack.Screen
-                name="index"
-                options={{
-                    title: t('tabs.settings'),
-                    headerLargeTitle: false,
-                    headerShown: true
-                }}
-            />
-            <Stack.Screen
-                name="modem"
-                options={{
-                    title: t('settings.modemInfo'),
-                    headerBackTitle: t('common.back'),
-                }}
-            />
-            <Stack.Screen
-                name="mobile-network"
-                options={{
-                    title: t('settings.mobileNetwork'),
-                    headerBackTitle: t('common.back'),
-                }}
-            />
-            <Stack.Screen
-                name="lan"
-                options={{
-                    title: t('settings.lanSettings'),
-                    headerBackTitle: t('common.back'),
-                }}
-            />
-            <Stack.Screen
-                name="system"
-                options={{
-                    title: t('settings.system'),
-                    headerBackTitle: t('common.back'),
-                }}
-            />
-            <Stack.Screen
-                name="update"
-                options={{
-                    title: t('settings.checkUpdate'),
-                    headerBackTitle: t('common.back'),
-                }}
-            />
+            <Stack.Screen name="index" />
+            <Stack.Screen name="modem" />
+            <Stack.Screen name="mobile-network" />
+            <Stack.Screen name="lan" />
+            <Stack.Screen name="system" />
+            <Stack.Screen name="update" />
         </Stack>
     );
 }
