@@ -11,6 +11,8 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
+    StatusBar,
+    Pressable,
 } from 'react-native';
 import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -130,7 +132,7 @@ export function DeviceDetailModal({
         >
             <MeshGradientBackground style={styles.modalContainer}>
                 {/* Header - Same style as MonthlySettingsModal */}
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
                     <Text style={[styles.title, { color: colors.text }]}>
                         {t('wifi.deviceDetails')}
                     </Text>
@@ -145,7 +147,7 @@ export function DeviceDetailModal({
                 >
                     <ScrollView
                         style={styles.modalContent}
-                        contentContainerStyle={{ paddingBottom: 120 }}
+                        contentContainerStyle={{ paddingBottom: 20 }}
                         keyboardShouldPersistTaps="handled"
                     >
                         {/* Device Name Section */}
@@ -222,27 +224,35 @@ export function DeviceDetailModal({
                             </TouchableOpacity>
                         </View>
                     </ScrollView>
-                </KeyboardAvoidingView>
 
-                {/* Footer - Fixed at bottom, same as MonthlySettingsModal */}
-                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-                    <TouchableOpacity
-                        style={[
-                            styles.saveButton,
-                            { backgroundColor: hasChanges ? colors.primary : colors.textSecondary },
-                        ]}
-                        onPress={hasChanges ? handleSave : onClose}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <ActivityIndicator color="#FFF" />
-                        ) : (
-                            <Text style={styles.saveButtonText}>
-                                {hasChanges ? t('common.save') : t('common.cancel')}
-                            </Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
+                    {/* Footer - Inside KeyboardAvoidingView */}
+                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.saveButton,
+                                { backgroundColor: hasChanges ? colors.primary : colors.textSecondary },
+                                pressed && { opacity: 0.8 }
+                            ]}
+                            onPress={() => {
+                                Keyboard.dismiss();
+                                if (hasChanges) {
+                                    handleSave();
+                                } else {
+                                    onClose();
+                                }
+                            }}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                <Text style={styles.saveButtonText}>
+                                    {hasChanges ? t('common.save') : t('common.cancel')}
+                                </Text>
+                            )}
+                        </Pressable>
+                    </View>
+                </KeyboardAvoidingView>
             </MeshGradientBackground>
         </Modal>
     );
@@ -257,7 +267,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
         paddingHorizontal: 20,
-        paddingTop: 20,
         paddingBottom: 16,
         borderBottomWidth: 1,
     },
@@ -318,10 +327,6 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         padding: 20,
         paddingBottom: 40,
         borderTopWidth: 1,

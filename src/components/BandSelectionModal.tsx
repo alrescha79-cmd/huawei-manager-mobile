@@ -9,6 +9,8 @@ import {
     TextInput,
     SafeAreaView,
     Keyboard,
+    StatusBar,
+    Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
@@ -194,7 +196,7 @@ export function BandSelectionModal({
             >
                 <ModalMeshGradient />
                 {/* Header */}
-                <View style={styles.header}>
+                <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
                     <View>
                         <Text style={[styles.title, { color: colors.text }]}>{t('settings.lteBandSelection') || 'Select Bands'}</Text>
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('settings.selectedCount', { count: selectedBandBits.length })}</Text>
@@ -323,7 +325,6 @@ export function BandSelectionModal({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        paddingTop: 20,
     },
     header: {
         flexDirection: 'row',

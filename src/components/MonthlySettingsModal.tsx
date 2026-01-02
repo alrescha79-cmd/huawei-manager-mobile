@@ -12,6 +12,8 @@ import {
     KeyboardAvoidingView,
     Platform,
     Keyboard,
+    StatusBar,
+    Pressable,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -113,7 +115,7 @@ export function MonthlySettingsModal({
         >
             <MeshGradientBackground style={styles.modalContainer}>
                 {/* Header */}
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
                     <Text style={[styles.title, { color: colors.text }]}>
                         {t('home.monthlySettings') || 'Usage Limit'}
                     </Text>
@@ -125,8 +127,9 @@ export function MonthlySettingsModal({
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={{ flex: 1 }}
+                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
                 >
-                    <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 100 }} keyboardShouldPersistTaps="handled">
+                    <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
 
                         {/* Enable Toggle Box */}
                         <View style={[styles.toggleBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
@@ -253,24 +256,35 @@ export function MonthlySettingsModal({
                         </View>
 
                     </ScrollView>
-                </KeyboardAvoidingView>
 
-                {/* Footer Button */}
-                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-                    <TouchableOpacity
-                        style={[styles.applyButton, { backgroundColor: hasChanges ? colors.primary : colors.textSecondary }]}
-                        onPress={hasChanges ? handleSave : onClose}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <ActivityIndicator color="#FFF" />
-                        ) : (
-                            <Text style={styles.applyButtonText}>
-                                {hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
-                            </Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
+                    {/* Footer Button - Inside KeyboardAvoidingView */}
+                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.applyButton,
+                                { backgroundColor: hasChanges ? colors.primary : colors.textSecondary },
+                                pressed && { opacity: 0.8 }
+                            ]}
+                            onPress={() => {
+                                Keyboard.dismiss();
+                                if (hasChanges) {
+                                    handleSave();
+                                } else {
+                                    onClose();
+                                }
+                            }}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                <Text style={styles.applyButtonText}>
+                                    {hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
+                                </Text>
+                            )}
+                        </Pressable>
+                    </View>
+                </KeyboardAvoidingView>
             </MeshGradientBackground>
         </Modal>
     );
@@ -279,7 +293,6 @@ export function MonthlySettingsModal({
 const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
-        paddingTop: 20,
     },
     modalHeader: {
         flexDirection: 'row',
@@ -436,10 +449,6 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     footer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
         padding: 20,
         paddingBottom: 40,
         borderTopWidth: 1,

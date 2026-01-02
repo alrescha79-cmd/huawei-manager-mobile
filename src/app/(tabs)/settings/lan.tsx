@@ -9,6 +9,11 @@ import {
     ActivityIndicator,
     TextInput,
     Modal,
+    StatusBar,
+    Platform,
+    KeyboardAvoidingView,
+    Keyboard,
+    Pressable,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -481,7 +486,7 @@ export default function LanSettingsScreen() {
                     presentationStyle="pageSheet"
                     onRequestClose={() => setShowApnModal(false)}
                 >
-                    <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: 20 }]}>
+                    <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
                         <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                             <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
                                 {editingApn ? t('networkSettings.editApn') : t('networkSettings.addApn')}
@@ -491,101 +496,118 @@ export default function LanSettingsScreen() {
                             </TouchableOpacity>
                         </View>
 
-                        <ScrollView
-                            style={{ flex: 1, padding: 20 }}
-                            contentContainerStyle={{ paddingBottom: 100 }}
+                        <KeyboardAvoidingView
+                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                            style={{ flex: 1 }}
                         >
-                            {/* Profile Name */}
-                            <View style={{ marginBottom: 16 }}>
-                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('networkSettings.profileName')}</Text>
-                                <TextInput
-                                    placeholder={t('networkSettings.profileName')}
-                                    placeholderTextColor={colors.textSecondary}
-                                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                    value={apnName}
-                                    onChangeText={setApnName}
-                                />
-                            </View>
-
-                            {/* APN */}
-                            <View style={{ marginBottom: 16 }}>
-                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>APN</Text>
-                                <TextInput
-                                    placeholder="APN"
-                                    placeholderTextColor={colors.textSecondary}
-                                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                    value={apnApn}
-                                    onChangeText={setApnApn}
-                                />
-                            </View>
-
-                            {/* Username */}
-                            <View style={{ marginBottom: 16 }}>
-                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.usernameLabel')}</Text>
-                                <TextInput
-                                    placeholder={t('settings.usernameLabel')}
-                                    placeholderTextColor={colors.textSecondary}
-                                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                    value={apnUsername}
-                                    onChangeText={setApnUsername}
-                                />
-                            </View>
-
-                            {/* Password */}
-                            <View style={{ marginBottom: 16 }}>
-                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.passwordLabel')}</Text>
-                                <TextInput
-                                    placeholder={t('settings.passwordLabel')}
-                                    placeholderTextColor={colors.textSecondary}
-                                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                    secureTextEntry
-                                    value={apnPassword}
-                                    onChangeText={setApnPassword}
-                                />
-                            </View>
-
-                            {/* Set as Default Toggle */}
-                            <View style={{
-                                flexDirection: 'row',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                marginBottom: 16,
-                                backgroundColor: colors.card,
-                                padding: 12,
-                                borderRadius: 8,
-                                borderWidth: 1,
-                                borderColor: colors.border
-                            }}>
-                                <View style={{ flex: 1, marginRight: 12 }}>
-                                    <Text style={[typography.body, { color: colors.text, fontWeight: 'bold' }]}>{t('networkSettings.setAsDefault')}</Text>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('networkSettings.setAsDefaultHint')}</Text>
-                                </View>
-                                <Switch
-                                    value={apnIsDefault}
-                                    onValueChange={setApnIsDefault}
-                                    trackColor={{ false: colors.border, true: colors.primary }}
-                                    thumbColor={'#FFF'}
-                                    disabled={editingApn === activeApnProfileId}
-                                />
-                            </View>
-                        </ScrollView>
-
-                        {/* Footer Button */}
-                        <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-                            <TouchableOpacity
-                                style={[styles.saveButton, { backgroundColor: hasApnChanges() ? colors.primary : colors.textSecondary }]}
-                                onPress={hasApnChanges() ? handleSaveApnProfile : () => setShowApnModal(false)}
-                                disabled={isSavingApn}
+                            <ScrollView
+                                style={{ flex: 1, padding: 20 }}
+                                contentContainerStyle={{ paddingBottom: 20 }}
+                                keyboardShouldPersistTaps="handled"
                             >
-                                {isSavingApn ? (
-                                    <ActivityIndicator color="#FFF" />
-                                ) : (
-                                    <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>
-                                        {hasApnChanges() ? t('common.save') : t('common.cancel')}
-                                    </Text>
-                                )}
-                            </TouchableOpacity>
-                        </View>
+                                {/* Profile Name */}
+                                <View style={{ marginBottom: 16 }}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('networkSettings.profileName')}</Text>
+                                    <TextInput
+                                        placeholder={t('networkSettings.profileName')}
+                                        placeholderTextColor={colors.textSecondary}
+                                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                        value={apnName}
+                                        onChangeText={setApnName}
+                                    />
+                                </View>
+
+                                {/* APN */}
+                                <View style={{ marginBottom: 16 }}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>APN</Text>
+                                    <TextInput
+                                        placeholder="APN"
+                                        placeholderTextColor={colors.textSecondary}
+                                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                        value={apnApn}
+                                        onChangeText={setApnApn}
+                                    />
+                                </View>
+
+                                {/* Username */}
+                                <View style={{ marginBottom: 16 }}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.usernameLabel')}</Text>
+                                    <TextInput
+                                        placeholder={t('settings.usernameLabel')}
+                                        placeholderTextColor={colors.textSecondary}
+                                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                        value={apnUsername}
+                                        onChangeText={setApnUsername}
+                                    />
+                                </View>
+
+                                {/* Password */}
+                                <View style={{ marginBottom: 16 }}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.passwordLabel')}</Text>
+                                    <TextInput
+                                        placeholder={t('settings.passwordLabel')}
+                                        placeholderTextColor={colors.textSecondary}
+                                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                        secureTextEntry
+                                        value={apnPassword}
+                                        onChangeText={setApnPassword}
+                                    />
+                                </View>
+
+                                {/* Set as Default Toggle */}
+                                <View style={{
+                                    flexDirection: 'row',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    marginBottom: 16,
+                                    backgroundColor: colors.card,
+                                    padding: 12,
+                                    borderRadius: 8,
+                                    borderWidth: 1,
+                                    borderColor: colors.border
+                                }}>
+                                    <View style={{ flex: 1, marginRight: 12 }}>
+                                        <Text style={[typography.body, { color: colors.text, fontWeight: 'bold' }]}>{t('networkSettings.setAsDefault')}</Text>
+                                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('networkSettings.setAsDefaultHint')}</Text>
+                                    </View>
+                                    <Switch
+                                        value={apnIsDefault}
+                                        onValueChange={setApnIsDefault}
+                                        trackColor={{ false: colors.border, true: colors.primary }}
+                                        thumbColor={'#FFF'}
+                                        disabled={editingApn === activeApnProfileId}
+                                    />
+                                </View>
+                            </ScrollView>
+
+                            {/* Footer Button - Inside KeyboardAvoidingView */}
+                            <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                                <Pressable
+                                    style={({ pressed }) => [
+                                        styles.saveButton,
+                                        { backgroundColor: hasApnChanges() ? colors.primary : colors.textSecondary },
+                                        pressed && { opacity: 0.8 }
+                                    ]}
+                                    onPress={() => {
+                                        Keyboard.dismiss();
+                                        if (hasApnChanges()) {
+                                            handleSaveApnProfile();
+                                        } else {
+                                            setShowApnModal(false);
+                                        }
+                                    }}
+                                    disabled={isSavingApn}
+                                >
+                                    {isSavingApn ? (
+                                        <ActivityIndicator color="#FFF" />
+                                    ) : (
+                                        <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>
+                                            {hasApnChanges() ? t('common.save') : t('common.cancel')}
+                                        </Text>
+                                    )}
+                                </Pressable>
+                            </View>
+                        </KeyboardAvoidingView>
                     </View>
                 </Modal>
 
@@ -629,7 +651,6 @@ const styles = StyleSheet.create({
         height: 50, borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, fontSize: 16
     },
     footer: {
-        position: 'absolute', bottom: 0, left: 0, right: 0,
         padding: 20, paddingBottom: 40, borderTopWidth: 1
     },
     saveButton: {
