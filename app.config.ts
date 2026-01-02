@@ -62,7 +62,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
             foregroundImage: './assets/logo.png',
             backgroundColor: '#ffffff',
         },
-        edgeToEdgeEnabled: true,
         predictiveBackGestureEnabled: false,
         package: 'com.alrescha79.hmmobile',
     },

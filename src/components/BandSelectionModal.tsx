@@ -272,7 +272,11 @@ export function BandSelectionModal({
                                     activeOpacity={0.7}
                                 >
                                     <View style={styles.bandLeft}>
-                                        <View style={[styles.bandTag, { backgroundColor: colors.border }, isSelected && { backgroundColor: colors.primary }]}>
+                                        <View style={[
+                                            styles.bandTag,
+                                            { backgroundColor: isDark ? colors.border : '#9CA3AF' }, 
+                                            isSelected && { backgroundColor: colors.primary }
+                                        ]}>
                                             <Text style={styles.bandTagName}>{band.name}</Text>
                                         </View>
                                         <View>

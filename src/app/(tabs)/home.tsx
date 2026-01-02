@@ -6,7 +6,6 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Switch,
   ActivityIndicator,
   Platform,
   StatusBar,
@@ -15,7 +14,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -599,546 +598,548 @@ export default function HomeScreen() {
   );
 
   return (
-    <MeshGradientBackground>
-      <ScrollView
-        style={[styles.container, { backgroundColor: 'transparent' }]}
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
-        ]}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <View style={styles.header}>
+    <AnimatedScreen>
+      <MeshGradientBackground>
+        <ScrollView
+          style={[styles.container, { backgroundColor: 'transparent' }]}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          <View style={styles.header}>
+            {!hasValidData && (
+              <TouchableOpacity
+                onPress={handleReLogin}
+                style={[styles.reLoginButton, { backgroundColor: colors.error }]}
+              >
+                <Text style={[typography.caption1, { color: '#FFFFFF' }]}>
+                  {t('home.reLogin')}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {/* Warning if no valid data */}
           {!hasValidData && (
-            <TouchableOpacity
-              onPress={handleReLogin}
-              style={[styles.reLoginButton, { backgroundColor: colors.error }]}
-            >
-              <Text style={[typography.caption1, { color: '#FFFFFF' }]}>
-                {t('home.reLogin')}
+            <Card style={{ marginBottom: spacing.md, backgroundColor: colors.error + '10', borderColor: colors.error, borderWidth: 1 }}>
+              <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm, textAlign: 'center' }]}>
+                <MaterialIcons name="warning" size={24} color={colors.error} /> {t('alerts.noSignalData')}
               </Text>
-            </TouchableOpacity>
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+              <Text style={[typography.body, { color: colors.text }]}>
+                {t('alerts.noSignalMessage')}{'\n\n'}
+                <Text style={{ fontWeight: 'bold' }}>{t('alerts.possibleCauses')}</Text>{'\n'}
+                • {t('alerts.notLoggedIn')}{'\n'}
+                • {t('alerts.sessionExpired')}{'\n'}
+                • {t('alerts.modemNotResponding')}
+              </Text>
+              <TouchableOpacity
+                onPress={handleReLogin}
+                style={[styles.reLoginButtonLarge, { backgroundColor: colors.error }]}
+              >
+                <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                  {t('common.goToLogin')}
+                </Text>
+              </TouchableOpacity>
+            </Card>
           )}
-        </View>
 
-        {/* Warning if no valid data */}
-        {!hasValidData && (
-          <Card style={{ marginBottom: spacing.md, backgroundColor: colors.error + '10', borderColor: colors.error, borderWidth: 1 }}>
-            <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm, textAlign: 'center' }]}>
-              <MaterialIcons name="warning" size={24} color={colors.error} /> {t('alerts.noSignalData')}
-            </Text>
-            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-            <Text style={[typography.body, { color: colors.text }]}>
-              {t('alerts.noSignalMessage')}{'\n\n'}
-              <Text style={{ fontWeight: 'bold' }}>{t('alerts.possibleCauses')}</Text>{'\n'}
-              • {t('alerts.notLoggedIn')}{'\n'}
-              • {t('alerts.sessionExpired')}{'\n'}
-              • {t('alerts.modemNotResponding')}
-            </Text>
-            <TouchableOpacity
-              onPress={handleReLogin}
-              style={[styles.reLoginButtonLarge, { backgroundColor: colors.error }]}
-            >
-              <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-                {t('common.goToLogin')}
-              </Text>
-            </TouchableOpacity>
-          </Card>
-        )}
+          {/* Connection Status Card - Matching Reference Design */}
+          <CollapsibleCard title={t('home.connectionStatus')}>
+            {/* Top Section: Signal Bars + Info | Status + Network Badge */}
+            <View style={styles.connectionMainRow}>
+              {/* Left: Signal Bars + Good + ISP */}
+              <View style={styles.connectionLeftSection}>
+                <SignalBar
+                  strength={getSignalIcon(signalInfo?.rssi)}
+                  label=""
+                />
+                <View style={styles.connectionSignalLabels}>
+                  <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
+                    {t(`home.signal${getSignalStrength(signalInfo?.rssi).charAt(0).toUpperCase()}${getSignalStrength(signalInfo?.rssi).slice(1)}`)}
+                  </Text>
+                  <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                    {networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
+                  </Text>
+                </View>
+              </View>
 
-        {/* Connection Status Card - Matching Reference Design */}
-        <CollapsibleCard title={t('home.connectionStatus')}>
-          {/* Top Section: Signal Bars + Info | Status + Network Badge */}
-          <View style={styles.connectionMainRow}>
-            {/* Left: Signal Bars + Good + ISP */}
-            <View style={styles.connectionLeftSection}>
-              <SignalBar
-                strength={getSignalIcon(signalInfo?.rssi)}
-                label=""
-              />
-              <View style={styles.connectionSignalLabels}>
-                <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
-                  {t(`home.signal${getSignalStrength(signalInfo?.rssi).charAt(0).toUpperCase()}${getSignalStrength(signalInfo?.rssi).slice(1)}`)}
+              {/* Right: Connected Status + 4G Badge */}
+              <View style={styles.connectionRightSection}>
+                <Text style={[
+                  typography.subheadline,
+                  {
+                    color: modemStatus?.connectionStatus === '901' ? colors.primary : colors.error,
+                    fontWeight: '600',
+                    marginBottom: 4,
+                  }
+                ]}>
+                  {t(`home.status${getConnectionStatusText(modemStatus?.connectionStatus).charAt(0).toUpperCase()}${getConnectionStatusText(modemStatus?.connectionStatus).slice(1)}`)}
                 </Text>
-                <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
-                  {networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
-                </Text>
+                <View style={[styles.networkTypeBadge, { borderColor: colors.primary, borderWidth: 1 }]}>
+                  <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700' }]}>
+                    {getNetworkTypeText(networkInfo?.currentNetworkType || modemStatus?.currentNetworkType)}
+                  </Text>
+                </View>
               </View>
             </View>
 
-            {/* Right: Connected Status + 4G Badge */}
-            <View style={styles.connectionRightSection}>
-              <Text style={[
-                typography.subheadline,
-                {
-                  color: modemStatus?.connectionStatus === '901' ? colors.primary : colors.error,
-                  fontWeight: '600',
-                  marginBottom: 4,
-                }
-              ]}>
-                {t(`home.status${getConnectionStatusText(modemStatus?.connectionStatus).charAt(0).toUpperCase()}${getConnectionStatusText(modemStatus?.connectionStatus).slice(1)}`)}
-              </Text>
-              <View style={[styles.networkTypeBadge, { borderColor: colors.primary, borderWidth: 1 }]}>
-                <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700' }]}>
+            {/* Divider */}
+            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 12 }} />
+
+            {/* Info Grid 2x2 */}
+            <View style={styles.connectionInfoGrid}>
+
+              {/* Network Type */}
+              <View style={styles.connectionInfoGridItem}>
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+                  {t('home.networkType')}
+                </Text>
+                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
                   {getNetworkTypeText(networkInfo?.currentNetworkType || modemStatus?.currentNetworkType)}
                 </Text>
               </View>
-            </View>
-          </View>
 
-          {/* Divider */}
-          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: 12 }} />
-
-          {/* Info Grid 2x2 */}
-          <View style={styles.connectionInfoGrid}>
-
-            {/* Network Type */}
-            <View style={styles.connectionInfoGridItem}>
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
-                {t('home.networkType')}
-              </Text>
-              <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
-                {getNetworkTypeText(networkInfo?.currentNetworkType || modemStatus?.currentNetworkType)}
-              </Text>
-            </View>
-
-            {/* IP Address */}
-            <View style={styles.connectionInfoGridItem}>
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
-                {t('home.ipAddress')}
-              </Text>
-              <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
-                {wanInfo?.wanIPAddress || '...'}
-              </Text>
-            </View>
-
-            {/* Band */}
-            <View style={styles.connectionInfoGridItem}>
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
-                {t('home.band')}
-              </Text>
-              <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
-                {getLteBandInfo(signalInfo?.band)}
-              </Text>
-            </View>
-
-            {/* Width */}
-            <View style={styles.connectionInfoGridItem}>
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
-                {t('home.width')}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
-                  <>
-                    <MaterialIcons name="arrow-upward" size={14} color={colors.primary} />
-                    <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600', marginRight: 4 }]}>
-                      {signalInfo.ulbandwidth || '-'}
-                    </Text>
-                    <MaterialIcons name="arrow-downward" size={14} color={colors.success} />
-                    <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
-                      {signalInfo.dlbandwidth || '-'}
-                    </Text>
-                  </>
-                ) : (
-                  <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>-</Text>
-                )}
-              </View>
-            </View>
-          </View>
-        </CollapsibleCard>
-
-        {/* Quick Actions Card - Modern Compact Design */}
-        <CollapsibleCard title={t('home.actions')}>
-          {/* Row 1: Large Action Buttons */}
-          <View style={styles.quickActionsRow}>
-            {/* Set Band Button */}
-            <TouchableOpacity
-              style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-              onPress={() => setShowBandModal(true)}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: colors.background }]}>
-                <MaterialIcons name="settings-input-antenna" size={20} color={colors.primary} />
-              </View>
-              <View style={styles.quickActionLargeContent}>
+              {/* IP Address */}
+              <View style={styles.connectionInfoGridItem}>
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+                  {t('home.ipAddress')}
+                </Text>
                 <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
-                  {t('home.setBand')}
-                </Text>
-                <Text
-                  style={[typography.caption2, { color: colors.textSecondary }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
-                  {selectedBands.length > 0 ? selectedBands.join(', ') : t('common.loading')}
-                </Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
-            </TouchableOpacity>
-
-            {/* Change IP Button */}
-            <TouchableOpacity
-              style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-              onPress={handleChangeIp}
-              disabled={isChangingIp}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: colors.background }]}>
-                {isChangingIp ? (
-                  <ActivityIndicator color={colors.primary} size="small" />
-                ) : (
-                  <MaterialIcons name="sync" size={20} color={colors.primary} />
-                )}
-              </View>
-              <View style={styles.quickActionLargeContent}>
-                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
-                  {t('home.changeIp')}
-                </Text>
-                <Text
-                  style={[typography.caption2, { color: colors.textSecondary }]}
-                  numberOfLines={1}
-                  ellipsizeMode="tail"
-                >
                   {wanInfo?.wanIPAddress || '...'}
                 </Text>
               </View>
-            </TouchableOpacity>
-          </View>
 
-          {/* Row 2: Compact Action Buttons Grid */}
-          <View style={styles.quickActionsRow}>
-            {/* Mobile Data Toggle Button */}
-            <TouchableOpacity
-              style={[
-                styles.quickActionSmall,
-                {
-                  backgroundColor: mobileDataStatus?.dataswitch ? colors.primary : colors.card,
-                  borderColor: colors.border,
-                  borderWidth: 1,
-                }
-              ]}
-              onPress={handleToggleMobileData}
-              disabled={isTogglingData}
-            >
-              {isTogglingData ? (
-                <ActivityIndicator color={mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.primary} size="small" />
-              ) : (
-                <>
-                  <MaterialIcons
-                    name="swap-vert"
-                    size={22}
-                    color={mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.primary}
-                  />
-                  <Text
-                    style={[
-                      typography.caption2,
-                      {
-                        color: mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.text,
-                        fontWeight: '500',
-                        marginTop: 4,
-                        textAlign: 'center',
-                      }
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {t('home.mobileData')}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+              {/* Band */}
+              <View style={styles.connectionInfoGridItem}>
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+                  {t('home.band')}
+                </Text>
+                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
+                  {getLteBandInfo(signalInfo?.band)}
+                </Text>
+              </View>
 
-            {/* Diagnosis Button */}
-            <TouchableOpacity
-              style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-              onPress={handleDiagnosis}
-              disabled={isRunningDiagnosis}
-            >
-              {isRunningDiagnosis ? (
-                <ActivityIndicator color={colors.primary} size="small" />
-              ) : (
-                <>
-                  <MaterialIcons name="network-check" size={22} color={colors.primary} />
-                  <Text
-                    style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
-                    numberOfLines={1}
-                  >
-                    {t('home.diagnosis')}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
+              {/* Width */}
+              <View style={styles.connectionInfoGridItem}>
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+                  {t('home.width')}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
+                    <>
+                      <MaterialIcons name="arrow-upward" size={14} color={colors.primary} />
+                      <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600', marginRight: 4 }]}>
+                        {signalInfo.ulbandwidth || '-'}
+                      </Text>
+                      <MaterialIcons name="arrow-downward" size={14} color={colors.success} />
+                      <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
+                        {signalInfo.dlbandwidth || '-'}
+                      </Text>
+                    </>
+                  ) : (
+                    <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>-</Text>
+                  )}
+                </View>
+              </View>
+            </View>
+          </CollapsibleCard>
 
-            {/* Quick Check Button */}
-            <TouchableOpacity
-              style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-              onPress={handleOneClickCheck}
-              disabled={isRunningCheck}
-            >
-              {isRunningCheck ? (
-                <ActivityIndicator color={colors.primary} size="small" />
-              ) : (
-                <>
-                  <MaterialIcons name="perm-scan-wifi" size={22} color={colors.primary} />
-                  <Text
-                    style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
-                    numberOfLines={1}
-                  >
-                    {t('home.quickCheck')}
-                  </Text>
-                </>
-              )}
-            </TouchableOpacity>
-
-            {/* Speedtest Button */}
-            <TouchableOpacity
-              style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-              onPress={() => setShowSpeedtestModal(true)}
-            >
-              <MaterialIcons name="speed" size={22} color={colors.primary} />
-              <Text
-                style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
-                numberOfLines={1}
+          {/* Quick Actions Card - Modern Compact Design */}
+          <CollapsibleCard title={t('home.actions')}>
+            {/* Row 1: Large Action Buttons */}
+            <View style={styles.quickActionsRow}>
+              {/* Set Band Button */}
+              <TouchableOpacity
+                style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                onPress={() => setShowBandModal(true)}
               >
-                {t('home.speedtest')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </CollapsibleCard>
+                <View style={[styles.quickActionIcon, { backgroundColor: colors.background }]}>
+                  <MaterialIcons name="settings-input-antenna" size={20} color={colors.primary} />
+                </View>
+                <View style={styles.quickActionLargeContent}>
+                  <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                    {t('home.setBand')}
+                  </Text>
+                  <Text
+                    style={[typography.caption2, { color: colors.textSecondary }]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {selectedBands.length > 0 ? selectedBands.join(', ') : t('common.loading')}
+                  </Text>
+                </View>
+                <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
+              </TouchableOpacity>
 
-        {/* Signal Strength Card */}
-        {signalInfo && (signalInfo.rssi || signalInfo.rsrp) ? (
-          <CollapsibleCard title={t('home.signalInfo')}>
-            <SignalCard
-              title={t('home.signalStrength')}
-              badge={t(`home.signal${getSignalStrength(signalInfo.rssi).charAt(0).toUpperCase()}${getSignalStrength(signalInfo.rssi).slice(1)}`)}
-              color="blue"
-              icon="signal-cellular-alt"
-              metrics={[
-                ...(signalInfo.rssi ? [{
-                  label: 'RSSI',
-                  value: signalInfo.rssi,
-                  unit: 'dBm',
-                  quality: getSignalQuality(parseFloat(signalInfo.rssi), { excellent: -65, good: -75, fair: -85, poor: -95 }, true),
-                }] : []),
-                ...(signalInfo.rsrp ? [{
-                  label: 'RSRP',
-                  value: signalInfo.rsrp,
-                  unit: 'dBm',
-                  quality: getSignalQuality(parseFloat(signalInfo.rsrp), { excellent: -80, good: -90, fair: -100, poor: -110 }, true),
-                }] : []),
-                ...(signalInfo.rsrq ? [{
-                  label: 'RSRQ',
-                  value: signalInfo.rsrq,
-                  unit: 'dB',
-                  quality: getSignalQuality(parseFloat(signalInfo.rsrq), { excellent: -5, good: -9, fair: -12, poor: -15 }, true),
-                }] : []),
-                ...(signalInfo.sinr ? [{
-                  label: 'SINR',
-                  value: signalInfo.sinr,
-                  unit: 'dB',
-                  quality: getSignalQuality(parseFloat(signalInfo.sinr), { excellent: 20, good: 13, fair: 6, poor: 0 }, false),
-                }] : []),
-              ]}
-              band={signalInfo.band ? getLteBandInfo(signalInfo.band) : undefined}
-              cellId={signalInfo.cellId}
-            />
-          </CollapsibleCard>
-        ) : (
-          <CollapsibleCard title={t('home.signalInfo')}>
-            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>
-              ⚠️ {t('home.noSignalAvailable')}{'\n'}
-              {t('home.checkLogin')}
-            </Text>
-          </CollapsibleCard>
-        )}
-
-        {/* Traffic Statistics Card */}
-        {trafficStats && (
-          <Card style={{ marginBottom: spacing.md }}>
-            {/* Header with gear icon - centered title */}
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm }}>
-              <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{t('home.trafficStats')}</Text>
+              {/* Change IP Button */}
+              <TouchableOpacity
+                style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                onPress={handleChangeIp}
+                disabled={isChangingIp}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: colors.background }]}>
+                  {isChangingIp ? (
+                    <ActivityIndicator color={colors.primary} size="small" />
+                  ) : (
+                    <MaterialIcons name="sync" size={20} color={colors.primary} />
+                  )}
+                </View>
+                <View style={styles.quickActionLargeContent}>
+                  <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                    {t('home.changeIp')}
+                  </Text>
+                  <Text
+                    style={[typography.caption2, { color: colors.textSecondary }]}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                  >
+                    {wanInfo?.wanIPAddress || '...'}
+                  </Text>
+                </View>
+              </TouchableOpacity>
             </View>
 
-            {/* Divider below header */}
-            <View style={{ height: 1, backgroundColor: colors.border, marginBottom: spacing.md }} />
-
-            {/* Speed Gauge */}
-            <SpeedGauge
-              downloadSpeed={trafficStats.currentDownloadRate}
-              uploadSpeed={trafficStats.currentUploadRate}
-            />
-
-            {/* Divider */}
-            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-
-            {/* Daily Usage Card */}
-            <DailyUsageCard
-              usage={trafficStats.dayUsed}
-              duration={trafficStats.dayDuration}
-              style={{ marginBottom: spacing.md }}
-            />
-
-            {usageCardStyle === 'compact' ? (
-              <CompactUsageCard
-                stats={trafficStats}
-                dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
-              />
-            ) : (
-              <>
-                {/* Session Usage Card */}
-                <UsageCard
-                  title={t('home.session') || "Session"}
-                  download={trafficStats.currentDownload}
-                  upload={trafficStats.currentUpload}
-                  duration={trafficStats.currentConnectTime}
-                  variant="session"
-                  style={{ marginBottom: spacing.md }}
-                />
-
-                {/* Monthly Usage Card */}
-                <UsageCard
-                  title={t('home.monthlyUsage') || "Monthly Usage"}
-                  download={trafficStats.monthDownload || trafficStats.totalDownload}
-                  upload={trafficStats.monthUpload || trafficStats.totalUpload}
-                  duration={trafficStats.monthDuration}
-                  variant="monthly"
-                  dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
-                />
-
-                {/* Total Usage Card */}
-                <UsageCard
-                  title={t('home.totalUsage') || "Total Usage"}
-                  badge={formatDuration(trafficStats.totalConnectTime, durationUnits)}
-                  download={trafficStats.totalDownload}
-                  upload={trafficStats.totalUpload}
-                  icon="data-usage"
-                />
-              </>
-            )}
-
-            {/* Divider */}
-            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-
-            {/* Actions: Clear History + Monthly Settings */}
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md, gap: 12 }}>
-              {/* Clear History Button */}
+            {/* Row 2: Compact Action Buttons Grid */}
+            <View style={styles.quickActionsRow}>
+              {/* Mobile Data Toggle Button */}
               <TouchableOpacity
-                style={{
-                  flex: 1,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: spacing.sm,
-                  backgroundColor: colors.error + '15',
-                  borderRadius: 8,
-                  opacity: isClearingHistory ? 0.6 : 1,
-                }}
-                onPress={handleClearHistory}
-                disabled={isClearingHistory}
+                style={[
+                  styles.quickActionSmall,
+                  {
+                    backgroundColor: mobileDataStatus?.dataswitch ? colors.primary : colors.card,
+                    borderColor: colors.border,
+                    borderWidth: 1,
+                  }
+                ]}
+                onPress={handleToggleMobileData}
+                disabled={isTogglingData}
               >
-                {isClearingHistory ? (
-                  <ActivityIndicator size="small" color={colors.error} />
+                {isTogglingData ? (
+                  <ActivityIndicator color={mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.primary} size="small" />
                 ) : (
                   <>
-                    <MaterialIcons name="delete-outline" size={18} color={colors.error} />
-                    <Text style={[typography.caption1, { color: colors.error, marginLeft: 6, fontWeight: '600' }]}>
-                      {t('home.clearHistory')}
+                    <MaterialIcons
+                      name="swap-vert"
+                      size={22}
+                      color={mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.primary}
+                    />
+                    <Text
+                      style={[
+                        typography.caption2,
+                        {
+                          color: mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.text,
+                          fontWeight: '500',
+                          marginTop: 4,
+                          textAlign: 'center',
+                        }
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {t('home.mobileData')}
                     </Text>
                   </>
                 )}
               </TouchableOpacity>
 
-              {/* Monthly Settings Button */}
+              {/* Diagnosis Button */}
               <TouchableOpacity
-                style={{
-                  flex: 1,
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  paddingVertical: spacing.sm,
-                  backgroundColor: colors.primary + '15',
-                  borderRadius: 8,
-                }}
-                onPress={() => setShowMonthlySettingsModal(true)}
+                style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                onPress={handleDiagnosis}
+                disabled={isRunningDiagnosis}
               >
-                <MaterialIcons name="data-saver-on" size={18} color={colors.primary} />
-                <Text style={[typography.caption1, { color: colors.primary, marginLeft: 6, fontWeight: '600' }]}>
-                  {t('home.monthlySettings') || 'Monthly Limit'}
+                {isRunningDiagnosis ? (
+                  <ActivityIndicator color={colors.primary} size="small" />
+                ) : (
+                  <>
+                    <MaterialIcons name="network-check" size={22} color={colors.primary} />
+                    <Text
+                      style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
+                      numberOfLines={1}
+                    >
+                      {t('home.diagnosis')}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {/* Quick Check Button */}
+              <TouchableOpacity
+                style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                onPress={handleOneClickCheck}
+                disabled={isRunningCheck}
+              >
+                {isRunningCheck ? (
+                  <ActivityIndicator color={colors.primary} size="small" />
+                ) : (
+                  <>
+                    <MaterialIcons name="perm-scan-wifi" size={22} color={colors.primary} />
+                    <Text
+                      style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
+                      numberOfLines={1}
+                    >
+                      {t('home.quickCheck')}
+                    </Text>
+                  </>
+                )}
+              </TouchableOpacity>
+
+              {/* Speedtest Button */}
+              <TouchableOpacity
+                style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                onPress={() => setShowSpeedtestModal(true)}
+              >
+                <MaterialIcons name="speed" size={22} color={colors.primary} />
+                <Text
+                  style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
+                  numberOfLines={1}
+                >
+                  {t('home.speedtest')}
                 </Text>
               </TouchableOpacity>
             </View>
+          </CollapsibleCard>
 
-            {/* Last Cleared Text */}
-            {lastClearedDate && (
-              <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
-                {t('home.lastCleared')}: {new Date(lastClearedDate).toLocaleDateString()}
+          {/* Signal Strength Card */}
+          {signalInfo && (signalInfo.rssi || signalInfo.rsrp) ? (
+            <CollapsibleCard title={t('home.signalInfo')}>
+              <SignalCard
+                title={t('home.signalStrength')}
+                badge={t(`home.signal${getSignalStrength(signalInfo.rssi).charAt(0).toUpperCase()}${getSignalStrength(signalInfo.rssi).slice(1)}`)}
+                color="blue"
+                icon="signal-cellular-alt"
+                metrics={[
+                  ...(signalInfo.rssi ? [{
+                    label: 'RSSI',
+                    value: signalInfo.rssi,
+                    unit: 'dBm',
+                    quality: getSignalQuality(parseFloat(signalInfo.rssi), { excellent: -65, good: -75, fair: -85, poor: -95 }, true),
+                  }] : []),
+                  ...(signalInfo.rsrp ? [{
+                    label: 'RSRP',
+                    value: signalInfo.rsrp,
+                    unit: 'dBm',
+                    quality: getSignalQuality(parseFloat(signalInfo.rsrp), { excellent: -80, good: -90, fair: -100, poor: -110 }, true),
+                  }] : []),
+                  ...(signalInfo.rsrq ? [{
+                    label: 'RSRQ',
+                    value: signalInfo.rsrq,
+                    unit: 'dB',
+                    quality: getSignalQuality(parseFloat(signalInfo.rsrq), { excellent: -5, good: -9, fair: -12, poor: -15 }, true),
+                  }] : []),
+                  ...(signalInfo.sinr ? [{
+                    label: 'SINR',
+                    value: signalInfo.sinr,
+                    unit: 'dB',
+                    quality: getSignalQuality(parseFloat(signalInfo.sinr), { excellent: 20, good: 13, fair: 6, poor: 0 }, false),
+                  }] : []),
+                ]}
+                band={signalInfo.band ? getLteBandInfo(signalInfo.band) : undefined}
+                cellId={signalInfo.cellId}
+              />
+            </CollapsibleCard>
+          ) : (
+            <CollapsibleCard title={t('home.signalInfo')}>
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>
+                ⚠️ {t('home.noSignalAvailable')}{'\n'}
+                {t('home.checkLogin')}
               </Text>
-            )}
-          </Card>
-        )}
+            </CollapsibleCard>
+          )}
 
-        {/* Hidden WebView for auto re-login when session expires */}
-        <WebViewLogin
-          modemIp={credentials?.modemIp || '192.168.8.1'}
-          username={credentials?.username || 'admin'}
-          password={credentials?.password || ''}
-          visible={showReloginWebView}
-          hidden={true}
-          onClose={() => {
-            setShowReloginWebView(false);
-            // If user cancels re-login, show error
-            if (authSessionExpired) {
-              ThemedAlertHelper.alert(t('common.error'), t('alerts.sessionExpired'));
-            }
-          }}
-          onLoginSuccess={handleReloginSuccess}
-          onTimeout={async () => {
-            // Session re-login timed out, redirect to login screen
-            setShowReloginWebView(false);
-            requestRelogin();
-            await logout();
-            router.replace('/login');
-          }}
-        />
+          {/* Traffic Statistics Card */}
+          {trafficStats && (
+            <Card style={{ marginBottom: spacing.md }}>
+              {/* Header with gear icon - centered title */}
+              <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm }}>
+                <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{t('home.trafficStats')}</Text>
+              </View>
 
-        {/* LTE Band Selection Modal */}
-        <BandSelectionModal
-          visible={showBandModal}
-          onClose={() => setShowBandModal(false)}
-          modemService={modemService}
-          onSaved={() => {
-            if (modemService) loadBands(modemService);
-          }}
-        />
+              {/* Divider below header */}
+              <View style={{ height: 1, backgroundColor: colors.border, marginBottom: spacing.md }} />
 
-        {/* Monthly Usage Settings Modal */}
-        <MonthlySettingsModal
-          visible={showMonthlySettingsModal}
-          onClose={() => setShowMonthlySettingsModal(false)}
-          onSave={handleSaveMonthlySettings}
-          initialSettings={monthlySettings || undefined}
-        />
+              {/* Speed Gauge */}
+              <SpeedGauge
+                downloadSpeed={trafficStats.currentDownloadRate}
+                uploadSpeed={trafficStats.currentUploadRate}
+              />
 
-        {/* Diagnosis Result Modal */}
-        <DiagnosisResultModal
-          visible={showDiagnosisModal}
-          onClose={() => setShowDiagnosisModal(false)}
-          title={diagnosisTitle}
-          results={diagnosisResults}
-          summary={diagnosisSummary}
-        />
+              {/* Divider */}
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-        {/* Speedtest Modal */}
-        <SpeedtestModal
-          visible={showSpeedtestModal}
-          onClose={() => setShowSpeedtestModal(false)}
-        />
-      </ScrollView>
-    </MeshGradientBackground>
+              {/* Daily Usage Card */}
+              <DailyUsageCard
+                usage={trafficStats.dayUsed}
+                duration={trafficStats.dayDuration}
+                style={{ marginBottom: spacing.md }}
+              />
+
+              {usageCardStyle === 'compact' ? (
+                <CompactUsageCard
+                  stats={trafficStats}
+                  dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
+                />
+              ) : (
+                <>
+                  {/* Session Usage Card */}
+                  <UsageCard
+                    title={t('home.session') || "Session"}
+                    download={trafficStats.currentDownload}
+                    upload={trafficStats.currentUpload}
+                    duration={trafficStats.currentConnectTime}
+                    variant="session"
+                    style={{ marginBottom: spacing.md }}
+                  />
+
+                  {/* Monthly Usage Card */}
+                  <UsageCard
+                    title={t('home.monthlyUsage') || "Monthly Usage"}
+                    download={trafficStats.monthDownload || trafficStats.totalDownload}
+                    upload={trafficStats.monthUpload || trafficStats.totalUpload}
+                    duration={trafficStats.monthDuration}
+                    variant="monthly"
+                    dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
+                  />
+
+                  {/* Total Usage Card */}
+                  <UsageCard
+                    title={t('home.totalUsage') || "Total Usage"}
+                    badge={formatDuration(trafficStats.totalConnectTime, durationUnits)}
+                    download={trafficStats.totalDownload}
+                    upload={trafficStats.totalUpload}
+                    icon="data-usage"
+                  />
+                </>
+              )}
+
+              {/* Divider */}
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+              {/* Actions: Clear History + Monthly Settings */}
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md, gap: 12 }}>
+                {/* Clear History Button */}
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: spacing.sm,
+                    backgroundColor: colors.error + '15',
+                    borderRadius: 8,
+                    opacity: isClearingHistory ? 0.6 : 1,
+                  }}
+                  onPress={handleClearHistory}
+                  disabled={isClearingHistory}
+                >
+                  {isClearingHistory ? (
+                    <ActivityIndicator size="small" color={colors.error} />
+                  ) : (
+                    <>
+                      <MaterialIcons name="delete-outline" size={18} color={colors.error} />
+                      <Text style={[typography.caption1, { color: colors.error, marginLeft: 6, fontWeight: '600' }]}>
+                        {t('home.clearHistory')}
+                      </Text>
+                    </>
+                  )}
+                </TouchableOpacity>
+
+                {/* Monthly Settings Button */}
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    paddingVertical: spacing.sm,
+                    backgroundColor: colors.primary + '15',
+                    borderRadius: 8,
+                  }}
+                  onPress={() => setShowMonthlySettingsModal(true)}
+                >
+                  <MaterialIcons name="data-saver-on" size={18} color={colors.primary} />
+                  <Text style={[typography.caption1, { color: colors.primary, marginLeft: 6, fontWeight: '600' }]}>
+                    {t('home.monthlySettings') || 'Monthly Limit'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Last Cleared Text */}
+              {lastClearedDate && (
+                <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: spacing.sm, textAlign: 'center' }]}>
+                  {t('home.lastCleared')}: {new Date(lastClearedDate).toLocaleDateString()}
+                </Text>
+              )}
+            </Card>
+          )}
+
+          {/* Hidden WebView for auto re-login when session expires */}
+          <WebViewLogin
+            modemIp={credentials?.modemIp || '192.168.8.1'}
+            username={credentials?.username || 'admin'}
+            password={credentials?.password || ''}
+            visible={showReloginWebView}
+            hidden={true}
+            onClose={() => {
+              setShowReloginWebView(false);
+              // If user cancels re-login, show error
+              if (authSessionExpired) {
+                ThemedAlertHelper.alert(t('common.error'), t('alerts.sessionExpired'));
+              }
+            }}
+            onLoginSuccess={handleReloginSuccess}
+            onTimeout={async () => {
+              // Session re-login timed out, redirect to login screen
+              setShowReloginWebView(false);
+              requestRelogin();
+              await logout();
+              router.replace('/login');
+            }}
+          />
+
+          {/* LTE Band Selection Modal */}
+          <BandSelectionModal
+            visible={showBandModal}
+            onClose={() => setShowBandModal(false)}
+            modemService={modemService}
+            onSaved={() => {
+              if (modemService) loadBands(modemService);
+            }}
+          />
+
+          {/* Monthly Usage Settings Modal */}
+          <MonthlySettingsModal
+            visible={showMonthlySettingsModal}
+            onClose={() => setShowMonthlySettingsModal(false)}
+            onSave={handleSaveMonthlySettings}
+            initialSettings={monthlySettings || undefined}
+          />
+
+          {/* Diagnosis Result Modal */}
+          <DiagnosisResultModal
+            visible={showDiagnosisModal}
+            onClose={() => setShowDiagnosisModal(false)}
+            title={diagnosisTitle}
+            results={diagnosisResults}
+            summary={diagnosisSummary}
+          />
+
+          {/* Speedtest Modal */}
+          <SpeedtestModal
+            visible={showSpeedtestModal}
+            onClose={() => setShowSpeedtestModal(false)}
+          />
+        </ScrollView>
+      </MeshGradientBackground>
+    </AnimatedScreen>
   );
 }
 

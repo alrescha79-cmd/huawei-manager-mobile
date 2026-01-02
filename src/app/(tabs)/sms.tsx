@@ -15,7 +15,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground } from '@/components';
+import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
@@ -262,164 +262,166 @@ export default function SMSScreen() {
 
   return (
     <>
-      <MeshGradientBackground>
-        <ScrollView
-          style={[styles.container, { backgroundColor: 'transparent' }]}
-          contentContainerStyle={[
-            styles.content,
-            { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0), paddingBottom: 80 }
-          ]}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefreshing}
-              onRefresh={handleRefresh}
-              tintColor={colors.primary}
-            />
-          }
-        >
+      <AnimatedScreen>
+        <MeshGradientBackground>
+          <ScrollView
+            style={[styles.container, { backgroundColor: 'transparent' }]}
+            contentContainerStyle={[
+              styles.content,
+              { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0), paddingBottom: 80 }
+            ]}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefreshing}
+                onRefresh={handleRefresh}
+                tintColor={colors.primary}
+              />
+            }
+          >
 
-          {/* SMS Count Card */}
-          {smsCount && (
-            <Card style={{ marginBottom: spacing.md }}>
-              <CardHeader title={t('sms.smsCount')} />
-              <View style={styles.countRow}>
-                <View style={styles.countItem}>
-                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    {t('sms.unread')}
-                  </Text>
-                  <Text style={[typography.title2, { color: colors.primary }]}>
-                    {smsCount.localUnread}
-                  </Text>
+            {/* SMS Count Card */}
+            {smsCount && (
+              <Card style={{ marginBottom: spacing.md }}>
+                <CardHeader title={t('sms.smsCount')} />
+                <View style={styles.countRow}>
+                  <View style={styles.countItem}>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {t('sms.unread')}
+                    </Text>
+                    <Text style={[typography.title2, { color: colors.primary }]}>
+                      {smsCount.localUnread}
+                    </Text>
+                  </View>
+                  <View style={styles.countItem}>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {t('sms.inbox')}
+                    </Text>
+                    <Text style={[typography.title2, { color: colors.text }]}>
+                      {smsCount.localInbox}
+                    </Text>
+                  </View>
+                  <View style={styles.countItem}>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {t('sms.sent')}
+                    </Text>
+                    <Text style={[typography.title2, { color: colors.text }]}>
+                      {smsCount.localOutbox}
+                    </Text>
+                  </View>
                 </View>
-                <View style={styles.countItem}>
-                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    {t('sms.inbox')}
-                  </Text>
-                  <Text style={[typography.title2, { color: colors.text }]}>
-                    {smsCount.localInbox}
-                  </Text>
-                </View>
-                <View style={styles.countItem}>
-                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    {t('sms.sent')}
-                  </Text>
-                  <Text style={[typography.title2, { color: colors.text }]}>
-                    {smsCount.localOutbox}
-                  </Text>
-                </View>
+              </Card>
+            )}
+
+            {/* Messages List */}
+            {!smsSupported || messages.length === 0 ? (
+              <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
+                <MaterialIcons name="sms" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+                <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
+                  {isRefreshing ? t('sms.loadingMessages') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
+                </Text>
               </View>
-            </Card>
-          )}
+            ) : (
+              <View style={[styles.messagesList, { backgroundColor: colors.card }]}>
+                {messages.map((message, index) => {
+                  // Get initials from phone number (last 2 digits)
+                  const initials = message.phone.slice(-2);
+                  // Format relative time
+                  const messageDate = dayjs(message.date);
+                  const now = dayjs();
+                  let timeDisplay = '';
+                  if (now.diff(messageDate, 'day') === 0) {
+                    timeDisplay = messageDate.format('h:mm A');
+                  } else if (now.diff(messageDate, 'day') === 1) {
+                    timeDisplay = t('sms.yesterday') || 'Yesterday';
+                  } else if (now.diff(messageDate, 'day') < 7) {
+                    timeDisplay = messageDate.format('ddd');
+                  } else {
+                    timeDisplay = messageDate.format('MMM D');
+                  }
+                  const isUnread = message.smstat === '0';
+                  const isLast = index === messages.length - 1;
 
-          {/* Messages List */}
-          {!smsSupported || messages.length === 0 ? (
-            <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
-              <MaterialIcons name="sms" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
-              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
-                {isRefreshing ? t('sms.loadingMessages') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
-              </Text>
-            </View>
-          ) : (
-            <View style={[styles.messagesList, { backgroundColor: colors.card }]}>
-              {messages.map((message, index) => {
-                // Get initials from phone number (last 2 digits)
-                const initials = message.phone.slice(-2);
-                // Format relative time
-                const messageDate = dayjs(message.date);
-                const now = dayjs();
-                let timeDisplay = '';
-                if (now.diff(messageDate, 'day') === 0) {
-                  timeDisplay = messageDate.format('h:mm A');
-                } else if (now.diff(messageDate, 'day') === 1) {
-                  timeDisplay = t('sms.yesterday') || 'Yesterday';
-                } else if (now.diff(messageDate, 'day') < 7) {
-                  timeDisplay = messageDate.format('ddd');
-                } else {
-                  timeDisplay = messageDate.format('MMM D');
-                }
-                const isUnread = message.smstat === '0';
-                const isLast = index === messages.length - 1;
+                  return (
+                    <TouchableOpacity
+                      key={message.index}
+                      onPress={() => handleOpenDetail(message)}
+                      activeOpacity={0.6}
+                      style={[
+                        styles.messageItem,
+                        !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border }
+                      ]}
+                    >
+                      {/* Avatar */}
+                      <View style={[
+                        styles.avatar,
+                        { backgroundColor: isUnread ? colors.primary : colors.textSecondary }
+                      ]}>
+                        <Text style={styles.avatarText}>{initials}</Text>
+                      </View>
 
-                return (
-                  <TouchableOpacity
-                    key={message.index}
-                    onPress={() => handleOpenDetail(message)}
-                    activeOpacity={0.6}
-                    style={[
-                      styles.messageItem,
-                      !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border }
-                    ]}
-                  >
-                    {/* Avatar */}
-                    <View style={[
-                      styles.avatar,
-                      { backgroundColor: isUnread ? colors.primary : colors.textSecondary }
-                    ]}>
-                      <Text style={styles.avatarText}>{initials}</Text>
-                    </View>
-
-                    {/* Content */}
-                    <View style={styles.messageContent}>
-                      <View style={styles.messageTopRow}>
-                        <Text style={[
-                          typography.headline,
-                          {
-                            color: colors.text,
-                            fontWeight: isUnread ? '700' : '500',
-                            flex: 1,
-                          }
-                        ]} numberOfLines={1}>
-                          {message.phone}
-                        </Text>
-                        <Text style={[
-                          typography.caption1,
-                          {
-                            color: isUnread ? colors.primary : colors.textSecondary,
-                            fontWeight: isUnread ? '600' : '400',
-                            marginLeft: 8,
-                          }
-                        ]}>
-                          {timeDisplay}
+                      {/* Content */}
+                      <View style={styles.messageContent}>
+                        <View style={styles.messageTopRow}>
+                          <Text style={[
+                            typography.headline,
+                            {
+                              color: colors.text,
+                              fontWeight: isUnread ? '700' : '500',
+                              flex: 1,
+                            }
+                          ]} numberOfLines={1}>
+                            {message.phone}
+                          </Text>
+                          <Text style={[
+                            typography.caption1,
+                            {
+                              color: isUnread ? colors.primary : colors.textSecondary,
+                              fontWeight: isUnread ? '600' : '400',
+                              marginLeft: 8,
+                            }
+                          ]}>
+                            {timeDisplay}
+                          </Text>
+                        </View>
+                        <Text
+                          style={[
+                            typography.body,
+                            {
+                              color: isUnread ? colors.text : colors.textSecondary,
+                              fontWeight: isUnread ? '500' : '400',
+                              marginTop: 2,
+                            }
+                          ]}
+                          numberOfLines={1}
+                        >
+                          {message.content}
                         </Text>
                       </View>
-                      <Text
-                        style={[
-                          typography.body,
-                          {
-                            color: isUnread ? colors.text : colors.textSecondary,
-                            fontWeight: isUnread ? '500' : '400',
-                            marginTop: 2,
-                          }
-                        ]}
-                        numberOfLines={1}
-                      >
-                        {message.content}
-                      </Text>
-                    </View>
 
-                    {/* Unread indicator */}
-                    {isUnread && (
-                      <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]} />
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </View>
-          )}
-        </ScrollView>
+                      {/* Unread indicator */}
+                      {isUnread && (
+                        <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
+          </ScrollView>
 
-        {/* Floating Action Button for New Message */}
-        <TouchableOpacity
-          style={[
-            styles.fab,
-            { backgroundColor: colors.primary }
-          ]}
-          onPress={() => setShowCompose(true)}
-          activeOpacity={0.8}
-        >
-          <MaterialIcons name="add" size={28} color="#FFF" />
-        </TouchableOpacity>
-      </MeshGradientBackground>
+          {/* Floating Action Button for New Message */}
+          <TouchableOpacity
+            style={[
+              styles.fab,
+              { backgroundColor: colors.primary }
+            ]}
+            onPress={() => setShowCompose(true)}
+            activeOpacity={0.8}
+          >
+            <MaterialIcons name="add" size={28} color="#FFF" />
+          </TouchableOpacity>
+        </MeshGradientBackground>
+      </AnimatedScreen>
 
       {/* Compose Modal */}
       <Modal
