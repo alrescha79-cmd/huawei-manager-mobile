@@ -59,12 +59,7 @@ export default function RootLayout() {
         if (Platform.OS === 'android') {
             const configureNavBar = async () => {
                 try {
-                    // Enable edge-to-edge (draw behind nav bar) - Handled by app.json edgeToEdgeEnabled: true
-                    // await NavigationBar.setPositionAsync('absolute'); // Causes warning
-                    // Make nav bar transparent so app background shows through
-                    // await NavigationBar.setBackgroundColorAsync('#00000000'); // Causes warning
-
-                    // Set icons to be visible (opposite of theme)
+                    // Only set button style - background color not supported with edge-to-edge
                     await NavigationBar.setButtonStyleAsync(isDark ? 'light' : 'dark');
                 } catch (e) {
                     console.warn('Failed to configure navigation bar:', e);

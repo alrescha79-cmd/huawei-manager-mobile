@@ -17,8 +17,22 @@ const StatusBarHeader = () => {
       <StatusBar
         barStyle={isDark ? 'light-content' : 'dark-content'}
         backgroundColor={colors.background}
-        translucent={false}
+        translucent={true}
       />
+      {/* Solid background behind status bar to prevent content overlap */}
+      {Platform.OS === 'android' && (
+        <View
+          style={{
+            height: StatusBar.currentHeight || 24,
+            backgroundColor: colors.background,
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 1000,
+          }}
+        />
+      )}
     </>
   );
 };

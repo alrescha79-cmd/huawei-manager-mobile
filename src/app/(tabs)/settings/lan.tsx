@@ -5,7 +5,6 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    Switch,
     ActivityIndicator,
     TextInput,
     Modal,
@@ -20,7 +19,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader } from '@/components';
+import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch } from '@/components';
 
 const ETHERNET_MODES = [
     { value: 'auto', labelKey: 'networkSettings.modeAuto' },
@@ -366,7 +365,7 @@ export default function LanSettingsScreen() {
                         title={t('networkSettings.dhcpServer')}
                         rightElement={
                             isTogglingDhcp ? <ActivityIndicator size="small" /> : (
-                                <Switch value={dhcpSettings.dhcpStatus} onValueChange={handleDHCPToggle} trackColor={{ false: colors.border, true: colors.primary }} thumbColor="white" />
+                                <ThemedSwitch value={dhcpSettings.dhcpStatus} onValueChange={handleDHCPToggle} />
                             )
                         }
                         showChevron={false}
@@ -570,11 +569,9 @@ export default function LanSettingsScreen() {
                                         <Text style={[typography.body, { color: colors.text, fontWeight: 'bold' }]}>{t('networkSettings.setAsDefault')}</Text>
                                         <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('networkSettings.setAsDefaultHint')}</Text>
                                     </View>
-                                    <Switch
+                                    <ThemedSwitch
                                         value={apnIsDefault}
                                         onValueChange={setApnIsDefault}
-                                        trackColor={{ false: colors.border, true: colors.primary }}
-                                        thumbColor={'#FFF'}
                                         disabled={editingApn === activeApnProfileId}
                                     />
                                 </View>

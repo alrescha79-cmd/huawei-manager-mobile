@@ -286,7 +286,7 @@ export function WebViewLogin({
         >
             {hidden ? (
                 // Hidden mode - show loading overlay or timeout UI
-                <View style={[styles.hiddenContainer, { backgroundColor: 'rgba(0,0,0,0.7)' }]}>
+                <View style={[styles.hiddenContainer, { backgroundColor: 'rgba(0,0,0,0.85)' }]}>
                     <View style={[styles.hiddenContent, { backgroundColor: colors.card }]}>
                         {isTimedOut ? (
                             // Timeout UI with retry options

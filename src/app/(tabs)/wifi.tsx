@@ -5,7 +5,6 @@ import {
   StyleSheet,
   ScrollView,
   RefreshControl,
-  Switch,
   StatusBar,
   Platform,
   TextInput,
@@ -19,7 +18,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground } from '@/components';
+import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch } from '@/components';
 import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -600,336 +599,289 @@ export default function WiFiScreen() {
 
 
   return (
-    <MeshGradientBackground>
-      <ScrollView
-        style={[styles.container, { backgroundColor: 'transparent' }]}
-        contentContainerStyle={[
-          styles.content,
-          { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
-        ]}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefreshing}
-            onRefresh={handleRefresh}
-            tintColor={colors.primary}
-          />
-        }
-      >
-        <View style={styles.header} />
+    <AnimatedScreen>
+      <MeshGradientBackground>
+        <ScrollView
+          style={[styles.container, { backgroundColor: 'transparent' }]}
+          contentContainerStyle={[
+            styles.content,
+            { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
+          ]}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={handleRefresh}
+              tintColor={colors.primary}
+            />
+          }
+        >
+          <View style={styles.header} />
 
-        {/* WiFi Settings Card */}
-        {wifiSettings && (
-          <Card style={{ marginBottom: spacing.md }}>
-            <CardHeader title={t('wifi.wifiSettings')} />
+          {/* WiFi Settings Card */}
+          {wifiSettings && (
+            <Card style={{ marginBottom: spacing.md }}>
+              <CardHeader title={t('wifi.wifiSettings')} />
 
-            {/* WiFi Enable Toggle */}
-            <View style={styles.toggleRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.body, { color: colors.text }]}>WiFi</Text>
-                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  {wifiSettings.wifiEnable ? t('wifi.enabled') : t('wifi.disabled')}
-                </Text>
-              </View>
-              <Switch
-                value={wifiSettings.wifiEnable}
-                onValueChange={handleToggleWiFi}
-                trackColor={{ false: colors.border, true: colors.primary + '80' }}
-                thumbColor={wifiSettings.wifiEnable ? colors.primary : colors.textSecondary}
-              />
-            </View>
-
-            {/* Guest WiFi Toggle */}
-            <View style={styles.toggleRow}>
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.body, { color: colors.text }]}>{t('wifi.guestWifi')}</Text>
-                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  {guestWifiEnabled ? t('wifi.enabled') : t('wifi.disabled')}
-                </Text>
-              </View>
-              {isTogglingGuest ? (
-                <ActivityIndicator color={colors.primary} />
-              ) : (
-                <Switch
-                  value={guestWifiEnabled}
-                  onValueChange={handleToggleGuestWiFi}
-                  trackColor={{ false: colors.border, true: colors.primary + '80' }}
-                  thumbColor={guestWifiEnabled ? colors.primary : colors.textSecondary}
+              {/* WiFi Enable Toggle */}
+              <View style={styles.toggleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text }]}>WiFi</Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {wifiSettings.wifiEnable ? t('wifi.enabled') : t('wifi.disabled')}
+                  </Text>
+                </View>
+                <ThemedSwitch
+                  value={wifiSettings.wifiEnable}
+                  onValueChange={handleToggleWiFi}
                 />
-              )}
-            </View>
+              </View>
 
-            {/* Guest WiFi Extended Settings - Only shown when enabled */}
-            {guestWifiEnabled && (
-              <View style={{ marginTop: spacing.md, paddingLeft: spacing.md }}>
-                {/* Duration Dropdown */}
-                <View style={styles.formGroup}>
-                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-                    {t('wifi.duration')}
+              {/* Guest WiFi Toggle */}
+              <View style={styles.toggleRow}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text }]}>{t('wifi.guestWifi')}</Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {guestWifiEnabled ? t('wifi.enabled') : t('wifi.disabled')}
                   </Text>
-                  <TouchableOpacity
-                    style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-                    onPress={() => setShowGuestDurationDropdown(!showGuestDurationDropdown)}
-                  >
-                    <Text style={[typography.body, { color: colors.text }]}>
-                      {guestWifiDuration === '0' ? t('wifi.durationUnlimited') :
-                        guestWifiDuration === '24' ? t('wifi.duration1Day') :
-                          guestWifiDuration === '4' ? t('wifi.duration4Hours') : t('wifi.durationUnlimited')}
-                    </Text>
-                    <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                  {showGuestDurationDropdown && (
-                    <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                      {[
-                        { value: '0', label: t('wifi.durationUnlimited') },
-                        { value: '24', label: t('wifi.duration1Day') },
-                        { value: '4', label: t('wifi.duration4Hours') },
-                      ].map((option) => (
-                        <TouchableOpacity
-                          key={option.value}
-                          style={[styles.dropdownItem, guestWifiDuration === option.value && { backgroundColor: colors.primary + '20' }]}
-                          onPress={() => {
-                            setGuestWifiDuration(option.value);
-                            setShowGuestDurationDropdown(false);
-                          }}
-                        >
-                          <Text style={[typography.body, { color: guestWifiDuration === option.value ? colors.primary : colors.text }]}>
-                            {option.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
                 </View>
-
-                {/* Time Remaining - Only shown when duration is not unlimited */}
-                {guestWifiDuration !== '0' && isTimeRemainingActive && (
-                  <View style={[styles.formGroup, { backgroundColor: colors.card, padding: spacing.md, borderRadius: 8, marginTop: spacing.sm }]}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-                      {t('wifi.timeRemaining')}
-                    </Text>
-                    <Text style={[typography.body, { color: colors.primary, fontFamily: 'monospace', fontSize: 20, fontWeight: 'bold' }]}>
-                      {formatTimeRemaining(guestTimeRemaining)}
-                    </Text>
-                    <TouchableOpacity
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        backgroundColor: colors.success,
-                        paddingVertical: spacing.sm,
-                        paddingHorizontal: spacing.md,
-                        borderRadius: 6,
-                        marginTop: spacing.sm,
-                        opacity: isExtendingTime ? 0.6 : 1,
-                      }}
-                      onPress={handleExtendGuestTime}
-                      disabled={isExtendingTime}
-                    >
-                      {isExtendingTime ? (
-                        <ActivityIndicator color="#fff" size="small" />
-                      ) : (
-                        <>
-                          <MaterialIcons name="add" size={18} color="#fff" />
-                          <Text style={[typography.caption1, { color: '#fff', marginLeft: 4, fontWeight: '600' }]}>
-                            {t('wifi.extend30Min')}
-                          </Text>
-                        </>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                )}
-
-                {/* WiFi Name */}
-                <View style={styles.formGroup}>
-                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-                    {t('wifi.guestSsid')}
-                  </Text>
-                  <TextInput
-                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                    value={guestWifiSsid}
-                    onChangeText={setGuestWifiSsid}
-                    placeholder={t('wifi.enterSsid')}
-                    placeholderTextColor={colors.textSecondary}
+                {isTogglingGuest ? (
+                  <ActivityIndicator color={colors.primary} />
+                ) : (
+                  <ThemedSwitch
+                    value={guestWifiEnabled}
+                    onValueChange={handleToggleGuestWiFi}
                   />
-                </View>
+                )}
+              </View>
 
-                {/* Security Dropdown */}
-                <View style={styles.formGroup}>
-                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-                    {t('wifi.security')}
-                  </Text>
-                  <TouchableOpacity
-                    style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-                    onPress={() => setShowGuestSecurityDropdown(!showGuestSecurityDropdown)}
-                  >
-                    <Text style={[typography.body, { color: colors.text }]}>
-                      {guestWifiSecurity === 'OPEN' ? t('wifi.securityOpen') : t('wifi.securityEncrypted')}
-                    </Text>
-                    <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                  {showGuestSecurityDropdown && (
-                    <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                      {[
-                        { value: 'OPEN', label: t('wifi.securityOpen') },
-                        { value: 'WPA2-PSK', label: t('wifi.securityEncrypted') },
-                      ].map((option) => (
-                        <TouchableOpacity
-                          key={option.value}
-                          style={[styles.dropdownItem, guestWifiSecurity === option.value && { backgroundColor: colors.primary + '20' }]}
-                          onPress={() => {
-                            setGuestWifiSecurity(option.value);
-                            setShowGuestSecurityDropdown(false);
-                          }}
-                        >
-                          <Text style={[typography.body, { color: guestWifiSecurity === option.value ? colors.primary : colors.text }]}>
-                            {option.label}
-                          </Text>
-                        </TouchableOpacity>
-                      ))}
-                    </View>
-                  )}
-                </View>
-
-                {/* Password - Only shown when security is not OPEN */}
-                {guestWifiSecurity !== 'OPEN' && (
+              {/* Guest WiFi Extended Settings - Only shown when enabled */}
+              {guestWifiEnabled && (
+                <View style={{ marginTop: spacing.md, paddingLeft: spacing.md }}>
+                  {/* Duration Dropdown */}
                   <View style={styles.formGroup}>
                     <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
-                      {t('wifi.password')}
+                      {t('wifi.duration')}
+                    </Text>
+                    <TouchableOpacity
+                      style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => setShowGuestDurationDropdown(!showGuestDurationDropdown)}
+                    >
+                      <Text style={[typography.body, { color: colors.text }]}>
+                        {guestWifiDuration === '0' ? t('wifi.durationUnlimited') :
+                          guestWifiDuration === '24' ? t('wifi.duration1Day') :
+                            guestWifiDuration === '4' ? t('wifi.duration4Hours') : t('wifi.durationUnlimited')}
+                      </Text>
+                      <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                    {showGuestDurationDropdown && (
+                      <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        {[
+                          { value: '0', label: t('wifi.durationUnlimited') },
+                          { value: '24', label: t('wifi.duration1Day') },
+                          { value: '4', label: t('wifi.duration4Hours') },
+                        ].map((option) => (
+                          <TouchableOpacity
+                            key={option.value}
+                            style={[styles.dropdownItem, guestWifiDuration === option.value && { backgroundColor: colors.primary + '20' }]}
+                            onPress={() => {
+                              setGuestWifiDuration(option.value);
+                              setShowGuestDurationDropdown(false);
+                            }}
+                          >
+                            <Text style={[typography.body, { color: guestWifiDuration === option.value ? colors.primary : colors.text }]}>
+                              {option.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
+                  </View>
+
+                  {/* Time Remaining - Only shown when duration is not unlimited */}
+                  {guestWifiDuration !== '0' && isTimeRemainingActive && (
+                    <View style={[styles.formGroup, { backgroundColor: colors.card, padding: spacing.md, borderRadius: 8, marginTop: spacing.sm }]}>
+                      <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                        {t('wifi.timeRemaining')}
+                      </Text>
+                      <Text style={[typography.body, { color: colors.primary, fontFamily: 'monospace', fontSize: 20, fontWeight: 'bold' }]}>
+                        {formatTimeRemaining(guestTimeRemaining)}
+                      </Text>
+                      <TouchableOpacity
+                        style={{
+                          flexDirection: 'row',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          backgroundColor: colors.success,
+                          paddingVertical: spacing.sm,
+                          paddingHorizontal: spacing.md,
+                          borderRadius: 6,
+                          marginTop: spacing.sm,
+                          opacity: isExtendingTime ? 0.6 : 1,
+                        }}
+                        onPress={handleExtendGuestTime}
+                        disabled={isExtendingTime}
+                      >
+                        {isExtendingTime ? (
+                          <ActivityIndicator color="#fff" size="small" />
+                        ) : (
+                          <>
+                            <MaterialIcons name="add" size={18} color="#fff" />
+                            <Text style={[typography.caption1, { color: '#fff', marginLeft: 4, fontWeight: '600' }]}>
+                              {t('wifi.extend30Min')}
+                            </Text>
+                          </>
+                        )}
+                      </TouchableOpacity>
+                    </View>
+                  )}
+
+                  {/* WiFi Name */}
+                  <View style={styles.formGroup}>
+                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                      {t('wifi.guestSsid')}
                     </Text>
                     <TextInput
                       style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                      value={guestWifiPassword}
-                      onChangeText={setGuestWifiPassword}
-                      placeholder={t('wifi.enterPassword')}
+                      value={guestWifiSsid}
+                      onChangeText={setGuestWifiSsid}
+                      placeholder={t('wifi.enterSsid')}
                       placeholderTextColor={colors.textSecondary}
-                      secureTextEntry
                     />
                   </View>
-                )}
 
-                {/* Save Button */}
-                <TouchableOpacity
-                  style={[
-                    styles.saveButton,
-                    { backgroundColor: colors.primary },
-                    isSavingGuestSettings && { opacity: 0.6 }
-                  ]}
-                  onPress={handleSaveGuestSettings}
-                  disabled={isSavingGuestSettings}
-                >
-                  {isSavingGuestSettings ? (
-                    <ActivityIndicator color="#fff" />
-                  ) : (
-                    <Text style={[typography.body, { color: '#fff', fontWeight: '600' }]}>{t('common.save')}</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Separator */}
-            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-
-            {/* Edit WiFi Settings - Collapsible Header */}
-            <TouchableOpacity
-              style={[styles.collapseHeader, { borderColor: colors.border }]}
-              onPress={() => setIsEditExpanded(!isEditExpanded)}
-            >
-              <View style={{ flex: 1 }}>
-                <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
-                  {t('wifi.editSettings')}
-                </Text>
-                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                  {t('wifi.editSettingsHint')}
-                </Text>
-              </View>
-              <MaterialIcons
-                name={isEditExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
-                size={24}
-                color={colors.textSecondary}
-              />
-            </TouchableOpacity>
-
-            {/* Collapsible Content */}
-            {isEditExpanded && (
-              <View style={{ marginTop: spacing.md }}>
-
-                {/* SSID Input */}
-                <View style={styles.formGroup}>
-                  <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
-                    {t('wifi.wifiName')}
-                  </Text>
-                  <TextInput
-                    style={[styles.input, {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border,
-                      color: colors.text
-                    }]}
-                    value={formSsid}
-                    onChangeText={setFormSsid}
-                    placeholder={t('wifi.wifiNamePlaceholder')}
-                    placeholderTextColor={colors.textSecondary}
-                  />
-                </View>
-
-                {/* Security Mode Dropdown - DISABLED (encryption not supported yet) */}
-                <View style={[styles.formGroup, { opacity: 0.5 }]}>
-                  <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
-                    {t('wifi.securityMode')}
-                  </Text>
-                  <View
-                    style={[styles.dropdown, {
-                      backgroundColor: colors.card,
-                      borderColor: colors.border
-                    }]}
-                  >
-                    <Text style={[typography.body, { color: colors.text }]}>
-                      {getSecurityModeLabel(formSecurityMode)}
+                  {/* Security Dropdown */}
+                  <View style={styles.formGroup}>
+                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                      {t('wifi.security')}
                     </Text>
-                    <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
+                    <TouchableOpacity
+                      style={[styles.dropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => setShowGuestSecurityDropdown(!showGuestSecurityDropdown)}
+                    >
+                      <Text style={[typography.body, { color: colors.text }]}>
+                        {guestWifiSecurity === 'OPEN' ? t('wifi.securityOpen') : t('wifi.securityEncrypted')}
+                      </Text>
+                      <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                    {showGuestSecurityDropdown && (
+                      <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        {[
+                          { value: 'OPEN', label: t('wifi.securityOpen') },
+                          { value: 'WPA2-PSK', label: t('wifi.securityEncrypted') },
+                        ].map((option) => (
+                          <TouchableOpacity
+                            key={option.value}
+                            style={[styles.dropdownItem, guestWifiSecurity === option.value && { backgroundColor: colors.primary + '20' }]}
+                            onPress={() => {
+                              setGuestWifiSecurity(option.value);
+                              setShowGuestSecurityDropdown(false);
+                            }}
+                          >
+                            <Text style={[typography.body, { color: guestWifiSecurity === option.value ? colors.primary : colors.text }]}>
+                              {option.label}
+                            </Text>
+                          </TouchableOpacity>
+                        ))}
+                      </View>
+                    )}
                   </View>
-                  <TouchableOpacity onPress={() => Linking.openURL(`http://${credentials?.modemIp || '192.168.8.1'}`)}>
-                    <Text style={[typography.caption1, { color: colors.primary, marginTop: 4, fontStyle: 'italic' }]}>
-                      {t('wifi.useWebInterface')} →
-                    </Text>
+
+                  {/* Password - Only shown when security is not OPEN */}
+                  {guestWifiSecurity !== 'OPEN' && (
+                    <View style={styles.formGroup}>
+                      <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: spacing.xs }]}>
+                        {t('wifi.password')}
+                      </Text>
+                      <TextInput
+                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                        value={guestWifiPassword}
+                        onChangeText={setGuestWifiPassword}
+                        placeholder={t('wifi.enterPassword')}
+                        placeholderTextColor={colors.textSecondary}
+                        secureTextEntry
+                      />
+                    </View>
+                  )}
+
+                  {/* Save Button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.saveButton,
+                      { backgroundColor: colors.primary },
+                      isSavingGuestSettings && { opacity: 0.6 }
+                    ]}
+                    onPress={handleSaveGuestSettings}
+                    disabled={isSavingGuestSettings}
+                  >
+                    {isSavingGuestSettings ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text style={[typography.body, { color: '#fff', fontWeight: '600' }]}>{t('common.save')}</Text>
+                    )}
                   </TouchableOpacity>
                 </View>
+              )}
 
-                {/* Password Input - DISABLED (encryption not supported yet) */}
-                {formSecurityMode !== 'OPEN' && (
+              {/* Separator */}
+              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+              {/* Edit WiFi Settings - Collapsible Header */}
+              <TouchableOpacity
+                style={[styles.collapseHeader, { borderColor: colors.border }]}
+                onPress={() => setIsEditExpanded(!isEditExpanded)}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                    {t('wifi.editSettings')}
+                  </Text>
+                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                    {t('wifi.editSettingsHint')}
+                  </Text>
+                </View>
+                <MaterialIcons
+                  name={isEditExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                  size={24}
+                  color={colors.textSecondary}
+                />
+              </TouchableOpacity>
+
+              {/* Collapsible Content */}
+              {isEditExpanded && (
+                <View style={{ marginTop: spacing.md }}>
+
+                  {/* SSID Input */}
+                  <View style={styles.formGroup}>
+                    <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
+                      {t('wifi.wifiName')}
+                    </Text>
+                    <TextInput
+                      style={[styles.input, {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border,
+                        color: colors.text
+                      }]}
+                      value={formSsid}
+                      onChangeText={setFormSsid}
+                      placeholder={t('wifi.wifiNamePlaceholder')}
+                      placeholderTextColor={colors.textSecondary}
+                    />
+                  </View>
+
+                  {/* Security Mode Dropdown - DISABLED (encryption not supported yet) */}
                   <View style={[styles.formGroup, { opacity: 0.5 }]}>
                     <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
-                      {t('wifi.password')}
+                      {t('wifi.securityMode')}
                     </Text>
-                    <View style={{ position: 'relative' }}>
-                      <TextInput
-                        style={[styles.input, {
-                          backgroundColor: colors.card,
-                          borderColor: colors.border,
-                          color: colors.text,
-                          paddingRight: 48
-                        }]}
-                        value={formPassword}
-                        editable={false}
-                        placeholder="********"
-                        placeholderTextColor={colors.textSecondary}
-                        secureTextEntry={true}
-                      />
-                      <View
-                        style={{
-                          position: 'absolute',
-                          right: 12,
-                          top: 0,
-                          bottom: 0,
-                          justifyContent: 'center',
-                          alignItems: 'center'
-                        }}
-                      >
-                        <MaterialIcons
-                          name="lock"
-                          size={22}
-                          color={colors.textSecondary}
-                        />
-                      </View>
+                    <View
+                      style={[styles.dropdown, {
+                        backgroundColor: colors.card,
+                        borderColor: colors.border
+                      }]}
+                    >
+                      <Text style={[typography.body, { color: colors.text }]}>
+                        {getSecurityModeLabel(formSecurityMode)}
+                      </Text>
+                      <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
                     </View>
                     <TouchableOpacity onPress={() => Linking.openURL(`http://${credentials?.modemIp || '192.168.8.1'}`)}>
                       <Text style={[typography.caption1, { color: colors.primary, marginTop: 4, fontStyle: 'italic' }]}>
@@ -937,489 +889,530 @@ export default function WiFiScreen() {
                       </Text>
                     </TouchableOpacity>
                   </View>
-                )}
 
-                {/* Save Button */}
-                <TouchableOpacity
-                  style={[
-                    styles.saveButton,
-                    {
-                      backgroundColor: hasChanges ? colors.primary : colors.border,
-                      opacity: hasChanges && !isSaving ? 1 : 0.6
-                    }
-                  ]}
-                  onPress={handleSaveSettings}
-                  disabled={!hasChanges || isSaving}
-                >
-                  {isSaving ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-                      {t('wifi.saveChanges')}
-                    </Text>
+                  {/* Password Input - DISABLED (encryption not supported yet) */}
+                  {formSecurityMode !== 'OPEN' && (
+                    <View style={[styles.formGroup, { opacity: 0.5 }]}>
+                      <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
+                        {t('wifi.password')}
+                      </Text>
+                      <View style={{ position: 'relative' }}>
+                        <TextInput
+                          style={[styles.input, {
+                            backgroundColor: colors.card,
+                            borderColor: colors.border,
+                            color: colors.text,
+                            paddingRight: 48
+                          }]}
+                          value={formPassword}
+                          editable={false}
+                          placeholder="********"
+                          placeholderTextColor={colors.textSecondary}
+                          secureTextEntry={true}
+                        />
+                        <View
+                          style={{
+                            position: 'absolute',
+                            right: 12,
+                            top: 0,
+                            bottom: 0,
+                            justifyContent: 'center',
+                            alignItems: 'center'
+                          }}
+                        >
+                          <MaterialIcons
+                            name="lock"
+                            size={22}
+                            color={colors.textSecondary}
+                          />
+                        </View>
+                      </View>
+                      <TouchableOpacity onPress={() => Linking.openURL(`http://${credentials?.modemIp || '192.168.8.1'}`)}>
+                        <Text style={[typography.caption1, { color: colors.primary, marginTop: 4, fontStyle: 'italic' }]}>
+                          {t('wifi.useWebInterface')} →
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
-                </TouchableOpacity>
-              </View>
-            )}
-          </Card>
-        )}
 
-        {/* Connected Devices Card */}
-        <Card>
-          <CardHeader title={`${t('wifi.connectedDevices')} (${connectedDevices.length})`} />
-
-          {connectedDevices.length === 0 ? (
-            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.lg }]}>
-              {t('wifi.noDevices')}
-            </Text>
-          ) : (
-            connectedDevices.map((device, index) => (
-              <TouchableOpacity
-                key={device.macAddress}
-                style={[
-                  styles.deviceItem,
-                  {
-                    borderBottomWidth: index < connectedDevices.length - 1 ? 1 : 0,
-                    borderBottomColor: colors.border,
-                    paddingBottom: spacing.md,
-                    marginBottom: index < connectedDevices.length - 1 ? spacing.md : 0,
-                  },
-                ]}
-                onPress={() => {
-                  setSelectedDevice(device);
-                  setShowDeviceDetailModal(true);
-                }}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
-                    {device.hostName || 'Unknown Device'}
-                  </Text>
-                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    IP: {device.ipAddress}
-                  </Text>
-                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    MAC: {formatMacAddress(device.macAddress)}
-                  </Text>
+                  {/* Save Button */}
+                  <TouchableOpacity
+                    style={[
+                      styles.saveButton,
+                      {
+                        backgroundColor: hasChanges ? colors.primary : colors.border,
+                        opacity: hasChanges && !isSaving ? 1 : 0.6
+                      }
+                    ]}
+                    onPress={handleSaveSettings}
+                    disabled={!hasChanges || isSaving}
+                  >
+                    {isSaving ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                        {t('wifi.saveChanges')}
+                      </Text>
+                    )}
+                  </TouchableOpacity>
                 </View>
-
-                <Button
-                  title={t('wifi.blockDevice')}
-                  variant="danger"
-                  onPress={() => handleBlockDevice(device.macAddress, device.hostName)}
-                  style={styles.kickButton}
-                />
-              </TouchableOpacity>
-            ))
+              )}
+            </Card>
           )}
-        </Card>
 
-        {/* Blocked Devices Card - Only show if there are blocked devices */}
-        {blockedDevices.length > 0 && (
-          <Card style={{ marginTop: spacing.md }}>
-            <CardHeader title={t('wifi.blockedDevices')} />
-            {blockedDevices.map((device, index) => (
-              <View
-                key={device.macAddress + index}
-                style={{
-                  flexDirection: 'row',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  paddingVertical: spacing.sm,
-                  borderBottomWidth: index < blockedDevices.length - 1 ? 1 : 0,
-                  borderBottomColor: colors.border,
-                }}
-              >
-                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                  <View style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 20,
-                    backgroundColor: colors.error + '20',
-                    justifyContent: 'center',
-                    alignItems: 'center',
-                    marginRight: spacing.sm,
-                  }}>
-                    <MaterialIcons name="block" size={20} color={colors.error} />
-                  </View>
+          {/* Connected Devices Card */}
+          <Card>
+            <CardHeader title={`${t('wifi.connectedDevices')} (${connectedDevices.length})`} />
+
+            {connectedDevices.length === 0 ? (
+              <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.lg }]}>
+                {t('wifi.noDevices')}
+              </Text>
+            ) : (
+              connectedDevices.map((device, index) => (
+                <TouchableOpacity
+                  key={device.macAddress}
+                  style={[
+                    styles.deviceItem,
+                    {
+                      borderBottomWidth: index < connectedDevices.length - 1 ? 1 : 0,
+                      borderBottomColor: colors.border,
+                      paddingBottom: spacing.md,
+                      marginBottom: index < connectedDevices.length - 1 ? spacing.md : 0,
+                    },
+                  ]}
+                  onPress={() => {
+                    setSelectedDevice(device);
+                    setShowDeviceDetailModal(true);
+                  }}
+                >
                   <View style={{ flex: 1 }}>
-                    <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
-                      {device.hostName || t('wifi.unknownDevice')}
+                    <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
+                      {device.hostName || 'Unknown Device'}
                     </Text>
                     <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                      {device.macAddress}
+                      IP: {device.ipAddress}
+                    </Text>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      MAC: {formatMacAddress(device.macAddress)}
                     </Text>
                   </View>
-                </View>
-                <TouchableOpacity
+
+                  <Button
+                    title={t('wifi.blockDevice')}
+                    variant="danger"
+                    onPress={() => handleBlockDevice(device.macAddress, device.hostName)}
+                    style={styles.kickButton}
+                  />
+                </TouchableOpacity>
+              ))
+            )}
+          </Card>
+
+          {/* Blocked Devices Card - Only show if there are blocked devices */}
+          {blockedDevices.length > 0 && (
+            <Card style={{ marginTop: spacing.md }}>
+              <CardHeader title={t('wifi.blockedDevices')} />
+              {blockedDevices.map((device, index) => (
+                <View
+                  key={device.macAddress + index}
                   style={{
                     flexDirection: 'row',
+                    justifyContent: 'space-between',
                     alignItems: 'center',
-                    backgroundColor: colors.success,
-                    paddingHorizontal: spacing.sm,
-                    paddingVertical: spacing.xs,
-                    borderRadius: 6,
-                    opacity: isUnblocking === device.macAddress ? 0.6 : 1,
+                    paddingVertical: spacing.sm,
+                    borderBottomWidth: index < blockedDevices.length - 1 ? 1 : 0,
+                    borderBottomColor: colors.border,
                   }}
-                  onPress={() => handleUnblockDevice(device.macAddress)}
-                  disabled={isUnblocking === device.macAddress}
                 >
-                  {isUnblocking === device.macAddress ? (
-                    <ActivityIndicator color="#fff" size="small" />
-                  ) : (
-                    <>
-                      <MaterialIcons name="check" size={16} color="#fff" />
-                      <Text style={{ color: '#fff', fontSize: 12, marginLeft: 4 }}>{t('wifi.unblock')}</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </View>
-            ))}
-          </Card>
-        )}
-
-        {/* Parental Control Card */}
-        <Card style={{ marginTop: spacing.md }}>
-          <CardHeader title={t('parentalControl.title')} />
-
-          {/* Enable/Disable Switch */}
-          <View style={styles.toggleRow}>
-            <View style={{ flex: 1 }}>
-              <Text style={[typography.body, { color: colors.text }]}>{t('parentalControl.title')}</Text>
-              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                {t('parentalControl.enableHint')}
-              </Text>
-            </View>
-            {isTogglingParental ? (
-              <ActivityIndicator color={colors.primary} />
-            ) : (
-              <Switch
-                value={parentalControlEnabled}
-                onValueChange={handleToggleParentalControl}
-                trackColor={{ false: colors.border, true: colors.primary + '80' }}
-                thumbColor={parentalControlEnabled ? colors.primary : colors.textSecondary}
-              />
-            )}
-          </View>
-
-          {/* Separator */}
-          <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-
-          {/* Profiles Section - Collapsible */}
-          <TouchableOpacity
-            style={[styles.collapseHeader, { borderColor: colors.border }]}
-            onPress={() => setIsParentalExpanded(!isParentalExpanded)}
-          >
-            <View style={{ flex: 1 }}>
-              <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
-                {t('parentalControl.profiles')}
-              </Text>
-              <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                {parentalProfiles.length > 0
-                  ? `${parentalProfiles.length} ${t('parentalControl.profiles').toLowerCase()}`
-                  : t('parentalControl.noProfiles')}
-              </Text>
-            </View>
-            <MaterialIcons
-              name={isParentalExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
-              size={24}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-
-          {isParentalExpanded && (
-            <View style={{ marginTop: spacing.md }}>
-              {parentalProfiles.length === 0 ? (
-                <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.md }]}>
-                  {t('parentalControl.noProfiles')}
-                </Text>
-              ) : (
-                parentalProfiles.map((profile, index) => (
-                  <TouchableOpacity
-                    key={profile.id}
-                    onPress={() => openEditProfileModal(profile)}
-                    style={[
-                      styles.deviceItem,
-                      {
-                        borderBottomWidth: index < parentalProfiles.length - 1 ? 1 : 0,
-                        borderBottomColor: colors.border,
-                        paddingBottom: spacing.md,
-                        marginBottom: index < parentalProfiles.length - 1 ? spacing.md : 0,
-                        backgroundColor: profile.enabled ? colors.primary + '10' : 'transparent',
-                        padding: spacing.sm,
-                        borderRadius: 8,
-                      },
-                    ]}
-                  >
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <View style={{
+                      width: 40,
+                      height: 40,
+                      borderRadius: 20,
+                      backgroundColor: colors.error + '20',
+                      justifyContent: 'center',
+                      alignItems: 'center',
+                      marginRight: spacing.sm,
+                    }}>
+                      <MaterialIcons name="block" size={20} color={colors.error} />
+                    </View>
                     <View style={{ flex: 1 }}>
-                      <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
-                        {profile.name}
+                      <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
+                        {device.hostName || t('wifi.unknownDevice')}
                       </Text>
                       <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                        {t('parentalControl.timeRange')}: {profile.startTime} - {profile.endTime}
-                      </Text>
-                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                        {t('parentalControl.activeDays')}: {profile.activeDays.map(d => getDayName(d).substring(0, 3)).join(', ')}
-                      </Text>
-                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                        {profile.deviceMacs.length} {t('parentalControl.selectDevices').toLowerCase()}
+                        {device.macAddress}
                       </Text>
                     </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      <TouchableOpacity
-                        onPress={(e) => { e.stopPropagation(); handleDeleteProfile(profile.id, profile.name); }}
-                        style={{ padding: 4 }}
-                      >
-                        <MaterialIcons name="delete" size={20} color={colors.error} />
-                      </TouchableOpacity>
-                      <MaterialIcons
-                        name={profile.enabled ? 'check-circle' : 'radio-button-unchecked'}
-                        size={24}
-                        color={profile.enabled ? colors.success : colors.textSecondary}
-                      />
-                    </View>
-                  </TouchableOpacity>
-                ))
-              )}
-
-              {/* Add Profile Button */}
-              <Button
-                title={t('parentalControl.addProfile')}
-                onPress={openAddProfileModal}
-                style={{ marginTop: spacing.md }}
-              />
-            </View>
-          )}
-        </Card>
-
-        <Modal
-          visible={showProfileModal}
-          animationType="slide"
-          presentationStyle="pageSheet"
-          onRequestClose={() => setShowProfileModal(false)}
-        >
-          <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
-            <View style={[styles.modalHeader, {
-              borderBottomColor: colors.border,
-              // Header styling updated to match new pattern
-            }]}>
-              <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
-                {editingProfile ? t('parentalControl.editProfile') : t('parentalControl.addProfile')}
-              </Text>
-              <TouchableOpacity onPress={() => setShowProfileModal(false)}>
-                <MaterialIcons name="close" size={28} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-
-            <KeyboardAvoidingView
-              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-              style={{ flex: 1 }}
-            >
-              <ScrollView
-                style={styles.modalContentScroll}
-                contentContainerStyle={{ paddingBottom: 20 }}
-                keyboardShouldPersistTaps="handled"
-              >
-                {/* Profile Name */}
-                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
-                  {t('parentalControl.profileName')}
-                </Text>
-                <TextInput
-                  style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
-                  value={profileName}
-                  onChangeText={setProfileName}
-                  placeholder={t('parentalControl.profileName')}
-                  placeholderTextColor={colors.textSecondary}
-                />
-
-                {/* Time Range */}
-                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
-                  {t('parentalControl.timeRange')}
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
-                  {/* Start Time Picker */}
-                  <TouchableOpacity
-                    style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
-                    onPress={() => setShowStartTimePicker(true)}
-                  >
-                    <MaterialIcons name="schedule" size={20} color={colors.primary} />
-                    <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
-                      {profileStartTime}
-                    </Text>
-                    <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-
-                  <Text style={[typography.title3, { color: colors.textSecondary, marginHorizontal: spacing.md }]}>→</Text>
-
-                  {/* End Time Picker */}
-                  <TouchableOpacity
-                    style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
-                    onPress={() => setShowEndTimePicker(true)}
-                  >
-                    <MaterialIcons name="schedule" size={20} color={colors.primary} />
-                    <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
-                      {profileEndTime}
-                    </Text>
-                    <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-                  </TouchableOpacity>
-                </View>
-
-                <SelectionModal
-                  visible={showStartTimePicker}
-                  title={t('parentalControl.startTime')}
-                  options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
-                  selectedValue={profileStartTime}
-                  onSelect={(val) => {
-                    setProfileStartTime(val);
-                    setShowStartTimePicker(false);
-                  }}
-                  onClose={() => setShowStartTimePicker(false)}
-                />
-
-                <SelectionModal
-                  visible={showEndTimePicker}
-                  title={t('parentalControl.endTime')}
-                  options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
-                  selectedValue={profileEndTime}
-                  onSelect={(val) => {
-                    setProfileEndTime(val);
-                    setShowEndTimePicker(false);
-                  }}
-                  onClose={() => setShowEndTimePicker(false)}
-                />
-
-
-                {/* Active Days */}
-                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
-                  {t('parentalControl.activeDays')}
-                </Text>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md }}>
-                  {[0, 1, 2, 3, 4, 5, 6].map(day => (
-                    <TouchableOpacity
-                      key={day}
-                      onPress={() => toggleProfileDay(day)}
-                      style={[
-                        styles.dayButton,
-                        {
-                          backgroundColor: profileDays.includes(day) ? colors.primary : colors.card,
-                          borderColor: profileDays.includes(day) ? colors.primary : colors.border,
-                        }
-                      ]}
-                    >
-                      <Text style={[typography.caption1, {
-                        color: profileDays.includes(day) ? '#fff' : colors.text,
-                        fontWeight: profileDays.includes(day) ? '600' : '400'
-                      }]}>
-                        {getDayName(day).substring(0, 3)}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-
-                {/* Select Devices */}
-                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
-                  {t('parentalControl.selectDevices')}
-                </Text>
-                {connectedDevices.length === 0 ? (
-                  <View style={[styles.deviceSelectItem, { backgroundColor: colors.card, borderColor: colors.border, justifyContent: 'center' }]}>
-                    <Text style={[typography.body, { color: colors.textSecondary }]}>
-                      {t('wifi.noDevices')}
-                    </Text>
                   </View>
+                  <TouchableOpacity
+                    style={{
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      backgroundColor: colors.success,
+                      paddingHorizontal: spacing.sm,
+                      paddingVertical: spacing.xs,
+                      borderRadius: 6,
+                      opacity: isUnblocking === device.macAddress ? 0.6 : 1,
+                    }}
+                    onPress={() => handleUnblockDevice(device.macAddress)}
+                    disabled={isUnblocking === device.macAddress}
+                  >
+                    {isUnblocking === device.macAddress ? (
+                      <ActivityIndicator color="#fff" size="small" />
+                    ) : (
+                      <>
+                        <MaterialIcons name="check" size={16} color="#fff" />
+                        <Text style={{ color: '#fff', fontSize: 12, marginLeft: 4 }}>{t('wifi.unblock')}</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </View>
+              ))}
+            </Card>
+          )}
+
+          {/* Parental Control Card */}
+          <Card style={{ marginTop: spacing.md }}>
+            <CardHeader title={t('parentalControl.title')} />
+
+            {/* Enable/Disable Switch */}
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.body, { color: colors.text }]}>{t('parentalControl.title')}</Text>
+                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                  {t('parentalControl.enableHint')}
+                </Text>
+              </View>
+              {isTogglingParental ? (
+                <ActivityIndicator color={colors.primary} />
+              ) : (
+                <ThemedSwitch
+                  value={parentalControlEnabled}
+                  onValueChange={handleToggleParentalControl}
+                />
+              )}
+            </View>
+
+            {/* Separator */}
+            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+
+            {/* Profiles Section - Collapsible */}
+            <TouchableOpacity
+              style={[styles.collapseHeader, { borderColor: colors.border }]}
+              onPress={() => setIsParentalExpanded(!isParentalExpanded)}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                  {t('parentalControl.profiles')}
+                </Text>
+                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                  {parentalProfiles.length > 0
+                    ? `${parentalProfiles.length} ${t('parentalControl.profiles').toLowerCase()}`
+                    : t('parentalControl.noProfiles')}
+                </Text>
+              </View>
+              <MaterialIcons
+                name={isParentalExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                size={24}
+                color={colors.textSecondary}
+              />
+            </TouchableOpacity>
+
+            {isParentalExpanded && (
+              <View style={{ marginTop: spacing.md }}>
+                {parentalProfiles.length === 0 ? (
+                  <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.md }]}>
+                    {t('parentalControl.noProfiles')}
+                  </Text>
                 ) : (
-                  connectedDevices.map(device => (
+                  parentalProfiles.map((profile, index) => (
                     <TouchableOpacity
-                      key={device.macAddress}
-                      onPress={() => toggleProfileDevice(device.macAddress)}
+                      key={profile.id}
+                      onPress={() => openEditProfileModal(profile)}
                       style={[
-                        styles.deviceSelectItem,
+                        styles.deviceItem,
                         {
-                          backgroundColor: profileDevices.includes(device.macAddress) ? colors.primary + '15' : colors.card,
-                          borderColor: profileDevices.includes(device.macAddress) ? colors.primary : colors.border,
-                          marginBottom: 8,
-                        }
+                          borderBottomWidth: index < parentalProfiles.length - 1 ? 1 : 0,
+                          borderBottomColor: colors.border,
+                          paddingBottom: spacing.md,
+                          marginBottom: index < parentalProfiles.length - 1 ? spacing.md : 0,
+                          backgroundColor: profile.enabled ? colors.primary + '10' : 'transparent',
+                          padding: spacing.sm,
+                          borderRadius: 8,
+                        },
                       ]}
                     >
                       <View style={{ flex: 1 }}>
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
-                          {device.hostName || 'Unknown Device'}
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
+                          {profile.name}
                         </Text>
                         <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                          {formatMacAddress(device.macAddress)}
+                          {t('parentalControl.timeRange')}: {profile.startTime} - {profile.endTime}
+                        </Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                          {t('parentalControl.activeDays')}: {profile.activeDays.map(d => getDayName(d).substring(0, 3)).join(', ')}
+                        </Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                          {profile.deviceMacs.length} {t('parentalControl.selectDevices').toLowerCase()}
                         </Text>
                       </View>
-                      <MaterialIcons
-                        name={profileDevices.includes(device.macAddress) ? 'check-circle' : 'radio-button-unchecked'}
-                        size={24}
-                        color={profileDevices.includes(device.macAddress) ? colors.primary : colors.textSecondary}
-                      />
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <TouchableOpacity
+                          onPress={(e) => { e.stopPropagation(); handleDeleteProfile(profile.id, profile.name); }}
+                          style={{ padding: 4 }}
+                        >
+                          <MaterialIcons name="delete" size={20} color={colors.error} />
+                        </TouchableOpacity>
+                        <MaterialIcons
+                          name={profile.enabled ? 'check-circle' : 'radio-button-unchecked'}
+                          size={24}
+                          color={profile.enabled ? colors.success : colors.textSecondary}
+                        />
+                      </View>
                     </TouchableOpacity>
                   ))
                 )}
 
-                {/* Enabled Switch */}
-                <View style={[styles.toggleRow, { marginTop: spacing.md, paddingVertical: spacing.sm }]}>
-                  <View style={{ flex: 1 }}>
-                    <Text style={[typography.body, { color: colors.text }]}>
-                      {t('parentalControl.enabled')}
-                    </Text>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                      {profileEnabled ? t('parentalControl.enabled') : t('parentalControl.disabled')}
-                    </Text>
-                  </View>
-                  <Switch
-                    value={profileEnabled}
-                    onValueChange={setProfileEnabled}
-                    trackColor={{ false: colors.border, true: colors.primary + '80' }}
-                    thumbColor={profileEnabled ? colors.primary : colors.textSecondary}
-                  />
-                </View>
-              </ScrollView>
-
-              {/* Footer Button - Inside KeyboardAvoidingView */}
-              <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.saveButtonFull,
-                    { backgroundColor: hasProfileChanges() ? colors.primary : colors.textSecondary },
-                    pressed && { opacity: 0.8 }
-                  ]}
-                  onPress={() => {
-                    Keyboard.dismiss();
-                    if (hasProfileChanges()) {
-                      handleSaveProfile();
-                    } else {
-                      setShowProfileModal(false);
-                    }
-                  }}
-                  disabled={isSavingProfile}
-                >
-                  {isSavingProfile ? (
-                    <ActivityIndicator color="#FFFFFF" />
-                  ) : (
-                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: 'bold' }]}>
-                      {hasProfileChanges() ? t('common.save') : t('common.cancel')}
-                    </Text>
-                  )}
-                </Pressable>
+                {/* Add Profile Button */}
+                <Button
+                  title={t('parentalControl.addProfile')}
+                  onPress={openAddProfileModal}
+                  style={{ marginTop: spacing.md }}
+                />
               </View>
-            </KeyboardAvoidingView>
+            )}
+          </Card>
 
-          </View>
-        </Modal>
+          <Modal
+            visible={showProfileModal}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={() => setShowProfileModal(false)}
+          >
+            <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
+              <View style={[styles.modalHeader, {
+                borderBottomColor: colors.border,
+                // Header styling updated to match new pattern
+              }]}>
+                <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
+                  {editingProfile ? t('parentalControl.editProfile') : t('parentalControl.addProfile')}
+                </Text>
+                <TouchableOpacity onPress={() => setShowProfileModal(false)}>
+                  <MaterialIcons name="close" size={28} color={colors.primary} />
+                </TouchableOpacity>
+              </View>
 
-        {/* Device Detail Modal */}
-        <DeviceDetailModal
-          visible={showDeviceDetailModal}
-          onClose={() => {
-            setShowDeviceDetailModal(false);
-            setSelectedDevice(null);
-          }}
-          device={selectedDevice}
-          onSaveName={handleSaveDeviceName}
-          onBlock={handleBlockDevice}
-        />
-      </ScrollView>
-    </MeshGradientBackground>
+              <KeyboardAvoidingView
+                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                style={{ flex: 1 }}
+              >
+                <ScrollView
+                  style={styles.modalContentScroll}
+                  contentContainerStyle={{ paddingBottom: 20 }}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {/* Profile Name */}
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+                    {t('parentalControl.profileName')}
+                  </Text>
+                  <TextInput
+                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
+                    value={profileName}
+                    onChangeText={setProfileName}
+                    placeholder={t('parentalControl.profileName')}
+                    placeholderTextColor={colors.textSecondary}
+                  />
+
+                  {/* Time Range */}
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+                    {t('parentalControl.timeRange')}
+                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
+                    {/* Start Time Picker */}
+                    <TouchableOpacity
+                      style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => setShowStartTimePicker(true)}
+                    >
+                      <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                      <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
+                        {profileStartTime}
+                      </Text>
+                      <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
+
+                    <Text style={[typography.title3, { color: colors.textSecondary, marginHorizontal: spacing.md }]}>→</Text>
+
+                    {/* End Time Picker */}
+                    <TouchableOpacity
+                      style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
+                      onPress={() => setShowEndTimePicker(true)}
+                    >
+                      <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                      <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
+                        {profileEndTime}
+                      </Text>
+                      <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
+                  </View>
+
+                  <SelectionModal
+                    visible={showStartTimePicker}
+                    title={t('parentalControl.startTime')}
+                    options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
+                    selectedValue={profileStartTime}
+                    onSelect={(val) => {
+                      setProfileStartTime(val);
+                      setShowStartTimePicker(false);
+                    }}
+                    onClose={() => setShowStartTimePicker(false)}
+                  />
+
+                  <SelectionModal
+                    visible={showEndTimePicker}
+                    title={t('parentalControl.endTime')}
+                    options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
+                    selectedValue={profileEndTime}
+                    onSelect={(val) => {
+                      setProfileEndTime(val);
+                      setShowEndTimePicker(false);
+                    }}
+                    onClose={() => setShowEndTimePicker(false)}
+                  />
+
+
+                  {/* Active Days */}
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+                    {t('parentalControl.activeDays')}
+                  </Text>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md }}>
+                    {[0, 1, 2, 3, 4, 5, 6].map(day => (
+                      <TouchableOpacity
+                        key={day}
+                        onPress={() => toggleProfileDay(day)}
+                        style={[
+                          styles.dayButton,
+                          {
+                            backgroundColor: profileDays.includes(day) ? colors.primary : colors.card,
+                            borderColor: profileDays.includes(day) ? colors.primary : colors.border,
+                          }
+                        ]}
+                      >
+                        <Text style={[typography.caption1, {
+                          color: profileDays.includes(day) ? '#fff' : colors.text,
+                          fontWeight: profileDays.includes(day) ? '600' : '400'
+                        }]}>
+                          {getDayName(day).substring(0, 3)}
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {/* Select Devices */}
+                  <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+                    {t('parentalControl.selectDevices')}
+                  </Text>
+                  {connectedDevices.length === 0 ? (
+                    <View style={[styles.deviceSelectItem, { backgroundColor: colors.card, borderColor: colors.border, justifyContent: 'center' }]}>
+                      <Text style={[typography.body, { color: colors.textSecondary }]}>
+                        {t('wifi.noDevices')}
+                      </Text>
+                    </View>
+                  ) : (
+                    connectedDevices.map(device => (
+                      <TouchableOpacity
+                        key={device.macAddress}
+                        onPress={() => toggleProfileDevice(device.macAddress)}
+                        style={[
+                          styles.deviceSelectItem,
+                          {
+                            backgroundColor: profileDevices.includes(device.macAddress) ? colors.primary + '15' : colors.card,
+                            borderColor: profileDevices.includes(device.macAddress) ? colors.primary : colors.border,
+                            marginBottom: 8,
+                          }
+                        ]}
+                      >
+                        <View style={{ flex: 1 }}>
+                          <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
+                            {device.hostName || 'Unknown Device'}
+                          </Text>
+                          <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                            {formatMacAddress(device.macAddress)}
+                          </Text>
+                        </View>
+                        <MaterialIcons
+                          name={profileDevices.includes(device.macAddress) ? 'check-circle' : 'radio-button-unchecked'}
+                          size={24}
+                          color={profileDevices.includes(device.macAddress) ? colors.primary : colors.textSecondary}
+                        />
+                      </TouchableOpacity>
+                    ))
+                  )}
+
+                  {/* Enabled Switch */}
+                  <View style={[styles.toggleRow, { marginTop: spacing.md, paddingVertical: spacing.sm }]}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={[typography.body, { color: colors.text }]}>
+                        {t('parentalControl.enabled')}
+                      </Text>
+                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                        {profileEnabled ? t('parentalControl.enabled') : t('parentalControl.disabled')}
+                      </Text>
+                    </View>
+                    <ThemedSwitch
+                      value={profileEnabled}
+                      onValueChange={setProfileEnabled}
+                    />
+                  </View>
+                </ScrollView>
+
+                {/* Footer Button - Inside KeyboardAvoidingView */}
+                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                  <Pressable
+                    style={({ pressed }) => [
+                      styles.saveButtonFull,
+                      { backgroundColor: hasProfileChanges() ? colors.primary : colors.textSecondary },
+                      pressed && { opacity: 0.8 }
+                    ]}
+                    onPress={() => {
+                      Keyboard.dismiss();
+                      if (hasProfileChanges()) {
+                        handleSaveProfile();
+                      } else {
+                        setShowProfileModal(false);
+                      }
+                    }}
+                    disabled={isSavingProfile}
+                  >
+                    {isSavingProfile ? (
+                      <ActivityIndicator color="#FFFFFF" />
+                    ) : (
+                      <Text style={[typography.body, { color: '#FFFFFF', fontWeight: 'bold' }]}>
+                        {hasProfileChanges() ? t('common.save') : t('common.cancel')}
+                      </Text>
+                    )}
+                  </Pressable>
+                </View>
+              </KeyboardAvoidingView>
+
+            </View>
+          </Modal>
+
+          {/* Device Detail Modal */}
+          <DeviceDetailModal
+            visible={showDeviceDetailModal}
+            onClose={() => {
+              setShowDeviceDetailModal(false);
+              setSelectedDevice(null);
+            }}
+            device={selectedDevice}
+            onSaveName={handleSaveDeviceName}
+            onBlock={handleBlockDevice}
+          />
+        </ScrollView>
+      </MeshGradientBackground>
+    </AnimatedScreen>
   );
 }
 

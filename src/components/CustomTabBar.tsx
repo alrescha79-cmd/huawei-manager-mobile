@@ -90,17 +90,17 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                     {/* Gradient Definitions */}
                     <Defs>
                         <LinearGradient id="tabBarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <Stop offset="0%" stopColor={isDark ? '#1A1A2E' : '#E8E8F0'} stopOpacity="1" />
-                            <Stop offset="50%" stopColor={isDark ? '#16213E' : '#D4D4E8'} stopOpacity="1" />
-                            <Stop offset="100%" stopColor={isDark ? '#0D0D18' : '#E0E0F0'} stopOpacity="1" />
+                            <Stop offset="0%" stopColor={isDark ? '#1A1A2E' : '#FFFFFF'} stopOpacity="1" />
+                            <Stop offset="50%" stopColor={isDark ? '#16213E' : '#F8F9FC'} stopOpacity="1" />
+                            <Stop offset="100%" stopColor={isDark ? '#0D0D18' : '#F0F2F8'} stopOpacity="1" />
                         </LinearGradient>
                         <RadialGradient id="tabBarBlob1" cx="20%" cy="30%" rx="40%" ry="60%">
-                            <Stop offset="0%" stopColor={isDark ? '#2A1A4E' : '#C8D4F0'} stopOpacity={isDark ? '0.4' : '0.5'} />
-                            <Stop offset="100%" stopColor={isDark ? '#2A1A4E' : '#C8D4F0'} stopOpacity="0" />
+                            <Stop offset="0%" stopColor={isDark ? '#2A1A4E' : '#E8ECFF'} stopOpacity={isDark ? '0.4' : '0.6'} />
+                            <Stop offset="100%" stopColor={isDark ? '#2A1A4E' : '#E8ECFF'} stopOpacity="0" />
                         </RadialGradient>
                         <RadialGradient id="tabBarBlob2" cx="80%" cy="50%" rx="35%" ry="50%">
-                            <Stop offset="0%" stopColor={isDark ? '#0A84FF' : '#D0D8F8'} stopOpacity={isDark ? '0.2' : '0.4'} />
-                            <Stop offset="100%" stopColor={isDark ? '#0A84FF' : '#D0D8F8'} stopOpacity="0" />
+                            <Stop offset="0%" stopColor={isDark ? '#0A84FF' : '#D8E0FF'} stopOpacity={isDark ? '0.2' : '0.5'} />
+                            <Stop offset="100%" stopColor={isDark ? '#0A84FF' : '#D8E0FF'} stopOpacity="0" />
                         </RadialGradient>
                     </Defs>
 

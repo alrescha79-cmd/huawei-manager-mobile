@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
     StyleSheet,
     ScrollView,
-    Switch,
     ActivityIndicator,
     View, // Added View
     TouchableOpacity,
@@ -12,7 +11,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader } from '@/components';
+import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const NETWORK_MODES = [
@@ -208,11 +207,9 @@ export default function MobileNetworkSettingsScreen() {
                             isTogglingMobileData ? (
                                 <ActivityIndicator size="small" color={colors.primary} />
                             ) : (
-                                <Switch
+                                <ThemedSwitch
                                     value={mobileDataEnabled}
                                     onValueChange={handleToggleMobileData}
-                                    trackColor={{ false: colors.border, true: colors.primary }}
-                                    thumbColor={'#FFFFFF'}
                                 />
                             )
                         }
@@ -225,11 +222,9 @@ export default function MobileNetworkSettingsScreen() {
                             isTogglingRoaming ? (
                                 <ActivityIndicator size="small" color={colors.primary} />
                             ) : (
-                                <Switch
+                                <ThemedSwitch
                                     value={dataRoamingEnabled}
                                     onValueChange={handleToggleRoaming}
-                                    trackColor={{ false: colors.border, true: colors.primary }}
-                                    thumbColor={'#FFFFFF'}
                                 />
                             )
                         }
@@ -243,11 +238,9 @@ export default function MobileNetworkSettingsScreen() {
                             isTogglingAutoNetwork ? (
                                 <ActivityIndicator size="small" color={colors.primary} />
                             ) : (
-                                <Switch
+                                <ThemedSwitch
                                     value={autoNetworkEnabled}
                                     onValueChange={handleToggleAutoNetwork}
-                                    trackColor={{ false: colors.border, true: colors.primary }}
-                                    thumbColor={'#FFFFFF'}
                                 />
                             )
                         }
