@@ -13,6 +13,9 @@ import {
   ActivityIndicator,
   Modal,
   Linking,
+  KeyboardAvoidingView,
+  Keyboard,
+  Pressable,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -1194,7 +1197,7 @@ export default function WiFiScreen() {
           presentationStyle="pageSheet"
           onRequestClose={() => setShowProfileModal(false)}
         >
-          <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: 20 }]}>
+          <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
             <View style={[styles.modalHeader, {
               borderBottomColor: colors.border,
               // Header styling updated to match new pattern
@@ -1207,182 +1210,199 @@ export default function WiFiScreen() {
               </TouchableOpacity>
             </View>
 
-            <ScrollView
-              style={styles.modalContentScroll}
-              contentContainerStyle={{ paddingBottom: 100 }}
+            <KeyboardAvoidingView
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+              style={{ flex: 1 }}
             >
-              {/* Profile Name */}
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
-                {t('parentalControl.profileName')}
-              </Text>
-              <TextInput
-                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
-                value={profileName}
-                onChangeText={setProfileName}
-                placeholder={t('parentalControl.profileName')}
-                placeholderTextColor={colors.textSecondary}
-              />
-
-              {/* Time Range */}
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
-                {t('parentalControl.timeRange')}
-              </Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
-                {/* Start Time Picker */}
-                <TouchableOpacity
-                  style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
-                  onPress={() => setShowStartTimePicker(true)}
-                >
-                  <MaterialIcons name="schedule" size={20} color={colors.primary} />
-                  <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
-                    {profileStartTime}
-                  </Text>
-                  <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-
-                <Text style={[typography.title3, { color: colors.textSecondary, marginHorizontal: spacing.md }]}>→</Text>
-
-                {/* End Time Picker */}
-                <TouchableOpacity
-                  style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
-                  onPress={() => setShowEndTimePicker(true)}
-                >
-                  <MaterialIcons name="schedule" size={20} color={colors.primary} />
-                  <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
-                    {profileEndTime}
-                  </Text>
-                  <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
-                </TouchableOpacity>
-              </View>
-
-              <SelectionModal
-                visible={showStartTimePicker}
-                title={t('parentalControl.startTime')}
-                options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
-                selectedValue={profileStartTime}
-                onSelect={(val) => {
-                  setProfileStartTime(val);
-                  setShowStartTimePicker(false);
-                }}
-                onClose={() => setShowStartTimePicker(false)}
-              />
-
-              <SelectionModal
-                visible={showEndTimePicker}
-                title={t('parentalControl.endTime')}
-                options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
-                selectedValue={profileEndTime}
-                onSelect={(val) => {
-                  setProfileEndTime(val);
-                  setShowEndTimePicker(false);
-                }}
-                onClose={() => setShowEndTimePicker(false)}
-              />
-
-
-              {/* Active Days */}
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
-                {t('parentalControl.activeDays')}
-              </Text>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md }}>
-                {[0, 1, 2, 3, 4, 5, 6].map(day => (
-                  <TouchableOpacity
-                    key={day}
-                    onPress={() => toggleProfileDay(day)}
-                    style={[
-                      styles.dayButton,
-                      {
-                        backgroundColor: profileDays.includes(day) ? colors.primary : colors.card,
-                        borderColor: profileDays.includes(day) ? colors.primary : colors.border,
-                      }
-                    ]}
-                  >
-                    <Text style={[typography.caption1, {
-                      color: profileDays.includes(day) ? '#fff' : colors.text,
-                      fontWeight: profileDays.includes(day) ? '600' : '400'
-                    }]}>
-                      {getDayName(day).substring(0, 3)}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-
-              {/* Select Devices */}
-              <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
-                {t('parentalControl.selectDevices')}
-              </Text>
-              {connectedDevices.length === 0 ? (
-                <View style={[styles.deviceSelectItem, { backgroundColor: colors.card, borderColor: colors.border, justifyContent: 'center' }]}>
-                  <Text style={[typography.body, { color: colors.textSecondary }]}>
-                    {t('wifi.noDevices')}
-                  </Text>
-                </View>
-              ) : (
-                connectedDevices.map(device => (
-                  <TouchableOpacity
-                    key={device.macAddress}
-                    onPress={() => toggleProfileDevice(device.macAddress)}
-                    style={[
-                      styles.deviceSelectItem,
-                      {
-                        backgroundColor: profileDevices.includes(device.macAddress) ? colors.primary + '15' : colors.card,
-                        borderColor: profileDevices.includes(device.macAddress) ? colors.primary : colors.border,
-                        marginBottom: 8,
-                      }
-                    ]}
-                  >
-                    <View style={{ flex: 1 }}>
-                      <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
-                        {device.hostName || 'Unknown Device'}
-                      </Text>
-                      <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                        {formatMacAddress(device.macAddress)}
-                      </Text>
-                    </View>
-                    <MaterialIcons
-                      name={profileDevices.includes(device.macAddress) ? 'check-circle' : 'radio-button-unchecked'}
-                      size={24}
-                      color={profileDevices.includes(device.macAddress) ? colors.primary : colors.textSecondary}
-                    />
-                  </TouchableOpacity>
-                ))
-              )}
-
-              {/* Enabled Switch */}
-              <View style={[styles.toggleRow, { marginTop: spacing.md, paddingVertical: spacing.sm }]}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[typography.body, { color: colors.text }]}>
-                    {t('parentalControl.enabled')}
-                  </Text>
-                  <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                    {profileEnabled ? t('parentalControl.enabled') : t('parentalControl.disabled')}
-                  </Text>
-                </View>
-                <Switch
-                  value={profileEnabled}
-                  onValueChange={setProfileEnabled}
-                  trackColor={{ false: colors.border, true: colors.primary + '80' }}
-                  thumbColor={profileEnabled ? colors.primary : colors.textSecondary}
-                />
-              </View>
-            </ScrollView>
-
-            {/* Footer Button */}
-            <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-              <TouchableOpacity
-                style={[styles.saveButtonFull, { backgroundColor: hasProfileChanges() ? colors.primary : colors.textSecondary }]}
-                onPress={hasProfileChanges() ? handleSaveProfile : () => setShowProfileModal(false)}
-                disabled={isSavingProfile}
+              <ScrollView
+                style={styles.modalContentScroll}
+                contentContainerStyle={{ paddingBottom: 20 }}
+                keyboardShouldPersistTaps="handled"
               >
-                {isSavingProfile ? (
-                  <ActivityIndicator color="#FFFFFF" />
+                {/* Profile Name */}
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+                  {t('parentalControl.profileName')}
+                </Text>
+                <TextInput
+                  style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, marginBottom: spacing.md }]}
+                  value={profileName}
+                  onChangeText={setProfileName}
+                  placeholder={t('parentalControl.profileName')}
+                  placeholderTextColor={colors.textSecondary}
+                />
+
+                {/* Time Range */}
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+                  {t('parentalControl.timeRange')}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: spacing.md }}>
+                  {/* Start Time Picker */}
+                  <TouchableOpacity
+                    style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => setShowStartTimePicker(true)}
+                  >
+                    <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                    <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
+                      {profileStartTime}
+                    </Text>
+                    <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+
+                  <Text style={[typography.title3, { color: colors.textSecondary, marginHorizontal: spacing.md }]}>→</Text>
+
+                  {/* End Time Picker */}
+                  <TouchableOpacity
+                    style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
+                    onPress={() => setShowEndTimePicker(true)}
+                  >
+                    <MaterialIcons name="schedule" size={20} color={colors.primary} />
+                    <Text style={[typography.body, { color: colors.text, marginLeft: 8, fontWeight: '600' }]}>
+                      {profileEndTime}
+                    </Text>
+                    <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
+
+                <SelectionModal
+                  visible={showStartTimePicker}
+                  title={t('parentalControl.startTime')}
+                  options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
+                  selectedValue={profileStartTime}
+                  onSelect={(val) => {
+                    setProfileStartTime(val);
+                    setShowStartTimePicker(false);
+                  }}
+                  onClose={() => setShowStartTimePicker(false)}
+                />
+
+                <SelectionModal
+                  visible={showEndTimePicker}
+                  title={t('parentalControl.endTime')}
+                  options={TIME_OPTIONS.map(time => ({ label: time, value: time }))}
+                  selectedValue={profileEndTime}
+                  onSelect={(val) => {
+                    setProfileEndTime(val);
+                    setShowEndTimePicker(false);
+                  }}
+                  onClose={() => setShowEndTimePicker(false)}
+                />
+
+
+                {/* Active Days */}
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+                  {t('parentalControl.activeDays')}
+                </Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md }}>
+                  {[0, 1, 2, 3, 4, 5, 6].map(day => (
+                    <TouchableOpacity
+                      key={day}
+                      onPress={() => toggleProfileDay(day)}
+                      style={[
+                        styles.dayButton,
+                        {
+                          backgroundColor: profileDays.includes(day) ? colors.primary : colors.card,
+                          borderColor: profileDays.includes(day) ? colors.primary : colors.border,
+                        }
+                      ]}
+                    >
+                      <Text style={[typography.caption1, {
+                        color: profileDays.includes(day) ? '#fff' : colors.text,
+                        fontWeight: profileDays.includes(day) ? '600' : '400'
+                      }]}>
+                        {getDayName(day).substring(0, 3)}
+                      </Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {/* Select Devices */}
+                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
+                  {t('parentalControl.selectDevices')}
+                </Text>
+                {connectedDevices.length === 0 ? (
+                  <View style={[styles.deviceSelectItem, { backgroundColor: colors.card, borderColor: colors.border, justifyContent: 'center' }]}>
+                    <Text style={[typography.body, { color: colors.textSecondary }]}>
+                      {t('wifi.noDevices')}
+                    </Text>
+                  </View>
                 ) : (
-                  <Text style={[typography.body, { color: '#FFFFFF', fontWeight: 'bold' }]}>
-                    {hasProfileChanges() ? t('common.save') : t('common.cancel')}
-                  </Text>
+                  connectedDevices.map(device => (
+                    <TouchableOpacity
+                      key={device.macAddress}
+                      onPress={() => toggleProfileDevice(device.macAddress)}
+                      style={[
+                        styles.deviceSelectItem,
+                        {
+                          backgroundColor: profileDevices.includes(device.macAddress) ? colors.primary + '15' : colors.card,
+                          borderColor: profileDevices.includes(device.macAddress) ? colors.primary : colors.border,
+                          marginBottom: 8,
+                        }
+                      ]}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
+                          {device.hostName || 'Unknown Device'}
+                        </Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                          {formatMacAddress(device.macAddress)}
+                        </Text>
+                      </View>
+                      <MaterialIcons
+                        name={profileDevices.includes(device.macAddress) ? 'check-circle' : 'radio-button-unchecked'}
+                        size={24}
+                        color={profileDevices.includes(device.macAddress) ? colors.primary : colors.textSecondary}
+                      />
+                    </TouchableOpacity>
+                  ))
                 )}
-              </TouchableOpacity>
-            </View>
+
+                {/* Enabled Switch */}
+                <View style={[styles.toggleRow, { marginTop: spacing.md, paddingVertical: spacing.sm }]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[typography.body, { color: colors.text }]}>
+                      {t('parentalControl.enabled')}
+                    </Text>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {profileEnabled ? t('parentalControl.enabled') : t('parentalControl.disabled')}
+                    </Text>
+                  </View>
+                  <Switch
+                    value={profileEnabled}
+                    onValueChange={setProfileEnabled}
+                    trackColor={{ false: colors.border, true: colors.primary + '80' }}
+                    thumbColor={profileEnabled ? colors.primary : colors.textSecondary}
+                  />
+                </View>
+              </ScrollView>
+
+              {/* Footer Button - Inside KeyboardAvoidingView */}
+              <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.saveButtonFull,
+                    { backgroundColor: hasProfileChanges() ? colors.primary : colors.textSecondary },
+                    pressed && { opacity: 0.8 }
+                  ]}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    if (hasProfileChanges()) {
+                      handleSaveProfile();
+                    } else {
+                      setShowProfileModal(false);
+                    }
+                  }}
+                  disabled={isSavingProfile}
+                >
+                  {isSavingProfile ? (
+                    <ActivityIndicator color="#FFFFFF" />
+                  ) : (
+                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: 'bold' }]}>
+                      {hasProfileChanges() ? t('common.save') : t('common.cancel')}
+                    </Text>
+                  )}
+                </Pressable>
+              </View>
+            </KeyboardAvoidingView>
 
           </View>
         </Modal>
@@ -1525,10 +1545,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   footer: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
     padding: 20,
     paddingBottom: 40,
     borderTopWidth: 1,

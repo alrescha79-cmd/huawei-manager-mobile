@@ -56,7 +56,10 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
             animationType="fade"
             onRequestClose={onDismiss}
         >
-            <View style={styles.overlay}>
+            <View style={[
+                styles.overlay,
+                { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.5)' }
+            ]}>
                 <BlurView
                     intensity={glassmorphism.blur.alert}
                     tint={isDark ? 'dark' : 'light'}
@@ -64,7 +67,8 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
                     style={[
                         styles.alertContainer,
                         {
-                            backgroundColor: isDark ? glassmorphism.background.dark.alert : glassmorphism.background.light.alert,
+                            // Use fully opaque backgrounds for better visibility
+                            backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
                             borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
                             borderWidth: 1,
                         }
@@ -154,7 +158,6 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
     overlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
         justifyContent: 'center',
         alignItems: 'center',
     },

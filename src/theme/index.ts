@@ -3,36 +3,36 @@ import { useThemeStore } from '@/stores/theme.store';
 
 export const Colors = {
   light: {
-    primary: '#007AFF',
-    background: '#E8E8F0',  // Fallback solid color
-    backgroundGradient: ['#E8E8F0', '#D4D4E8', '#E0E0F0'],  // Subtle purple-gray gradient
-    card: 'rgba(255, 255, 255, 0.40)',
-    text: '#000000',
-    textSecondary: '#8E8E93',
-    border: '#C6C6C8',
-    notification: '#FF3B30',
-    success: '#34C759',
-    warning: '#FF9500',
-    error: '#FF3B30',
-    tabBar: '#F9F9F9',
-    tabBarInactive: '#8E8E93',
-    shadow: 'rgba(0, 0, 0, 0.1)',
+    primary: '#2563EB',
+    background: '#F0F2F5',
+    backgroundGradient: ['#F8FAFC', '#E2E8F0', '#CBD5E1'],
+    card: 'rgba(255, 255, 255, 0.50)',
+    text: '#0F172A',
+    textSecondary: '#64748B',
+    border: 'rgba(255, 255, 255, 0.6)',
+    notification: '#EF4444',
+    success: '#10B981',
+    warning: '#F59E0B',
+    error: '#EF4444',
+    tabBar: 'rgba(255, 255, 255, 0.9)',
+    tabBarInactive: '#94A3B8',
+    shadow: 'rgba(37, 99, 235, 0.10)',
   },
   dark: {
-    primary: '#0A84FF',
-    background: '#0D0D18',  // Fallback solid color
-    backgroundGradient: ['#0D0D18', '#1A1A2E', '#16213E'],  // Deep purple-navy gradient (more visible)
-    card: 'rgba(28, 28, 30, 0.40)',
+    primary: '#3B82F6',
+    background: '#111111',
+    backgroundGradient: ['#111111', '#1A1A1A', '#222222'],
+    card: 'rgba(255, 255, 255, 0.08)',
     text: '#FFFFFF',
-    textSecondary: '#8E8E93',
-    border: '#38383A',
+    textSecondary: '#AAAAAA',
+    border: 'rgba(255, 255, 255, 0.04)',
     notification: '#FF453A',
     success: '#32D74B',
     warning: '#FF9F0A',
     error: '#FF453A',
     tabBar: '#1C1C1E',
     tabBarInactive: '#8E8E93',
-    shadow: 'rgba(255, 255, 255, 0.1)',
+    shadow: 'rgba(0, 0, 0, 0.0)',
   },
 };
 
@@ -58,7 +58,7 @@ export const Glassmorphism = {
     card: 40,
     modal: 50,
     overlay: 40,
-    alert: 40,  // Reduced for better readability
+    alert: 40,
     light: 25,
     heavy: 60,
   },
@@ -68,7 +68,7 @@ export const Glassmorphism = {
       card: 'rgba(10, 10, 10, 0.4)',
       modal: 'rgba(10, 10, 10, 0.6)',
       overlay: 'rgba(10, 10, 10, 0.5)',
-      alert: 'rgba(28, 28, 30, 1.0)',  // Fully opaque for dark mode readability
+      alert: 'rgba(28, 28, 30, 1.0)',
     },
     light: {
       card: 'rgba(255, 255, 255, 0.4)',
