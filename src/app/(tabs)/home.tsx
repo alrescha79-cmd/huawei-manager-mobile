@@ -31,6 +31,7 @@ import {
   getLteBandInfo,
 } from '@/utils/helpers';
 import { useTranslation } from '@/i18n';
+import { checkDailyUsageNotification, checkIPChangeNotification } from '@/services/notification.service';
 
 // Helper to determine signal quality based on thresholds
 const getSignalQuality = (
@@ -67,7 +68,8 @@ export default function HomeScreen() {
     isRelogging,
     setRelogging,
     clearSessionExpired,
-    requestRelogin
+    requestRelogin,
+    tryQuietSessionRestore
   } = useAuthStore();
   const { t } = useTranslation();
 
@@ -87,6 +89,7 @@ export default function HomeScreen() {
     wanInfo,
     mobileDataStatus,
     monthlySettings,
+    isUsingCache,
     setSignalInfo,
     setNetworkInfo,
     setTrafficStats,
@@ -94,6 +97,7 @@ export default function HomeScreen() {
     setWanInfo,
     setMobileDataStatus,
     setMonthlySettings,
+    loadFromCache,
   } = useModemStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -102,6 +106,7 @@ export default function HomeScreen() {
   const [isTogglingData, setIsTogglingData] = useState(false);
   const [isChangingIp, setIsChangingIp] = useState(false);
   const [showReloginWebView, setShowReloginWebView] = useState(false);
+  const [isBackgroundLogging, setIsBackgroundLogging] = useState(false); // Silent background login
   const [reloginAttempts, setReloginAttempts] = useState(0);
   const [selectedBands, setSelectedBands] = useState<string[]>([]);
   const [showBandModal, setShowBandModal] = useState(false);
@@ -146,10 +151,17 @@ export default function HomeScreen() {
       const service = new ModemService(credentials.modemIp);
       setModemService(service);
 
-      // Initial load
-      loadData(service);
-      loadBands(service);
-      loadMonthlySettings(service);
+      // Load cached data first for instant display
+      const initializeData = async () => {
+        const hasCachedData = await loadFromCache();
+
+        // Try to load fresh data (will trigger background login if needed)
+        loadData(service);
+        loadBands(service);
+        loadMonthlySettings(service);
+      };
+
+      initializeData();
 
       // Fast refresh for traffic/speed data only (every 1 second)
       const fastIntervalId = setInterval(() => {
@@ -204,10 +216,35 @@ export default function HomeScreen() {
         await AsyncStorage.setItem('previousTotalTraffic', currentTotal.toString());
       }
 
+      // Check for push notifications
+      if (traffic && monthlySettings?.enabled) {
+        const dataLimitInGB = monthlySettings.dataLimitUnit === 'GB'
+          ? monthlySettings.dataLimit
+          : monthlySettings.dataLimit / 1024;
+
+        // Check daily usage threshold notification
+        checkDailyUsageNotification(
+          traffic.dayUsed || 0,
+          dataLimitInGB,
+          monthlySettings.monthThreshold,
+          {
+            title: t('notifications.dailyUsageTitle'),
+            body: (used, limit) => t('notifications.dailyUsageBody', { used, limit }),
+          }
+        );
+
+        // Check IP change notification (via session duration reset)
+        checkIPChangeNotification(traffic.currentConnectTime || 0, {
+          title: t('notifications.ipChangeTitle'),
+          body: t('notifications.ipChangeBody'),
+        });
+      }
+
       // Check if data is empty (session expired returns empty values)
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
+        // Session expired, trigger re-login via WebView with loading animation
         requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
@@ -228,8 +265,8 @@ export default function HomeScreen() {
         !signalInfo; // No signal data might indicate session issue
 
 
-      if (isSessionError && credentials && reloginAttempts < 3) {
-        // Session expired, trigger silent re-login via WebView
+      if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
+        // Session expired, trigger re-login via WebView with loading animation
         requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
@@ -267,6 +304,7 @@ export default function HomeScreen() {
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
+        // Session expired, trigger re-login via WebView with loading animation
         requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
@@ -285,6 +323,7 @@ export default function HomeScreen() {
 
 
       if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
+        // Session expired, trigger re-login via WebView with loading animation
         requestRelogin();
         setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);

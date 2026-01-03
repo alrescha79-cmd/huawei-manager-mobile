@@ -563,6 +563,12 @@
     "deleteConfirm": "Yakin ingin menghapus profil ini?",
     "noProfiles": "Tidak ada profil yang dikonfigurasi",
     "manageProfiles": "Kelola"
+  },
+  "notifications": {
+    "dailyUsageTitle": "⚠️ Penggunaan Harian Tinggi",
+    "dailyUsageBody": "Sudah menggunakan {{used}} GB hari ini (batas: {{limit}} GB)",
+    "ipChangeTitle": "🔄 IP Address Berubah",
+    "ipChangeBody": "Koneksi baru terdeteksi, IP kemungkinan sudah berganti"
   }
 }
 

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModemInfo, SignalInfo, NetworkInfo, TrafficStats, ModemStatus, WanInfo, MobileDataStatus } from '@/types';
+import { saveModemDataCache, getModemDataCache, clearModemDataCache } from '@/utils/storage';
 
 const PREVIOUS_WAN_IP_KEY = 'previous_wan_ip';
 
@@ -25,6 +26,7 @@ interface ModemState {
   monthlySettings: MonthlySettings | null;
   previousWanIp: string | null;
   isLoading: boolean;
+  isUsingCache: boolean; // Flag to indicate showing cached data
   error: string | null;
 
   setModemInfo: (info: ModemInfo) => void;
@@ -40,6 +42,12 @@ interface ModemState {
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
   reset: () => void;
+
+  // Cache functions for invisible auto-login
+  loadFromCache: () => Promise<boolean>; // Returns true if cache was loaded
+  saveToCache: () => Promise<void>; // Save current state to cache
+  clearCache: () => Promise<void>; // Clear cache on logout
+  setUsingCache: (value: boolean) => void;
 }
 
 export const useModemStore = create<ModemState>((set, get) => ({
@@ -53,13 +61,28 @@ export const useModemStore = create<ModemState>((set, get) => ({
   monthlySettings: null,
   previousWanIp: null,
   isLoading: false,
+  isUsingCache: false,
   error: null,
 
   setModemInfo: (info) => set({ modemInfo: info }),
-  setSignalInfo: (info) => set({ signalInfo: info }),
-  setNetworkInfo: (info) => set({ networkInfo: info }),
-  setTrafficStats: (stats) => set({ trafficStats: stats }),
-  setModemStatus: (status) => set({ modemStatus: status }),
+
+  setSignalInfo: (info) => {
+    set({ signalInfo: info, isUsingCache: false });
+    // Auto-save to cache when data is updated
+    get().saveToCache();
+  },
+
+  setNetworkInfo: (info) => {
+    set({ networkInfo: info, isUsingCache: false });
+  },
+
+  setTrafficStats: (stats) => {
+    set({ trafficStats: stats, isUsingCache: false });
+  },
+
+  setModemStatus: (status) => {
+    set({ modemStatus: status, isUsingCache: false });
+  },
 
   setWanInfo: (info) => {
     const currentWanInfo = get().wanInfo;
@@ -73,10 +96,12 @@ export const useModemStore = create<ModemState>((set, get) => ({
       AsyncStorage.setItem(PREVIOUS_WAN_IP_KEY, currentIp).catch(console.error);
     }
 
-    set({ wanInfo: info });
+    set({ wanInfo: info, isUsingCache: false });
   },
 
-  setMobileDataStatus: (status) => set({ mobileDataStatus: status }),
+  setMobileDataStatus: (status) => {
+    set({ mobileDataStatus: status, isUsingCache: false });
+  },
 
   setMonthlySettings: (settings) => set({ monthlySettings: settings }),
 
@@ -102,6 +127,52 @@ export const useModemStore = create<ModemState>((set, get) => ({
 
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
+  setUsingCache: (value) => set({ isUsingCache: value }),
+
+  // Load cached modem data for instant display
+  loadFromCache: async () => {
+    try {
+      const cached = await getModemDataCache();
+      if (cached) {
+        set({
+          signalInfo: cached.signalInfo,
+          networkInfo: cached.networkInfo,
+          trafficStats: cached.trafficStats,
+          modemStatus: cached.modemStatus,
+          wanInfo: cached.wanInfo,
+          mobileDataStatus: cached.mobileDataStatus,
+          isUsingCache: true,
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error loading from cache:', error);
+      return false;
+    }
+  },
+
+  // Save current modem data to cache
+  saveToCache: async () => {
+    const state = get();
+    // Only save if we have valid data (not using cache)
+    if (state.signalInfo && !state.isUsingCache) {
+      await saveModemDataCache({
+        signalInfo: state.signalInfo,
+        networkInfo: state.networkInfo,
+        trafficStats: state.trafficStats,
+        modemStatus: state.modemStatus,
+        wanInfo: state.wanInfo,
+        mobileDataStatus: state.mobileDataStatus,
+      });
+    }
+  },
+
+  // Clear cache on logout
+  clearCache: async () => {
+    await clearModemDataCache();
+    set({ isUsingCache: false });
+  },
 
   reset: () => set({
     modemInfo: null,
@@ -113,7 +184,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
     mobileDataStatus: null,
     // Don't reset previousWanIp on reset - keep it for reference
     isLoading: false,
+    isUsingCache: false,
     error: null,
   }),
 }));
-

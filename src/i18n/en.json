@@ -563,6 +563,12 @@
     "deleteConfirm": "Are you sure you want to delete this profile?",
     "noProfiles": "No profiles configured",
     "manageProfiles": "Manage"
+  },
+  "notifications": {
+    "dailyUsageTitle": "⚠️ High Daily Usage",
+    "dailyUsageBody": "You've used {{used}} GB today (limit: {{limit}} GB)",
+    "ipChangeTitle": "🔄 IP Address Changed",
+    "ipChangeBody": "New connection detected, IP may have changed"
   }
 }
 

@@ -12,6 +12,8 @@ import { useTheme } from '@/theme';
 import { ThemedAlert, setAlertListener, ThemedAlertHelper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
+import { isSessionLikelyValid } from '@/utils/storage';
+import { requestNotificationPermissions } from '@/services/notification.service';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
 
@@ -48,11 +50,22 @@ export default function RootLayout() {
     });
 
     const { colors, isDark } = useTheme();
-    const { isAuthenticated, loadCredentials, autoLogin } = useAuthStore();
+    const {
+        isAuthenticated,
+        loadCredentials,
+        autoLogin,
+        tryQuietSessionRestore,
+        startSessionKeepAlive,
+        stopSessionKeepAlive
+    } = useAuthStore();
     const { initializeLanguage } = useThemeStore();
     const { t } = useTranslation();
     const segments = useSegments();
     const router = useRouter();
+
+    // Track app state for session management
+    const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+    const [isRestoringSession, setIsRestoringSession] = useState(false);
 
     // Handle Android Navigation Bar Colors
     useEffect(() => {
@@ -164,16 +177,68 @@ export default function RootLayout() {
             // Show star request alert (once per version)
             checkAndShowStarRequest();
 
+            // Request notification permissions
+            requestNotificationPermissions();
+
             // Load auth credentials
             await loadCredentials();
             // Auto-login if credentials exist
             const credentials = useAuthStore.getState().credentials;
             if (credentials) {
-                await autoLogin();
+                // Try quiet session restore first (faster, no WebView)
+                const restored = await useAuthStore.getState().tryQuietSessionRestore();
+                if (!restored) {
+                    // Fall back to regular auto-login
+                    await autoLogin();
+                }
             }
         };
         initializeApp();
     }, []);
+
+    // Handle app state changes for session management
+    useEffect(() => {
+        const handleAppStateChange = async (nextAppState: AppStateStatus) => {
+            const previousState = appStateRef.current;
+            appStateRef.current = nextAppState;
+
+            // App came to foreground from background
+            if (previousState.match(/inactive|background/) && nextAppState === 'active') {
+                const { credentials, isAuthenticated } = useAuthStore.getState();
+
+                if (credentials && isAuthenticated) {
+                    // Try to quietly restore the session without showing WebView
+                    setIsRestoringSession(true);
+                    try {
+                        const sessionValid = await isSessionLikelyValid();
+                        if (sessionValid) {
+                            // Just restart keep-alive, session should be fine
+                            startSessionKeepAlive();
+                        } else {
+                            // Session might have expired, try quiet restore
+                            await useAuthStore.getState().tryQuietSessionRestore();
+                        }
+                    } catch (error) {
+                        // Silent fail - home screen will handle re-login if needed
+                    } finally {
+                        setIsRestoringSession(false);
+                    }
+                }
+            }
+
+            // App going to background
+            if (nextAppState.match(/inactive|background/)) {
+                // Stop session keep-alive to save battery
+                stopSessionKeepAlive();
+            }
+        };
+
+        const subscription = AppState.addEventListener('change', handleAppStateChange);
+
+        return () => {
+            subscription.remove();
+        };
+    }, [startSessionKeepAlive, stopSessionKeepAlive]);
 
     // Set up global alert listener
     useEffect(() => {
