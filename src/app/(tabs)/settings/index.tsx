@@ -124,7 +124,6 @@ export default function SettingsIndex() {
                             icon="translate"
                             title={t('settings.language')}
                             onPress={() => setShowLanguageModal(true)}
-                            isLast
                             rightElement={
                                 <TouchableOpacity
                                     style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -136,6 +135,14 @@ export default function SettingsIndex() {
                                     <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             }
+                        />
+
+                        {/* Notification Settings */}
+                        <SettingsItem
+                            icon="notifications"
+                            title={t('notifications.title')}
+                            onPress={() => router.push('/settings/notifications')}
+                            isLast
                         />
                     </SettingsSection>
 

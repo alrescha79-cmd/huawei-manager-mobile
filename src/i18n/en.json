@@ -30,7 +30,8 @@
     "back": "Back",
     "done": "Done",
     "disabled": "Disabled",
-    "turnOff": "Turn Off"
+    "turnOff": "Turn Off",
+    "custom": "Custom"
   },
   "alerts": {
     "newVersionAvailable": "A new version is available. Would you like to download it now?",
@@ -565,10 +566,24 @@
     "manageProfiles": "Manage"
   },
   "notifications": {
-    "dailyUsageTitle": "⚠️ High Daily Usage",
+    "title": "Notifications",
+    "dailyUsage": "Daily Usage Alert",
+    "dailyUsageHint": "Notify when daily usage exceeds threshold",
+    "monthlyUsage": "Monthly Usage Alert",
+    "monthlyUsageHint": "Notify when monthly usage exceeds threshold",
+    "ipChange": "IP Change Alert",
+    "ipChangeHint": "Notify when IP address changes",
+    "dailyUsageTitle": "High Daily Usage",
     "dailyUsageBody": "You've used {{used}} GB today (limit: {{limit}} GB)",
-    "ipChangeTitle": "🔄 IP Address Changed",
-    "ipChangeBody": "New connection detected, IP may have changed"
+    "monthlyUsageTitle": "High Monthly Usage",
+    "monthlyUsageBody": "You've used {{used}} GB this month (limit: {{limit}} GB)",
+    "ipChangeTitle": "IP Address Changed",
+    "ipChangeBody": "IP changed {{minutes}} minutes ago",
+    "ipChangeBodyJustNow": "IP just changed",
+    "minutesAgo": "{{minutes}} minutes ago",
+    "hoursAgo": "{{hours}} hours ago",
+    "justNow": "Just now",
+    "usageLimitRequired": "Enable Usage Limit first"
   }
 }
 

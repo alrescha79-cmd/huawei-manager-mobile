@@ -174,9 +174,6 @@ export default function RootLayout() {
             // Check for app updates
             checkForUpdates();
 
-            // Show star request alert (once per version)
-            checkAndShowStarRequest();
-
             // Request notification permissions
             requestNotificationPermissions();
 
@@ -191,6 +188,9 @@ export default function RootLayout() {
                     // Fall back to regular auto-login
                     await autoLogin();
                 }
+
+                // Show star request after successful login
+                checkAndShowStarRequest();
             }
         };
         initializeApp();

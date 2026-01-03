@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Modal,
     TouchableOpacity,
-    Switch,
     TextInput,
     ScrollView,
     ActivityIndicator,
@@ -19,6 +18,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { MeshGradientBackground } from './MeshGradientBackground';
+import { ThemedSwitch } from './ThemedSwitch';
 
 interface MonthlySettingsModalProps {
     visible: boolean;
@@ -136,11 +136,9 @@ export function MonthlySettingsModal({
                             <Text style={[styles.label, { color: colors.text, fontSize: 16 }]}>
                                 {t('home.enableMonthlyLimit')}
                             </Text>
-                            <Switch
+                            <ThemedSwitch
                                 value={enabled}
                                 onValueChange={setEnabled}
-                                trackColor={{ false: '#333', true: colors.primary }}
-                                thumbColor={'#FFF'}
                             />
                         </View>
 
@@ -224,13 +222,44 @@ export function MonthlySettingsModal({
                             )}
                         </View>
 
-                        {/* Threshold Slider with Manual Input */}
+                        {/* Threshold Selection - Modern Design */}
                         <View style={styles.section}>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                                <Text style={[styles.sectionTitle, { color: colors.text, marginBottom: 0 }]}>{t('home.threshold').replace(' (%)', '')}</Text>
-                                <View style={[styles.thresholdInputContainer, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.threshold').replace(' (%)', '')}</Text>
+
+                            {/* Preset Buttons */}
+                            <View style={styles.presetContainer}>
+                                {[50, 70, 80, 90, 95].map((preset) => {
+                                    const isSelected = monthThreshold === preset;
+                                    return (
+                                        <TouchableOpacity
+                                            key={preset}
+                                            style={[
+                                                styles.presetButton,
+                                                isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
+                                                !isSelected && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderColor: colors.border }
+                                            ]}
+                                            onPress={() => setMonthThreshold(preset)}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Text style={[
+                                                styles.presetText,
+                                                { color: isSelected ? '#FFF' : colors.textSecondary }
+                                            ]}>
+                                                {preset}%
+                                            </Text>
+                                        </TouchableOpacity>
+                                    );
+                                })}
+                            </View>
+
+                            {/* Custom Input Row */}
+                            <View style={[styles.customInputRow, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: colors.border }]}>
+                                <Text style={[styles.customLabel, { color: colors.textSecondary }]}>
+                                    {t('common.custom') || 'Custom'}
+                                </Text>
+                                <View style={styles.customInputWrapper}>
                                     <TextInput
-                                        style={[styles.thresholdInput, { color: colors.primary }]}
+                                        style={[styles.customTextInput, { color: colors.text, borderColor: colors.primary }]}
                                         value={monthThreshold.toString()}
                                         onChangeText={(text) => {
                                             const num = parseInt(text) || 0;
@@ -240,24 +269,7 @@ export function MonthlySettingsModal({
                                         maxLength={3}
                                         selectTextOnFocus
                                     />
-                                    <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 16 }}>%</Text>
-                                </View>
-                            </View>
-
-                            {/* Custom Slider Bar */}
-                            <View
-                                style={[styles.sliderTrack, { backgroundColor: '#333' }]}
-                                onLayout={(e) => setSliderWidth(e.nativeEvent.layout.width)}
-                                onTouchEnd={(e) => {
-                                    if (sliderWidth > 0) {
-                                        const x = e.nativeEvent.locationX;
-                                        const percent = Math.min(100, Math.max(0, Math.round((x / sliderWidth) * 100)));
-                                        setMonthThreshold(percent);
-                                    }
-                                }}
-                            >
-                                <View style={[styles.sliderFill, { width: `${monthThreshold}%`, backgroundColor: colors.primary }]}>
-                                    <View style={styles.sliderKnob} />
+                                    <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>%</Text>
                                 </View>
                             </View>
 
@@ -490,6 +502,51 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 16,
         fontWeight: 'bold',
+    },
+    presetContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 8,
+        marginBottom: 16,
+    },
+    presetButton: {
+        flex: 1,
+        paddingVertical: 14,
+        borderRadius: 12,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    presetText: {
+        fontSize: 15,
+        fontWeight: '600',
+    },
+    customInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 1,
+    },
+    customLabel: {
+        fontSize: 14,
+        fontWeight: '500',
+    },
+    customInputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+    },
+    customTextInput: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        textAlign: 'center',
+        minWidth: 60,
+        paddingVertical: 4,
+        paddingHorizontal: 12,
+        borderWidth: 2,
+        borderRadius: 8,
     },
 });
 

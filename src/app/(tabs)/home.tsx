@@ -31,7 +31,7 @@ import {
   getLteBandInfo,
 } from '@/utils/helpers';
 import { useTranslation } from '@/i18n';
-import { checkDailyUsageNotification, checkIPChangeNotification } from '@/services/notification.service';
+import { checkDailyUsageNotification, checkMonthlyUsageNotification, checkIPChangeNotification } from '@/services/notification.service';
 
 // Helper to determine signal quality based on thresholds
 const getSignalQuality = (
@@ -233,10 +233,23 @@ export default function HomeScreen() {
           }
         );
 
+        // Check monthly usage threshold notification
+        checkMonthlyUsageNotification(
+          traffic.monthDownload + traffic.monthUpload,
+          dataLimitInGB,
+          monthlySettings.monthThreshold,
+          {
+            title: t('notifications.monthlyUsageTitle'),
+            body: (used, limit) => t('notifications.monthlyUsageBody', { used, limit }),
+          }
+        );
+
         // Check IP change notification (via session duration reset)
         checkIPChangeNotification(traffic.currentConnectTime || 0, {
           title: t('notifications.ipChangeTitle'),
-          body: t('notifications.ipChangeBody'),
+          body: (minutes) => minutes === '0'
+            ? t('notifications.ipChangeBodyJustNow')
+            : t('notifications.ipChangeBody', { minutes }),
         });
       }
 
