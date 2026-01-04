@@ -583,7 +583,11 @@
     "minutesAgo": "{{minutes}} menit yang lalu",
     "hoursAgo": "{{hours}} jam yang lalu",
     "justNow": "Baru saja",
-    "usageLimitRequired": "Aktifkan Batas Penggunaan terlebih dahulu"
+    "usageLimitRequired": "Aktifkan Batas Penggunaan terlebih dahulu",
+    "updateAvailableTitle": "Update Tersedia!",
+    "updateAvailableBody": "Versi {{version}} tersedia dengan fitur baru.",
+    "announcementTitle": "Pengumuman",
+    "tapToLearnMore": "Ketuk untuk info lebih lanjut"
   }
 }
 

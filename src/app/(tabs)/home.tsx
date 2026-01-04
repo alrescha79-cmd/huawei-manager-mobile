@@ -58,7 +58,7 @@ const getSignalQuality = (
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, isDark } = useTheme();
   const { usageCardStyle } = useThemeStore();
   const {
     credentials,
@@ -814,7 +814,7 @@ export default function HomeScreen() {
                 style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
                 onPress={() => setShowBandModal(true)}
               >
-                <View style={[styles.quickActionIcon, { backgroundColor: colors.background }]}>
+                <View style={[styles.quickActionIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.background }]}>
                   <MaterialIcons name="settings-input-antenna" size={20} color={colors.primary} />
                 </View>
                 <View style={styles.quickActionLargeContent}>
@@ -838,7 +838,7 @@ export default function HomeScreen() {
                 onPress={handleChangeIp}
                 disabled={isChangingIp}
               >
-                <View style={[styles.quickActionIcon, { backgroundColor: colors.background }]}>
+                <View style={[styles.quickActionIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.background }]}>
                   {isChangingIp ? (
                     <ActivityIndicator color={colors.primary} size="small" />
                   ) : (

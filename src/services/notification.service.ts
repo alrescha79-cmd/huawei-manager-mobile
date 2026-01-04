@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // Storage keys
 const NOTIFICATION_SETTINGS_KEY = 'notification_settings';
+const EXPO_PUSH_TOKEN_KEY = 'expo_push_token';
 const LAST_DAILY_USAGE_NOTIFY_KEY = 'last_daily_usage_notify_date';
 const LAST_MONTHLY_USAGE_NOTIFY_KEY = 'last_monthly_usage_notify_date';
 const LAST_SESSION_DURATION_KEY = 'last_session_duration';
@@ -59,6 +60,64 @@ export async function saveNotificationSettings(settings: NotificationSettings): 
 }
 
 // ============================================================================
+// EXPO PUSH TOKEN (for remote notifications)
+// ============================================================================
+
+/**
+ * Register for push notifications and get Expo Push Token
+ * Token is stored locally and logged to console for easy copying
+ */
+async function registerForPushNotifications(): Promise<string | null> {
+    try {
+        // Get project ID from Constants
+        const Constants = require('expo-constants').default;
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId ||
+            Constants.easConfig?.projectId;
+
+        if (!projectId) {
+            console.log('No Expo project ID found - push notifications require EAS setup');
+            return null;
+        }
+
+        const token = await Notifications.getExpoPushTokenAsync({ projectId });
+        const pushToken = token.data;
+
+        // Store token locally
+        await AsyncStorage.setItem(EXPO_PUSH_TOKEN_KEY, pushToken);
+
+        // Log for easy copying during development
+        console.log('===========================================');
+        console.log('📱 EXPO PUSH TOKEN:');
+        console.log(pushToken);
+        console.log('===========================================');
+
+        // Subscribe to 'all_users' topic for broadcast notifications
+        await Notifications.setNotificationChannelAsync?.('app-updates', {
+            name: 'App Updates',
+            importance: Notifications.AndroidImportance.HIGH,
+        });
+
+        console.log('📱 Subscribed to all_users topic for broadcast notifications');
+
+        return pushToken;
+    } catch (error) {
+        console.log('Failed to get push token:', error);
+        return null;
+    }
+}
+
+/**
+ * Get stored Expo Push Token
+ */
+export async function getExpoPushToken(): Promise<string | null> {
+    try {
+        return await AsyncStorage.getItem(EXPO_PUSH_TOKEN_KEY);
+    } catch {
+        return null;
+    }
+}
+
+// ============================================================================
 // NOTIFICATION PERMISSIONS
 // ============================================================================
 
@@ -96,7 +155,18 @@ export async function requestNotificationPermissions(): Promise<boolean> {
             vibrationPattern: [0, 250],
             lightColor: '#4ECDC4',
         });
+
+        // Channel for app updates
+        await Notifications.setNotificationChannelAsync('app-updates', {
+            name: 'App Updates',
+            importance: Notifications.AndroidImportance.HIGH,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#6C63FF',
+        });
     }
+
+    // Register for push notifications and get token
+    await registerForPushNotifications();
 
     return true;
 }

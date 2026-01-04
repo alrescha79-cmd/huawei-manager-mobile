@@ -583,7 +583,11 @@
     "minutesAgo": "{{minutes}} minutes ago",
     "hoursAgo": "{{hours}} hours ago",
     "justNow": "Just now",
-    "usageLimitRequired": "Enable Usage Limit first"
+    "usageLimitRequired": "Enable Usage Limit first",
+    "updateAvailableTitle": "Update Available!",
+    "updateAvailableBody": "Version {{version}} is now available with new features.",
+    "announcementTitle": "Announcement",
+    "tapToLearnMore": "Tap to learn more"
   }
 }
 

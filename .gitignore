@@ -41,3 +41,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Firebase credentials (sensitive)
+google-services.json
+hm-mobile-1a0d0-firebase-adminsdk-fbsvc-cf2e9c0f03.json
+GoogleService-Info.plist

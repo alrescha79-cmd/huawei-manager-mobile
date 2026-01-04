@@ -14,6 +14,7 @@ import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
 import { requestNotificationPermissions } from '@/services/notification.service';
+import * as Notifications from 'expo-notifications';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
 
@@ -194,6 +195,20 @@ export default function RootLayout() {
             }
         };
         initializeApp();
+    }, []);
+
+    // Handle notification tap - open URL if present
+    useEffect(() => {
+        const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+            const data = response.notification.request.content.data;
+            if (data?.url && typeof data.url === 'string') {
+                Linking.openURL(data.url).catch(err => {
+                    console.log('Failed to open URL from notification:', err);
+                });
+            }
+        });
+
+        return () => subscription.remove();
     }, []);
 
     // Handle app state changes for session management
