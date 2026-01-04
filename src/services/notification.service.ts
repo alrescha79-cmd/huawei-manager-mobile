@@ -11,6 +11,12 @@ const LAST_MONTHLY_USAGE_NOTIFY_KEY = 'last_monthly_usage_notify_date';
 const LAST_SESSION_DURATION_KEY = 'last_session_duration';
 const LAST_IP_CHANGE_TIME_KEY = 'last_ip_change_time';
 
+// Cooldown to prevent duplicate notifications (in-memory, resets on app restart)
+let lastDailyNotifyTimestamp = 0;
+let lastMonthlyNotifyTimestamp = 0;
+let lastIpChangeNotifyTimestamp = 0;
+const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+
 // Notification settings interface
 export interface NotificationSettings {
     dailyUsageEnabled: boolean;
@@ -203,6 +209,10 @@ export async function checkDailyUsageNotification(
     const settings = await getNotificationSettings();
     if (!settings.dailyUsageEnabled) return;
 
+    // Cooldown check to prevent duplicate notifications
+    const now = Date.now();
+    if (now - lastDailyNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) return;
+
     const daysInMonth = new Date(
         new Date().getFullYear(),
         new Date().getMonth() + 1,
@@ -225,6 +235,7 @@ export async function checkDailyUsageNotification(
             'usage-alerts'
         );
 
+        lastDailyNotifyTimestamp = now;
         await AsyncStorage.setItem(LAST_DAILY_USAGE_NOTIFY_KEY, today);
     }
 }
@@ -242,6 +253,10 @@ export async function checkMonthlyUsageNotification(
     const settings = await getNotificationSettings();
     if (!settings.monthlyUsageEnabled) return;
 
+    // Cooldown check to prevent duplicate notifications
+    const now = Date.now();
+    if (now - lastMonthlyNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) return;
+
     const limitBytes = dataLimit * 1024 * 1024 * 1024;
     const notifyThresholdBytes = limitBytes * (monthThreshold / 100);
 
@@ -258,6 +273,7 @@ export async function checkMonthlyUsageNotification(
             'usage-alerts'
         );
 
+        lastMonthlyNotifyTimestamp = now;
         await AsyncStorage.setItem(LAST_MONTHLY_USAGE_NOTIFY_KEY, thisMonth);
     }
 }
@@ -282,11 +298,21 @@ export async function checkIPChangeNotification(
     const settings = await getNotificationSettings();
     if (!settings.ipChangeEnabled) return;
 
+    // Cooldown check to prevent duplicate notifications
+    const now = Date.now();
+    if (now - lastIpChangeNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) {
+        // Still update session duration even during cooldown
+        await AsyncStorage.setItem(
+            LAST_SESSION_DURATION_KEY,
+            currentSessionDuration.toString()
+        );
+        return;
+    }
+
     const lastDuration = await AsyncStorage.getItem(LAST_SESSION_DURATION_KEY);
     const previousDuration = lastDuration ? parseInt(lastDuration, 10) : 0;
 
     if (currentSessionDuration < previousDuration && previousDuration > 60) {
-        const now = Date.now();
         await AsyncStorage.setItem(LAST_IP_CHANGE_TIME_KEY, now.toString());
 
         await sendLocalNotification(
@@ -294,6 +320,8 @@ export async function checkIPChangeNotification(
             translations.body('0'),
             'ip-change'
         );
+
+        lastIpChangeNotifyTimestamp = now;
     }
 
     await AsyncStorage.setItem(
