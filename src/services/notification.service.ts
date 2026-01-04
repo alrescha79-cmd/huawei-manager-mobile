@@ -315,9 +315,23 @@ export async function checkIPChangeNotification(
     if (currentSessionDuration < previousDuration && previousDuration > 60) {
         await AsyncStorage.setItem(LAST_IP_CHANGE_TIME_KEY, now.toString());
 
+        // Format previous session duration for notification body
+        const prevMinutes = Math.floor(previousDuration / 60);
+        const prevHours = Math.floor(prevMinutes / 60);
+        const remainingMinutes = prevMinutes % 60;
+
+        let durationText: string;
+        if (prevHours > 0) {
+            durationText = remainingMinutes > 0
+                ? `${prevHours}h ${remainingMinutes}m`
+                : `${prevHours}h`;
+        } else {
+            durationText = `${prevMinutes}m`;
+        }
+
         await sendLocalNotification(
             translations.title,
-            translations.body('0'),
+            translations.body(durationText),
             'ip-change'
         );
 

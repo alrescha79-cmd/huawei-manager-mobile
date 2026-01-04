@@ -99,21 +99,25 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
         limitFormatted = formatBytesWithUnit(dataLimit);
     }
 
+    // Dynamic color based on percentage
+    const getProgressColor = (pct: number): string => {
+        if (pct >= 90) return '#ef4444'; // Red
+        if (pct >= 75) return '#f97316'; // Orange
+        if (pct >= 50) return '#eab308'; // Yellow
+        return '#22c55e'; // Green
+    };
+
+    const progressColor = showProgress ? getProgressColor(percent) : blueColor;
+
     return (
         <Card style={[styles.container, style]}>
             {/* Header: Title + Tabs */}
             <View style={styles.header}>
-                <View>
-                    <Text style={[typography.headline, { color: colors.text, fontWeight: '800', fontSize: 13, letterSpacing: 0.5 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialIcons name="insert-chart" size={18} color={blueColor} style={{ marginRight: 8 }} />
+                    <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}>
                         {t('home.dataStatistics')}
                     </Text>
-                    {/* Duration Display */}
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 4 }}>
-                        <MaterialIcons name="access-time" size={12} color={colors.textSecondary} style={{ marginRight: 4 }} />
-                        <Text style={[typography.caption1, { color: colors.textSecondary, fontSize: 11, fontFamily: 'monospace' }]}>
-                            {durationText}
-                        </Text>
-                    </View>
                 </View>
 
                 {/* Tabs */}
@@ -160,19 +164,28 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                     </Text>
                 </View>
 
-                {/* Right Side: Progress Info (Monthly Only) */}
-                {showProgress && (
-                    <View style={styles.rightStatsGroup}>
-                        <View style={[styles.percentBadge, { borderColor: blueColor }]}>
-                            <Text style={[typography.caption2, { color: blueColor, fontWeight: 'bold' }]}>
-                                {percent}%
+                {/* Right Side: Progress Info (Monthly) OR Duration (Session/Total) */}
+                <View style={styles.rightStatsGroup}>
+                    {showProgress ? (
+                        <>
+                            <View style={[styles.percentBadge, { borderColor: progressColor }]}>
+                                <Text style={[typography.caption2, { color: progressColor, fontWeight: 'bold' }]}>
+                                    {percent}%
+                                </Text>
+                            </View>
+                            <Text style={[typography.caption2, { color: colors.textSecondary, fontSize: 10, textAlign: 'right', marginTop: 2 }]}>
+                                {t('home.of')} {limitFormatted.value} {limitFormatted.unit}
+                            </Text>
+                        </>
+                    ) : (
+                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                            <MaterialIcons name="data-usage" size={14} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                            <Text style={[typography.caption1, { color: colors.textSecondary, fontSize: 12, fontFamily: 'monospace' }]}>
+                                {durationText}
                             </Text>
                         </View>
-                        <Text style={[typography.caption2, { color: colors.textSecondary, fontSize: 10, textAlign: 'right', marginTop: 2 }]}>
-                            {t('home.of')} {limitFormatted.value} {limitFormatted.unit}
-                        </Text>
-                    </View>
-                )}
+                    )}
+                </View>
             </View>
 
             {/* Progress Bar (Full Width if Monthly) */}
@@ -183,7 +196,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                             styles.progressBarFill,
                             {
                                 width: `${percent}%`,
-                                backgroundColor: blueColor
+                                backgroundColor: progressColor
                             }
                         ]}
                     />

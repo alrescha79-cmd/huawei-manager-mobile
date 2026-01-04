@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { Card } from './Card';
@@ -49,9 +50,12 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
             <View style={styles.content}>
                 {/* Left Side: Title + Usage */}
                 <View style={styles.leftSide}>
-                    <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16, marginBottom: 8 }]}>
-                        {t('home.dailyUsage')}
-                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                        <MaterialIcons name="today" size={18} color={blueColor} style={{ marginRight: 8 }} />
+                        <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}>
+                            {t('home.dailyUsage')}
+                        </Text>
+                    </View>
                     <View style={styles.usageRow}>
                         <Text style={[styles.usageValue, { color: blueColor }]}>
                             {formattedUsage.value}
