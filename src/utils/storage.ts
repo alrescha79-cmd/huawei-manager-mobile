@@ -2,6 +2,14 @@ import * as SecureStore from 'expo-secure-store';
 import { ModemCredentials } from '@/types';
 
 const CREDENTIALS_KEY = 'modem_credentials';
+const SESSION_STATE_KEY = 'session_state';
+
+// Session state interface for persistence
+export interface SessionState {
+  lastSuccessfulLogin: number;      // Timestamp of last successful login
+  lastSessionActivity: number;       // Timestamp of last successful API call
+  sessionHealthy: boolean;           // Whether session was healthy when app closed
+}
 
 export const saveCredentials = async (credentials: ModemCredentials): Promise<void> => {
   try {
@@ -25,8 +33,141 @@ export const getCredentials = async (): Promise<ModemCredentials | null> => {
 export const deleteCredentials = async (): Promise<void> => {
   try {
     await SecureStore.deleteItemAsync(CREDENTIALS_KEY);
+    // Also clear session state when logging out
+    await SecureStore.deleteItemAsync(SESSION_STATE_KEY);
   } catch (error) {
     console.error('Error deleting credentials:', error);
     throw error;
+  }
+};
+
+// Session state persistence functions
+export const saveSessionState = async (state: SessionState): Promise<void> => {
+  try {
+    await SecureStore.setItemAsync(SESSION_STATE_KEY, JSON.stringify(state));
+  } catch (error) {
+    console.error('Error saving session state:', error);
+  }
+};
+
+export const getSessionState = async (): Promise<SessionState | null> => {
+  try {
+    const state = await SecureStore.getItemAsync(SESSION_STATE_KEY);
+    return state ? JSON.parse(state) : null;
+  } catch (error) {
+    console.error('Error getting session state:', error);
+    return null;
+  }
+};
+
+export const updateSessionActivity = async (): Promise<void> => {
+  try {
+    const currentState = await getSessionState();
+    const now = Date.now();
+
+    await saveSessionState({
+      lastSuccessfulLogin: currentState?.lastSuccessfulLogin || now,
+      lastSessionActivity: now,
+      sessionHealthy: true,
+    });
+  } catch (error) {
+    console.error('Error updating session activity:', error);
+  }
+};
+
+export const markSessionUnhealthy = async (): Promise<void> => {
+  try {
+    const currentState = await getSessionState();
+    if (currentState) {
+      await saveSessionState({
+        ...currentState,
+        sessionHealthy: false,
+      });
+    }
+  } catch (error) {
+    console.error('Error marking session unhealthy:', error);
+  }
+};
+
+// Check if session might still be valid based on last activity
+// Modem sessions typically expire after 5-10 minutes of inactivity
+const SESSION_TIMEOUT_MS = 5 * 60 * 1000; // 5 minutes
+
+export const isSessionLikelyValid = async (): Promise<boolean> => {
+  try {
+    const state = await getSessionState();
+    if (!state) return false;
+
+    const timeSinceActivity = Date.now() - state.lastSessionActivity;
+    return state.sessionHealthy && timeSinceActivity < SESSION_TIMEOUT_MS;
+  } catch (error) {
+    return false;
+  }
+};
+
+// ============================================================================
+// MODEM DATA CACHE
+// Cache the last known modem data to display while re-logging in
+// ============================================================================
+
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { SignalInfo, NetworkInfo, TrafficStats, ModemStatus, WanInfo, MobileDataStatus } from '@/types';
+
+const MODEM_DATA_CACHE_KEY = 'modem_data_cache';
+
+export interface CachedModemData {
+  signalInfo: SignalInfo | null;
+  networkInfo: NetworkInfo | null;
+  trafficStats: TrafficStats | null;
+  modemStatus: ModemStatus | null;
+  wanInfo: WanInfo | null;
+  mobileDataStatus: MobileDataStatus | null;
+  cachedAt: number; // Timestamp when data was cached
+}
+
+// Save modem data to cache
+export const saveModemDataCache = async (data: Omit<CachedModemData, 'cachedAt'>): Promise<void> => {
+  try {
+    const cacheData: CachedModemData = {
+      ...data,
+      cachedAt: Date.now(),
+    };
+    await AsyncStorage.setItem(MODEM_DATA_CACHE_KEY, JSON.stringify(cacheData));
+  } catch (error) {
+    console.error('Error saving modem data cache:', error);
+  }
+};
+
+// Load modem data from cache
+export const getModemDataCache = async (): Promise<CachedModemData | null> => {
+  try {
+    const cached = await AsyncStorage.getItem(MODEM_DATA_CACHE_KEY);
+    if (!cached) return null;
+
+    const data = JSON.parse(cached) as CachedModemData;
+
+    // Cache is valid for 24 hours (data might be stale but UI won't be empty)
+    const cacheAge = Date.now() - data.cachedAt;
+    const MAX_CACHE_AGE = 24 * 60 * 60 * 1000; // 24 hours
+
+    if (cacheAge > MAX_CACHE_AGE) {
+      // Cache too old, delete it
+      await AsyncStorage.removeItem(MODEM_DATA_CACHE_KEY);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Error loading modem data cache:', error);
+    return null;
+  }
+};
+
+// Clear modem data cache (on logout)
+export const clearModemDataCache = async (): Promise<void> => {
+  try {
+    await AsyncStorage.removeItem(MODEM_DATA_CACHE_KEY);
+  } catch (error) {
+    console.error('Error clearing modem data cache:', error);
   }
 };

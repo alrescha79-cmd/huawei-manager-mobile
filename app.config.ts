@@ -64,6 +64,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         },
         predictiveBackGestureEnabled: false,
         package: 'com.alrescha79.hmmobile',
+        googleServicesFile: './google-services.json',
     },
     web: {
         favicon: './assets/logo.png',

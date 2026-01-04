@@ -53,6 +53,9 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
 
+      - name: Create google-services.json from secret
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
+
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
@@ -116,6 +119,9 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
 
+      - name: Create google-services.json from secret
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
+
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
@@ -178,6 +184,9 @@ jobs:
           VERSION=$(node -p "require('./app.json').expo.version")
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
+
+      - name: Create google-services.json from secret
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
 
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean

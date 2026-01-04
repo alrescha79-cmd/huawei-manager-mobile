@@ -30,7 +30,8 @@
     "back": "Kembali",
     "done": "Selesai",
     "disabled": "Nonaktif",
-    "turnOff": "Matikan"
+    "turnOff": "Matikan",
+    "custom": "Kustom"
   },
   "alerts": {
     "newVersionAvailable": "Versi baru tersedia. Apakah Anda ingin mengunduhnya sekarang?",
@@ -563,6 +564,30 @@
     "deleteConfirm": "Yakin ingin menghapus profil ini?",
     "noProfiles": "Tidak ada profil yang dikonfigurasi",
     "manageProfiles": "Kelola"
+  },
+  "notifications": {
+    "title": "Notifikasi",
+    "dailyUsage": "Peringatan Penggunaan Harian",
+    "dailyUsageHint": "Notifikasi saat penggunaan harian melebihi batas",
+    "monthlyUsage": "Peringatan Penggunaan Bulanan",
+    "monthlyUsageHint": "Notifikasi saat penggunaan bulanan melebihi batas",
+    "ipChange": "Peringatan IP Berubah",
+    "ipChangeHint": "Notifikasi saat alamat IP berubah",
+    "dailyUsageTitle": "Penggunaan Harian Tinggi",
+    "dailyUsageBody": "Sudah menggunakan {{used}} GB hari ini (batas: {{limit}} GB)",
+    "monthlyUsageTitle": "Penggunaan Bulanan Tinggi",
+    "monthlyUsageBody": "Sudah menggunakan {{used}} GB bulan ini (batas: {{limit}} GB)",
+    "ipChangeTitle": "IP Address Berubah",
+    "ipChangeBody": "IP berubah {{minutes}} menit yang lalu",
+    "ipChangeBodyJustNow": "IP baru saja berubah",
+    "minutesAgo": "{{minutes}} menit yang lalu",
+    "hoursAgo": "{{hours}} jam yang lalu",
+    "justNow": "Baru saja",
+    "usageLimitRequired": "Aktifkan Batas Penggunaan terlebih dahulu",
+    "updateAvailableTitle": "Update Tersedia!",
+    "updateAvailableBody": "Versi {{version}} tersedia dengan fitur baru.",
+    "announcementTitle": "Pengumuman",
+    "tapToLearnMore": "Ketuk untuk info lebih lanjut"
   }
 }
 

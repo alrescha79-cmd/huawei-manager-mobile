@@ -1,5 +1,6 @@
 import axios, { AxiosInstance } from 'axios';
 import { parseXMLValue } from '@/utils/helpers';
+import { updateSessionActivity, markSessionUnhealthy } from '@/utils/storage';
 import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
 
@@ -55,8 +56,8 @@ export class ModemAPIClient {
       // Parse token from XML
       this.sessionToken = parseXMLValue(response.data, 'TokInfo');
       const sesInfo = parseXMLValue(response.data, 'SesInfo').trim();
-      // Increase token validity to 2 minutes (modem sessions typically last longer)
-      this.tokenExpiry = Date.now() + 120000;
+      // Extend token validity to 5 minutes (matches typical modem session timeout)
+      this.tokenExpiry = Date.now() + 300000;
 
       // IMPORTANT: Prioritize Set-Cookie header first (matches working bot-hmonn)
       let session = '';
@@ -556,6 +557,9 @@ export class ModemAPIClient {
         },
       });
 
+      // Track successful session activity
+      updateSessionActivity();
+
       return response.data;
     } catch (error) {
       console.error(`Error getting ${endpoint}:`, error);
@@ -585,6 +589,9 @@ export class ModemAPIClient {
         this.sessionCookie = '';
         this.tokenExpiry = 0;
 
+        // Mark session as unhealthy for persistence
+        markSessionUnhealthy();
+
         // Throw error with specific message for UI to handle
         const errorCode = responseData.includes('125003') ? '125003' : '125002';
         throw new Error(`Session expired (${errorCode}). Please re-login.`);
@@ -594,6 +601,9 @@ export class ModemAPIClient {
       if (responseData.includes('<code>100005</code>')) {
         throw new Error('Parameter error (100005). The request format may be incorrect.');
       }
+
+      // Track successful session activity
+      updateSessionActivity();
 
       return response.data;
     } catch (error: any) {
