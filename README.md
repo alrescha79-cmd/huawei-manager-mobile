@@ -72,27 +72,72 @@
 
 ---
 
-## 📸 Screenshots
+## 📸 App Preview
 
+<details>
+<summary><strong>🌑 Dark Mode (Bahasa Indonesia)</strong></summary>
+
+#### 🏠 Home
 <p align="center">
-  <em>Light Mode | 🇬🇧 EN</em>
+  <img src="docs/screenshots/dark/home.png" width="250" />
+  <img src="docs/screenshots/dark/home_stats.png" width="250" />
+  <img src="docs/screenshots/dark/home_speedtest.png" width="250" />
+  <img src="docs/screenshots/dark/home_select_band.png" width="250" />
 </p>
 
-
-
-| Home | WiFi | SMS | Sett |
-|:---------:|:----:|:---:|:--------:|
-| ![home](https://github.com/user-attachments/assets/8b1aff22-dcf2-4ff7-9886-8260cf1a52ab) | ![wifi](https://github.com/user-attachments/assets/15e11a76-e501-41aa-86bf-c17ee8c9555e) | ![sms](https://github.com/user-attachments/assets/d569df27-5145-4bef-9767-c972e28a22ef) | ![sett](https://github.com/user-attachments/assets/1f53d370-836c-4e34-9be7-dd6c067861d8) |
-
+#### 📶 WiFi
 <p align="center">
-  <em>Mode gelap | 🇮🇩 ID</em>
+  <img src="docs/screenshots/dark/wifi.png" width="250" />
+  <img src="docs/screenshots/dark/wifi_detail.png" width="250" />
+  <img src="docs/screenshots/dark/wifi_guest.png" width="250" />
+  <img src="docs/screenshots/dark/wifi_parental.png" width="250" />
 </p>
 
+#### 💬 SMS
+<p align="center">
+  <img src="docs/screenshots/dark/sms.png" width="250" />
+  <img src="docs/screenshots/dark/sms_new.png" width="250" />
+  <img src="docs/screenshots/dark/sms_succes.png" width="250" />
+</p>
 
+#### ⚙️ Settings
+<p align="center">
+  <img src="docs/screenshots/dark/settings.png" width="250" />
+  <img src="docs/screenshots/dark/settings_modal.png" width="250" />
+</p>
 
-| Home | WiFi | SMS | Sett |
-|:---------:|:----:|:---:|:--------:|
-| ![dark_home](https://github.com/user-attachments/assets/575730c6-62cf-44bd-b407-8bfb865e0772) | ![dark_wifi](https://github.com/user-attachments/assets/de1cee1e-f1a6-4470-b59f-114e1ea4a807) | ![dark_sms](https://github.com/user-attachments/assets/0fbb6bb4-6639-4e2e-ab46-eb072bb8edf0) | ![dark_sett](https://github.com/user-attachments/assets/a706b51e-7e25-4d5f-90b0-71a6babebbd9) |
+</details>
+
+<details>
+<summary><strong>☀️ Light Mode (English)</strong></summary>
+
+#### 🏠 Home
+<p align="center">
+  <img src="docs/screenshots/light/home.png" width="250" />
+  <img src="docs/screenshots/light/home_stats.png" width="250" />
+  <img src="docs/screenshots/light/home_usage_limit.png" width="250" />
+</p>
+
+#### 📶 WiFi
+<p align="center">
+  <img src="docs/screenshots/light/wifi_block.png" width="250" />
+</p>
+
+#### 💬 SMS
+<p align="center">
+  <img src="docs/screenshots/light/sms.png" width="250" />
+</p>
+
+#### ⚙️ Settings
+<p align="center">
+  <img src="docs/screenshots/light/settings.png" width="250" />
+  <img src="docs/screenshots/light/settings_lan.png" width="250" />
+  <img src="docs/screenshots/light/settings_select_band.png" width="250" />
+  <img src="docs/screenshots/light/settings_update.png" width="250" />
+  <img src="docs/screenshots/light/setting_notifications.png" width="250" />
+</p>
+
+</details>
 
 ---
 
@@ -110,6 +155,7 @@
 | 📟 **Widget** | Widget untuk monitoring signal, traffic, dan status koneksi |
 | 🌙 **Dark Mode** | Support light dan dark theme |
 | 🔤 **Language** | Pilih bahasa (Bahasa Indonesia dan Bahasa Inggris) |
+| 📱 **More Features** | Masih banyak fitur yang akan ditambahkan |
 
 ---
 
