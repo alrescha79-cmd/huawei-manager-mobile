@@ -82,6 +82,69 @@ sendPushNotification(
 | `usage-alerts` | Data usage warnings |
 | `ip-change` | IP address changes |
 | `app-updates` | App updates & announcements |
+| `debug-reminder` | Debug mode reminder |
+| `inactivity-reminder` | App inactivity reminder |
+
+## Deep Linking / Navigation
+
+Notifications can navigate to specific screens when tapped. Add custom `data` to your notification payload.
+
+### Available Routes
+
+| Route | Screen |
+|-------|--------|
+| `/(tabs)/home` | Home (Dashboard) |
+| `/(tabs)/settings` | Settings |
+| `/(tabs)/settings/lan` | LAN/WiFi Settings |
+| `/(tabs)/sms` | SMS |
+| `/(tabs)/parental-control` | Parental Control |
+
+### Expo Push with Route
+
+```bash
+curl -X POST https://exp.host/--/api/v2/push/send \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "ExponentPushToken[xxxxxxxxxxxxxx]",
+    "title": "Debug Mode Active",
+    "body": "Dont forget to disable debug mode",
+    "data": {
+      "route": "/(tabs)/settings"
+    }
+  }'
+```
+
+### Firebase Cloud Messaging (FCM)
+
+When sending from **Firebase Console**:
+
+1. Go to **Firebase Console** → **Cloud Messaging**
+2. Click **"New campaign"** or **"Send your first message"**
+3. Fill in **Title** and **Body**
+4. In **"Additional options"**, click **"Custom data"**
+5. Add key-value pair:
+   - Key: `route`
+   - Value: `/(tabs)/settings` (or any route from table above)
+6. Send notification
+
+For external URLs:
+- Key: `url`
+- Value: `https://example.com`
+
+### How It Works
+
+The app listens for notification taps in `_layout.tsx`:
+```typescript
+Notifications.addNotificationResponseReceivedListener(response => {
+  const data = response.notification.request.content.data;
+  
+  if (data?.route) {
+    router.push(data.route); // Navigate to internal screen
+  } else if (data?.url) {
+    Linking.openURL(data.url); // Open external URL
+  }
+});
+```
 
 ## Important Notes
 

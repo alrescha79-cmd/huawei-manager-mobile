@@ -184,13 +184,15 @@ export async function requestNotificationPermissions(): Promise<boolean> {
 export async function sendLocalNotification(
     title: string,
     body: string,
-    channelId: string = 'usage-alerts'
+    channelId: string = 'usage-alerts',
+    data?: { route?: string; url?: string;[key: string]: any }
 ): Promise<void> {
     await Notifications.scheduleNotificationAsync({
         content: {
             title,
             body,
             sound: true,
+            data: data || {},
         },
         trigger: null,
     });
@@ -388,7 +390,8 @@ export async function sendDebugModeReminder(translations: {
     await sendLocalNotification(
         translations.title,
         translations.body,
-        'debug-reminder'
+        'debug-reminder',
+        { route: '/(tabs)/settings' } // Navigate to settings when tapped
     );
 }
 
@@ -423,7 +426,8 @@ export async function checkInactivityReminder(translations: {
         await sendLocalNotification(
             translations.title,
             translations.body,
-            'inactivity-reminder'
+            'inactivity-reminder',
+            { route: '/(tabs)/home' } // Navigate to home when tapped
         );
         return true;
     }

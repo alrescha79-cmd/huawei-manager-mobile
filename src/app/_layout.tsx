@@ -197,19 +197,63 @@ export default function RootLayout() {
         initializeApp();
     }, []);
 
-    // Handle notification tap - open URL if present
+    // Handle notification tap - open URL if present or navigate to route
     useEffect(() => {
-        const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-            const data = response.notification.request.content.data;
-            if (data?.url && typeof data.url === 'string') {
-                Linking.openURL(data.url).catch(err => {
-                    console.log('Failed to open URL from notification:', err);
-                });
+        // Handle notification when app was opened from a notification (app was killed)
+        const getInitialNotification = async () => {
+            const lastResponse = await Notifications.getLastNotificationResponseAsync();
+            if (lastResponse) {
+                handleNotificationResponse(lastResponse);
             }
+        };
+        getInitialNotification();
+
+        // Handle notification tap when app is running
+        const subscription = Notifications.addNotificationResponseReceivedListener(response => {
+            handleNotificationResponse(response);
         });
 
         return () => subscription.remove();
-    }, []);
+    }, [router]);
+
+    // Helper function to handle notification response
+    const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
+        const rawData = response.notification.request.content.data;
+        const data = rawData as { route?: string; url?: string; body?: { route?: string; url?: string } } | undefined;
+
+        // Debug: log the data to see structure
+        console.log('📱 Notification data received:', JSON.stringify(data, null, 2));
+
+        // Get route from data - Firebase may send as string or nested
+        let route = data?.route;
+        let url = data?.url;
+
+        // Firebase sometimes nests data differently, try to extract
+        if (!route && data?.body?.route) {
+            route = data.body.route;
+        }
+        if (!url && data?.body?.url) {
+            url = data.body.url;
+        }
+
+        // Handle internal route navigation
+        if (route && typeof route === 'string') {
+            console.log('📱 Navigating to route:', route);
+            // Use setTimeout to ensure router and auth state are ready
+            setTimeout(() => {
+                router.push(route as any);
+            }, 500);
+            return;
+        }
+
+        // Handle external URL
+        if (url && typeof url === 'string') {
+            console.log('📱 Opening URL:', url);
+            Linking.openURL(url).catch(err => {
+                console.log('Failed to open URL from notification:', err);
+            });
+        }
+    };
 
     // Handle app state changes for session management
     useEffect(() => {
