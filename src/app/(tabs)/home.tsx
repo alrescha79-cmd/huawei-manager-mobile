@@ -1092,7 +1092,7 @@ export default function HomeScreen() {
                     badge={formatDuration(trafficStats.totalConnectTime, durationUnits)}
                     download={trafficStats.totalDownload}
                     upload={trafficStats.totalUpload}
-                    icon="data-usage"
+                    icon="timeline"
                   />
 
                   {/* Monthly Comparison Card */}

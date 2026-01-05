@@ -1,11 +1,12 @@
 import { Stack } from 'expo-router';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useSegments } from 'expo-router';
-import { Linking, AppState, Platform } from 'react-native';
+import { Linking, AppState, Platform, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Constants from 'expo-constants';
+import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
@@ -17,6 +18,9 @@ import { requestNotificationPermissions } from '@/services/notification.service'
 import * as Notifications from 'expo-notifications';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
+
+// Keep splash screen visible while loading
+SplashScreen.preventAutoHideAsync();
 
 interface AlertButton {
     text: string;
@@ -49,6 +53,7 @@ export default function RootLayout() {
     const [fontsLoaded] = useFonts({
         Doto_700Bold,
     });
+    const [appIsReady, setAppIsReady] = useState(false);
 
     const { colors, isDark } = useTheme();
     const {
@@ -67,6 +72,23 @@ export default function RootLayout() {
     // Track app state for session management
     const appStateRef = useRef<AppStateStatus>(AppState.currentState);
     const [isRestoringSession, setIsRestoringSession] = useState(false);
+
+    // Hide splash screen with smooth animation when fonts are loaded
+    const onLayoutRootView = useCallback(async () => {
+        if (fontsLoaded) {
+            // Small delay for smoother transition
+            await new Promise(resolve => setTimeout(resolve, 200));
+            await SplashScreen.hideAsync();
+            setAppIsReady(true);
+        }
+    }, [fontsLoaded]);
+
+    // Trigger splash hide when fonts are ready
+    useEffect(() => {
+        if (fontsLoaded) {
+            onLayoutRootView();
+        }
+    }, [fontsLoaded, onLayoutRootView]);
 
     // Handle Android Navigation Bar Colors
     useEffect(() => {

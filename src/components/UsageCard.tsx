@@ -85,7 +85,7 @@ export function UsageCard({
             <View style={styles.header}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <MaterialIcons
-                        name={variant === 'session' ? 'access-time' : variant === 'monthly' ? 'calendar-month' : 'data-usage'}
+                        name={icon || (variant === 'session' ? 'access-time' : variant === 'monthly' ? 'calendar-month' : 'data-usage')}
                         size={18}
                         color={highlightColor}
                         style={{ marginRight: 8 }}

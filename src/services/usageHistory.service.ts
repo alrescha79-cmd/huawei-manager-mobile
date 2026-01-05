@@ -132,9 +132,10 @@ export async function getLastMonthUsage(
 
 /**
  * Format month key to display string (e.g., "Jan 2024")
+ * Pass locale for translation (e.g., 'en-US' or 'id-ID')
  */
-export function formatMonthKey(monthKey: string): string {
+export function formatMonthKey(monthKey: string, locale: string = 'en-US'): string {
     const [year, month] = monthKey.split('-');
     const date = new Date(parseInt(year), parseInt(month) - 1);
-    return date.toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
+    return date.toLocaleDateString(locale, { month: 'short', year: 'numeric' });
 }

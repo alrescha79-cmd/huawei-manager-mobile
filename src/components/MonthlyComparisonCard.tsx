@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
+import { useThemeStore } from '@/stores/theme.store';
 import { Card } from './Card';
 import {
     getLastMonthUsage,
@@ -42,7 +43,11 @@ export function MonthlyComparisonCard({
 }: MonthlyComparisonCardProps) {
     const { colors, typography, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
+    const { language } = useThemeStore();
     const [lastMonthData, setLastMonthData] = useState<MonthlyUsageData | null>(null);
+
+    // Get locale for month formatting
+    const locale = language === 'id' ? 'id-ID' : 'en-US';
 
     const thisMonthTotal = monthDownload + monthUpload;
     const thisMonthFormatted = formatBytesWithUnit(thisMonthTotal);
@@ -116,7 +121,7 @@ export function MonthlyComparisonCard({
                 <View style={styles.barRow}>
                     <View style={styles.barLabel}>
                         <Text style={[styles.monthText, { color: colors.text }]}>
-                            {formatMonthKey(getCurrentMonthKey())}
+                            {formatMonthKey(getCurrentMonthKey(), locale)}
                         </Text>
                         <Text style={[styles.valueText, { color: blueColor }]}>
                             {thisMonthFormatted.value} {thisMonthFormatted.unit}
@@ -139,7 +144,7 @@ export function MonthlyComparisonCard({
                 <View style={styles.barRow}>
                     <View style={styles.barLabel}>
                         <Text style={[styles.monthText, { color: colors.textSecondary }]}>
-                            {formatMonthKey(getLastMonthKey())}
+                            {formatMonthKey(getLastMonthKey(), locale)}
                         </Text>
                         <Text style={[styles.valueText, { color: grayColor }]}>
                             {lastMonthFormatted.value} {lastMonthFormatted.unit}
