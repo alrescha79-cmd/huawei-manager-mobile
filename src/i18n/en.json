@@ -34,7 +34,10 @@
     "done": "Done",
     "disabled": "Disabled",
     "turnOff": "Turn Off",
-    "custom": "Custom"
+    "custom": "Custom",
+    "clear": "Clear",
+    "enable": "Enable",
+    "download": "Download"
   },
   "alerts": {
     "newVersionAvailable": "A new version is available. Would you like to download it now?",
@@ -350,6 +353,24 @@
     "developer": "Developer",
     "bugReport": "Report a Bug",
     "bugReportHint": "Found a bug? Help us improve by reporting it on GitHub issues",
+    "debugMode": "Debug Mode",
+    "debugModeHint": "Log API calls for troubleshooting",
+    "debugLogCount": "API Logs",
+    "entries": "entries",
+    "sendDebugLog": "Send Debug Log",
+    "sendDebugLogHint": "Send logs via email for troubleshooting",
+    "debugLogsCleared": "Debug logs cleared",
+    "noDebugLogs": "No Debug Logs",
+    "noDebugLogsHint": "Navigate around the app first to generate some API logs",
+    "emailClientError": "Failed to open email client",
+    "enableDebugConfirm": "Enable Debug Mode?",
+    "enableDebugMessage": "Navigate to the screen where you experience the issue, then send the debug log to help us investigate.",
+    "clearLogsConfirm": "Clear Debug Logs?",
+    "clearLogsMessage": "This will delete all recorded API logs. This action cannot be undone.",
+    "downloadDebugLog": "Download Debug Log",
+    "debugLogSaved": "Debug log saved",
+    "disableDebugConfirm": "Disable Debug Mode?",
+    "disableDebugMessage": "Disabling debug mode will delete all recorded API logs. This action cannot be undone.",
     "antennaModeChanged": "Antenna mode changed",
     "activeAntenna": "Active Antenna",
     "networkModeChanged": "Network mode changed",
@@ -592,7 +613,11 @@
     "updateAvailableTitle": "Update Available!",
     "updateAvailableBody": "Version {{version}} is now available with new features.",
     "announcementTitle": "Announcement",
-    "tapToLearnMore": "Tap to learn more"
+    "tapToLearnMore": "Tap to learn more",
+    "debugModeReminderTitle": "Debug Mode Still Active",
+    "debugModeReminderBody": "Don't forget to disable debug mode after troubleshooting",
+    "inactivityReminderTitle": "Miss Your Modem?",
+    "inactivityReminderBody": "You haven't checked your modem status in a while. Tap to see how it's doing!"
   }
 }
 

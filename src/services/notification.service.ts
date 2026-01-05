@@ -373,3 +373,60 @@ export async function resetNotificationTracking(): Promise<void> {
     await AsyncStorage.removeItem(LAST_SESSION_DURATION_KEY);
     await AsyncStorage.removeItem(LAST_IP_CHANGE_TIME_KEY);
 }
+
+// ============================================================================
+// DEBUG MODE REMINDER NOTIFICATION
+// ============================================================================
+
+const LAST_ACTIVE_TIME_KEY = 'last_active_time';
+const INACTIVITY_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
+
+export async function sendDebugModeReminder(translations: {
+    title: string;
+    body: string;
+}): Promise<void> {
+    await sendLocalNotification(
+        translations.title,
+        translations.body,
+        'debug-reminder'
+    );
+}
+
+// ============================================================================
+// INACTIVITY REMINDER NOTIFICATION
+// ============================================================================
+
+export async function saveLastActiveTime(): Promise<void> {
+    await AsyncStorage.setItem(LAST_ACTIVE_TIME_KEY, Date.now().toString());
+}
+
+export async function getLastActiveTime(): Promise<number | null> {
+    const value = await AsyncStorage.getItem(LAST_ACTIVE_TIME_KEY);
+    return value ? parseInt(value, 10) : null;
+}
+
+export async function checkInactivityReminder(translations: {
+    title: string;
+    body: string;
+}): Promise<boolean> {
+    const lastActive = await getLastActiveTime();
+
+    if (!lastActive) {
+        // First time, just save current time
+        await saveLastActiveTime();
+        return false;
+    }
+
+    const timeSinceActive = Date.now() - lastActive;
+
+    if (timeSinceActive >= INACTIVITY_THRESHOLD_MS) {
+        await sendLocalNotification(
+            translations.title,
+            translations.body,
+            'inactivity-reminder'
+        );
+        return true;
+    }
+
+    return false;
+}

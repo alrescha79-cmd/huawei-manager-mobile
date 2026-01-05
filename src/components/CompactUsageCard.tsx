@@ -179,7 +179,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                         </>
                     ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <MaterialIcons name="data-usage" size={14} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                            <MaterialIcons name="timeline" size={14} color={colors.textSecondary} style={{ marginRight: 4 }} />
                             <Text style={[typography.caption1, { color: colors.textSecondary, fontSize: 12, fontFamily: 'monospace' }]}>
                                 {durationText}
                             </Text>

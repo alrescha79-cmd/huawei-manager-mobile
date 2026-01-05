@@ -31,7 +31,8 @@ import {
   getLteBandInfo,
 } from '@/utils/helpers';
 import { useTranslation } from '@/i18n';
-import { checkDailyUsageNotification, checkMonthlyUsageNotification, checkIPChangeNotification } from '@/services/notification.service';
+import { checkDailyUsageNotification, checkMonthlyUsageNotification, checkIPChangeNotification, sendDebugModeReminder, saveLastActiveTime } from '@/services/notification.service';
+import { useDebugStore } from '@/stores/debug.store';
 
 // Helper to determine signal quality based on thresholds
 const getSignalQuality = (
@@ -162,6 +163,20 @@ export default function HomeScreen() {
       };
 
       initializeData();
+
+      // Check for debug mode reminder after login
+      const checkDebugReminder = async () => {
+        const debugStore = useDebugStore.getState();
+        if (debugStore.debugEnabled) {
+          await sendDebugModeReminder({
+            title: t('notifications.debugModeReminderTitle'),
+            body: t('notifications.debugModeReminderBody'),
+          });
+        }
+        // Save last active time for inactivity tracking
+        await saveLastActiveTime();
+      };
+      checkDebugReminder();
 
       // Fast refresh for traffic/speed data only (every 1 second)
       const fastIntervalId = setInterval(() => {

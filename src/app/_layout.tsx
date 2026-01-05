@@ -160,7 +160,7 @@ export default function RootLayout() {
                     );
                     // Save version after showing (won't show again for this version)
                     AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
-                }, 2000); // 2 second delay
+                }, 5000); // 5 second delay
             }
         } catch (error) {
             // Silently fail
