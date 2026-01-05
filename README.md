@@ -95,7 +95,7 @@
 <p align="center">
   <img src="docs/screenshots/dark/sms.png" width="250" />
   <img src="docs/screenshots/dark/sms_new.png" width="250" />
-  <img src="docs/screenshots/dark/sms_succes.png" width="250" />
+  <img src="docs/screenshots/dark/sms_success.jpg" width="250" />
 </p>
 
 #### ⚙️ Settings
