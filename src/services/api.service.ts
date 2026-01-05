@@ -24,22 +24,77 @@ export class ModemAPIClient {
       },
     });
 
-    // Add response interceptor to capture session tokens and cookies
-    this.client.interceptors.response.use((response) => {
-      const token = response.headers['__requestverificationtoken'];
-      if (token) {
-        this.sessionToken = token;
-        this.tokenExpiry = Date.now() + 30000; // 30 seconds validity
-      }
-
-      // Capture session cookie
-      const cookie = response.headers['set-cookie'];
-      if (cookie) {
-        this.sessionCookie = Array.isArray(cookie) ? cookie[0] : cookie;
-      }
-
-      return response;
+    // Add request interceptor to track timing
+    this.client.interceptors.request.use((config) => {
+      // Store request start time for duration calculation
+      (config as any).metadata = { startTime: Date.now() };
+      return config;
     });
+
+    // Add response interceptor to capture session tokens, cookies, and log for debug
+    this.client.interceptors.response.use(
+      (response) => {
+        const token = response.headers['__requestverificationtoken'];
+        if (token) {
+          this.sessionToken = token;
+          this.tokenExpiry = Date.now() + 30000; // 30 seconds validity
+        }
+
+        // Capture session cookie
+        const cookie = response.headers['set-cookie'];
+        if (cookie) {
+          this.sessionCookie = Array.isArray(cookie) ? cookie[0] : cookie;
+        }
+
+        // Debug logging - get the store dynamically to avoid circular imports
+        this.logDebug(response.config, response.data, undefined);
+
+        return response;
+      },
+      (error) => {
+        // Log errors too
+        if (error.config) {
+          this.logDebug(error.config, undefined, error.message || 'Request failed');
+        }
+        return Promise.reject(error);
+      }
+    );
+  }
+
+  // Debug logging helper - called from interceptors
+  private logDebug(config: any, responseData: any, errorMessage?: string) {
+    try {
+      // Dynamically import to avoid circular dependency
+      const { useDebugStore } = require('@/stores/debug.store');
+      const store = useDebugStore.getState();
+
+      if (store.debugEnabled) {
+        const startTime = config.metadata?.startTime || Date.now();
+        const duration = Date.now() - startTime;
+
+        store.addLog({
+          endpoint: config.url || 'unknown',
+          method: config.method?.toUpperCase() || 'GET',
+          requestData: config.data ? this.sanitizeData(config.data) : undefined,
+          responseData: responseData ? this.sanitizeData(responseData) : undefined,
+          error: errorMessage,
+          duration,
+        });
+      }
+    } catch (e) {
+      // Silent fail if debug store not available
+    }
+  }
+
+  // Sanitize sensitive data before logging
+  private sanitizeData(data: any): any {
+    if (typeof data === 'string') {
+      // Mask passwords in XML
+      return data
+        .replace(/<password>.*?<\/password>/gi, '<password>***</password>')
+        .replace(/<Password>.*?<\/Password>/gi, '<Password>***</Password>');
+    }
+    return data;
   }
 
   private async getToken(forceRefresh: boolean = false): Promise<{ token: string; session: string }> {

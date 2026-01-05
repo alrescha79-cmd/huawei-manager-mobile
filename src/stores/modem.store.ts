@@ -64,16 +64,60 @@ export const useModemStore = create<ModemState>((set, get) => ({
   isUsingCache: false,
   error: null,
 
-  setModemInfo: (info) => set({ modemInfo: info }),
+  setModemInfo: (info) => {
+    set({ modemInfo: info });
+    // Update debug store with modem info
+    try {
+      const { useDebugStore } = require('./debug.store');
+      const debugStore = useDebugStore.getState();
+      if (debugStore.debugEnabled) {
+        debugStore.setModemInfo({
+          ...debugStore.modemInfo,
+          modemModel: info.deviceName,
+          firmwareVersion: info.softwareVersion,
+          imei: info.imei,
+        });
+      }
+    } catch (e) {
+      // Silent fail if debug store not available
+    }
+  },
 
   setSignalInfo: (info) => {
     set({ signalInfo: info, isUsingCache: false });
     // Auto-save to cache when data is updated
     get().saveToCache();
+    // Update debug store with signal info
+    try {
+      const { useDebugStore } = require('./debug.store');
+      const debugStore = useDebugStore.getState();
+      if (debugStore.debugEnabled) {
+        debugStore.setModemInfo({
+          ...debugStore.modemInfo,
+          signalStrength: `${info.rssi || info.rsrp || 'N/A'} dBm`,
+        });
+      }
+    } catch (e) {
+      // Silent fail if debug store not available
+    }
   },
 
   setNetworkInfo: (info) => {
     set({ networkInfo: info, isUsingCache: false });
+    // Update debug store with network info
+    try {
+      const { useDebugStore } = require('./debug.store');
+      const debugStore = useDebugStore.getState();
+      if (debugStore.debugEnabled) {
+        debugStore.setModemInfo({
+          ...debugStore.modemInfo,
+          networkOperator: info.fullName || info.networkName,
+          connectionStatus: info.currentNetworkType,
+        });
+      }
+    } catch (e) {
+      // Silent fail if debug store not available
+    }
   },
 
   setTrafficStats: (stats) => {

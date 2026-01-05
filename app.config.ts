@@ -48,6 +48,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
         'expo-localization',
         'expo-font',
         ['react-native-android-widget', widgetConfig],
+        'expo-mail-composer',
     ],
     splash: {
         image: './assets/logo.png',

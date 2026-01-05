@@ -6,14 +6,16 @@ import {
     View,
     Text,
     TouchableOpacity,
+    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen } from '@/components';
+import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen, ThemedSwitch, ThemedAlertHelper } from '@/components';
 import { useThemeStore } from '@/stores/theme.store';
+import { useDebugStore } from '@/stores/debug.store';
 
 export default function SettingsIndex() {
     const router = useRouter();
@@ -24,6 +26,10 @@ export default function SettingsIndex() {
     const [showThemeModal, setShowThemeModal] = React.useState(false);
     const [showLanguageModal, setShowLanguageModal] = React.useState(false);
     const [showUsageModal, setShowUsageModal] = React.useState(false);
+    const [isSendingDebugLog, setIsSendingDebugLog] = React.useState(false);
+
+    // Debug store
+    const { debugEnabled, setDebugEnabled, apiLogs, sendDebugEmail, clearLogs, shareDebugLog } = useDebugStore();
 
     const handleOpenGitHub = () => {
         Linking.openURL('https://github.com/alrescha79-cmd');
@@ -175,6 +181,150 @@ export default function SettingsIndex() {
                         />
                     </SettingsSection>
 
+                    {/* Developer Section */}
+                    <SettingsSection title={t('settings.developer')}>
+                        <SettingsItem
+                            icon="developer-mode"
+                            title={t('settings.debugMode')}
+                            subtitle={t('settings.debugModeHint')}
+                            showChevron={false}
+                            rightElement={
+                                <ThemedSwitch
+                                    value={debugEnabled}
+                                    onValueChange={(enabled) => {
+                                        if (enabled) {
+                                            // Confirmation before enabling
+                                            ThemedAlertHelper.alert(
+                                                t('settings.enableDebugConfirm'),
+                                                t('settings.enableDebugMessage'),
+                                                [
+                                                    { text: t('common.cancel'), style: 'cancel' },
+                                                    { text: t('common.enable'), onPress: () => setDebugEnabled(true) }
+                                                ]
+                                            );
+                                        } else {
+                                            // Confirmation before disabling (will clear logs)
+                                            if (apiLogs.length > 0) {
+                                                ThemedAlertHelper.alert(
+                                                    t('settings.disableDebugConfirm'),
+                                                    t('settings.disableDebugMessage'),
+                                                    [
+                                                        { text: t('common.cancel'), style: 'cancel' },
+                                                        { text: t('common.turnOff'), style: 'destructive', onPress: () => setDebugEnabled(false) }
+                                                    ]
+                                                );
+                                            } else {
+                                                setDebugEnabled(false);
+                                            }
+                                        }
+                                    }}
+                                />
+                            }
+                        />
+                        {debugEnabled && (
+                            <>
+                                <SettingsItem
+                                    icon="list-alt"
+                                    title={t('settings.debugLogCount')}
+                                    subtitle={`${apiLogs.length} ${t('settings.entries')}`}
+                                    showChevron={false}
+                                    rightElement={
+                                        apiLogs.length > 0 ? (
+                                            <View style={styles.iconButtonRow}>
+                                                <TouchableOpacity
+                                                    style={[styles.iconButton, { backgroundColor: colors.primary + '20' }]}
+                                                    onPress={async () => {
+                                                        try {
+                                                            await shareDebugLog();
+                                                        } catch (e) {
+                                                            // Silent fail
+                                                        }
+                                                    }}
+                                                >
+                                                    <MaterialIcons name="download" size={20} color={colors.primary} />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={[styles.iconButton, { backgroundColor: colors.error + '20' }]}
+                                                    onPress={() => {
+                                                        // Confirmation before clearing
+                                                        ThemedAlertHelper.alert(
+                                                            t('settings.clearLogsConfirm'),
+                                                            t('settings.clearLogsMessage'),
+                                                            [
+                                                                { text: t('common.cancel'), style: 'cancel' },
+                                                                {
+                                                                    text: t('common.clear'),
+                                                                    style: 'destructive',
+                                                                    onPress: () => {
+                                                                        clearLogs();
+                                                                        ThemedAlertHelper.alert(t('common.success'), t('settings.debugLogsCleared'));
+                                                                    }
+                                                                }
+                                                            ]
+                                                        );
+                                                    }}
+                                                >
+                                                    <MaterialIcons name="delete-outline" size={20} color={colors.error} />
+                                                </TouchableOpacity>
+                                            </View>
+                                        ) : undefined
+                                    }
+                                />
+                                <SettingsItem
+                                    icon="email"
+                                    title={t('settings.sendDebugLog')}
+                                    subtitle={t('settings.sendDebugLogHint')}
+                                    onPress={async () => {
+                                        if (apiLogs.length === 0) {
+                                            ThemedAlertHelper.alert(
+                                                t('settings.noDebugLogs'),
+                                                t('settings.noDebugLogsHint')
+                                            );
+                                            return;
+                                        }
+                                        setIsSendingDebugLog(true);
+                                        try {
+                                            const emailOpened = await sendDebugEmail();
+                                            if (!emailOpened) {
+                                                // Email client not available, offer share fallback
+                                                ThemedAlertHelper.alert(
+                                                    t('settings.emailClientError'),
+                                                    t('settings.sendDebugLogHint'),
+                                                    [
+                                                        { text: t('common.cancel'), style: 'cancel' },
+                                                        {
+                                                            text: t('common.download'),
+                                                            onPress: async () => {
+                                                                try {
+                                                                    await shareDebugLog();
+                                                                } catch (e) {
+                                                                    // Silent fail
+                                                                }
+                                                            }
+                                                        }
+                                                    ]
+                                                );
+                                            }
+                                        } catch (e) {
+                                            ThemedAlertHelper.alert(t('common.error'), t('settings.emailClientError'));
+                                        } finally {
+                                            setIsSendingDebugLog(false);
+                                        }
+                                    }}
+                                    rightElement={
+                                        isSendingDebugLog ? (
+                                            <ActivityIndicator size="small" color={colors.primary} />
+                                        ) : undefined
+                                    }
+                                    isLast
+                                />
+                            </>
+                        )}
+                        {!debugEnabled && (
+                            <View style={{ height: 0 }} />
+                        )}
+                    </SettingsSection>
+
                     {/* Theme Modal */}
                     <SelectionModal
                         visible={showThemeModal}
@@ -245,5 +395,23 @@ const styles = StyleSheet.create({
     dropdownText: {
         fontSize: 12,
         fontWeight: '600',
+    },
+    clearButton: {
+        paddingVertical: 4,
+        paddingHorizontal: 10,
+        borderRadius: 6,
+    },
+    clearButtonText: {
+        fontSize: 12,
+        fontWeight: '600',
+    },
+    iconButtonRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    iconButton: {
+        padding: 8,
+        borderRadius: 8,
     },
 });

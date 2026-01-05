@@ -34,7 +34,10 @@
     "done": "Selesai",
     "disabled": "Nonaktif",
     "turnOff": "Matikan",
-    "custom": "Kustom"
+    "custom": "Kustom",
+    "clear": "Hapus",
+    "enable": "Aktifkan",
+    "download": "Unduh"
   },
   "alerts": {
     "newVersionAvailable": "Versi baru tersedia. Apakah Anda ingin mengunduhnya sekarang?",
@@ -352,6 +355,24 @@
     "developer": "Pengembang",
     "bugReport": "Laporkan Bug",
     "bugReportHint": "Menemukan bug? Bantu kami memperbaiki melalui github issues",
+    "debugMode": "Mode Debug",
+    "debugModeHint": "Catat panggilan API untuk troubleshooting",
+    "debugLogCount": "Log API",
+    "entries": "entri",
+    "sendDebugLog": "Kirim Log Debug",
+    "sendDebugLogHint": "Kirim log via email untuk bantuan troubleshooting",
+    "debugLogsCleared": "Log debug dihapus",
+    "noDebugLogs": "Tidak Ada Log Debug",
+    "noDebugLogsHint": "Navigasi aplikasi terlebih dahulu untuk menghasilkan log API",
+    "emailClientError": "Gagal membuka aplikasi email",
+    "enableDebugConfirm": "Aktifkan Mode Debug?",
+    "enableDebugMessage": "Buka halaman yang bermasalah, lalu kirim log debug untuk membantu kami menyelidiki.",
+    "clearLogsConfirm": "Hapus Log Debug?",
+    "clearLogsMessage": "Ini akan menghapus semua log API yang tercatat. Tindakan ini tidak dapat dibatalkan.",
+    "downloadDebugLog": "Unduh Log Debug",
+    "debugLogSaved": "Log debug tersimpan",
+    "disableDebugConfirm": "Nonaktifkan Mode Debug?",
+    "disableDebugMessage": "Menonaktifkan mode debug akan menghapus semua log API yang tercatat. Tindakan ini tidak dapat dibatalkan.",
     "antennaModeChanged": "Mode antena diubah",
     "activeAntenna": "Antena Aktif",
     "networkModeChanged": "Mode jaringan diubah",
@@ -592,7 +613,11 @@
     "updateAvailableTitle": "Update Tersedia!",
     "updateAvailableBody": "Versi {{version}} tersedia dengan fitur baru.",
     "announcementTitle": "Pengumuman",
-    "tapToLearnMore": "Ketuk untuk info lebih lanjut"
+    "tapToLearnMore": "Ketuk untuk info lebih lanjut",
+    "debugModeReminderTitle": "Mode Debug Masih Aktif",
+    "debugModeReminderBody": "Jangan lupa nonaktifkan mode debug setelah troubleshooting",
+    "inactivityReminderTitle": "Kangen Modem?",
+    "inactivityReminderBody": "Sudah lama tidak cek status modem. Ketuk untuk lihat kondisinya!"
   }
 }
 
