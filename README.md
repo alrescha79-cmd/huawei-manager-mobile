@@ -56,8 +56,6 @@
 > **armeabi-v7a**: Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-armeabi-v7a.apk)
 >
 >**universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
->
->**testing**: Build testing versi terbaru → [Link Download](https://expo.dev/accounts/alrescha79/projects/hm-mobile/builds/2f0fecac-14c2-4965-b702-a7f8e5caeeb3)
 
 > **⚡ Built with Expo SDK 54**
 
