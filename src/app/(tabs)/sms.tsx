@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
@@ -26,6 +27,7 @@ export default function SMSScreen() {
   const { colors, typography, spacing } = useTheme();
   const { t } = useTranslation();
   const { credentials } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const {
     messages,
     smsCount,
@@ -470,7 +472,7 @@ export default function SMSScreen() {
           </View>
 
           {/* Send Bar */}
-          <View style={[styles.composeSendBar, { borderTopColor: colors.border, backgroundColor: colors.card }]}>
+          <View style={[styles.composeSendBar, { borderTopColor: colors.border, backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom, 12) }]}>
             <TextInput
               style={[
                 styles.composeSendInput,
@@ -557,7 +559,7 @@ export default function SMSScreen() {
                   </Text>
                 </View>
 
-                <View style={[styles.replyContainer, { borderTopColor: colors.border }]}>
+                <View style={[styles.replyContainer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
                   <Text style={[typography.subheadline, { color: colors.text, marginBottom: spacing.sm }]}>
                     {t('sms.reply')}
                   </Text>
