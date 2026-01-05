@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { formatDuration } from '@/utils/helpers';
+import { DurationUnits, formatDuration } from '@/utils/helpers';
 import { Card } from './Card';
 import { LinearGradient } from 'expo-linear-gradient';
 
@@ -12,6 +12,7 @@ interface UsageCardProps {
     download: number;
     upload: number;
     duration?: number; // In seconds
+    durationUnits?: DurationUnits; // Translated units
     icon?: keyof typeof MaterialIcons.glyphMap;
     // New props for layout variant
     variant?: 'session' | 'monthly';
@@ -39,6 +40,7 @@ export function UsageCard({
     download,
     upload,
     duration,
+    durationUnits,
     icon,
     variant = 'session',
     dataLimit,
@@ -62,18 +64,36 @@ export function UsageCard({
     }
 
     // Badge text (Duration or fallback)
-    const badgeText = badge || (duration ? formatDuration(duration) : '');
+    const badgeText = badge || (duration ? formatDuration(duration, durationUnits) : '');
 
     // Highlight color (Blue for Usage as per image)
     const highlightColor = '#3b82f6'; // Tailwind blue-500
+
+    // Dynamic color based on percentage for monthly variant
+    const getProgressColor = (pct: number): string => {
+        if (pct >= 90) return '#ef4444'; // Red
+        if (pct >= 75) return '#f97316'; // Orange
+        if (pct >= 50) return '#eab308'; // Yellow
+        return '#22c55e'; // Green
+    };
+
+    const progressColor = variant === 'monthly' && dataLimit ? getProgressColor(percent) : highlightColor;
 
     return (
         <Card style={[styles.container, style]}>
             {/* Header: Title + Badge */}
             <View style={styles.header}>
-                <Text style={[typography.headline, { color: colors.text, fontWeight: '700' }]}>
-                    {title}
-                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialIcons
+                        name={variant === 'session' ? 'access-time' : variant === 'monthly' ? 'calendar-month' : 'data-usage'}
+                        size={18}
+                        color={highlightColor}
+                        style={{ marginRight: 8 }}
+                    />
+                    <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}>
+                        {title}
+                    </Text>
+                </View>
                 {badgeText ? (
                     <View style={[styles.badgeContainer, { borderColor: colors.border }]}>
                         <Text style={[typography.caption1, { color: colors.textSecondary, fontFamily: 'monospace' }]}>
@@ -103,7 +123,7 @@ export function UsageCard({
                                 styles.progressBarFill,
                                 {
                                     width: `${percent}%`,
-                                    backgroundColor: highlightColor
+                                    backgroundColor: progressColor
                                 }
                             ]}
                         />
@@ -111,8 +131,8 @@ export function UsageCard({
 
                     {/* Percentage Info */}
                     <View style={styles.progressInfo}>
-                        <View style={[styles.percentBadge, { borderColor: highlightColor, borderWidth: 1 }]}>
-                            <Text style={[typography.caption2, { color: highlightColor, fontWeight: 'bold' }]}>
+                        <View style={[styles.percentBadge, { borderColor: progressColor, borderWidth: 1 }]}>
+                            <Text style={[typography.caption2, { color: progressColor, fontWeight: 'bold' }]}>
                                 {percent}%
                             </Text>
                         </View>

@@ -518,6 +518,22 @@ export default function WiFiScreen() {
     );
   };
 
+  // Handle profile modal close with confirmation
+  const handleCloseProfileModal = () => {
+    if (hasProfileChanges()) {
+      ThemedAlertHelper.alert(
+        t('common.unsavedChanges'),
+        t('common.discardChangesMessage'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          { text: t('common.discard'), style: 'destructive', onPress: () => setShowProfileModal(false) }
+        ]
+      );
+    } else {
+      setShowProfileModal(false);
+    }
+  };
+
   const toggleProfileDay = (day: number) => {
     setProfileDays(prev =>
       prev.includes(day)
@@ -1189,7 +1205,7 @@ export default function WiFiScreen() {
             visible={showProfileModal}
             animationType="slide"
             presentationStyle="pageSheet"
-            onRequestClose={() => setShowProfileModal(false)}
+            onRequestClose={handleCloseProfileModal}
           >
             <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
               <View style={[styles.modalHeader, {
@@ -1199,7 +1215,7 @@ export default function WiFiScreen() {
                 <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
                   {editingProfile ? t('parentalControl.editProfile') : t('parentalControl.addProfile')}
                 </Text>
-                <TouchableOpacity onPress={() => setShowProfileModal(false)}>
+                <TouchableOpacity onPress={handleCloseProfileModal}>
                   <MaterialIcons name="close" size={28} color={colors.primary} />
                 </TouchableOpacity>
               </View>

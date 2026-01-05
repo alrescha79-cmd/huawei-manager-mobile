@@ -19,6 +19,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { MeshGradientBackground } from './MeshGradientBackground';
 import { ThemedSwitch } from './ThemedSwitch';
+import { ThemedAlertHelper } from './ThemedAlert';
 
 interface MonthlySettingsModalProps {
     visible: boolean;
@@ -106,12 +107,28 @@ export function MonthlySettingsModal({
 
     const [sliderWidth, setSliderWidth] = useState(0);
 
+    // Handle close with confirmation if there are unsaved changes
+    const handleClose = () => {
+        if (hasChanges) {
+            ThemedAlertHelper.alert(
+                t('common.unsavedChanges'),
+                t('common.discardChangesMessage'),
+                [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('common.discard'), style: 'destructive', onPress: onClose }
+                ]
+            );
+        } else {
+            onClose();
+        }
+    };
+
     return (
         <Modal
             visible={visible}
             animationType="slide"
             presentationStyle="pageSheet"
-            onRequestClose={onClose}
+            onRequestClose={handleClose}
         >
             <MeshGradientBackground style={styles.modalContainer}>
                 {/* Header */}
@@ -119,7 +136,7 @@ export function MonthlySettingsModal({
                     <Text style={[styles.title, { color: colors.text }]}>
                         {t('home.monthlySettings') || 'Usage Limit'}
                     </Text>
-                    <TouchableOpacity onPress={onClose}>
+                    <TouchableOpacity onPress={handleClose}>
                         <Ionicons name="close-circle" size={32} color={colors.primary} />
                     </TouchableOpacity>
                 </View>

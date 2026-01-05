@@ -10,6 +10,14 @@ on:
         description: 'Version tag (e.g., v1.0.0)'
         required: false
         default: ''
+      release_type:
+        description: 'Release type'
+        required: true
+        default: 'latest'
+        type: choice
+        options:
+          - latest
+          - pre-release
 
 jobs:
   build-arm64:
@@ -46,10 +54,10 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Get version from app.json
+      - name: Get version from app.config.ts
         id: get_version
         run: |
-          VERSION=$(node -p "require('./app.json').expo.version")
+          VERSION=$(grep -oP "version:\s*'\\K[^']+" app.config.ts)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
 
@@ -112,10 +120,10 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Get version from app.json
+      - name: Get version from app.config.ts
         id: get_version
         run: |
-          VERSION=$(node -p "require('./app.json').expo.version")
+          VERSION=$(grep -oP "version:\s*'\\K[^']+" app.config.ts)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
 
@@ -178,10 +186,10 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Get version from app.json
+      - name: Get version from app.config.ts
         id: get_version
         run: |
-          VERSION=$(node -p "require('./app.json').expo.version")
+          VERSION=$(grep -oP "version:\s*'\\K[^']+" app.config.ts)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
 
@@ -379,7 +387,7 @@ jobs:
             > Terima kasih atas pengertian dan masukan Anda untuk membantu pengembangan Huawei Manager.
           files: apks/*.apk
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event.inputs.release_type == 'pre-release' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -466,6 +474,6 @@ jobs:
             > Terima kasih atas pengertian dan masukan Anda untuk membantu pengembangan Huawei Manager.
           files: apks/*.apk
           draft: false
-          prerelease: false
+          prerelease: ${{ github.event.inputs.release_type == 'pre-release' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

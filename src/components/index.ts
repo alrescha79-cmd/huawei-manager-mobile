@@ -30,4 +30,5 @@ export * from './ModalMeshGradient';
 export * from './AnimatedScreen';
 export * from './ThemedSwitch';
 export * from './Skeleton';
+export * from './MonthlyComparisonCard';
 

@@ -83,6 +83,22 @@ export function BandSelectionModal({
     // Check if there are changes
     const hasChanges = JSON.stringify([...selectedBandBits].sort()) !== JSON.stringify([...initialBandBits].sort());
 
+    // Handle close with confirmation if there are unsaved changes
+    const handleClose = () => {
+        if (hasChanges) {
+            ThemedAlertHelper.alert(
+                t('common.unsavedChanges'),
+                t('common.discardChangesMessage'),
+                [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('common.discard'), style: 'destructive', onPress: onClose }
+                ]
+            );
+        } else {
+            onClose();
+        }
+    };
+
     // Load current band settings when modal opens
     useEffect(() => {
         if (visible && modemService) {
@@ -183,7 +199,7 @@ export function BandSelectionModal({
             visible={visible}
             animationType="slide"
             presentationStyle="pageSheet"
-            onRequestClose={onClose}
+            onRequestClose={handleClose}
         >
             <BlurView
                 intensity={isDark ? 80 : glassmorphism.blur.modal}  // Higher intensity for dark mode = more solid
@@ -201,7 +217,7 @@ export function BandSelectionModal({
                         <Text style={[styles.title, { color: colors.text }]}>{t('settings.lteBandSelection') || 'Select Bands'}</Text>
                         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('settings.selectedCount', { count: selectedBandBits.length })}</Text>
                     </View>
-                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                    <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
                         <Ionicons name="close-circle" size={32} color={colors.primary} />
                     </TouchableOpacity>
                 </View>
@@ -274,7 +290,7 @@ export function BandSelectionModal({
                                     <View style={styles.bandLeft}>
                                         <View style={[
                                             styles.bandTag,
-                                            { backgroundColor: isDark ? colors.border : '#9CA3AF' }, 
+                                            { backgroundColor: isDark ? colors.border : '#9CA3AF' },
                                             isSelected && { backgroundColor: colors.primary }
                                         ]}>
                                             <Text style={styles.bandTagName}>{band.name}</Text>

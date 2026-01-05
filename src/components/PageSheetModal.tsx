@@ -10,8 +10,10 @@ import {
     ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@/theme';
+import { useTranslation } from '@/i18n';
 import { BlurView } from 'expo-blur';
 import { ModalMeshGradient } from './ModalMeshGradient';
+import { ThemedAlertHelper } from './ThemedAlert';
 
 interface PageSheetModalProps {
     visible: boolean;
@@ -21,6 +23,7 @@ interface PageSheetModalProps {
     isSaving?: boolean;
     saveText?: string;
     cancelText?: string;
+    hasChanges?: boolean; // Track if there are unsaved changes
     children: React.ReactNode;
 }
 
@@ -32,9 +35,26 @@ export function PageSheetModal({
     isSaving = false,
     saveText = 'Save',
     cancelText = 'Cancel',
+    hasChanges = false,
     children,
 }: PageSheetModalProps) {
     const { colors, typography, glassmorphism, isDark } = useTheme();
+    const { t } = useTranslation();
+
+    const handleClose = () => {
+        if (hasChanges) {
+            ThemedAlertHelper.alert(
+                t('common.unsavedChanges'),
+                t('common.discardChangesMessage'),
+                [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('common.discard'), style: 'destructive', onPress: onClose }
+                ]
+            );
+        } else {
+            onClose();
+        }
+    };
 
     return (
         <Modal
@@ -42,7 +62,7 @@ export function PageSheetModal({
             animationType="slide"
             presentationStyle="overFullScreen"
             transparent
-            onRequestClose={onClose}
+            onRequestClose={handleClose}
         >
             <BlurView
                 intensity={glassmorphism.blur.modal}
@@ -58,7 +78,7 @@ export function PageSheetModal({
                     borderBottomColor: colors.border,
                     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
                 }]}>
-                    <TouchableOpacity onPress={onClose}>
+                    <TouchableOpacity onPress={handleClose}>
                         <Text style={[typography.body, { color: colors.primary }]}>{cancelText}</Text>
                     </TouchableOpacity>
                     <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>

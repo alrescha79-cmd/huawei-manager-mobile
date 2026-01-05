@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen, MonthlyComparisonCard } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -247,9 +247,9 @@ export default function HomeScreen() {
         // Check IP change notification (via session duration reset)
         checkIPChangeNotification(traffic.currentConnectTime || 0, {
           title: t('notifications.ipChangeTitle'),
-          body: (minutes) => minutes === '0'
+          body: (duration) => duration === '0'
             ? t('notifications.ipChangeBodyJustNow')
-            : t('notifications.ipChangeBody', { minutes }),
+            : t('notifications.ipChangeBody', { duration }),
         });
       }
 
@@ -1035,10 +1035,18 @@ export default function HomeScreen() {
               />
 
               {usageCardStyle === 'compact' ? (
-                <CompactUsageCard
-                  stats={trafficStats}
-                  dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
-                />
+                <>
+                  <CompactUsageCard
+                    stats={trafficStats}
+                    dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
+                  />
+                  <MonthlyComparisonCard
+                    totalDownload={trafficStats.totalDownload}
+                    totalUpload={trafficStats.totalUpload}
+                    monthDownload={trafficStats.monthDownload}
+                    monthUpload={trafficStats.monthUpload}
+                  />
+                </>
               ) : (
                 <>
                   {/* Session Usage Card */}
@@ -1047,6 +1055,7 @@ export default function HomeScreen() {
                     download={trafficStats.currentDownload}
                     upload={trafficStats.currentUpload}
                     duration={trafficStats.currentConnectTime}
+                    durationUnits={durationUnits}
                     variant="session"
                     style={{ marginBottom: spacing.md }}
                   />
@@ -1057,6 +1066,7 @@ export default function HomeScreen() {
                     download={trafficStats.monthDownload || trafficStats.totalDownload}
                     upload={trafficStats.monthUpload || trafficStats.totalUpload}
                     duration={trafficStats.monthDuration}
+                    durationUnits={durationUnits}
                     variant="monthly"
                     dataLimit={monthlySettings?.enabled ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576) : undefined}
                   />
@@ -1068,6 +1078,15 @@ export default function HomeScreen() {
                     download={trafficStats.totalDownload}
                     upload={trafficStats.totalUpload}
                     icon="data-usage"
+                  />
+
+                  {/* Monthly Comparison Card */}
+                  <MonthlyComparisonCard
+                    totalDownload={trafficStats.totalDownload}
+                    totalUpload={trafficStats.totalUpload}
+                    monthDownload={trafficStats.monthDownload}
+                    monthUpload={trafficStats.monthUpload}
+                    style={{ marginTop: spacing.md }}
                   />
                 </>
               )}

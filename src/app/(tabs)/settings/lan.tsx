@@ -229,6 +229,22 @@ export default function LanSettingsScreen() {
         );
     };
 
+    // Handle APN modal close with confirmation
+    const handleCloseApnModal = () => {
+        if (hasApnChanges()) {
+            ThemedAlertHelper.alert(
+                t('common.unsavedChanges'),
+                t('common.discardChangesMessage'),
+                [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('common.discard'), style: 'destructive', onPress: () => setShowApnModal(false) }
+                ]
+            );
+        } else {
+            setShowApnModal(false);
+        }
+    };
+
     const handleSaveApnProfile = async () => {
         if (!networkSettingsService || isSavingApn) return;
         if (!apnName.trim() || !apnApn.trim()) {
@@ -483,14 +499,14 @@ export default function LanSettingsScreen() {
                     visible={showApnModal}
                     animationType="slide"
                     presentationStyle="pageSheet"
-                    onRequestClose={() => setShowApnModal(false)}
+                    onRequestClose={handleCloseApnModal}
                 >
                     <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
                         <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
                             <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
                                 {editingApn ? t('networkSettings.editApn') : t('networkSettings.addApn')}
                             </Text>
-                            <TouchableOpacity onPress={() => setShowApnModal(false)}>
+                            <TouchableOpacity onPress={handleCloseApnModal}>
                                 <MaterialIcons name="close" size={28} color={colors.primary} />
                             </TouchableOpacity>
                         </View>
