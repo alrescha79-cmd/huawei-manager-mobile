@@ -192,6 +192,8 @@ eas build --profile preview --platform android
 | [Architecture](docs/ARCHITECTURE.md) | Tech stack & project structure |
 | [User Guide](docs/USER_GUIDE.md) | Cara penggunaan aplikasi |
 | [API Reference](docs/API_REFERENCE.md) | Huawei modem API endpoints |
+| [Debugging Guide](docs/DEBUGGING.md) | Cara mengirim laporan bug dengan log |
+| [Push Notifications](docs/push-notifications.md) | Setup push notifications |
 | [Devtools](devtools/README.md) | Reverse engineering Web UI |
 
 ---
@@ -204,7 +206,10 @@ Contributions welcome! Silakan buat issue atau pull request.
 
 ## 🐛 Bug Report
 
-Menemukan bug? Bantu kami memperbaikinya dengan melaporkan issue di GitHub:
+Menemukan bug? Bantu kami memperbaikinya!
+
+- 📖 **[Panduan Debugging](docs/DEBUGGING.md)** - Cara mengirim log API dari browser
+- 🔧 In-app: Settings > Debug Mode > Send Debug Report
 
 [![Report Bug](https://img.shields.io/badge/Report-Bug-red?style=for-the-badge&logo=github)](https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=bug&projects=&template=bug_report.md&title=%5BBUG%5D+)
 
