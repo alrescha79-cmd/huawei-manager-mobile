@@ -108,7 +108,10 @@
     "loginFailed": "Login gagal",
     "directLoginNote": "Akan mencoba login langsung terlebih dahulu.",
     "webFallbackNote": "Jika gagal, antarmuka web akan tersedia.",
-    "appVersion": "Versi Aplikasi"
+    "appVersion": "Versi Aplikasi",
+    "havingTrouble": "Mengalami kendala? Laporkan masalah",
+    "reportIssue": "Laporkan Masalah",
+    "reportIssueMessage": "Pilih cara Anda ingin melaporkan masalah"
   },
   "home": {
     "connectionStatus": "Status Koneksi",

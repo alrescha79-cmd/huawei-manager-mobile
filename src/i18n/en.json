@@ -108,7 +108,10 @@
     "loginFailed": "Login failed",
     "directLoginNote": "Will try direct login first.",
     "webFallbackNote": "If it fails, web interface will be available.",
-    "appVersion": "App Version"
+    "appVersion": "App Version",
+    "havingTrouble": "Having trouble? Report issue",
+    "reportIssue": "Report Issue",
+    "reportIssueMessage": "Choose how you would like to report the issue"
   },
   "home": {
     "connectionStatus": "Connection Status",
