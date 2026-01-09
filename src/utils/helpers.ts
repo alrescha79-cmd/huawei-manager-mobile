@@ -53,9 +53,34 @@ export const formatDuration = (seconds: number, units: DurationUnits = defaultUn
   }
 };
 
-export const getSignalStrength = (rssi: string | number): string => {
-  const rssiNum = typeof rssi === 'string' ? parseInt(rssi) : rssi;
+// Parse signal value from various formats (e.g., "-76dBm", ">=-51dBm", "-76")
+const parseSignalValue = (value: string | number | undefined): number | null => {
+  if (value === undefined || value === null || value === '') return null;
 
+  if (typeof value === 'number') return value;
+
+  // Handle special formats like ">=-51dBm" or ">=..." from E3372
+  const cleanValue = value.replace(/>=/g, '').replace(/dBm?/gi, '').replace(/dB/gi, '').trim();
+  const parsed = parseInt(cleanValue);
+
+  return isNaN(parsed) ? null : parsed;
+};
+
+export const getSignalStrength = (rssi: string | number | undefined, rsrp?: string | number): string => {
+  // Try RSSI first
+  let rssiNum = parseSignalValue(rssi);
+
+  // If RSSI is null/invalid, try RSRP as fallback (RSRP is usually more accurate for LTE)
+  if (rssiNum === null && rsrp) {
+    rssiNum = parseSignalValue(rsrp);
+  }
+
+  // If still no valid value, return unknown
+  if (rssiNum === null) return 'unknown';
+
+  // For RSRP values (typically -44 to -140 dBm)
+  // For RSSI values (typically -30 to -110 dBm)
+  // Using a unified scale that works for both
   if (rssiNum >= -65) return 'excellent';
   if (rssiNum >= -75) return 'good';
   if (rssiNum >= -85) return 'fair';
@@ -63,8 +88,17 @@ export const getSignalStrength = (rssi: string | number): string => {
   return 'veryPoor';
 };
 
-export const getSignalIcon = (rssi: string | number): number => {
-  const rssiNum = typeof rssi === 'string' ? parseInt(rssi) : rssi;
+export const getSignalIcon = (rssi: string | number | undefined, rsrp?: string | number): number => {
+  // Try RSSI first
+  let rssiNum = parseSignalValue(rssi);
+
+  // If RSSI is null/invalid, try RSRP as fallback
+  if (rssiNum === null && rsrp) {
+    rssiNum = parseSignalValue(rsrp);
+  }
+
+  // If still no valid value, return 0 (no signal bars)
+  if (rssiNum === null) return 0;
 
   if (rssiNum >= -65) return 5;
   if (rssiNum >= -75) return 4;
@@ -72,6 +106,24 @@ export const getSignalIcon = (rssi: string | number): number => {
   if (rssiNum >= -95) return 2;
   if (rssiNum >= -105) return 1;
   return 0;
+};
+
+// Get signal icon from modem status SignalIcon field (0-5 value from modem)
+export const getSignalIconFromModemStatus = (signalIcon: string | undefined): number => {
+  if (!signalIcon) return 0;
+  const parsed = parseInt(signalIcon);
+  if (isNaN(parsed)) return 0;
+  // Clamp to 0-5 range
+  return Math.max(0, Math.min(5, parsed));
+};
+
+// Map SignalIcon value (0-5) to signal strength text
+export const getSignalStrengthFromIcon = (signalIcon: number): string => {
+  if (signalIcon >= 5) return 'excellent';
+  if (signalIcon >= 4) return 'good';
+  if (signalIcon >= 3) return 'fair';
+  if (signalIcon >= 2) return 'poor';
+  return 'veryPoor';
 };
 
 // Decode HTML entities in strings

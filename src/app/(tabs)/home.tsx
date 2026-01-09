@@ -26,6 +26,8 @@ import {
   DurationUnits,
   getSignalIcon,
   getSignalStrength,
+  getSignalIconFromModemStatus,
+  getSignalStrengthFromIcon,
   getConnectionStatusText,
   getNetworkTypeText,
   getLteBandInfo,
@@ -726,12 +728,28 @@ export default function HomeScreen() {
               {/* Left: Signal Bars + Good + ISP */}
               <View style={styles.connectionLeftSection}>
                 <SignalBar
-                  strength={getSignalIcon(signalInfo?.rssi)}
+                  strength={(() => {
+                    // Try RSSI/RSRP first, then fallback to modem's SignalIcon
+                    const calculatedIcon = getSignalIcon(signalInfo?.rssi, signalInfo?.rsrp);
+                    if (calculatedIcon > 0) return calculatedIcon;
+                    // Fallback to modem's native SignalIcon (0-5)
+                    return getSignalIconFromModemStatus(modemStatus?.signalIcon);
+                  })()}
                   label=""
                 />
                 <View style={styles.connectionSignalLabels}>
                   <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
-                    {t(`home.signal${getSignalStrength(signalInfo?.rssi).charAt(0).toUpperCase()}${getSignalStrength(signalInfo?.rssi).slice(1)}`)}
+                    {(() => {
+                      // Try RSSI/RSRP first
+                      const strength = getSignalStrength(signalInfo?.rssi, signalInfo?.rsrp);
+                      if (strength !== 'unknown') {
+                        return t(`home.signal${strength.charAt(0).toUpperCase()}${strength.slice(1)}`);
+                      }
+                      // Fallback to modem's SignalIcon
+                      const iconVal = getSignalIconFromModemStatus(modemStatus?.signalIcon);
+                      const fallbackStrength = getSignalStrengthFromIcon(iconVal);
+                      return t(`home.signal${fallbackStrength.charAt(0).toUpperCase()}${fallbackStrength.slice(1)}`);
+                    })()}
                   </Text>
                   <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
                     {networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
@@ -976,11 +994,19 @@ export default function HomeScreen() {
           </CollapsibleCard>
 
           {/* Signal Strength Card */}
-          {signalInfo && (signalInfo.rssi || signalInfo.rsrp) ? (
+          {(signalInfo && (signalInfo.rssi || signalInfo.rsrp)) || modemStatus?.signalIcon ? (
             <CollapsibleCard title={t('home.signalInfo')}>
               <SignalCard
                 title={t('home.signalStrength')}
-                badge={t(`home.signal${getSignalStrength(signalInfo.rssi).charAt(0).toUpperCase()}${getSignalStrength(signalInfo.rssi).slice(1)}`)}
+                badge={(() => {
+                  const strength = getSignalStrength(signalInfo?.rssi, signalInfo?.rsrp);
+                  if (strength !== 'unknown') {
+                    return t(`home.signal${strength.charAt(0).toUpperCase()}${strength.slice(1)}`);
+                  }
+                  const iconVal = getSignalIconFromModemStatus(modemStatus?.signalIcon);
+                  const fallbackStrength = getSignalStrengthFromIcon(iconVal);
+                  return t(`home.signal${fallbackStrength.charAt(0).toUpperCase()}${fallbackStrength.slice(1)}`);
+                })()}
                 color="blue"
                 icon="signal-cellular-alt"
                 metrics={[

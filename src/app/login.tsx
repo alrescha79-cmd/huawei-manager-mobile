@@ -6,10 +6,15 @@ import {
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  TouchableOpacity,
+  Linking,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import Constants from 'expo-constants';
+import * as Device from 'expo-device';
+import * as MailComposer from 'expo-mail-composer';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, Input, Button, WebViewLogin, ThemedAlertHelper } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
@@ -149,6 +154,77 @@ export default function LoginScreen() {
     }
   };
 
+  // Handle reporting login issues via email or GitHub
+  const handleReportIssue = async () => {
+    // Build device info string
+    const deviceString = `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
+    const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
+    const appVersion = Constants.expoConfig?.version || '1.0.0';
+    const dateString = new Date().toLocaleDateString();
+
+    const reportTemplate = `=== BUG REPORT / FEATURE REQUEST ===
+
+📱 Device: ${deviceString}
+📲 OS: ${osString}
+📦 App Version: ${appVersion}
+🔧 Modem IP: ${modemIp || 'Not set'}
+📅 Date: ${dateString}
+
+---
+
+📝 Description (please fill in):
+[Describe the issue you're experiencing. Include any error messages you see.]
+
+🔄 Steps to Reproduce:
+1. Open App
+2. Enter credentials
+3. [What happens next?]
+
+---
+`;
+
+    const emailSubject = `[Huawei Manager] Login Issue - ${deviceString}`;
+    const githubTitle = encodeURIComponent(`Login Issue - ${deviceString}`);
+    const githubBody = encodeURIComponent(reportTemplate);
+    const githubUrl = `https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?title=${githubTitle}&body=${githubBody}`;
+
+    // Show options dialog
+    ThemedAlertHelper.alert(
+      t('login.reportIssue'),
+      t('login.reportIssueMessage'),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: 'GitHub Issue',
+          onPress: () => {
+            Linking.openURL(githubUrl).catch(() => {
+              ThemedAlertHelper.alert(t('common.error'), 'Could not open GitHub');
+            });
+          }
+        },
+        {
+          text: 'Email',
+          onPress: async () => {
+            const isAvailable = await MailComposer.isAvailableAsync();
+            if (isAvailable) {
+              await MailComposer.composeAsync({
+                recipients: ['alrescha79@gmail.com'],
+                subject: emailSubject,
+                body: reportTemplate,
+              });
+            } else {
+              // Fallback to mailto: link
+              const mailtoUrl = `mailto:alrescha79@gmail.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(reportTemplate)}`;
+              Linking.openURL(mailtoUrl).catch(() => {
+                ThemedAlertHelper.alert(t('common.error'), 'Could not open email client');
+              });
+            }
+          }
+        }
+      ]
+    );
+  };
+
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -239,6 +315,17 @@ export default function LoginScreen() {
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
             {t('login.appVersion')}: {Constants.expoConfig?.version || '1.0.0'}
           </Text>
+
+          {/* Having trouble? Report issue link */}
+          <TouchableOpacity
+            onPress={handleReportIssue}
+            style={styles.reportIssueLink}
+          >
+            <MaterialIcons name="help-outline" size={16} color={colors.primary} />
+            <Text style={[typography.caption1, { color: colors.primary, marginLeft: 4 }]}>
+              {t('login.havingTrouble')}
+            </Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -275,5 +362,12 @@ const styles = StyleSheet.create({
   footer: {
     marginTop: 24,
     alignItems: 'center',
+  },
+  reportIssueLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
   },
 });

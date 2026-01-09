@@ -1,0 +1,129 @@
+name: Build Test APK
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to build'
+        required: true
+        default: 'main'
+        type: string
+      architecture:
+        description: 'Architecture to build'
+        required: true
+        default: 'arm64-v8a'
+        type: choice
+        options:
+          - arm64-v8a
+          - armeabi-v7a
+          - x86_64
+          - all
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Get version and branch info
+        id: get_info
+        run: |
+          VERSION=$(grep -oP "version:\s*'\K[^']+" app.config.ts)
+          SHORT_SHA=$(echo ${{ github.sha }} | cut -c1-7)
+          BRANCH=${{ github.event.inputs.branch }}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "short_sha=$SHORT_SHA" >> $GITHUB_OUTPUT
+          echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+          echo "Build info: v$VERSION - $BRANCH ($SHORT_SHA)"
+
+      - name: Create google-services.json from secret
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
+
+      - name: Prebuild Android
+        run: npx expo prebuild --platform android --clean
+
+      - name: Build APK (single architecture)
+        if: ${{ github.event.inputs.architecture != 'all' }}
+        run: |
+          cd android
+          ./gradlew assembleRelease \
+            -PreactNativeArchitectures=${{ github.event.inputs.architecture }} \
+            --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+
+      - name: Build APK (all architectures)
+        if: ${{ github.event.inputs.architecture == 'all' }}
+        run: |
+          cd android
+          ./gradlew assembleRelease --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+
+      - name: Rename APK
+        run: |
+          ARCH="${{ github.event.inputs.architecture }}"
+          VERSION="${{ steps.get_info.outputs.version }}"
+          BRANCH="${{ steps.get_info.outputs.branch }}"
+          SHORT_SHA="${{ steps.get_info.outputs.short_sha }}"
+          
+          if [ "$ARCH" = "all" ]; then
+            FILENAME="huawei-manager-v${VERSION}-${BRANCH}-${SHORT_SHA}-universal.apk"
+          else
+            FILENAME="huawei-manager-v${VERSION}-${BRANCH}-${SHORT_SHA}-${ARCH}.apk"
+          fi
+          
+          mv android/app/build/outputs/apk/release/app-release.apk "$FILENAME"
+          echo "APK_FILENAME=$FILENAME" >> $GITHUB_ENV
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-apk-${{ github.event.inputs.architecture }}-${{ steps.get_info.outputs.short_sha }}
+          path: huawei-manager-*.apk
+          retention-days: 30
+
+      - name: Build Summary
+        run: |
+          echo "## 🚀 Test Build Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Info | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **Branch** | \`${{ github.event.inputs.branch }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Architecture** | \`${{ github.event.inputs.architecture }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Version** | \`${{ steps.get_info.outputs.version }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Commit** | \`${{ steps.get_info.outputs.short_sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "📦 APK available in **Artifacts** section above." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Download Link" >> $GITHUB_STEP_SUMMARY
+          echo "Go to **Actions** > **This workflow run** > **Artifacts** to download the APK" >> $GITHUB_STEP_SUMMARY
