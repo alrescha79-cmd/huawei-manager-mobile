@@ -228,6 +228,10 @@ export async function checkDailyUsageNotification(
     const lastNotifyDate = await AsyncStorage.getItem(LAST_DAILY_USAGE_NOTIFY_KEY);
 
     if (dayUsed >= notifyThresholdBytes && lastNotifyDate !== today) {
+        // Update timestamp BEFORE sending to prevent race condition duplicates
+        lastDailyNotifyTimestamp = now;
+        await AsyncStorage.setItem(LAST_DAILY_USAGE_NOTIFY_KEY, today);
+
         const usedGB = (dayUsed / (1024 * 1024 * 1024)).toFixed(2);
         const thresholdGB = (notifyThresholdBytes / (1024 * 1024 * 1024)).toFixed(2);
 
@@ -236,9 +240,6 @@ export async function checkDailyUsageNotification(
             translations.body(usedGB, thresholdGB),
             'usage-alerts'
         );
-
-        lastDailyNotifyTimestamp = now;
-        await AsyncStorage.setItem(LAST_DAILY_USAGE_NOTIFY_KEY, today);
     }
 }
 
@@ -266,6 +267,10 @@ export async function checkMonthlyUsageNotification(
     const lastNotifyMonth = await AsyncStorage.getItem(LAST_MONTHLY_USAGE_NOTIFY_KEY);
 
     if (monthUsed >= notifyThresholdBytes && lastNotifyMonth !== thisMonth) {
+        // Update timestamp BEFORE sending to prevent race condition duplicates
+        lastMonthlyNotifyTimestamp = now;
+        await AsyncStorage.setItem(LAST_MONTHLY_USAGE_NOTIFY_KEY, thisMonth);
+
         const usedGB = (monthUsed / (1024 * 1024 * 1024)).toFixed(2);
         const limitGB = dataLimit.toFixed(0);
 
@@ -274,9 +279,6 @@ export async function checkMonthlyUsageNotification(
             translations.body(usedGB, limitGB),
             'usage-alerts'
         );
-
-        lastMonthlyNotifyTimestamp = now;
-        await AsyncStorage.setItem(LAST_MONTHLY_USAGE_NOTIFY_KEY, thisMonth);
     }
 }
 
@@ -315,6 +317,8 @@ export async function checkIPChangeNotification(
     const previousDuration = lastDuration ? parseInt(lastDuration, 10) : 0;
 
     if (currentSessionDuration < previousDuration && previousDuration > 60) {
+        // Update timestamp BEFORE sending to prevent race condition duplicates
+        lastIpChangeNotifyTimestamp = now;
         await AsyncStorage.setItem(LAST_IP_CHANGE_TIME_KEY, now.toString());
 
         // Format previous session duration for notification body
@@ -336,8 +340,6 @@ export async function checkIPChangeNotification(
             translations.body(durationText),
             'ip-change'
         );
-
-        lastIpChangeNotifyTimestamp = now;
     }
 
     await AsyncStorage.setItem(

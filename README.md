@@ -57,6 +57,8 @@
 >
 >**universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
 
+> 🧪 **Testing Version** — Versi khusus untuk modem yang tidak terbaca kekuatan sinyalnya tersedia di [Pre-releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/test-2/huawei-manager-v1.1.0-main-12207da-arm64-v8a.apk)
+
 > **⚡ Built with Expo SDK 54**
 
 > **📡 Tested on Huawei B312-929 (Orbit Star 2) and Android 15 (Iqoo Z7)**
@@ -204,13 +206,24 @@ Contributions welcome! Silakan buat issue atau pull request.
 
 ---
 
-## 🐛 Bug Report
+## 🐛 Bug Report & Debugging
 
-Menemukan bug? Bantu kami memperbaikinya!
+Menemukan bug? Bantu kami memperbaikinya dengan mengirim laporan lengkap!
 
-- 📖 **[Panduan Debugging](docs/DEBUGGING.md)** - Cara mengirim log API dari browser
-- 🔧 In-app: Settings > Debug Mode > Send Debug Report
+### 📱 Dari Aplikasi (In-App Debug Mode)
+1. Buka **Settings** > **Debug Mode**
+2. Aktifkan toggle **Enable Debug Mode**
+3. Gunakan aplikasi seperti biasa
+4. Tap **Send Debug Report** untuk kirim via Email/GitHub
 
+### 🌐 Dari Browser (Untuk masalah Login)
+Jika tidak bisa login ke aplikasi, gunakan browser DevTools:
+1. Buka web modem di browser (`http://192.168.8.1`)
+2. Tekan F12 > Console
+3. Paste script dari **[Panduan Debugging](docs/DEBUGGING.md)**
+4. Ketik `downloadAPILogs()` dan kirim file-nya
+
+### 📤 Kirim Laporan
 [![Report Bug](https://img.shields.io/badge/Report-Bug-red?style=for-the-badge&logo=github)](https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=bug&projects=&template=bug_report.md&title=%5BBUG%5D+)
 
 
