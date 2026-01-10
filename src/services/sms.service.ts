@@ -114,7 +114,7 @@ const MOCK_SMS_COUNT: SMSCount = {
 };
 
 // Global flag to enable mock mode for testing
-let useMockSMSData = true;
+let useMockSMSData = false;
 
 export function setMockSMSMode(enabled: boolean): void {
   useMockSMSData = enabled;
@@ -123,7 +123,7 @@ export function setMockSMSMode(enabled: boolean): void {
 
 export function isMockSMSMode(): boolean {
   return useMockSMSData;
-}
+} 
 
 export class SMSService {
   private apiClient: ModemAPIClient;

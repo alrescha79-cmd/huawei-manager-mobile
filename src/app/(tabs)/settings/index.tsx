@@ -13,7 +13,7 @@ import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen, ThemedSwitch, ThemedAlertHelper } from '@/components';
+import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen, ThemedSwitch, ThemedAlertHelper, BouncingDots } from '@/components';
 import { useThemeStore } from '@/stores/theme.store';
 import { useDebugStore } from '@/stores/debug.store';
 
@@ -313,7 +313,7 @@ export default function SettingsIndex() {
                                     }}
                                     rightElement={
                                         isSendingDebugLog ? (
-                                            <ActivityIndicator size="small" color={colors.primary} />
+                                            <BouncingDots size="small" color={colors.primary} />
                                         ) : undefined
                                     }
                                     isLast

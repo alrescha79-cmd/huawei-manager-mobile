@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { ThemedAlert, setAlertListener, ThemedAlertHelper } from '@/components';
+import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -72,23 +72,24 @@ export default function RootLayout() {
     // Track app state for session management
     const appStateRef = useRef<AppStateStatus>(AppState.currentState);
     const [isRestoringSession, setIsRestoringSession] = useState(false);
+    const [authReady, setAuthReady] = useState(false); // Track when auth check is complete
 
-    // Hide splash screen with smooth animation when fonts are loaded
+    // Hide splash screen when BOTH fonts loaded AND auth checked
     const onLayoutRootView = useCallback(async () => {
-        if (fontsLoaded) {
+        if (fontsLoaded && authReady) {
             // Small delay for smoother transition
             await new Promise(resolve => setTimeout(resolve, 200));
             await SplashScreen.hideAsync();
             setAppIsReady(true);
         }
-    }, [fontsLoaded]);
+    }, [fontsLoaded, authReady]);
 
-    // Trigger splash hide when fonts are ready
+    // Trigger splash hide when ready
     useEffect(() => {
-        if (fontsLoaded) {
+        if (fontsLoaded && authReady) {
             onLayoutRootView();
         }
-    }, [fontsLoaded, onLayoutRootView]);
+    }, [fontsLoaded, authReady, onLayoutRootView]);
 
     // Handle Android Navigation Bar Colors
     useEffect(() => {
@@ -215,6 +216,9 @@ export default function RootLayout() {
                 // Show star request after successful login
                 checkAndShowStarRequest();
             }
+
+            // Auth check complete - allow splash screen to hide
+            setAuthReady(true);
         };
         initializeApp();
     }, []);
@@ -379,8 +383,9 @@ export default function RootLayout() {
         }
     }, [isAuthenticated, segments]);
 
-    if (!fontsLoaded) {
-        return null;
+    // Show animated splash screen while loading
+    if (!fontsLoaded || !appIsReady) {
+        return <AnimatedSplashScreen isLoading={true} />;
     }
 
     return (

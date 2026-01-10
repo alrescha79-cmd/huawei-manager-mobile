@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader } from '@/components';
+import { ThemedAlertHelper, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, BouncingDots } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const ANTENNA_MODES = [
@@ -90,7 +90,7 @@ export default function ModemSettingsScreen() {
                 <SettingsSection title={t('settings.deviceInfo')}>
                     {isLoading ? (
                         <View style={{ padding: 20, alignItems: 'center' }}>
-                            <ActivityIndicator color={colors.primary} />
+                            <BouncingDots size="medium" color={colors.primary} />
                         </View>
                     ) : (
                         <>
@@ -111,7 +111,7 @@ export default function ModemSettingsScreen() {
                         value={t(ANTENNA_MODES.find(m => m.value === antennaMode)?.labelKey || 'settings.antennaAuto')}
                         onPress={() => setShowAntennaModal(true)}
                         isLast
-                        rightElement={isChangingAntenna ? <ActivityIndicator size="small" color={colors.primary} /> : undefined}
+                        rightElement={isChangingAntenna ? <BouncingDots size="small" color={colors.primary} /> : undefined}
                     />
                 </SettingsSection>
 

@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch } from '@/components';
+import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots } from '@/components';
 import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -661,7 +661,7 @@ export default function WiFiScreen() {
                   </Text>
                 </View>
                 {isTogglingGuest ? (
-                  <ActivityIndicator color={colors.primary} />
+                  <BouncingDots size="medium" color={colors.primary} />
                 ) : (
                   <ThemedSwitch
                     value={guestWifiEnabled}
@@ -738,7 +738,7 @@ export default function WiFiScreen() {
                         disabled={isExtendingTime}
                       >
                         {isExtendingTime ? (
-                          <ActivityIndicator color="#fff" size="small" />
+                          <BouncingDots size="small" color="#fff" />
                         ) : (
                           <>
                             <MaterialIcons name="add" size={18} color="#fff" />
@@ -830,7 +830,7 @@ export default function WiFiScreen() {
                     disabled={isSavingGuestSettings}
                   >
                     {isSavingGuestSettings ? (
-                      <ActivityIndicator color="#fff" />
+                      <BouncingDots size="small" color="#fff" />
                     ) : (
                       <Text style={[typography.body, { color: '#fff', fontWeight: '600' }]}>{t('common.save')}</Text>
                     )}
@@ -964,7 +964,7 @@ export default function WiFiScreen() {
                     disabled={!hasChanges || isSaving}
                   >
                     {isSaving ? (
-                      <ActivityIndicator color="#FFFFFF" />
+                      <BouncingDots size="small" color="#FFFFFF" />
                     ) : (
                       <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
                         {t('wifi.saveChanges')}
@@ -1076,7 +1076,7 @@ export default function WiFiScreen() {
                     disabled={isUnblocking === device.macAddress}
                   >
                     {isUnblocking === device.macAddress ? (
-                      <ActivityIndicator color="#fff" size="small" />
+                      <BouncingDots size="small" color="#fff" />
                     ) : (
                       <>
                         <MaterialIcons name="check" size={16} color="#fff" />
@@ -1102,7 +1102,7 @@ export default function WiFiScreen() {
                 </Text>
               </View>
               {isTogglingParental ? (
-                <ActivityIndicator color={colors.primary} />
+                <BouncingDots size="medium" color={colors.primary} />
               ) : (
                 <ThemedSwitch
                   value={parentalControlEnabled}
@@ -1402,7 +1402,7 @@ export default function WiFiScreen() {
                     disabled={isSavingProfile}
                   >
                     {isSavingProfile ? (
-                      <ActivityIndicator color="#FFFFFF" />
+                      <BouncingDots size="small" color="#FFFFFF" />
                     ) : (
                       <Text style={[typography.body, { color: '#FFFFFF', fontWeight: 'bold' }]}>
                         {hasProfileChanges() ? t('common.save') : t('common.cancel')}

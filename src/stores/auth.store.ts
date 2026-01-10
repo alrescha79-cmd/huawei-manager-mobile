@@ -9,6 +9,7 @@ import {
   updateSessionActivity
 } from '@/utils/storage';
 import { ModemAPIClient } from '@/services/api.service';
+import { DirectAuthService } from '@/services/direct-auth.service';
 
 // Session keep-alive interval (2 minutes)
 const SESSION_KEEPALIVE_INTERVAL_MS = 2 * 60 * 1000;
@@ -34,6 +35,7 @@ interface AuthState {
 
   // New session management functions
   tryQuietSessionRestore: () => Promise<boolean>; // Try to restore session silently
+  tryDirectApiLogin: () => Promise<boolean>; // Try direct API login without WebView
   startSessionKeepAlive: () => void; // Start background keep-alive
   stopSessionKeepAlive: () => void; // Stop background keep-alive
 }
@@ -180,10 +182,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   // Try to restore session silently without showing any UI
   // Returns true if session is likely valid, false if re-login is needed
   tryQuietSessionRestore: async () => {
-    const { credentials } = get();
+    const { credentials, setRelogging } = get();
     if (!credentials) {
       return false;
     }
+
+    // Set relogging state so UI can respond
+    setRelogging(true);
 
     // First, check if session is likely still valid based on last activity
     const sessionLikelyValid = await isSessionLikelyValid();
@@ -198,6 +203,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           // Session is valid, update activity timestamp
           await updateSessionActivity();
           get().startSessionKeepAlive();
+          setRelogging(false);
           return true;
         }
       } catch (error) {
@@ -205,8 +211,27 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     }
 
-    // Session expired or invalid, try direct API login first
+    // SCRAM disabled - still fails with 108006. ModemAPIClient password_type 4 works.
+    // TODO: Fix SCRAM client proof calculation
+    // try {
+    //   console.log('[Auth] Trying Direct SCRAM API login...');
+    //   const directAuth = new DirectAuthService(credentials.modemIp);
+    //   await directAuth.login(credentials.password, credentials.username);
+    //   await saveSessionState({
+    //     lastSuccessfulLogin: Date.now(),
+    //     lastSessionActivity: Date.now(),
+    //     sessionHealthy: true,
+    //   });
+    //   get().startSessionKeepAlive();
+    //   console.log('[Auth] Direct SCRAM login successful!');
+    //   return true;
+    // } catch (error: any) {
+    //   console.log('[Auth] Direct SCRAM login failed:', error.message);
+    // }
+
+    // Try ModemAPIClient password_type 4 method (this works!)
     try {
+      console.log('[Auth] Trying ModemAPIClient login...');
       const apiClient = new ModemAPIClient(credentials.modemIp);
       const success = await apiClient.login(credentials.username, credentials.password);
 
@@ -217,6 +242,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           sessionHealthy: true,
         });
         get().startSessionKeepAlive();
+        console.log('[Auth] ModemAPIClient login successful!');
+        setRelogging(false);
         return true;
       }
     } catch (error) {
@@ -224,7 +251,35 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     // All silent methods failed, need WebView
+    console.log('[Auth] All direct methods failed, WebView required');
+    setRelogging(false);
     return false;
+  },
+
+  // Try direct API login without WebView (exposed for manual use)
+  tryDirectApiLogin: async () => {
+    const { credentials } = get();
+    if (!credentials) {
+      return false;
+    }
+
+    try {
+      console.log('[Auth] Manual Direct SCRAM API login...');
+      const directAuth = new DirectAuthService(credentials.modemIp);
+      await directAuth.login(credentials.password, credentials.username);
+
+      await saveSessionState({
+        lastSuccessfulLogin: Date.now(),
+        lastSessionActivity: Date.now(),
+        sessionHealthy: true,
+      });
+      get().startSessionKeepAlive();
+      console.log('[Auth] Manual Direct SCRAM login successful!');
+      return true;
+    } catch (error: any) {
+      console.log('[Auth] Manual Direct SCRAM login failed:', error.message);
+      return false;
+    }
   },
 
   // Start background session keep-alive

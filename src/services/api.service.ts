@@ -477,17 +477,15 @@ export class ModemAPIClient {
         return true;
       }
 
-      // SCRAM authentication disabled for now - cookie handling in React Native axios
-      // causes 125003 errors. WebView fallback handles login reliably.
-      // TODO: Investigate proper cookie jar implementation for React Native
-      // console.log('[Login] Trying SCRAM authentication...');
-      // const scramSuccess = await this.scramLogin(username, password);
-      // if (scramSuccess) {
-      //   console.log('[Login] SCRAM authentication successful');
-      //   return true;
-      // }
-
       console.log('[Login] Trying password_type 4 method...');
+
+      // Step 0: Fetch homepage to establish session cookies (CRITICAL!)
+      try {
+        await this.client.get('/html/index.html');
+        console.log('[Login] Homepage fetched');
+      } catch (e) {
+        // Ignore error, continue anyway
+      }
 
       // Step 1: Get fresh token and session using axios
       const tokenResponse = await this.client.get('/api/webserver/SesTokInfo');
@@ -496,15 +494,19 @@ export class ModemAPIClient {
       const sesInfo = parseXMLValue(tokenResponse.data, 'SesInfo');
 
       if (!token) {
+        console.log('[Login] Failed to get token');
         return false;
       }
 
-      // Extract session from response - use SesInfo directly
-      // Note: In React Native, Set-Cookie headers may not be accessible
+      // Format session cookie
       let session = '';
       if (sesInfo) {
         session = sesInfo.includes('SessionID=') ? sesInfo : `SessionID=${sesInfo}`;
+        this.sessionCookie = session;
       }
+
+      console.log('[Login] Got token:', token.substring(0, 16) + '...');
+      console.log('[Login] Got session:', session.substring(0, 30) + '...');
 
       // Step 2: Encode password
       const passwordType = '4';
@@ -531,12 +533,16 @@ export class ModemAPIClient {
         ? loginResponse.data
         : JSON.stringify(loginResponse.data);
 
+      console.log('[Login] Response:', responseData.substring(0, 150));
+
       // Check for error response
       if (responseData.includes('<error>')) {
         const errorCode = parseXMLValue(responseData, 'code');
+        console.log('[Login] Error code:', errorCode);
 
         // 108002: User already logged in - treat as success
         if (errorCode === '108002') {
+          console.log('[Login] Already logged in, treating as success');
           this.sessionToken = token;
           this.sessionCookie = session;
           this.tokenExpiry = Date.now() + 120000;
@@ -551,19 +557,24 @@ export class ModemAPIClient {
         responseData.includes('<response/>') ||
         responseData.includes('<?xml version="1.0" encoding="UTF-8"?><response>OK</response>') ||
         responseData.trim() === 'OK') {
+        console.log('[Login] Login successful!');
         this.sessionToken = token;
         this.sessionCookie = session;
         this.tokenExpiry = Date.now() + 120000;
         return true;
       }
 
+      console.log('[Login] Unexpected response format');
       return false;
     } catch (error: any) {
+      console.log('[Login] Error:', error.message);
       // Check if error response contains XML with error code
       if (error.response?.data) {
         const errorData = typeof error.response.data === 'string'
           ? error.response.data
           : JSON.stringify(error.response.data);
+
+        console.log('[Login] Error response data:', errorData.substring(0, 150));
 
         if (errorData.includes('<error>')) {
           const errorCode = parseXMLValue(errorData, 'code');

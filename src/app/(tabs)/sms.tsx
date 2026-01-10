@@ -17,7 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen } from '@/components';
+import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
@@ -649,7 +649,7 @@ export default function SMSScreen() {
               disabled={isSending || !newPhone || !newMessage}
             >
               {isSending ? (
-                <ActivityIndicator color="#FFF" size="small" />
+                <BouncingDots size="small" color="#FFF" />
               ) : (
                 <MaterialIcons name="send" size={20} color="#FFF" />
               )}
@@ -765,7 +765,7 @@ export default function SMSScreen() {
                 disabled={isSending || !replyMessage.trim()}
               >
                 {isSending ? (
-                  <ActivityIndicator size="small" color="#FFF" />
+                  <BouncingDots size="small" color="#FFF" />
                 ) : (
                   <MaterialIcons name="send" size={20} color="#FFF" />
                 )}
