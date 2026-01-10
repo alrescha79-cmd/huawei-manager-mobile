@@ -35,6 +35,10 @@ import {
 import { useTranslation } from '@/i18n';
 import { checkDailyUsageNotification, checkMonthlyUsageNotification, checkIPChangeNotification, sendDebugModeReminder, saveLastActiveTime } from '@/services/notification.service';
 import { useDebugStore } from '@/stores/debug.store';
+import { useSMSStore } from '@/stores/sms.store';
+import { useWiFiStore } from '@/stores/wifi.store';
+import { SMSService } from '@/services/sms.service';
+import { WiFiService } from '@/services/wifi.service';
 
 // Helper to determine signal quality based on thresholds
 const getSignalQuality = (
@@ -162,6 +166,27 @@ export default function HomeScreen() {
         loadData(service);
         loadBands(service);
         loadMonthlySettings(service);
+
+        // Load SMS count for tab badge
+        try {
+          const smsService = new SMSService(credentials.modemIp);
+          const isSupported = await smsService.isSMSSupported();
+          if (isSupported) {
+            const smsCount = await smsService.getSMSCount();
+            useSMSStore.getState().setSMSCount(smsCount);
+          }
+        } catch (e) {
+          // SMS loading failed silently
+        }
+
+        // Load WiFi connected devices for tab badge
+        try {
+          const wifiService = new WiFiService(credentials.modemIp);
+          const devices = await wifiService.getConnectedDevices();
+          useWiFiStore.getState().setConnectedDevices(devices);
+        } catch (e) {
+          // WiFi loading failed silently
+        }
       };
 
       initializeData();
@@ -1068,12 +1093,14 @@ export default function HomeScreen() {
               {/* Divider */}
               <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-              {/* Daily Usage Card */}
-              <DailyUsageCard
-                usage={trafficStats.dayUsed}
-                duration={trafficStats.dayDuration}
-                style={{ marginBottom: spacing.md }}
-              />
+              {/* Daily Usage Card - only show if data is available */}
+              {trafficStats.dayUsed > 0 && (
+                <DailyUsageCard
+                  usage={trafficStats.dayUsed}
+                  duration={trafficStats.dayDuration}
+                  style={{ marginBottom: spacing.md }}
+                />
+              )}
 
               {usageCardStyle === 'compact' ? (
                 <>

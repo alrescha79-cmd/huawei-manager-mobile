@@ -1,10 +1,13 @@
 import { Tabs, useRouter } from 'expo-router';
 import React, { useEffect } from 'react';
-import { View, StyleSheet, StatusBar, Platform } from 'react-native';
+import { View, StyleSheet, StatusBar, Platform, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
+import { useSMSStore } from '@/stores/sms.store';
+import { useWiFiStore } from '@/stores/wifi.store';
+import { useThemeStore } from '@/stores/theme.store';
 import { useTranslation } from '@/i18n';
 import { CustomTabBar } from '@/components';
 
@@ -37,8 +40,9 @@ const StatusBarHeader = () => {
   );
 };
 
-// Tab icon component using Material Icons
-const TabIcon = ({ name, color, focused }: { name: string; color: string; focused: boolean }) => {
+// Tab icon component using Material Icons with optional badge
+const TabIcon = ({ name, color, focused, badge }: { name: string; color: string; focused: boolean; badge?: number }) => {
+  const { colors } = useTheme();
   const iconNames: { [key: string]: keyof typeof MaterialIcons.glyphMap } = {
     home: 'home',
     wifi: 'wifi',
@@ -55,6 +59,13 @@ const TabIcon = ({ name, color, focused }: { name: string; color: string; focuse
         size={focused ? 26 : 24}
         color={color}
       />
+      {badge !== undefined && badge > 0 && (
+        <View style={[styles.badge, { backgroundColor: colors.notification }]}>
+          <Text style={styles.badgeText}>
+            {badge > 99 ? '99+' : badge}
+          </Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -63,6 +74,9 @@ export default function TabLayout() {
   const { colors } = useTheme();
   const router = useRouter();
   const { isAuthenticated, credentials } = useAuthStore();
+  const { smsCount } = useSMSStore();
+  const { connectedDevices } = useWiFiStore();
+  const { badgesEnabled } = useThemeStore();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -103,7 +117,7 @@ export default function TabLayout() {
           options={{
             title: t('tabs.wifi'),
             tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="wifi" color={color} focused={focused} />
+              <TabIcon name="wifi" color={color} focused={focused} badge={badgesEnabled ? connectedDevices.length : undefined} />
             ),
           }}
         />
@@ -112,7 +126,7 @@ export default function TabLayout() {
           options={{
             title: t('tabs.sms'),
             tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="sms" color={color} focused={focused} />
+              <TabIcon name="sms" color={color} focused={focused} badge={badgesEnabled ? smsCount?.localUnread : undefined} />
             ),
           }}
         />
@@ -137,5 +151,21 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     borderRadius: 16,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -8,
+    minWidth: 18,
+    height: 18,
+    borderRadius: 9,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 4,
+  },
+  badgeText: {
+    color: '#FFF',
+    fontSize: 10,
+    fontWeight: '700',
   },
 });

@@ -10,6 +10,7 @@ interface ThemeState {
   refreshInterval: number;
   language: string;
   isLanguageInitialized: boolean; // Track if language was auto-detected
+  badgesEnabled: boolean; // Tab badge visibility
 
   setThemeMode: (mode: ThemeMode) => void;
   usageCardStyle: 'split' | 'compact';
@@ -17,6 +18,7 @@ interface ThemeState {
   setRefreshInterval: (interval: number) => void;
   setLanguage: (language: string) => void;
   initializeLanguage: () => void; // Auto-detect device language on first install
+  setBadgesEnabled: (enabled: boolean) => void;
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -26,6 +28,7 @@ export const useThemeStore = create<ThemeState>()(
       refreshInterval: 5000, // 5 seconds
       language: 'en',
       isLanguageInitialized: false,
+      badgesEnabled: true,
 
       setThemeMode: (mode) => {
         set({ themeMode: mode });
@@ -34,6 +37,7 @@ export const useThemeStore = create<ThemeState>()(
       setUsageCardStyle: (style) => set({ usageCardStyle: style }),
       setRefreshInterval: (interval) => set({ refreshInterval: interval }),
       setLanguage: (language) => set({ language }),
+      setBadgesEnabled: (enabled) => set({ badgesEnabled: enabled }),
 
       // Auto-detect device language on first install
       initializeLanguage: () => {
