@@ -10,17 +10,12 @@ const widgetConfig: WithAndroidWidgetsParams = {
             description: 'Display modem speed and usage statistics',
             minWidth: '180dp',
             minHeight: '110dp',
-            // Default size: 3x2 cells
             targetCellWidth: 3,
             targetCellHeight: 2,
-            // Max resize: 5x4 cells
             maxResizeWidth: '320dp',
             maxResizeHeight: '280dp',
-            // Widget preview image
             previewImage: './assets/widget-preview/modem_status.png',
-            // Update every 30 minutes (minimum allowed)
             updatePeriodMillis: 1800000,
-            // Allow widget to be resized
             resizeMode: 'horizontal|vertical',
         },
     ],
@@ -30,7 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     name: 'Huawei Manager',
     slug: 'hm-mobile',
-    version: '1.1.0',
+    version: '1.1.05',
     orientation: 'portrait',
     icon: './assets/logo.png',
     userInterfaceStyle: 'automatic',
