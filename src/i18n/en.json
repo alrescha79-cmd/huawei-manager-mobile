@@ -284,8 +284,10 @@
     "unread": "Unread",
     "inbox": "Inbox",
     "sent": "Sent",
+    "total": "Total",
     "newMessage": "New Message",
     "noMessages": "No messages",
+    "noSearchResults": "No messages found",
     "smsNotSupported": "SMS might not be supported on this modem",
     "loadingMessages": "Loading messages...",
     "phoneNumber": "Phone Number",
@@ -302,7 +304,10 @@
     "compose": "Compose",
     "reply": "Reply",
     "yesterday": "Yesterday",
-    "to": "To"
+    "to": "To",
+    "searchPlaceholder": "Search messages...",
+    "recentMessages": "Recent Messages",
+    "markAllAsRead": "Mark all as read"
   },
   "settings": {
     "modemInfo": "Modem Information",
@@ -620,7 +625,13 @@
     "debugModeReminderTitle": "Debug Mode Still Active",
     "debugModeReminderBody": "Don't forget to disable debug mode after troubleshooting",
     "inactivityReminderTitle": "Miss Your Modem?",
-    "inactivityReminderBody": "You haven't checked your modem status in a while. Tap to see how it's doing!"
+    "inactivityReminderBody": "You haven't checked your modem status in a while. Tap to see how it's doing!",
+    "sms": "SMS Notification",
+    "smsHint": "Notify when new SMS arrives",
+    "newSms": "New SMS",
+    "newSmsBody": "You have {{count}} new message(s)",
+    "badges": "Tab Badges",
+    "badgesHint": "Show unread count on SMS and WiFi tabs"
   }
 }
 

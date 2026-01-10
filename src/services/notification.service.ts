@@ -10,11 +10,13 @@ const LAST_DAILY_USAGE_NOTIFY_KEY = 'last_daily_usage_notify_date';
 const LAST_MONTHLY_USAGE_NOTIFY_KEY = 'last_monthly_usage_notify_date';
 const LAST_SESSION_DURATION_KEY = 'last_session_duration';
 const LAST_IP_CHANGE_TIME_KEY = 'last_ip_change_time';
+const LAST_SMS_COUNT_KEY = 'last_sms_count';
 
 // Cooldown to prevent duplicate notifications (in-memory, resets on app restart)
 let lastDailyNotifyTimestamp = 0;
 let lastMonthlyNotifyTimestamp = 0;
 let lastIpChangeNotifyTimestamp = 0;
+let lastSmsNotifyTimestamp = 0;
 const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
 
 // Notification settings interface
@@ -22,6 +24,8 @@ export interface NotificationSettings {
     dailyUsageEnabled: boolean;
     monthlyUsageEnabled: boolean;
     ipChangeEnabled: boolean;
+    smsEnabled: boolean;
+    badgesEnabled: boolean;
 }
 
 // Default notification settings
@@ -29,6 +33,8 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     dailyUsageEnabled: true,
     monthlyUsageEnabled: true,
     ipChangeEnabled: true,
+    smsEnabled: true,
+    badgesEnabled: true,
 };
 
 // Configure how notifications are handled when app is in foreground
@@ -346,6 +352,44 @@ export async function checkIPChangeNotification(
         LAST_SESSION_DURATION_KEY,
         currentSessionDuration.toString()
     );
+}
+
+// ============================================================================
+// SMS NOTIFICATION
+// ============================================================================
+
+export async function checkNewSMSNotification(
+    currentUnreadCount: number,
+    translations: { title: string; body: (count: number) => string }
+): Promise<void> {
+    const settings = await getNotificationSettings();
+    if (!settings.smsEnabled) return;
+
+    // Cooldown check to prevent duplicate notifications
+    const now = Date.now();
+    if (now - lastSmsNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) return;
+
+    // Get previously stored unread count
+    const lastCountStr = await AsyncStorage.getItem(LAST_SMS_COUNT_KEY);
+    const lastCount = lastCountStr ? parseInt(lastCountStr, 10) : 0;
+
+    // Check if there are new unread messages (count increased)
+    if (currentUnreadCount > lastCount && currentUnreadCount > 0) {
+        // Update timestamp BEFORE sending to prevent race condition
+        lastSmsNotifyTimestamp = now;
+        await AsyncStorage.setItem(LAST_SMS_COUNT_KEY, currentUnreadCount.toString());
+
+        const newCount = currentUnreadCount - lastCount;
+        await sendLocalNotification(
+            translations.title,
+            translations.body(newCount),
+            'sms-alerts',
+            { route: '/sms' }
+        );
+    } else {
+        // Just update the stored count if it decreased (messages were read)
+        await AsyncStorage.setItem(LAST_SMS_COUNT_KEY, currentUnreadCount.toString());
+    }
 }
 
 // ============================================================================

@@ -197,7 +197,6 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
 
                     const animatedTextStyle = useAnimatedStyle(() => {
                         const diff = Math.abs(activeIndex.value - index);
-                        const scale = interpolate(diff, [0, 1], [0.8, 1], Extrapolation.CLAMP);
                         const color = interpolateColor(
                             diff,
                             [0, 1],
@@ -205,7 +204,6 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                         );
                         return {
                             color,
-                            transform: [{ scale }]
                         };
                     });
 
@@ -240,7 +238,11 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                                     : null}
                             </AnimatedView>
 
-                            <AnimatedText style={[typography.caption2, { marginTop: 6 }, animatedTextStyle]}>
+                            <AnimatedText style={[
+                                typography.caption2,
+                                { marginTop: 6, fontWeight: isFocused ? '600' : '400' },
+                                animatedTextStyle
+                            ]}>
                                 {typeof label === 'string' ? label : route.name}
                             </AnimatedText>
                         </TouchableOpacity>

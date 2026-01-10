@@ -11,6 +11,7 @@ import {
   Platform,
   TextInput,
   ActivityIndicator,
+  Linking,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
@@ -20,11 +21,12 @@ import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackgro
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
+import { checkNewSMSNotification } from '@/services/notification.service';
 import { useTranslation } from '@/i18n';
 import { SMSMessage } from '@/types';
 
 export default function SMSScreen() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
   const { t } = useTranslation();
   const { credentials } = useAuthStore();
   const insets = useSafeAreaInsets();
@@ -48,6 +50,7 @@ export default function SMSScreen() {
   const [selectedMessage, setSelectedMessage] = useState<SMSMessage | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
 
 
   // Auto-refresh SMS every 10 seconds
@@ -121,6 +124,14 @@ export default function SMSScreen() {
         setMessages(messagesList);
         setSMSCount(count);
         setSmsSupported(true);
+
+        // Check for new SMS notification
+        if (count.localUnread > 0) {
+          checkNewSMSNotification(count.localUnread, {
+            title: t('notifications.newSms'),
+            body: (n) => t('notifications.newSmsBody', { count: n }),
+          });
+        }
       } catch (error: any) {
         // Check if this is a session error
         if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
@@ -262,6 +273,108 @@ export default function SMSScreen() {
     }
   };
 
+  // Filter messages based on search query
+  const filteredMessages = messages.filter(msg => {
+    if (!searchQuery.trim()) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      msg.phone.toLowerCase().includes(query) ||
+      msg.content.toLowerCase().includes(query)
+    );
+  });
+
+  // Format time as "Xm ago", "Xh ago", etc.
+  const formatTimeAgo = (dateStr: string): string => {
+    const messageDate = dayjs(dateStr);
+    const now = dayjs();
+    const diffMinutes = now.diff(messageDate, 'minute');
+    const diffHours = now.diff(messageDate, 'hour');
+    const diffDays = now.diff(messageDate, 'day');
+
+    if (diffMinutes < 1) return 'now';
+    if (diffMinutes < 60) return `${diffMinutes}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
+    return messageDate.format('MMM D');
+  };
+
+  // Mark all messages as read
+  const handleMarkAllAsRead = async () => {
+    if (!smsService) return;
+    const unreadMessages = messages.filter(m => m.smstat === '0');
+    for (const msg of unreadMessages) {
+      try {
+        await smsService.markAsRead(msg.index);
+      } catch (error) {
+        // Silent fail for individual messages
+      }
+    }
+    handleRefresh();
+  };
+
+  // Render message content with clickable links
+  const renderMessageWithLinks = (content: string) => {
+    // URL regex pattern - matches http, https, and www
+    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
+
+    const parts = content.split(urlRegex).filter(Boolean);
+
+    if (parts.length === 1 && !urlRegex.test(content)) {
+      // No links found, return plain text
+      return (
+        <Text style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
+          {content}
+        </Text>
+      );
+    }
+
+    // Reset regex lastIndex
+    urlRegex.lastIndex = 0;
+
+    const elements: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match;
+    let key = 0;
+
+    while ((match = urlRegex.exec(content)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        elements.push(
+          <Text key={key++} style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
+            {content.substring(lastIndex, match.index)}
+          </Text>
+        );
+      }
+
+      // Add the URL as a clickable link
+      const url = match[0];
+      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+
+      elements.push(
+        <Text
+          key={key++}
+          style={[typography.body, { color: colors.primary, lineHeight: 22, textDecorationLine: 'underline' }]}
+          onPress={() => Linking.openURL(fullUrl)}
+        >
+          {url}
+        </Text>
+      );
+
+      lastIndex = match.index + match[0].length;
+    }
+
+    // Add remaining text after last match
+    if (lastIndex < content.length) {
+      elements.push(
+        <Text key={key++} style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
+          {content.substring(lastIndex)}
+        </Text>
+      );
+    }
+
+    return <Text>{elements}</Text>;
+  };
+
   return (
     <>
       <AnimatedScreen>
@@ -281,67 +394,108 @@ export default function SMSScreen() {
             }
           >
 
-            {/* SMS Count Card */}
-            {smsCount && (
-              <Card style={{ marginBottom: spacing.md }}>
-                <CardHeader title={t('sms.smsCount')} />
-                <View style={styles.countRow}>
-                  <View style={styles.countItem}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                      {t('sms.unread')}
-                    </Text>
-                    <Text style={[typography.title2, { color: colors.primary }]}>
-                      {smsCount.localUnread}
-                    </Text>
-                  </View>
-                  <View style={styles.countItem}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                      {t('sms.inbox')}
-                    </Text>
-                    <Text style={[typography.title2, { color: colors.text }]}>
-                      {smsCount.localInbox}
-                    </Text>
-                  </View>
-                  <View style={styles.countItem}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                      {t('sms.sent')}
-                    </Text>
-                    <Text style={[typography.title2, { color: colors.text }]}>
-                      {smsCount.localOutbox}
-                    </Text>
-                  </View>
+            {/* Stats Cards Row - Only show if SMS is supported */}
+            {smsSupported && smsCount && (
+              <View style={styles.statsRow}>
+                <View style={[styles.statsCard, {
+                  backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+                  borderWidth: 1,
+                  borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                }]}>
+                  <Text style={[typography.caption2, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                    {t('sms.total')}
+                  </Text>
+                  <Text style={[typography.largeTitle, { color: colors.text, marginTop: 4 }]}>
+                    {smsCount.localInbox + smsCount.localOutbox}
+                  </Text>
                 </View>
-              </Card>
+                <View style={[styles.statsCard, styles.statsCardHighlight, { backgroundColor: colors.primary }]}>
+                  <Text style={[typography.caption2, { color: '#FFF', textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                    {t('sms.unread')}
+                  </Text>
+                  <Text style={[typography.largeTitle, { color: '#FFF', marginTop: 4 }]}>
+                    {smsCount.localUnread}
+                  </Text>
+                </View>
+                <View style={[styles.statsCard, {
+                  backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+                  borderWidth: 1,
+                  borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                }]}>
+                  <Text style={[typography.caption2, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                    {t('sms.sent')}
+                  </Text>
+                  <Text style={[typography.largeTitle, { color: colors.text, marginTop: 4 }]}>
+                    {smsCount.localOutbox}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            {/* Search Bar - Only show if SMS is supported */}
+            {smsSupported && (
+              <View style={[styles.searchContainer, {
+                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+                borderWidth: 1,
+                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+              }]}>
+                <MaterialIcons name="search" size={20} color={colors.textSecondary} />
+                <TextInput
+                  style={[styles.searchInput, { color: colors.text }]}
+                  placeholder={t('sms.searchPlaceholder')}
+                  placeholderTextColor={colors.textSecondary}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <MaterialIcons name="close" size={20} color={colors.textSecondary} />
+                  </TouchableOpacity>
+                )}
+              </View>
+            )}
+
+            {/* Recent Messages Header - Only show if SMS is supported */}
+            {smsSupported && (
+              <View style={styles.messagesHeader}>
+                <Text style={[typography.caption1, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                  {t('sms.recentMessages')}
+                </Text>
+                {smsCount && smsCount.localUnread > 0 && (
+                  <TouchableOpacity onPress={handleMarkAllAsRead}>
+                    <Text style={[typography.caption1, { color: colors.primary }]}>
+                      {t('sms.markAllAsRead')}
+                    </Text>
+                  </TouchableOpacity>
+                )}
+              </View>
             )}
 
             {/* Messages List */}
-            {!smsSupported || messages.length === 0 ? (
-              <View style={[styles.emptyState, { backgroundColor: colors.card }]}>
+            {!smsSupported || filteredMessages.length === 0 ? (
+              <View style={[styles.emptyState, {
+                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+                borderWidth: 1,
+                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+              }]}>
                 <MaterialIcons name="sms" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
-                  {isRefreshing ? t('sms.loadingMessages') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
+                  {isRefreshing ? t('sms.loadingMessages') : searchQuery ? t('sms.noSearchResults') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
                 </Text>
               </View>
             ) : (
-              <View style={[styles.messagesList, { backgroundColor: colors.card }]}>
-                {messages.map((message, index) => {
-                  // Get initials from phone number (last 2 digits)
-                  const initials = message.phone.slice(-2);
-                  // Format relative time
-                  const messageDate = dayjs(message.date);
-                  const now = dayjs();
-                  let timeDisplay = '';
-                  if (now.diff(messageDate, 'day') === 0) {
-                    timeDisplay = messageDate.format('h:mm A');
-                  } else if (now.diff(messageDate, 'day') === 1) {
-                    timeDisplay = t('sms.yesterday') || 'Yesterday';
-                  } else if (now.diff(messageDate, 'day') < 7) {
-                    timeDisplay = messageDate.format('ddd');
-                  } else {
-                    timeDisplay = messageDate.format('MMM D');
-                  }
+              <View style={[styles.messagesList, {
+                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+                borderWidth: 1,
+                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+              }]}>
+                {filteredMessages.map((message, index) => {
+                  // Get first letter or icon for avatar
+                  const initials = message.phone.charAt(0).toUpperCase();
+                  // Use the formatTimeAgo helper
+                  const timeDisplay = formatTimeAgo(message.date);
                   const isUnread = message.smstat === '0';
-                  const isLast = index === messages.length - 1;
+                  const isLast = index === filteredMessages.length - 1;
 
                   return (
                     <TouchableOpacity
@@ -432,6 +586,7 @@ export default function SMSScreen() {
         presentationStyle="pageSheet"
         onRequestClose={() => setShowCompose(false)}
       >
+        <StatusBar backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
           {/* Header */}
           <View style={[
@@ -513,7 +668,9 @@ export default function SMSScreen() {
           setSelectedMessage(null);
         }}
       >
+        <StatusBar backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
         <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+          {/* Header with centered phone */}
           <View style={[
             styles.modalHeader,
             {
@@ -524,10 +681,10 @@ export default function SMSScreen() {
             <TouchableOpacity onPress={() => {
               setShowDetail(false);
               setSelectedMessage(null);
-            }}>
+            }} style={{ width: 40 }}>
               <MaterialIcons name="arrow-back" size={24} color={colors.primary} />
             </TouchableOpacity>
-            <Text style={[typography.headline, { color: colors.text, flex: 1, marginLeft: spacing.md }]}>
+            <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>
               {selectedMessage?.phone || ''}
             </Text>
             <TouchableOpacity onPress={() => {
@@ -536,52 +693,85 @@ export default function SMSScreen() {
                 setShowDetail(false);
                 setSelectedMessage(null);
               }
-            }}>
+            }} style={{ width: 40, alignItems: 'flex-end' }}>
               <MaterialIcons name="delete" size={24} color={colors.error} />
             </TouchableOpacity>
           </View>
 
-          <ScrollView style={[styles.modalContent, { backgroundColor: colors.background }]}>
-            {selectedMessage && (
-              <>
-                {/* Chat bubble */}
-                <View style={{ alignItems: 'flex-start', marginBottom: spacing.lg }}>
-                  <View style={[
-                    styles.chatBubble,
-                    { backgroundColor: colors.card }
-                  ]}>
-                    <Text style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
-                      {selectedMessage.content}
+          <View style={{ flex: 1 }}>
+            <ScrollView
+              style={[styles.modalContent, { backgroundColor: colors.background }]}
+              contentContainerStyle={{ paddingBottom: 100 }}
+            >
+              {selectedMessage && (
+                <>
+                  {/* Date above message */}
+                  <View style={{ alignItems: 'center', marginBottom: spacing.md }}>
+                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                      {dayjs(selectedMessage.date).format('dddd, MMMM D, YYYY')}
+                    </Text>
+                    <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: 2 }]}>
+                      {dayjs(selectedMessage.date).format('h:mm A')}
                     </Text>
                   </View>
-                  <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: 4, marginLeft: 4 }]}>
-                    {dayjs(selectedMessage.date).format('dddd, MMMM D, YYYY • h:mm A')}
-                  </Text>
-                </View>
 
-                <View style={[styles.replyContainer, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 16) }]}>
-                  <Text style={[typography.subheadline, { color: colors.text, marginBottom: spacing.sm }]}>
-                    {t('sms.reply')}
-                  </Text>
-                  <Input
-                    value={replyMessage}
-                    onChangeText={setReplyMessage}
-                    placeholder={t('sms.typeMessage')}
-                    multiline
-                    numberOfLines={4}
-                    style={{ height: 100 }}
-                  />
-                  <Button
-                    title={t('sms.send')}
-                    onPress={handleReply}
-                    loading={isSending}
-                    disabled={isSending || !replyMessage}
-                    style={{ marginTop: spacing.sm }}
-                  />
-                </View>
-              </>
-            )}
-          </ScrollView>
+                  {/* Chat bubble */}
+                  <View style={{ alignItems: 'flex-start' }}>
+                    <View style={[
+                      styles.chatBubble,
+                      {
+                        backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+                        borderWidth: 1,
+                        borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                      }
+                    ]}>
+                      {renderMessageWithLinks(selectedMessage.content)}
+                    </View>
+                  </View>
+                </>
+              )}
+            </ScrollView>
+
+            {/* Modern Reply Bar */}
+            <View style={[styles.modernReplyBar, {
+              backgroundColor: colors.background,
+              borderTopColor: colors.border,
+              paddingBottom: Math.max(insets.bottom, 16)
+            }]}>
+              <View style={[styles.modernInputContainer, {
+                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+                borderWidth: 1,
+                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+              }]}>
+                <TextInput
+                  style={[styles.modernInput, { color: colors.text }]}
+                  placeholder={t('sms.typeMessage')}
+                  placeholderTextColor={colors.textSecondary}
+                  value={replyMessage}
+                  onChangeText={setReplyMessage}
+                  multiline
+                  maxLength={160}
+                />
+                <Text style={[typography.caption2, { color: colors.textSecondary }]}>
+                  {replyMessage.length} / 160
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.modernSendButton, {
+                  backgroundColor: replyMessage.trim() ? colors.primary : colors.textSecondary,
+                  opacity: isSending ? 0.6 : 1,
+                }]}
+                onPress={handleReply}
+                disabled={isSending || !replyMessage.trim()}
+              >
+                {isSending ? (
+                  <ActivityIndicator size="small" color="#FFF" />
+                ) : (
+                  <MaterialIcons name="send" size={20} color="#FFF" />
+                )}
+              </TouchableOpacity>
+            </View>
+          </View>
         </View>
       </Modal>
     </>
@@ -634,6 +824,51 @@ const styles = StyleSheet.create({
   },
   countItem: {
     alignItems: 'center',
+  },
+  // Stats cards styles
+  statsRow: {
+    flexDirection: 'row',
+    gap: 12,
+    marginBottom: 16,
+  },
+  statsCard: {
+    flex: 1,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 80,
+  },
+  statsCardHighlight: {
+    transform: [{ scale: 1.05 }],
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+  },
+  // Search bar styles
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 16,
+    gap: 12,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 16,
+    padding: 0,
+  },
+  // Messages header styles
+  messagesHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 4,
   },
   // New Android-style message list
   messagesList: {
@@ -749,6 +984,37 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  // Modern reply bar styles
+  modernReplyBar: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    gap: 12,
+  },
+  modernInputContainer: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    borderRadius: 24,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    gap: 8,
+  },
+  modernInput: {
+    flex: 1,
+    fontSize: 16,
+    maxHeight: 80,
+    padding: 0,
+  },
+  modernSendButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
   },

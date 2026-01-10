@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useModemStore } from '@/stores/modem.store';
+import { useThemeStore } from '@/stores/theme.store';
 import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ThemedSwitch } from '@/components';
 import {
     getNotificationSettings,
@@ -27,11 +28,14 @@ export default function NotificationSettingsScreen() {
     const { colors, isDark } = useTheme();
     const { t } = useTranslation();
     const { monthlySettings } = useModemStore();
+    const { setBadgesEnabled } = useThemeStore();
 
     const [settings, setSettings] = useState<NotificationSettings>({
         dailyUsageEnabled: true,
         monthlyUsageEnabled: true,
         ipChangeEnabled: true,
+        smsEnabled: true,
+        badgesEnabled: true,
     });
     const [lastIpChangeTime, setLastIpChangeTime] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -64,6 +68,11 @@ export default function NotificationSettingsScreen() {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         await saveNotificationSettings(newSettings);
+
+        // Sync badge setting to store for reactive updates
+        if (key === 'badgesEnabled') {
+            setBadgesEnabled(value);
+        }
     };
 
     const getLastIpChangeText = () => {
@@ -168,6 +177,38 @@ export default function NotificationSettingsScreen() {
                             <ThemedSwitch
                                 value={settings.ipChangeEnabled}
                                 onValueChange={(v) => updateSetting('ipChangeEnabled', v)}
+                            />
+                        </View>
+
+                        {/* SMS Notification */}
+                        <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
+                            <View style={styles.settingInfo}>
+                                <Text style={[styles.settingLabel, { color: colors.text }]}>
+                                    {t('notifications.sms')}
+                                </Text>
+                                <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
+                                    {t('notifications.smsHint')}
+                                </Text>
+                            </View>
+                            <ThemedSwitch
+                                value={settings.smsEnabled}
+                                onValueChange={(v) => updateSetting('smsEnabled', v)}
+                            />
+                        </View>
+
+                        {/* Tab Badges */}
+                        <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
+                            <View style={styles.settingInfo}>
+                                <Text style={[styles.settingLabel, { color: colors.text }]}>
+                                    {t('notifications.badges')}
+                                </Text>
+                                <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
+                                    {t('notifications.badgesHint')}
+                                </Text>
+                            </View>
+                            <ThemedSwitch
+                                value={settings.badgesEnabled}
+                                onValueChange={(v) => updateSetting('badgesEnabled', v)}
                             />
                         </View>
                     </View>

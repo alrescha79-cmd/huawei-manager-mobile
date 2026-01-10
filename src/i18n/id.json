@@ -284,8 +284,10 @@
     "unread": "Belum Dibaca",
     "inbox": "Kotak Masuk",
     "sent": "Terkirim",
+    "total": "Total",
     "newMessage": "Pesan Baru",
     "noMessages": "Tidak ada pesan",
+    "noSearchResults": "Tidak ada pesan ditemukan",
     "smsNotSupported": "SMS mungkin tidak didukung pada modem ini",
     "loadingMessages": "Memuat pesan...",
     "phoneNumber": "Nomor Telepon",
@@ -302,7 +304,10 @@
     "compose": "Tulis",
     "reply": "Balas",
     "yesterday": "Kemarin",
-    "to": "Kepada"
+    "to": "Kepada",
+    "searchPlaceholder": "Cari pesan...",
+    "recentMessages": "Pesan Terbaru",
+    "markAllAsRead": "Tandai semua dibaca"
   },
   "settings": {
     "modemInfo": "Informasi Modem",
@@ -620,7 +625,13 @@
     "debugModeReminderTitle": "Mode Debug Masih Aktif",
     "debugModeReminderBody": "Jangan lupa nonaktifkan mode debug setelah troubleshooting",
     "inactivityReminderTitle": "Kangen Modem?",
-    "inactivityReminderBody": "Sudah lama tidak cek status modem. Ketuk untuk lihat kondisinya!"
+    "inactivityReminderBody": "Sudah lama tidak cek status modem. Ketuk untuk lihat kondisinya!",
+    "sms": "Notifikasi SMS",
+    "smsHint": "Notifikasi saat ada SMS baru",
+    "newSms": "SMS Baru",
+    "newSmsBody": "Anda memiliki {{count}} pesan baru",
+    "badges": "Badge Tab",
+    "badgesHint": "Tampilkan jumlah unread di tab SMS dan WiFi"
   }
 }
 
