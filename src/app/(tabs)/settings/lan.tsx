@@ -19,7 +19,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch } from '@/components';
+import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots } from '@/components';
 
 const ETHERNET_MODES = [
     { value: 'auto', labelKey: 'networkSettings.modeAuto' },
@@ -347,7 +347,7 @@ export default function LanSettingsScreen() {
                         value={(() => { const mode = ETHERNET_MODES.find(m => m.value === ethernetMode); return mode ? t(mode.labelKey) : t('networkSettings.modeAuto'); })()}
                         onPress={() => setShowEthernetModal(true)}
                         rightElement={
-                            isChangingEthernet ? <ActivityIndicator size="small" color={colors.primary} /> : undefined
+                            isChangingEthernet ? <BouncingDots size="small" color={colors.primary} /> : undefined
                         }
                         isLast={!ethernetStatus.connected}
                     />
@@ -380,7 +380,7 @@ export default function LanSettingsScreen() {
                     <SettingsItem
                         title={t('networkSettings.dhcpServer')}
                         rightElement={
-                            isTogglingDhcp ? <ActivityIndicator size="small" /> : (
+                            isTogglingDhcp ? <BouncingDots size="small" color={colors.primary} /> : (
                                 <ThemedSwitch value={dhcpSettings.dhcpStatus} onValueChange={handleDHCPToggle} />
                             )
                         }
@@ -612,7 +612,7 @@ export default function LanSettingsScreen() {
                                     disabled={isSavingApn}
                                 >
                                     {isSavingApn ? (
-                                        <ActivityIndicator color="#FFF" />
+                                        <BouncingDots size="small" color="#FFF" />
                                     ) : (
                                         <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>
                                             {hasApnChanges() ? t('common.save') : t('common.cancel')}

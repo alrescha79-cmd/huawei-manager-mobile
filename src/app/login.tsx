@@ -46,17 +46,13 @@ export default function LoginScreen() {
     initCredentials();
   }, []);
 
-  // Auto-fill form and trigger auto-login with WebView if credentials exist
+  // Auto-fill form - NO WebView auto-trigger
   useEffect(() => {
     if (isAutoLoginReady && credentials) {
       setModemIp(credentials.modemIp || '192.168.8.1');
       setUsername(credentials.username || 'admin');
       setPassword(credentials.password || '');
-
-      // Auto-trigger WebView login if we have saved credentials
-      if (credentials.modemIp && credentials.password) {
-        setShowWebViewLogin(true);
-      }
+      // WebView disabled - direct login via ModemAPIClient works
     }
   }, [isAutoLoginReady, credentials]);
 
@@ -93,29 +89,43 @@ export default function LoginScreen() {
       return;
     }
 
-    // Try direct API login first
+    // Try direct API login with retries
     setIsDirectLogging(true);
 
-    try {
-      const apiClient = new ModemAPIClient(modemIp);
-      const success = await apiClient.login(username, password);
+    const apiClient = new ModemAPIClient(modemIp);
+    let success = false;
+    let lastError = null;
 
-      if (success) {
-        await login({
-          modemIp,
-          username,
-          password,
-        });
-        router.replace('/(tabs)/home');
-        return;
+    // Retry up to 3 times
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        console.log(`[Login Page] Attempt ${attempt}/3...`);
+        success = await apiClient.login(username, password);
+
+        if (success) {
+          console.log('[Login Page] Direct login successful!');
+          await login({
+            modemIp,
+            username,
+            password,
+          });
+          setIsDirectLogging(false);
+          router.replace('/(tabs)/home');
+          return;
+        }
+      } catch (err: any) {
+        lastError = err;
+        console.log(`[Login Page] Attempt ${attempt} failed:`, err.message);
+        // Wait a bit before retry
+        if (attempt < 3) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
       }
-    } catch (err) {
-      // Direct login failed - continue to show WebView option
-    } finally {
-      setIsDirectLogging(false);
     }
 
-    // If direct login fails, show WebView option
+    setIsDirectLogging(false);
+
+    // If all retries fail, show WebView option
     setShowWebViewOption(true);
     ThemedAlertHelper.alert(
       t('login.directLoginFailed'),

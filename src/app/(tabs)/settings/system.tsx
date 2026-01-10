@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch } from '@/components';
+import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots } from '@/components';
 
 const TIMEZONES = [
     'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5',
@@ -258,7 +258,7 @@ export default function SystemSettingsScreen() {
                     <SettingsItem
                         title={t('timeSettings.sntpServer')}
                         showChevron={false}
-                        rightElement={isTogglingSntp ? <ActivityIndicator size="small" color={colors.primary} /> : (
+                        rightElement={isTogglingSntp ? <BouncingDots size="small" color={colors.primary} /> : (
                             <ThemedSwitch
                                 value={sntpEnabled}
                                 onValueChange={handleToggleSntp}

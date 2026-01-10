@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen, MonthlyComparisonCard } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen, MonthlyComparisonCard, BouncingDots } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -222,6 +222,16 @@ export default function HomeScreen() {
     }
   }, [credentials]);
 
+  // Reload data after silent login completes
+  useEffect(() => {
+    if (!isRelogging && modemService) {
+      // isRelogging just became false = login completed, refresh all data
+      console.log('[Home] Session restored, refreshing data...');
+      loadData(modemService);
+      loadBands(modemService);
+    }
+  }, [isRelogging]);
+
   const loadData = async (service: ModemService) => {
     try {
       setIsRefreshing(true);
@@ -301,7 +311,8 @@ export default function HomeScreen() {
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
         // Session expired, trigger re-login via WebView with loading animation
         requestRelogin();
-        setShowReloginWebView(true);
+        // WebView disabled - ModemAPIClient handles session restore
+        // setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       } else if (!isDataEmpty) {
         // Session is valid, reset expired state
@@ -323,7 +334,8 @@ export default function HomeScreen() {
       if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
         // Session expired, trigger re-login via WebView with loading animation
         requestRelogin();
-        setShowReloginWebView(true);
+        // WebView disabled - ModemAPIClient handles session restore
+        // setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       } else {
         ThemedAlertHelper.alert(t('common.error'), t('alerts.failedLoadModemData'));
@@ -361,7 +373,8 @@ export default function HomeScreen() {
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
         // Session expired, trigger re-login via WebView with loading animation
         requestRelogin();
-        setShowReloginWebView(true);
+        // WebView disabled - ModemAPIClient handles session restore
+        // setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       } else if (!isDataEmpty) {
         // Session is valid
@@ -380,7 +393,8 @@ export default function HomeScreen() {
       if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
         // Session expired, trigger re-login via WebView with loading animation
         requestRelogin();
-        setShowReloginWebView(true);
+        // WebView disabled - ModemAPIClient handles session restore
+        // setShowReloginWebView(true);
         setReloginAttempts(prev => prev + 1);
       }
     }
@@ -898,7 +912,7 @@ export default function HomeScreen() {
               >
                 <View style={[styles.quickActionIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.background }]}>
                   {isChangingIp ? (
-                    <ActivityIndicator color={colors.primary} size="small" />
+                    <BouncingDots size="small" color={colors.primary} />
                   ) : (
                     <MaterialIcons name="sync" size={20} color={colors.primary} />
                   )}
@@ -934,7 +948,7 @@ export default function HomeScreen() {
                 disabled={isTogglingData}
               >
                 {isTogglingData ? (
-                  <ActivityIndicator color={mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.primary} size="small" />
+                  <BouncingDots size="small" color={mobileDataStatus?.dataswitch ? '#FFFFFF' : colors.primary} />
                 ) : (
                   <>
                     <MaterialIcons
@@ -967,7 +981,7 @@ export default function HomeScreen() {
                 disabled={isRunningDiagnosis}
               >
                 {isRunningDiagnosis ? (
-                  <ActivityIndicator color={colors.primary} size="small" />
+                  <BouncingDots size="small" color={colors.primary} />
                 ) : (
                   <>
                     <MaterialIcons name="network-check" size={22} color={colors.primary} />
@@ -988,7 +1002,7 @@ export default function HomeScreen() {
                 disabled={isRunningCheck}
               >
                 {isRunningCheck ? (
-                  <ActivityIndicator color={colors.primary} size="small" />
+                  <BouncingDots size="small" color={colors.primary} />
                 ) : (
                   <>
                     <MaterialIcons name="perm-scan-wifi" size={22} color={colors.primary} />

@@ -11,7 +11,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch } from '@/components';
+import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const NETWORK_MODES = [
@@ -205,7 +205,7 @@ export default function MobileNetworkSettingsScreen() {
                         showChevron={false}
                         rightElement={
                             isTogglingMobileData ? (
-                                <ActivityIndicator size="small" color={colors.primary} />
+                                <BouncingDots size="small" color={colors.primary} />
                             ) : (
                                 <ThemedSwitch
                                     value={mobileDataEnabled}
@@ -220,7 +220,7 @@ export default function MobileNetworkSettingsScreen() {
                         showChevron={false}
                         rightElement={
                             isTogglingRoaming ? (
-                                <ActivityIndicator size="small" color={colors.primary} />
+                                <BouncingDots size="small" color={colors.primary} />
                             ) : (
                                 <ThemedSwitch
                                     value={dataRoamingEnabled}
@@ -236,7 +236,7 @@ export default function MobileNetworkSettingsScreen() {
                         isLast
                         rightElement={
                             isTogglingAutoNetwork ? (
-                                <ActivityIndicator size="small" color={colors.primary} />
+                                <BouncingDots size="small" color={colors.primary} />
                             ) : (
                                 <ThemedSwitch
                                     value={autoNetworkEnabled}
@@ -253,7 +253,7 @@ export default function MobileNetworkSettingsScreen() {
                         value={t(currentNetworkModeLabel)}
                         onPress={() => setShowNetworkModeModal(true)}
                         isLast
-                        rightElement={isChangingNetwork ? <ActivityIndicator size="small" color={colors.primary} /> : undefined}
+                        rightElement={isChangingNetwork ? <BouncingDots size="small" color={colors.primary} /> : undefined}
                     />
                 </SettingsSection>
 
