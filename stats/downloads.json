@@ -1,11 +1,15 @@
 [
   {
+    "tag": "test-5",
+    "total": 5
+  },
+  {
     "tag": "test-2",
-    "total": 37
+    "total": 46
   },
   {
     "tag": "v1.1.0",
-    "total": 675
+    "total": 706
   },
   {
     "tag": "v1.0.75",
