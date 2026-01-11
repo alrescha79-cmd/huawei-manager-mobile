@@ -16,6 +16,8 @@
     "continue": "Continue",
     "fetching": "Fetching...",
     "goToLogin": "Go to Login",
+    "retryConnection": "Retry Connection",
+    "retrying": "Retrying...",
     "kick": "Kick",
     "later": "Later",
     "unsavedChanges": "Unsaved Changes",
@@ -71,7 +73,8 @@
     "noSignalMessage": "Unable to retrieve signal and status information from the modem.",
     "possibleCauses": "Possible causes:",
     "notLoggedIn": "Not logged in to modem",
-    "sessionExpired": "Session expired",
+    "sessionExpired": "Session Expired",
+    "silentLoginFailed": "Auto-login failed after 3 attempts. Please log in manually.",
     "modemNotResponding": "Modem not responding",
     "failedSaveModemSettings": "Failed to save modem settings",
     "failedSaveGuestWifi": "Failed to save guest WiFi settings"

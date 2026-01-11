@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots } from '@/components';
+import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator } from '@/components';
 import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -44,7 +44,7 @@ const TIME_OPTIONS = [
 ];
 
 export default function WiFiScreen() {
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, isDark } = useTheme();
   const { t } = useTranslation();
   const { credentials } = useAuthStore();
   const {
@@ -617,6 +617,9 @@ export default function WiFiScreen() {
   return (
     <AnimatedScreen>
       <MeshGradientBackground>
+        {/* Modern Refresh Indicator */}
+        <ModernRefreshIndicator refreshing={isRefreshing} />
+
         <ScrollView
           style={[styles.container, { backgroundColor: 'transparent' }]}
           contentContainerStyle={[
@@ -627,7 +630,10 @@ export default function WiFiScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={colors.primary}
+              tintColor={isDark ? '#FFFFFF' : 'transparent'}
+              colors={isDark ? ['#FFFFFF'] : ['transparent']}
+              progressBackgroundColor="transparent"
+              progressViewOffset={50}
             />
           }
         >

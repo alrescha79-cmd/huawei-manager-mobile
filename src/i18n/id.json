@@ -16,6 +16,8 @@
     "continue": "Lanjutkan",
     "fetching": "Mengambil...",
     "goToLogin": "Ke Halaman Login",
+    "retryConnection": "Coba Ulang Koneksi",
+    "retrying": "Mencoba...",
     "kick": "Putuskan",
     "later": "Nanti",
     "unsavedChanges": "Perubahan Belum Disimpan",
@@ -71,7 +73,8 @@
     "noSignalMessage": "Tidak dapat mengambil informasi sinyal dan status dari modem.",
     "possibleCauses": "Kemungkinan penyebab:",
     "notLoggedIn": "Belum login ke modem",
-    "sessionExpired": "Sesi kedaluwarsa",
+    "sessionExpired": "Sesi Kedaluwarsa",
+    "silentLoginFailed": "Login otomatis gagal setelah 3 percobaan. Silakan login manual.",
     "modemNotResponding": "Modem tidak merespons",
     "failedSaveModemSettings": "Gagal menyimpan pengaturan modem",
     "failedSaveGuestWifi": "Gagal menyimpan pengaturan WiFi Tamu"
