@@ -18,7 +18,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator } from '@/components';
+import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView } from '@/components';
 import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -386,18 +386,67 @@ export default function WiFiScreen() {
       return;
     }
 
+    // Check if password is being changed - warn user about disconnect
+    const isPasswordChange = formPassword.length >= 8 && formPassword !== (wifiSettings?.password || '');
+
+    if (isPasswordChange) {
+      // Show confirmation dialog for password change
+      ThemedAlertHelper.alert(
+        t('wifi.passwordChangeWarning'),
+        t('wifi.passwordChangeMessage'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('wifi.changePassword'),
+            style: 'destructive',
+            onPress: () => doSaveSettings(true),
+          },
+        ]
+      );
+    } else {
+      // No password change, just save SSID or other settings
+      doSaveSettings(false);
+    }
+  };
+
+  const doSaveSettings = async (isPasswordChange: boolean) => {
     setIsSaving(true);
     try {
-      await wifiService.setWiFiSettings({
+      await wifiService!.setWiFiSettings({
         ssid: formSsid,
         password: formPassword,
         securityMode: formSecurityMode,
       });
-      ThemedAlertHelper.alert(t('common.success'), t('wifi.settingsSaved'));
-      handleRefresh();
-    } catch (error) {
+
+      if (isPasswordChange) {
+        // Password changed - WiFi will disconnect
+        // Show success message and don't try to refresh (will fail due to disconnect)
+        ThemedAlertHelper.alert(
+          t('common.success'),
+          t('wifi.passwordChangeSuccess')
+        );
+      } else {
+        ThemedAlertHelper.alert(t('common.success'), t('wifi.settingsSaved'));
+        handleRefresh();
+      }
+    } catch (error: any) {
       console.error('[WiFi UI] setWiFiSettings error:', error);
-      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveWifi'));
+
+      // Check if error is network-related (expected after password change)
+      const errorMessage = error?.message || '';
+      if (isPasswordChange && (
+        errorMessage.includes('Network') ||
+        errorMessage.includes('timeout') ||
+        errorMessage.includes('Failed to fetch')
+      )) {
+        // This is expected - WiFi disconnected due to password change
+        ThemedAlertHelper.alert(
+          t('wifi.passwordChanged'),
+          t('wifi.reconnectWithNewPassword')
+        );
+      } else {
+        ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveWifi'));
+      }
     } finally {
       setIsSaving(false);
     }
@@ -636,6 +685,8 @@ export default function WiFiScreen() {
               progressViewOffset={50}
             />
           }
+          keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="interactive"
         >
           <View style={styles.header} />
 
@@ -889,12 +940,13 @@ export default function WiFiScreen() {
                     />
                   </View>
 
-                  {/* Security Mode Dropdown - DISABLED (encryption not supported yet) */}
-                  <View style={[styles.formGroup, { opacity: 0.5 }]}>
+                  {/* Security Mode Dropdown */}
+                  <View style={styles.formGroup}>
                     <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
                       {t('wifi.securityMode')}
                     </Text>
-                    <View
+                    <TouchableOpacity
+                      onPress={() => setShowSecurityDropdown(true)}
                       style={[styles.dropdown, {
                         backgroundColor: colors.card,
                         borderColor: colors.border
@@ -903,18 +955,13 @@ export default function WiFiScreen() {
                       <Text style={[typography.body, { color: colors.text }]}>
                         {getSecurityModeLabel(formSecurityMode)}
                       </Text>
-                      <MaterialIcons name="lock" size={20} color={colors.textSecondary} />
-                    </View>
-                    <TouchableOpacity onPress={() => Linking.openURL(`http://${credentials?.modemIp || '192.168.8.1'}`)}>
-                      <Text style={[typography.caption1, { color: colors.primary, marginTop: 4, fontStyle: 'italic' }]}>
-                        {t('wifi.useWebInterface')} →
-                      </Text>
+                      <MaterialIcons name="arrow-drop-down" size={24} color={colors.textSecondary} />
                     </TouchableOpacity>
                   </View>
 
-                  {/* Password Input - DISABLED (encryption not supported yet) */}
+                  {/* Password Input */}
                   {formSecurityMode !== 'OPEN' && (
-                    <View style={[styles.formGroup, { opacity: 0.5 }]}>
+                    <View style={styles.formGroup}>
                       <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>
                         {t('wifi.password')}
                       </Text>
@@ -927,12 +974,15 @@ export default function WiFiScreen() {
                             paddingRight: 48
                           }]}
                           value={formPassword}
-                          editable={false}
-                          placeholder="********"
+                          onChangeText={setFormPassword}
+                          placeholder={t('wifi.enterPassword')}
                           placeholderTextColor={colors.textSecondary}
-                          secureTextEntry={true}
+                          secureTextEntry={!showPassword}
+                          autoCapitalize="none"
+                          autoCorrect={false}
                         />
-                        <View
+                        <TouchableOpacity
+                          onPress={() => setShowPassword(!showPassword)}
                           style={{
                             position: 'absolute',
                             right: 12,
@@ -943,40 +993,61 @@ export default function WiFiScreen() {
                           }}
                         >
                           <MaterialIcons
-                            name="lock"
+                            name={showPassword ? 'visibility' : 'visibility-off'}
                             size={22}
                             color={colors.textSecondary}
                           />
-                        </View>
+                        </TouchableOpacity>
                       </View>
-                      <TouchableOpacity onPress={() => Linking.openURL(`http://${credentials?.modemIp || '192.168.8.1'}`)}>
-                        <Text style={[typography.caption1, { color: colors.primary, marginTop: 4, fontStyle: 'italic' }]}>
-                          {t('wifi.useWebInterface')} →
-                        </Text>
-                      </TouchableOpacity>
+                      <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: 4 }]}>
+                        {t('wifi.passwordHint')}
+                      </Text>
                     </View>
                   )}
 
-                  {/* Save Button */}
-                  <TouchableOpacity
-                    style={[
-                      styles.saveButton,
-                      {
-                        backgroundColor: hasChanges ? colors.primary : colors.border,
-                        opacity: hasChanges && !isSaving ? 1 : 0.6
-                      }
+                  {/* Security Mode Selection Modal */}
+                  <SelectionModal
+                    visible={showSecurityDropdown}
+                    title={t('wifi.securityMode')}
+                    options={[
+                      { label: t('wifi.authModes.wpa2Psk'), value: 'WPA2-PSK' },
+                      { label: t('wifi.authModes.wpaPsk'), value: 'WPA-PSK' },
+                      { label: t('wifi.authModes.wpaWpa2Psk'), value: 'WPA/WPA2-PSK' },
+                      { label: t('wifi.authModes.wpa2Enterprise'), value: 'WPA2' },
+                      { label: t('wifi.authModes.wpaEnterprise'), value: 'WPA' },
+                      { label: t('wifi.authModes.shared'), value: 'SHARED' },
+                      { label: t('wifi.authModes.open'), value: 'OPEN' },
                     ]}
-                    onPress={handleSaveSettings}
-                    disabled={!hasChanges || isSaving}
-                  >
-                    {isSaving ? (
-                      <BouncingDots size="small" color="#FFFFFF" />
-                    ) : (
-                      <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-                        {t('wifi.saveChanges')}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
+                    selectedValue={formSecurityMode}
+                    onSelect={(val) => {
+                      setFormSecurityMode(val);
+                      setShowSecurityDropdown(false);
+                    }}
+                    onClose={() => setShowSecurityDropdown(false)}
+                  />
+
+                  {/* Save Button - only visible when there are changes */}
+                  {hasChanges && (
+                    <TouchableOpacity
+                      style={[
+                        styles.saveButton,
+                        {
+                          backgroundColor: colors.primary,
+                          opacity: isSaving ? 0.6 : 1
+                        }
+                      ]}
+                      onPress={handleSaveSettings}
+                      disabled={isSaving}
+                    >
+                      {isSaving ? (
+                        <BouncingDots size="small" color="#FFFFFF" />
+                      ) : (
+                        <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                          {t('wifi.saveChanges')}
+                        </Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
                 </View>
               )}
             </Card>
@@ -1434,7 +1505,7 @@ export default function WiFiScreen() {
           />
         </ScrollView>
       </MeshGradientBackground>
-    </AnimatedScreen>
+    </AnimatedScreen >
   );
 }
 

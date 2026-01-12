@@ -77,6 +77,30 @@ export interface ConnectedDevice {
   isBlock: boolean;
 }
 
+/**
+ * WiFi security mode
+ */
+export enum WifiAuthMode {
+  OPEN = 'OPEN',
+  SHARED = 'SHARED',
+  WPA_PSK = 'WPA-PSK',
+  WPA2_PSK = 'WPA2-PSK',
+  WPA_WPA2_PSK = 'WPA/WPA2-PSK',
+  WPA_ENTERPRISE = 'WPA',
+  WPA2_ENTERPRISE = 'WPA2',
+}
+
+/**
+ * WiFi encryption mode
+ */
+export enum WifiEncryptionMode {
+  NONE = 'NONE',
+  WEP = 'WEP',
+  TKIP = 'TKIP',
+  AES = 'AES',
+  TKIP_AES = 'TKIPAES',
+}
+
 export interface WiFiSettings {
   ssid: string;
   password: string;
@@ -86,6 +110,7 @@ export interface WiFiSettings {
   maxAssoc: string;
   wifiMode: string;
   securityMode: string;
+  encryptionMode?: string;
 }
 
 export interface SMSMessage {
