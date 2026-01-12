@@ -38,10 +38,10 @@
 
 > [!WARNING]
 > **🇬🇧 EN**  
-> Login currently still uses WebView, and changing the WiFi password is not yet functional due to limited information about the encryption method used by the latest Huawei firmware.
+> Login and WiFi password change features are now available in pre-release builds. These features are still being tested across various modem models. If you encounter issues, please report them on GitHub Issues.
 >
 > **🇮🇩 ID**  
-> Saat ini proses login masih menggunakan WebView, dan fitur ganti password WiFi belum berfungsi karena keterbatasan informasi mengenai metode enkripsi yang digunakan oleh firmware Huawei terbaru.
+> Fitur login dan ganti password WiFi sudah tersedia di pre-release. Fitur-fitur ini masih dalam tahap pengujian pada berbagai model modem. Jika menemukan masalah, silakan laporkan di GitHub Issues.
 
 
 
@@ -56,8 +56,8 @@
 > **armeabi-v7a**: Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-armeabi-v7a.apk)
 >
 >**universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
-
-> 🧪 **Testing Version** — Versi khusus untuk modem yang tidak terbaca kekuatan sinyalnya tersedia di [Pre-releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/test-2/huawei-manager-v1.1.0-main-12207da-arm64-v8a.apk)
+>
+> 🧪 **[Pre Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** — Versi testing dengan fitur terbaru seperti login API langsung dan pengaturan WiFi. Fitur-fitur ini masih dalam tahap pengujian pada berbagai model modem. Jika Anda ingin mencoba fitur terbaru, download di [Pre Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases). 
 
 > **⚡ Built with Expo SDK 54**
 
@@ -74,70 +74,9 @@
 
 ## 📸 App Preview
 
-<details>
-<summary><strong>🌑 Dark Mode (Bahasa Indonesia)</strong></summary>
-
-#### 🏠 Home
-<p align="center">
-  <img src="docs/screenshots/dark/home.png" width="250" />
-  <img src="docs/screenshots/dark/home_stats.png" width="250" />
-  <img src="docs/screenshots/dark/home_speedtest.png" width="250" />
-  <img src="docs/screenshots/dark/home_select_band.png" width="250" />
-</p>
-
-#### 📶 WiFi
-<p align="center">
-  <img src="docs/screenshots/dark/wifi.png" width="250" />
-  <img src="docs/screenshots/dark/wifi_detail.png" width="250" />
-  <img src="docs/screenshots/dark/wifi_guest.png" width="250" />
-  <img src="docs/screenshots/dark/wifi_parental.png" width="250" />
-</p>
-
-#### 💬 SMS
-<p align="center">
-  <img src="docs/screenshots/dark/sms.png" width="250" />
-  <img src="docs/screenshots/dark/sms_new.png" width="250" />
-  <img src="docs/screenshots/dark/sms_sucsess.jpg" width="250" />
-</p>
-
-#### ⚙️ Settings
-<p align="center">
-  <img src="docs/screenshots/dark/settings.png" width="250" />
-  <img src="docs/screenshots/dark/settings_modal.png" width="250" />
-</p>
-
-</details>
-
-<details>
-<summary><strong>☀️ Light Mode (English)</strong></summary>
-
-#### 🏠 Home
-<p align="center">
-  <img src="docs/screenshots/light/home.png" width="250" />
-  <img src="docs/screenshots/light/home_stats.png" width="250" />
-  <img src="docs/screenshots/light/home_usage_limit.png" width="250" />
-</p>
-
-#### 📶 WiFi
-<p align="center">
-  <img src="docs/screenshots/light/wifi_block.png" width="250" />
-</p>
-
-#### 💬 SMS
-<p align="center">
-  <img src="docs/screenshots/light/sms.png" width="250" />
-</p>
-
-#### ⚙️ Settings
-<p align="center">
-  <img src="docs/screenshots/light/settings.png" width="250" />
-  <img src="docs/screenshots/light/settings_lan.png" width="250" />
-  <img src="docs/screenshots/light/settings_select_band.png" width="250" />
-  <img src="docs/screenshots/light/settings_update.png" width="250" />
-  <img src="docs/screenshots/light/setting_notifications.png" width="250" />
-</p>
-
-</details>
+![dark](docs/screenshots/dark-en.png)
+![dark](docs/screenshots/dark-en-1.png)
+![light](docs/screenshots/light-id.png)
 
 ---
 
