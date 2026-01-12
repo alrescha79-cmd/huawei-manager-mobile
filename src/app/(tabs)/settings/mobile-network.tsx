@@ -11,7 +11,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots } from '@/components';
+import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const NETWORK_MODES = [
@@ -192,125 +192,127 @@ export default function MobileNetworkSettingsScreen() {
     const currentNetworkModeLabel = NETWORK_MODES.find(m => m.value === networkMode)?.labelKey || 'settings.networkAuto';
 
     return (
-        <MeshGradientBackground>
-            <PageHeader title={t('settings.mobileNetwork')} showBackButton />
-            <ScrollView
-                style={[styles.container, { backgroundColor: 'transparent' }]}
-                contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
-            >
-                <SettingsSection title={t('settings.mobileData')}>
-                    <SettingsItem
-                        title={t('settings.mobileData')}
-                        onPress={() => handleToggleMobileData(!mobileDataEnabled)}
-                        showChevron={false}
-                        rightElement={
-                            isTogglingMobileData ? (
-                                <BouncingDots size="small" color={colors.primary} />
-                            ) : (
-                                <ThemedSwitch
-                                    value={mobileDataEnabled}
-                                    onValueChange={handleToggleMobileData}
-                                />
-                            )
-                        }
-                    />
-                    <SettingsItem
-                        title={t('settings.dataRoaming')}
-                        onPress={() => handleToggleRoaming(!dataRoamingEnabled)}
-                        showChevron={false}
-                        rightElement={
-                            isTogglingRoaming ? (
-                                <BouncingDots size="small" color={colors.primary} />
-                            ) : (
-                                <ThemedSwitch
-                                    value={dataRoamingEnabled}
-                                    onValueChange={handleToggleRoaming}
-                                />
-                            )
-                        }
-                    />
-                    <SettingsItem
-                        title={t('settings.autoNetwork')}
-                        onPress={() => handleToggleAutoNetwork(!autoNetworkEnabled)}
-                        showChevron={false}
-                        isLast
-                        rightElement={
-                            isTogglingAutoNetwork ? (
-                                <BouncingDots size="small" color={colors.primary} />
-                            ) : (
-                                <ThemedSwitch
-                                    value={autoNetworkEnabled}
-                                    onValueChange={handleToggleAutoNetwork}
-                                />
-                            )
-                        }
-                    />
-                </SettingsSection>
+        <AnimatedScreen noAnimation>
+            <MeshGradientBackground>
+                <PageHeader title={t('settings.mobileNetwork')} showBackButton />
+                <ScrollView
+                    style={[styles.container, { backgroundColor: 'transparent' }]}
+                    contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
+                >
+                    <SettingsSection title={t('settings.mobileData')}>
+                        <SettingsItem
+                            title={t('settings.mobileData')}
+                            onPress={() => handleToggleMobileData(!mobileDataEnabled)}
+                            showChevron={false}
+                            rightElement={
+                                isTogglingMobileData ? (
+                                    <BouncingDots size="small" color={colors.primary} />
+                                ) : (
+                                    <ThemedSwitch
+                                        value={mobileDataEnabled}
+                                        onValueChange={handleToggleMobileData}
+                                    />
+                                )
+                            }
+                        />
+                        <SettingsItem
+                            title={t('settings.dataRoaming')}
+                            onPress={() => handleToggleRoaming(!dataRoamingEnabled)}
+                            showChevron={false}
+                            rightElement={
+                                isTogglingRoaming ? (
+                                    <BouncingDots size="small" color={colors.primary} />
+                                ) : (
+                                    <ThemedSwitch
+                                        value={dataRoamingEnabled}
+                                        onValueChange={handleToggleRoaming}
+                                    />
+                                )
+                            }
+                        />
+                        <SettingsItem
+                            title={t('settings.autoNetwork')}
+                            onPress={() => handleToggleAutoNetwork(!autoNetworkEnabled)}
+                            showChevron={false}
+                            isLast
+                            rightElement={
+                                isTogglingAutoNetwork ? (
+                                    <BouncingDots size="small" color={colors.primary} />
+                                ) : (
+                                    <ThemedSwitch
+                                        value={autoNetworkEnabled}
+                                        onValueChange={handleToggleAutoNetwork}
+                                    />
+                                )
+                            }
+                        />
+                    </SettingsSection>
 
-                <SettingsSection title={t('settings.preferredNetwork')}>
-                    <SettingsItem
+                    <SettingsSection title={t('settings.preferredNetwork')}>
+                        <SettingsItem
+                            title={t('settings.preferredNetwork')}
+                            value={t(currentNetworkModeLabel)}
+                            onPress={() => setShowNetworkModeModal(true)}
+                            isLast
+                            rightElement={isChangingNetwork ? <BouncingDots size="small" color={colors.primary} /> : undefined}
+                        />
+                    </SettingsSection>
+
+                    <SettingsSection title={t('settings.frequencyBands')}>
+                        <SettingsItem
+                            title={t('settings.selectBandsTitle')}
+                            subtitle={selectedBandsDisplay.length > 0 ? selectedBandsDisplay.join(', ') : t('common.all')}
+                            onPress={() => setShowBandModal(true)}
+                            isLast
+                        />
+                    </SettingsSection>
+
+                    {/* Monthly Usage Settings */}
+                    <SettingsSection title={t('home.monthlySettings')}>
+                        <SettingsItem
+                            title={t('home.monthlySettings')}
+                            subtitle={monthlySettings.enabled
+                                ? `${monthlySettings.dataLimit} ${monthlySettings.dataLimitUnit} | ${monthlySettings.monthThreshold}%`
+                                : t('common.disabled')}
+                            onPress={() => setShowMonthlyModal(true)}
+                            isLast
+                        />
+                    </SettingsSection>
+
+                    {/* Network Mode Modal */}
+                    {/* Network Mode Modal */}
+                    {/* Network Mode Modal */}
+                    <SelectionModal
+                        visible={showNetworkModeModal}
                         title={t('settings.preferredNetwork')}
-                        value={t(currentNetworkModeLabel)}
-                        onPress={() => setShowNetworkModeModal(true)}
-                        isLast
-                        rightElement={isChangingNetwork ? <BouncingDots size="small" color={colors.primary} /> : undefined}
+                        options={NETWORK_MODES.map(mode => ({
+                            label: t(mode.labelKey),
+                            value: mode.value
+                        }))}
+                        selectedValue={networkMode}
+                        onSelect={(val) => handleNetworkModeChange(val)}
+                        onClose={() => setShowNetworkModeModal(false)}
                     />
-                </SettingsSection>
 
-                <SettingsSection title={t('settings.frequencyBands')}>
-                    <SettingsItem
-                        title={t('settings.selectBandsTitle')}
-                        subtitle={selectedBandsDisplay.length > 0 ? selectedBandsDisplay.join(', ') : t('common.all')}
-                        onPress={() => setShowBandModal(true)}
-                        isLast
+                    <BandSelectionModal
+                        visible={showBandModal}
+                        onClose={() => setShowBandModal(false)}
+                        modemService={modemService}
+                        onSaved={() => {
+                            if (modemService) loadSettings(modemService);
+                        }}
                     />
-                </SettingsSection>
 
-                {/* Monthly Usage Settings */}
-                <SettingsSection title={t('home.monthlySettings')}>
-                    <SettingsItem
-                        title={t('home.monthlySettings')}
-                        subtitle={monthlySettings.enabled
-                            ? `${monthlySettings.dataLimit} ${monthlySettings.dataLimitUnit} | ${monthlySettings.monthThreshold}%`
-                            : t('common.disabled')}
-                        onPress={() => setShowMonthlyModal(true)}
-                        isLast
+                    {/* Monthly Settings Modal */}
+                    <MonthlySettingsModal
+                        visible={showMonthlyModal}
+                        onClose={() => setShowMonthlyModal(false)}
+                        onSave={handleSaveMonthlySettings}
+                        initialSettings={monthlySettings}
                     />
-                </SettingsSection>
-
-                {/* Network Mode Modal */}
-                {/* Network Mode Modal */}
-                {/* Network Mode Modal */}
-                <SelectionModal
-                    visible={showNetworkModeModal}
-                    title={t('settings.preferredNetwork')}
-                    options={NETWORK_MODES.map(mode => ({
-                        label: t(mode.labelKey),
-                        value: mode.value
-                    }))}
-                    selectedValue={networkMode}
-                    onSelect={(val) => handleNetworkModeChange(val)}
-                    onClose={() => setShowNetworkModeModal(false)}
-                />
-
-                <BandSelectionModal
-                    visible={showBandModal}
-                    onClose={() => setShowBandModal(false)}
-                    modemService={modemService}
-                    onSaved={() => {
-                        if (modemService) loadSettings(modemService);
-                    }}
-                />
-
-                {/* Monthly Settings Modal */}
-                <MonthlySettingsModal
-                    visible={showMonthlyModal}
-                    onClose={() => setShowMonthlyModal(false)}
-                    onSave={handleSaveMonthlySettings}
-                    initialSettings={monthlySettings}
-                />
-            </ScrollView>
-        </MeshGradientBackground>
+                </ScrollView>
+            </MeshGradientBackground>
+        </AnimatedScreen>
     );
 }
 

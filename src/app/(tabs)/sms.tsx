@@ -39,6 +39,7 @@ export default function SMSScreen() {
   } = useSMSStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullProgress, setPullProgress] = useState(0); // 0-1 for pull-to-refresh feedback
   const [smsService, setSMSService] = useState<SMSService | null>(null);
   const [showCompose, setShowCompose] = useState(false);
   const [newPhone, setNewPhone] = useState('');
@@ -379,7 +380,7 @@ export default function SMSScreen() {
     <>
       <AnimatedScreen>
         <MeshGradientBackground>
-          {/* Modern Refresh Indicator */}
+          {/* Modern Refresh Indicator - shows when refreshing */}
           <ModernRefreshIndicator refreshing={isRefreshing} />
 
           <ScrollView
@@ -392,12 +393,11 @@ export default function SMSScreen() {
               <RefreshControl
                 refreshing={isRefreshing}
                 onRefresh={handleRefresh}
-                // Hide native spinner completely - use ModernRefreshIndicator instead
+                // Hide native spinner - ModernRefreshIndicator handles visual
                 tintColor="transparent"
                 colors={['transparent']}
                 progressBackgroundColor="transparent"
                 progressViewOffset={-1000}
-                style={{ backgroundColor: 'transparent' }}
               />
             }
           >

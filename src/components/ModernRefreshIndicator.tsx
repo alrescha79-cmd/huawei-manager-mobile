@@ -1,18 +1,20 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing, Platform, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ModernRefreshIndicatorProps {
     refreshing: boolean;
+    /** Pull progress from 0 to 1 - controls opacity/position during pull */
+    pullProgress?: number;
 }
 
-export function ModernRefreshIndicator({ refreshing }: ModernRefreshIndicatorProps) {
+export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernRefreshIndicatorProps) {
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
 
-    // Animation values
+    // Animation values for refreshing state
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
 
@@ -116,17 +118,30 @@ export function ModernRefreshIndicator({ refreshing }: ModernRefreshIndicatorPro
         }
     }, [refreshing]);
 
-    if (!refreshing) return null;
+    // Calculate visibility: either from pullProgress during pull, or from opacityAnim when refreshing
+    const isPulling = pullProgress > 0 && !refreshing;
+    const showIndicator = refreshing || isPulling;
+
+    if (!showIndicator) return null;
 
     const dotTravelDistance = 50; // pixels to travel
+
+    // During pull: use pullProgress for opacity and position
+    // During refresh: use animated values
+    const pullOpacity = Math.min(pullProgress * 1.5, 1); // Fade in faster than pull
+    const pullScale = 0.8 + (pullProgress * 0.2); // Scale from 0.8 to 1
+    const pullTranslateY = -30 + (pullProgress * 30); // Slide in from -30 to 0
 
     return (
         <Animated.View
             style={[
                 styles.container,
                 {
-                    opacity: opacityAnim,
-                    transform: [{ scale: scaleAnim }],
+                    opacity: refreshing ? opacityAnim : pullOpacity,
+                    transform: [
+                        { scale: refreshing ? scaleAnim : pullScale },
+                        { translateY: refreshing ? 0 : pullTranslateY },
+                    ],
                     backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
                     top: insets.top + 10,
                 },
@@ -139,56 +154,67 @@ export function ModernRefreshIndicator({ refreshing }: ModernRefreshIndicatorPro
                     <MaterialIcons name="router" size={22} color={colors.primary} />
                 </View>
 
-                {/* Data packets flowing */}
+                {/* Data packets flowing - only animate when refreshing */}
                 <View style={styles.dataFlowContainer}>
-                    {/* Dot 1 */}
-                    <Animated.View
-                        style={[
-                            styles.dataDot,
-                            {
-                                backgroundColor: colors.primary,
-                                opacity: dot1Opacity,
-                                transform: [{
-                                    translateX: dot1X.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0, dotTravelDistance],
-                                    }),
-                                }],
-                            },
-                        ]}
-                    />
-                    {/* Dot 2 */}
-                    <Animated.View
-                        style={[
-                            styles.dataDot,
-                            {
-                                backgroundColor: colors.primary,
-                                opacity: dot2Opacity,
-                                transform: [{
-                                    translateX: dot2X.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0, dotTravelDistance],
-                                    }),
-                                }],
-                            },
-                        ]}
-                    />
-                    {/* Dot 3 */}
-                    <Animated.View
-                        style={[
-                            styles.dataDot,
-                            {
-                                backgroundColor: colors.primary,
-                                opacity: dot3Opacity,
-                                transform: [{
-                                    translateX: dot3X.interpolate({
-                                        inputRange: [0, 1],
-                                        outputRange: [0, dotTravelDistance],
-                                    }),
-                                }],
-                            },
-                        ]}
-                    />
+                    {refreshing ? (
+                        <>
+                            {/* Dot 1 */}
+                            <Animated.View
+                                style={[
+                                    styles.dataDot,
+                                    {
+                                        backgroundColor: colors.primary,
+                                        opacity: dot1Opacity,
+                                        transform: [{
+                                            translateX: dot1X.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [0, dotTravelDistance],
+                                            }),
+                                        }],
+                                    },
+                                ]}
+                            />
+                            {/* Dot 2 */}
+                            <Animated.View
+                                style={[
+                                    styles.dataDot,
+                                    {
+                                        backgroundColor: colors.primary,
+                                        opacity: dot2Opacity,
+                                        transform: [{
+                                            translateX: dot2X.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [0, dotTravelDistance],
+                                            }),
+                                        }],
+                                    },
+                                ]}
+                            />
+                            {/* Dot 3 */}
+                            <Animated.View
+                                style={[
+                                    styles.dataDot,
+                                    {
+                                        backgroundColor: colors.primary,
+                                        opacity: dot3Opacity,
+                                        transform: [{
+                                            translateX: dot3X.interpolate({
+                                                inputRange: [0, 1],
+                                                outputRange: [0, dotTravelDistance],
+                                            }),
+                                        }],
+                                    },
+                                ]}
+                            />
+                        </>
+                    ) : (
+                        // Static dots during pull (not moving yet)
+                        <>
+                            <View style={[styles.dataDot, { backgroundColor: colors.primary, opacity: 0.3, left: 10 }]} />
+                            <View style={[styles.dataDot, { backgroundColor: colors.primary, opacity: 0.3, left: 27 }]} />
+                            <View style={[styles.dataDot, { backgroundColor: colors.primary, opacity: 0.3, left: 44 }]} />
+                        </>
+                    )}
                 </View>
 
                 {/* Phone Icon */}
@@ -199,7 +225,7 @@ export function ModernRefreshIndicator({ refreshing }: ModernRefreshIndicatorPro
 
             {/* Loading text */}
             <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                Syncing...
+                {refreshing ? 'Syncing...' : 'Pull to refresh'}
             </Text>
         </Animated.View>
     );

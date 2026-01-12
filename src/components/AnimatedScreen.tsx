@@ -12,6 +12,8 @@ interface AnimatedScreenProps {
     style?: ViewStyle;
     /** Animation duration in ms */
     duration?: number;
+    /** Disable animation (for nested Stack navigators like settings) */
+    noAnimation?: boolean;
 }
 
 /**
@@ -23,9 +25,19 @@ export const AnimatedScreen: React.FC<AnimatedScreenProps> = ({
     children,
     style,
     duration = 350,
+    noAnimation = false,
 }) => {
     const isFocused = useIsFocused();
     const { colors } = useTheme();
+
+    // No animation mode - just render with themed background (for settings sub-pages)
+    if (noAnimation) {
+        return (
+            <View style={[styles.container, { backgroundColor: colors.background }, style]}>
+                {children}
+            </View>
+        );
+    }
 
     // Only render with animation when focused
     if (!isFocused) {
