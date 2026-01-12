@@ -25,7 +25,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     ...config,
     name: 'Huawei Manager',
     slug: 'hm-mobile',
-    version: '1.1.05',
+    version: '1.1.07',
     orientation: 'portrait',
     icon: './assets/logo.png',
     userInterfaceStyle: 'automatic',
