@@ -2,6 +2,7 @@ import { ModemAPIClient } from './api.service';
 import { ConnectedDevice, WiFiSettings } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
 import * as Crypto from 'expo-crypto';
+import CryptoJS from 'crypto-js';
 
 export class WiFiService {
   private apiClient: ModemAPIClient;
@@ -77,17 +78,23 @@ export class WiFiService {
 
   async getWiFiSettings(): Promise<WiFiSettings> {
     try {
-      const response = await this.apiClient.get('/api/wlan/basic-settings');
+      // Use multi-basic-settings which returns password with auth headers
+      const response = await this.apiClient.get('/api/wlan/multi-basic-settings');
+
+      // Parse the first Ssid block (main WiFi, Index 0)
+      const ssidMatch = response.match(/<Ssid>([\s\S]*?)<\/Ssid>/);
+      const mainSsid = ssidMatch ? ssidMatch[0] : response;
 
       return {
-        ssid: parseXMLValue(response, 'WifiSsid'),
-        password: parseXMLValue(response, 'WifiWepKey1') || parseXMLValue(response, 'WifiWpaPreSharedKey'),
-        wifiEnable: parseXMLValue(response, 'WifiEnable') === '1',
+        ssid: parseXMLValue(mainSsid, 'WifiSsid'),
+        password: parseXMLValue(mainSsid, 'WifiWpapsk') || parseXMLValue(mainSsid, 'WifiWepKey1'),
+        wifiEnable: parseXMLValue(mainSsid, 'WifiEnable') === '1',
         channel: parseXMLValue(response, 'WifiChannel'),
         band: parseXMLValue(response, 'WifiBand'),
         maxAssoc: parseXMLValue(response, 'WifiMaxassoc'),
         wifiMode: parseXMLValue(response, 'WifiMode'),
-        securityMode: parseXMLValue(response, 'WifiAuthmode'),
+        securityMode: parseXMLValue(mainSsid, 'WifiAuthmode'),
+        encryptionMode: parseXMLValue(mainSsid, 'WifiWpaencryptionmodes'),
       };
     } catch (error) {
       console.error('Error getting WiFi settings:', error);
@@ -96,8 +103,142 @@ export class WiFiService {
   }
 
   /**
-   * Encrypt WiFi password using modem's RSA public key with PKCS#1 v1.5 padding
-   * Note: This encryption is not currently working with all Huawei modems
+   * WiFi password encoder - escape special XML entities like modem web interface
+   */
+  private wifiEncode(str: string): string {
+    const entities: Record<string, string> = {
+      '&': '&amp;',
+      "'": '&apos;',
+      '"': '&quot;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '/': '&#x2F;',
+      '(': '&#40;',
+      ')': '&#41;',
+    };
+    return str.replace(/([&'"<>/()])/g, (_, char) => entities[char] || char);
+  }
+
+  /**
+   * SHA-1 hash implementation for OAEP padding
+   */
+  private sha1(data: Uint8Array): Uint8Array {
+    // Using CryptoJS for SHA-1
+    const wordArray = CryptoJS.lib.WordArray.create(data as any);
+    const hash = CryptoJS.SHA1(wordArray);
+    const hashHex = hash.toString(CryptoJS.enc.Hex);
+    return this.hexToBytes(hashHex);
+  }
+
+  /**
+   * Helper: hex string to Uint8Array
+   */
+  private hexToBytes(hex: string): Uint8Array {
+    const bytes = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < hex.length; i += 2) {
+      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+    }
+    return bytes;
+  }
+
+  /**
+   * Helper: bytes to hex string
+   */
+  private bytesToHex(bytes: Uint8Array): string {
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+  }
+
+  /**
+   * MGF1 (Mask Generation Function) for OAEP
+   */
+  private mgf1(seed: Uint8Array, length: number): Uint8Array {
+    const mask = new Uint8Array(length);
+    let offset = 0;
+    let counter = 0;
+
+    while (offset < length) {
+      const counterBytes = new Uint8Array(4);
+      counterBytes[0] = (counter >> 24) & 0xff;
+      counterBytes[1] = (counter >> 16) & 0xff;
+      counterBytes[2] = (counter >> 8) & 0xff;
+      counterBytes[3] = counter & 0xff;
+
+      const input = new Uint8Array(seed.length + 4);
+      input.set(seed);
+      input.set(counterBytes, seed.length);
+
+      const hash = this.sha1(input);
+      const copyLen = Math.min(hash.length, length - offset);
+      mask.set(hash.subarray(0, copyLen), offset);
+      offset += copyLen;
+      counter++;
+    }
+
+    return mask;
+  }
+
+  /**
+   * OAEP padding with SHA-1 for RSA encryption
+   * Implements RSAES-OAEP as per PKCS#1 v2.1
+   */
+  private oaepPad(message: Uint8Array, keySize: number): Uint8Array {
+    const hLen = 20; // SHA-1 output length in bytes
+    const maxMsgLen = keySize - 2 * hLen - 2;
+
+    if (message.length > maxMsgLen) {
+      throw new Error('Message too long for OAEP padding');
+    }
+
+    // lHash = Hash(L) where L is empty string
+    const lHash = this.sha1(new Uint8Array(0));
+
+    // PS = zero padding
+    const psLen = keySize - message.length - 2 * hLen - 2;
+
+    // DB = lHash || PS || 0x01 || M
+    const db = new Uint8Array(keySize - hLen - 1);
+    db.set(lHash, 0);
+    // PS is already zeros
+    db[hLen + psLen] = 0x01;
+    db.set(message, hLen + psLen + 1);
+
+    // Generate random seed
+    const seed = new Uint8Array(hLen);
+    for (let i = 0; i < hLen; i++) {
+      seed[i] = Math.floor(Math.random() * 256);
+    }
+
+    // dbMask = MGF(seed, k - hLen - 1)
+    const dbMask = this.mgf1(seed, db.length);
+
+    // maskedDB = DB xor dbMask
+    const maskedDB = new Uint8Array(db.length);
+    for (let i = 0; i < db.length; i++) {
+      maskedDB[i] = db[i] ^ dbMask[i];
+    }
+
+    // seedMask = MGF(maskedDB, hLen)
+    const seedMask = this.mgf1(maskedDB, hLen);
+
+    // maskedSeed = seed xor seedMask
+    const maskedSeed = new Uint8Array(hLen);
+    for (let i = 0; i < hLen; i++) {
+      maskedSeed[i] = seed[i] ^ seedMask[i];
+    }
+
+    // EM = 0x00 || maskedSeed || maskedDB
+    const em = new Uint8Array(keySize);
+    em[0] = 0x00;
+    em.set(maskedSeed, 1);
+    em.set(maskedDB, 1 + hLen);
+
+    return em;
+  }
+
+  /**
+   * Encrypt WiFi password using modem's RSA public key with OAEP SHA-1 padding
+   * Based on modem web interface analysis - uses rsapadingtype=1 (OAEP)
+   * Flow: wifiEncode -> base64 -> RSA-OAEP-SHA1
    */
   private async encryptWifiPassword(password: string): Promise<string> {
     try {
@@ -106,42 +247,35 @@ export class WiFiService {
       const encPubKeyE = parseXMLValue(pubkeyResponse, 'encpubkeye') || '010001';
       const encPubKeyN = parseXMLValue(pubkeyResponse, 'encpubkeyn') || '';
 
+      console.log('[WiFi DEBUG] Public Key E:', encPubKeyE);
+      console.log('[WiFi DEBUG] Public Key N length:', encPubKeyN.length);
+
       if (!encPubKeyN) {
+        console.log('[WiFi DEBUG] No public key found, returning plain password');
         return password;
       }
 
       // RSA key is 2048 bits = 256 bytes
       const keySize = 256;
 
-      // Base64 encode the password first (as per Python library)
-      const b64Password = btoa(password);
+      // Step 1: WiFi encode (escape XML entities)
+      const encodedPassword = this.wifiEncode(password);
+      console.log('[WiFi DEBUG] WiFi encoded password:', encodedPassword);
 
-      // Convert base64 string to bytes
+      // Step 2: Base64 encode
+      const b64Password = btoa(encodedPassword);
+      console.log('[WiFi DEBUG] Base64 password:', b64Password);
+
+      // Step 3: Convert to bytes for OAEP padding
       const dataBytes = new TextEncoder().encode(b64Password);
+      console.log('[WiFi DEBUG] Data bytes length:', dataBytes.length);
 
-      // PKCS#1 v1.5 padding: 0x00 || 0x02 || PS (random non-zero, >= 8 bytes) || 0x00 || M
-      const paddingLength = keySize - 3 - dataBytes.length;
-      if (paddingLength < 8) {
-        return password;
-      }
-
-      // Build padded message
-      const paddedMessage = new Uint8Array(keySize);
-      paddedMessage[0] = 0x00;
-      paddedMessage[1] = 0x02;
-
-      // Generate random non-zero padding bytes
-      for (let i = 2; i < 2 + paddingLength; i++) {
-        paddedMessage[i] = Math.floor(Math.random() * 255) + 1;
-      }
-
-      paddedMessage[2 + paddingLength] = 0x00;
-      paddedMessage.set(dataBytes, 3 + paddingLength);
+      // Step 4: Apply OAEP SHA-1 padding
+      const paddedMessage = this.oaepPad(dataBytes, keySize);
+      console.log('[WiFi DEBUG] OAEP padded message length:', paddedMessage.length);
 
       // Convert to hex
-      const dataHex = Array.from(paddedMessage).map(b =>
-        b.toString(16).padStart(2, '0')
-      ).join('');
+      const dataHex = this.bytesToHex(paddedMessage);
 
       // RSA modular exponentiation
       const n = BigInt('0x' + encPubKeyN);
@@ -162,7 +296,11 @@ export class WiFiService {
       };
 
       const cipher = modPow(m, e, n);
-      return cipher.toString(16).padStart(512, '0');
+      const encryptedHex = cipher.toString(16).padStart(512, '0');
+      console.log('[WiFi DEBUG] Encrypted hex length:', encryptedHex.length);
+      console.log('[WiFi DEBUG] Encrypted hex (first 64 chars):', encryptedHex.substring(0, 64));
+
+      return encryptedHex;
     } catch (error) {
       console.error('[WiFi] Error encrypting password:', error);
       return password;
@@ -240,16 +378,19 @@ export class WiFiService {
           </request>`;
       } else {
         // For WPA2-PSK and other auth modes - encrypt password if provided
+        // Use RSA encryption with only WifiWpapsk field (like Guest WiFi uses single field)
         let encryptedPsk = '';
 
         if (settings.password && settings.password.length >= 8) {
           encryptedPsk = await this.encryptWifiPassword(settings.password);
+          console.log('[WiFi DEBUG] Using RSA encrypted password');
         }
 
-        // Build password fields - only include if we have an encrypted password
+        // Build password fields - use only WifiWpapsk (not MixWifiWpapsk)
         const pskFields = encryptedPsk ? `
-                <MixWifiWpapsk>${encryptedPsk}</MixWifiWpapsk>
                 <WifiWpapsk>${encryptedPsk}</WifiWpapsk>` : '';
+
+        console.log('[WiFi DEBUG] Encrypted PSK length:', encryptedPsk.length);
 
         requestBody = `<?xml version="1.0" encoding="UTF-8"?>
           <request>
@@ -277,14 +418,20 @@ export class WiFiService {
           </request>`;
       }
 
+      console.log('[WiFi DEBUG] Request body (first 500 chars):', requestBody.substring(0, 500));
+      console.log('[WiFi DEBUG] Encrypted PSK included:', requestBody.includes('MixWifiWpapsk'));
+
       const response = await this.apiClient.post('/api/wlan/multi-basic-settings', requestBody);
+      console.log('[WiFi DEBUG] API Response:', response);
 
       // Check for error in response
       const errorCode = parseXMLValue(response, 'code');
       if (errorCode && errorCode !== '0') {
+        console.log('[WiFi DEBUG] Error code detected:', errorCode);
         throw new Error(`API error: ${errorCode}`);
       }
 
+      console.log('[WiFi DEBUG] WiFi settings saved successfully');
       return true;
     } catch (error) {
       console.error('[WiFi] Error setting WiFi settings:', error);
