@@ -1,10 +1,8 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { StyleSheet, ViewStyle, View } from 'react-native';
 import Animated, {
-    useSharedValue,
-    useAnimatedStyle,
-    withTiming,
-    Easing,
+    FadeIn,
+    FadeOut,
 } from 'react-native-reanimated';
 import { useIsFocused } from '@react-navigation/native';
 import { useTheme } from '@/theme';
@@ -12,45 +10,35 @@ import { useTheme } from '@/theme';
 interface AnimatedScreenProps {
     children: React.ReactNode;
     style?: ViewStyle;
+    /** Animation duration in ms */
+    duration?: number;
 }
 
 /**
- * Animated screen wrapper for smooth tab transitions
- * Applies fade and subtle slide animation when screen becomes focused
+ * Animated screen wrapper for smooth tab/page transitions
+ * Uses Entering/Exiting animations from react-native-reanimated
+ * Simple fade in/out animation for clean transitions
  */
-export const AnimatedScreen: React.FC<AnimatedScreenProps> = ({ children, style }) => {
+export const AnimatedScreen: React.FC<AnimatedScreenProps> = ({
+    children,
+    style,
+    duration = 350,
+}) => {
     const isFocused = useIsFocused();
     const { colors } = useTheme();
 
-    const opacity = useSharedValue(0);
-    const translateY = useSharedValue(12);
-
-    useEffect(() => {
-        if (isFocused) {
-            // Animate in when focused - slower for more fluid feel
-            opacity.value = withTiming(1, {
-                duration: 400,
-                easing: Easing.bezier(0.4, 0, 0.2, 1), // Material Design standard easing
-            });
-            translateY.value = withTiming(0, {
-                duration: 450,
-                easing: Easing.bezier(0.4, 0, 0.2, 1),
-            });
-        } else {
-            // Reset for next focus
-            opacity.value = 0;
-            translateY.value = 12;
-        }
-    }, [isFocused]);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        opacity: opacity.value,
-        transform: [{ translateY: translateY.value }],
-    }));
+    // Only render with animation when focused
+    if (!isFocused) {
+        return null;
+    }
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>
-            <Animated.View style={[styles.animatedContainer, style, animatedStyle]}>
+            <Animated.View
+                entering={FadeIn.duration(duration)}
+                exiting={FadeOut.duration(200)}
+                style={[styles.animatedContainer, style]}
+            >
                 {children}
             </Animated.View>
         </View>

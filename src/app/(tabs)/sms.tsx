@@ -17,7 +17,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots } from '@/components';
+import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
@@ -379,6 +379,9 @@ export default function SMSScreen() {
     <>
       <AnimatedScreen>
         <MeshGradientBackground>
+          {/* Modern Refresh Indicator */}
+          <ModernRefreshIndicator refreshing={isRefreshing} />
+
           <ScrollView
             style={[styles.container, { backgroundColor: 'transparent' }]}
             contentContainerStyle={[
@@ -389,7 +392,10 @@ export default function SMSScreen() {
               <RefreshControl
                 refreshing={isRefreshing}
                 onRefresh={handleRefresh}
-                tintColor={colors.primary}
+                tintColor={isDark ? '#FFFFFF' : 'transparent'}
+                colors={isDark ? ['#FFFFFF'] : ['transparent']}
+                progressBackgroundColor="transparent"
+                progressViewOffset={50}
               />
             }
           >
@@ -565,17 +571,19 @@ export default function SMSScreen() {
             )}
           </ScrollView>
 
-          {/* Floating Action Button for New Message */}
-          <TouchableOpacity
-            style={[
-              styles.fab,
-              { backgroundColor: colors.primary }
-            ]}
-            onPress={() => setShowCompose(true)}
-            activeOpacity={0.8}
-          >
-            <MaterialIcons name="add" size={28} color="#FFF" />
-          </TouchableOpacity>
+          {/* Floating Action Button for New Message - only show if SMS supported */}
+          {smsSupported && (
+            <TouchableOpacity
+              style={[
+                styles.fab,
+                { backgroundColor: colors.primary }
+              ]}
+              onPress={() => setShowCompose(true)}
+              activeOpacity={0.8}
+            >
+              <MaterialIcons name="add" size={28} color="#FFF" />
+            </TouchableOpacity>
+          )}
         </MeshGradientBackground>
       </AnimatedScreen>
 
@@ -587,7 +595,9 @@ export default function SMSScreen() {
         onRequestClose={() => setShowCompose(false)}
       >
         <StatusBar backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <KeyboardAnimatedView
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+        >
           {/* Header */}
           <View style={[
             styles.composeHeader,
@@ -655,7 +665,7 @@ export default function SMSScreen() {
               )}
             </TouchableOpacity>
           </View>
-        </View>
+        </KeyboardAnimatedView>
       </Modal>
 
       {/* Detail Modal */}
@@ -669,7 +679,9 @@ export default function SMSScreen() {
         }}
       >
         <StatusBar backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+        <KeyboardAnimatedView
+          style={[styles.modalContainer, { backgroundColor: colors.background }]}
+        >
           {/* Header with centered phone */}
           <View style={[
             styles.modalHeader,
@@ -772,7 +784,7 @@ export default function SMSScreen() {
               </TouchableOpacity>
             </View>
           </View>
-        </View>
+        </KeyboardAnimatedView>
       </Modal>
     </>
   );

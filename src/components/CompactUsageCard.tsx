@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, StyleProp } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { formatDuration } from '@/utils/helpers';
@@ -151,89 +152,95 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                 </View>
             </View>
 
-            {/* Main Stats Area */}
-            <View style={styles.mainStatsRow}>
-                {/* Left Side: Usage Value + Unit/Label */}
-                <View style={styles.leftStatsGroup}>
-                    <Text style={[styles.mainValue, { color: blueColor }]}>
-                        {totalFormatted.value}
-                    </Text>
+            {/* Main Stats Area - Animated on tab change */}
+            <Animated.View
+                key={activeTab}
+                entering={FadeIn.duration(200)}
+                exiting={FadeOut.duration(100)}
+            >
+                <View style={styles.mainStatsRow}>
+                    {/* Left Side: Usage Value + Unit/Label */}
+                    <View style={styles.leftStatsGroup}>
+                        <Text style={[styles.mainValue, { color: blueColor }]}>
+                            {totalFormatted.value}
+                        </Text>
 
-                    <Text style={[styles.mainUnitLabel, { color: colors.textSecondary }]}>
-                        {totalFormatted.unit} {currentStats.label}
-                    </Text>
-                </View>
+                        <Text style={[styles.mainUnitLabel, { color: colors.textSecondary }]}>
+                            {totalFormatted.unit} {currentStats.label}
+                        </Text>
+                    </View>
 
-                {/* Right Side: Progress Info (Monthly) OR Duration (Session/Total) */}
-                <View style={styles.rightStatsGroup}>
-                    {showProgress ? (
-                        <>
-                            <View style={[styles.percentBadge, { borderColor: progressColor }]}>
-                                <Text style={[typography.caption2, { color: progressColor, fontWeight: 'bold' }]}>
-                                    {percent}%
+                    {/* Right Side: Progress Info (Monthly) OR Duration (Session/Total) */}
+                    <View style={styles.rightStatsGroup}>
+                        {showProgress ? (
+                            <>
+                                <View style={[styles.percentBadge, { borderColor: progressColor }]}>
+                                    <Text style={[typography.caption2, { color: progressColor, fontWeight: 'bold' }]}>
+                                        {percent}%
+                                    </Text>
+                                </View>
+                                <Text style={[typography.caption2, { color: colors.textSecondary, fontSize: 10, textAlign: 'right', marginTop: 2 }]}>
+                                    {t('home.of')} {limitFormatted.value} {limitFormatted.unit}
+                                </Text>
+                            </>
+                        ) : (
+                            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                <MaterialIcons name="timeline" size={14} color={colors.textSecondary} style={{ marginRight: 4 }} />
+                                <Text style={[typography.caption1, { color: colors.textSecondary, fontSize: 12, fontFamily: 'monospace' }]}>
+                                    {durationText}
                                 </Text>
                             </View>
-                            <Text style={[typography.caption2, { color: colors.textSecondary, fontSize: 10, textAlign: 'right', marginTop: 2 }]}>
-                                {t('home.of')} {limitFormatted.value} {limitFormatted.unit}
-                            </Text>
-                        </>
-                    ) : (
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <MaterialIcons name="timeline" size={14} color={colors.textSecondary} style={{ marginRight: 4 }} />
-                            <Text style={[typography.caption1, { color: colors.textSecondary, fontSize: 12, fontFamily: 'monospace' }]}>
-                                {durationText}
+                        )}
+                    </View>
+                </View>
+
+                {/* Progress Bar (Full Width if Monthly) */}
+                {showProgress && (
+                    <View style={[styles.progressBarTrack, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, marginBottom: 20 }]}>
+                        <View
+                            style={[
+                                styles.progressBarFill,
+                                {
+                                    width: `${percent}%`,
+                                    backgroundColor: progressColor
+                                }
+                            ]}
+                        />
+                    </View>
+                )}
+
+                {/* Spacer if no progress bar to align footer */}
+                {!showProgress && <View style={{ height: 20 }} />}
+
+                {/* Footer Grid */}
+                <View style={styles.footerGrid}>
+                    {/* Download */}
+                    <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
+                        <View style={[styles.iconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
+                            <MaterialIcons name="arrow-downward" size={16} color={greenColor} />
+                        </View>
+                        <View>
+                            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('home.download').toUpperCase()}</Text>
+                            <Text style={[styles.detailValue, { color: colors.text }]}>
+                                {dlFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{dlFormatted.unit}</Text>
                             </Text>
                         </View>
-                    )}
-                </View>
-            </View>
-
-            {/* Progress Bar (Full Width if Monthly) */}
-            {showProgress && (
-                <View style={[styles.progressBarTrack, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, marginBottom: 20 }]}>
-                    <View
-                        style={[
-                            styles.progressBarFill,
-                            {
-                                width: `${percent}%`,
-                                backgroundColor: progressColor
-                            }
-                        ]}
-                    />
-                </View>
-            )}
-
-            {/* Spacer if no progress bar to align footer */}
-            {!showProgress && <View style={{ height: 20 }} />}
-
-            {/* Footer Grid */}
-            <View style={styles.footerGrid}>
-                {/* Download */}
-                <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
-                    <View style={[styles.iconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
-                        <MaterialIcons name="arrow-downward" size={16} color={greenColor} />
                     </View>
-                    <View>
-                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('home.download').toUpperCase()}</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
-                            {dlFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{dlFormatted.unit}</Text>
-                        </Text>
+
+                    {/* Upload */}
+                    <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
+                        <View style={[styles.iconCircle, { backgroundColor: 'rgba(168, 85, 247, 0.2)' }]}>
+                            <MaterialIcons name="arrow-upward" size={16} color={purpleColor} />
+                        </View>
+                        <View>
+                            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('home.upload').toUpperCase()}</Text>
+                            <Text style={[styles.detailValue, { color: colors.text }]}>
+                                {ulFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{ulFormatted.unit}</Text>
+                            </Text>
+                        </View>
                     </View>
                 </View>
-
-                {/* Upload */}
-                <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
-                    <View style={[styles.iconCircle, { backgroundColor: 'rgba(168, 85, 247, 0.2)' }]}>
-                        <MaterialIcons name="arrow-upward" size={16} color={purpleColor} />
-                    </View>
-                    <View>
-                        <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('home.upload').toUpperCase()}</Text>
-                        <Text style={[styles.detailValue, { color: colors.text }]}>
-                            {ulFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{ulFormatted.unit}</Text>
-                        </Text>
-                    </View>
-                </View>
-            </View>
+            </Animated.View>
 
         </Card>
     );

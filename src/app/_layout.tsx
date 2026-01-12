@@ -18,6 +18,7 @@ import { requestNotificationPermissions } from '@/services/notification.service'
 import * as Notifications from 'expo-notifications';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
+import { KeyboardProvider } from 'react-native-keyboard-controller';
 
 // Keep splash screen visible while loading
 SplashScreen.preventAutoHideAsync();
@@ -390,37 +391,39 @@ export default function RootLayout() {
 
     return (
         <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
-            <Stack
-                screenOptions={{
-                    headerStyle: {
-                        backgroundColor: colors.background,
-                    },
-                    headerTintColor: colors.text,
-                    headerShadowVisible: false,
-                }}
-            >
-                <Stack.Screen
-                    name="login"
-                    options={{
-                        headerShown: false,
+            <KeyboardProvider>
+                <Stack
+                    screenOptions={{
+                        headerStyle: {
+                            backgroundColor: colors.background,
+                        },
+                        headerTintColor: colors.text,
+                        headerShadowVisible: false,
                     }}
-                />
-                <Stack.Screen
-                    name="(tabs)"
-                    options={{
-                        headerShown: false,
-                    }}
-                />
-            </Stack>
+                >
+                    <Stack.Screen
+                        name="login"
+                        options={{
+                            headerShown: false,
+                        }}
+                    />
+                    <Stack.Screen
+                        name="(tabs)"
+                        options={{
+                            headerShown: false,
+                        }}
+                    />
+                </Stack>
 
-            {/* Global Themed Alert */}
-            <ThemedAlert
-                visible={alertState.visible}
-                title={alertState.title}
-                message={alertState.message}
-                buttons={alertState.buttons}
-                onDismiss={dismissAlert}
-            />
+                {/* Global Themed Alert */}
+                <ThemedAlert
+                    visible={alertState.visible}
+                    title={alertState.title}
+                    message={alertState.message}
+                    buttons={alertState.buttons}
+                    onDismiss={dismissAlert}
+                />
+            </KeyboardProvider>
         </GestureHandlerRootView>
     );
 }

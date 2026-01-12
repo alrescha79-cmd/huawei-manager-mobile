@@ -170,28 +170,19 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                     // We assume options.tabBarIcon is a function that returns a component
                     const IconComp = options.tabBarIcon;
 
-                    // Animations
-                    const animatedIconStyle = useAnimatedStyle(() => {
-                        // If focused, move up into the "hill"
-                        const isActive = activeIndex.value === index; // This is a bit jumpy if exact
-                        // Better: interpolate based on distance from activeIndex
-                        const diff = Math.abs(activeIndex.value - index);
-                        // If diff is 0 => -25 (up), if diff is 1 => 0
-                        const translateY = interpolate(diff, [0, 1], [-20, 0], Extrapolation.CLAMP);
-                        const opacity = interpolate(diff, [0.5, 1], [0, 1], Extrapolation.CLAMP); // Text opacity
-
-                        return {
-                            transform: [{ translateY }],
-                        }
-                    });
-
-                    // We need separate anim for Icon and Text
-                    // Icon moves UP and turns WHITE if active
+                    // Animations with enhanced scale and bounce
                     const animatedIconContainerStyle = useAnimatedStyle(() => {
+                        'worklet';
                         const diff = Math.abs(activeIndex.value - index);
                         const translateY = interpolate(diff, [0, 1], [-4, 6], Extrapolation.CLAMP);
+                        const scale = interpolate(diff, [0, 0.5, 1], [1.15, 1.05, 1], Extrapolation.CLAMP);
+                        const opacity = interpolate(diff, [0, 0.3], [1, 0.7], Extrapolation.CLAMP);
                         return {
-                            transform: [{ translateY }]
+                            transform: [
+                                { translateY: translateY },
+                                { scale: scale }
+                            ] as const,
+                            opacity: opacity,
                         };
                     });
 
@@ -202,8 +193,12 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                             [0, 1],
                             [colors.primary, colors.textSecondary]
                         );
+                        const scale = interpolate(diff, [0, 1], [1.05, 1], Extrapolation.CLAMP);
+                        const opacity = interpolate(diff, [0, 0.5, 1], [1, 0.8, 0.7], Extrapolation.CLAMP);
                         return {
                             color,
+                            transform: [{ scale }],
+                            opacity,
                         };
                     });
 

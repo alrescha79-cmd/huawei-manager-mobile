@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen, MonthlyComparisonCard, BouncingDots } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen, MonthlyComparisonCard, BouncingDots, ModernRefreshIndicator } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -120,6 +120,7 @@ export default function HomeScreen() {
   const [showMonthlySettingsModal, setShowMonthlySettingsModal] = useState(false);
   const [isRunningDiagnosis, setIsRunningDiagnosis] = useState(false);
   const [isRunningCheck, setIsRunningCheck] = useState(false);
+  const [isRetryingSilent, setIsRetryingSilent] = useState(false);
 
   // Diagnosis result modal state
   const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
@@ -699,6 +700,58 @@ export default function HomeScreen() {
     );
   };
 
+  // Retry silent login with 3 attempts
+  const handleRetrySilent = async () => {
+    if (isRetryingSilent) return;
+    setIsRetryingSilent(true);
+
+    let success = false;
+    const maxAttempts = 3;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`[Home] Silent login attempt ${attempt}/${maxAttempts}...`);
+      try {
+        const restored = await tryQuietSessionRestore();
+        if (restored) {
+          success = true;
+          // Refresh data after successful login
+          if (modemService) {
+            loadData(modemService);
+            loadBands(modemService);
+          }
+          break;
+        }
+      } catch (error) {
+        console.error(`[Home] Silent login attempt ${attempt} failed:`, error);
+      }
+
+      // Wait 500ms before next attempt
+      if (attempt < maxAttempts) {
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+
+    setIsRetryingSilent(false);
+
+    if (!success) {
+      // All attempts failed - show alert to go to login
+      ThemedAlertHelper.alert(
+        t('alerts.sessionExpired'),
+        t('alerts.silentLoginFailed'),
+        [
+          { text: t('common.cancel'), style: 'cancel' },
+          {
+            text: t('common.goToLogin'),
+            onPress: async () => {
+              await logout();
+              router.replace('/login');
+            },
+          },
+        ]
+      );
+    }
+  };
+
   // Check if we have any valid signal or status data
   const hasValidData = !!(
     (signalInfo?.rssi && signalInfo.rssi !== '') ||
@@ -708,6 +761,9 @@ export default function HomeScreen() {
   return (
     <AnimatedScreen>
       <MeshGradientBackground>
+        {/* Modern Refresh Indicator - positioned absolutely */}
+        <ModernRefreshIndicator refreshing={isRefreshing} />
+
         <ScrollView
           style={[styles.container, { backgroundColor: 'transparent' }]}
           contentContainerStyle={[
@@ -718,7 +774,10 @@ export default function HomeScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={colors.primary}
+              tintColor={isDark ? '#FFFFFF' : 'transparent'}
+              colors={isDark ? ['#FFFFFF'] : ['transparent']}
+              progressBackgroundColor="transparent"
+              progressViewOffset={50}
             />
           }
         >
@@ -749,11 +808,45 @@ export default function HomeScreen() {
                 • {t('alerts.sessionExpired')}{'\n'}
                 • {t('alerts.modemNotResponding')}
               </Text>
+
+              {/* Retry Silent Login Button */}
+              <TouchableOpacity
+                onPress={handleRetrySilent}
+                disabled={isRetryingSilent}
+                style={[styles.reLoginButtonLarge, {
+                  backgroundColor: colors.primary,
+                  marginTop: spacing.md,
+                  opacity: isRetryingSilent ? 0.7 : 1
+                }]}
+              >
+                {isRetryingSilent ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <BouncingDots size="small" color="#FFFFFF" />
+                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600', marginLeft: 8 }]}>
+                      {t('common.retrying')}
+                    </Text>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialIcons name="refresh" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
+                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                      {t('common.retryConnection')}
+                    </Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+
+              {/* Go to Login Button */}
               <TouchableOpacity
                 onPress={handleReLogin}
-                style={[styles.reLoginButtonLarge, { backgroundColor: colors.error }]}
+                style={[styles.reLoginButtonLarge, {
+                  backgroundColor: 'transparent',
+                  borderWidth: 1,
+                  borderColor: colors.error,
+                  marginTop: spacing.sm
+                }]}
               >
-                <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                <Text style={[typography.body, { color: colors.error, fontWeight: '600' }]}>
                   {t('common.goToLogin')}
                 </Text>
               </TouchableOpacity>
