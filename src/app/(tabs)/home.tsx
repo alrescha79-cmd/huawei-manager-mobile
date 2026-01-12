@@ -14,7 +14,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen, MonthlyComparisonCard, BouncingDots, ModernRefreshIndicator } from '@/components';
+import { Card, CardHeader, CollapsibleCard, InfoRow, SignalBar, SignalMeter, SpeedGauge, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, UsageCard, DailyUsageCard, SignalCard, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, CompactUsageCard, MeshGradientBackground, AnimatedScreen, MonthlyComparisonCard, BouncingDots, ModernRefreshIndicator, CustomRefreshScrollView } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -108,6 +108,7 @@ export default function HomeScreen() {
   } = useModemStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullProgress, setPullProgress] = useState(0); // 0-1 for pull-to-refresh feedback
   const [modemService, setModemService] = useState<ModemService | null>(null);
 
   const [isTogglingData, setIsTogglingData] = useState(false);
@@ -761,7 +762,7 @@ export default function HomeScreen() {
   return (
     <AnimatedScreen>
       <MeshGradientBackground>
-        {/* Modern Refresh Indicator - positioned absolutely */}
+        {/* Modern Refresh Indicator - shows when refreshing */}
         <ModernRefreshIndicator refreshing={isRefreshing} />
 
         <ScrollView
@@ -774,12 +775,11 @@ export default function HomeScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              // Hide native spinner completely - use ModernRefreshIndicator instead
+              // Hide native spinner - ModernRefreshIndicator handles visual
               tintColor="transparent"
               colors={['transparent']}
               progressBackgroundColor="transparent"
               progressViewOffset={-1000}
-              style={{ backgroundColor: 'transparent' }}
             />
           }
         >

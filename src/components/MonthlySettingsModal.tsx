@@ -60,6 +60,23 @@ export function MonthlySettingsModal({
     const [isSaving, setIsSaving] = useState(false);
     const [showUnitDropdown, setShowUnitDropdown] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+
+    // Track keyboard visibility to prevent button flicker
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+            setKeyboardVisible(true);
+        });
+        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+            // Small delay to prevent button text flicker
+            setTimeout(() => setKeyboardVisible(false), 100);
+        });
+
+        return () => {
+            keyboardDidShowListener.remove();
+            keyboardDidHideListener.remove();
+        };
+    }, []);
 
     // Load initial settings when modal opens
     useEffect(() => {
@@ -299,30 +316,45 @@ export function MonthlySettingsModal({
 
                     {/* Footer Button - Inside KeyboardAvoidingView */}
                     <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-                        <Pressable
-                            style={({ pressed }) => [
-                                styles.applyButton,
-                                { backgroundColor: hasChanges ? colors.primary : colors.textSecondary },
-                                pressed && { opacity: 0.8 }
-                            ]}
-                            onPress={() => {
-                                Keyboard.dismiss();
-                                if (hasChanges) {
+                        {hasChanges ? (
+                            <TouchableOpacity
+                                style={[
+                                    styles.applyButton,
+                                    { backgroundColor: colors.primary }
+                                ]}
+                                onPress={() => {
+                                    Keyboard.dismiss();
                                     handleSave();
-                                } else {
-                                    onClose();
-                                }
-                            }}
-                            disabled={isSaving}
-                        >
-                            {isSaving ? (
-                                <ActivityIndicator color="#FFF" />
-                            ) : (
+                                }}
+                                disabled={isSaving}
+                                activeOpacity={0.8}
+                            >
+                                {isSaving ? (
+                                    <ActivityIndicator color="#FFF" />
+                                ) : (
+                                    <Text style={styles.applyButtonText}>
+                                        {t('settings.applyConfiguration')}
+                                    </Text>
+                                )}
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity
+                                style={[
+                                    styles.applyButton,
+                                    { backgroundColor: colors.textSecondary }
+                                ]}
+                                onPress={() => {
+                                    Keyboard.dismiss();
+                                    // Small delay to let keyboard dismiss first
+                                    setTimeout(() => onClose(), 150);
+                                }}
+                                activeOpacity={0.8}
+                            >
                                 <Text style={styles.applyButtonText}>
-                                    {hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
+                                    {t('common.cancel')}
                                 </Text>
-                            )}
-                        </Pressable>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 </KeyboardAvoidingView>
             </MeshGradientBackground>

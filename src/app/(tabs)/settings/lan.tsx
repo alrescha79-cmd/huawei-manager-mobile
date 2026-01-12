@@ -19,7 +19,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots } from '@/components';
+import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen } from '@/components';
 
 const ETHERNET_MODES = [
     { value: 'auto', labelKey: 'networkSettings.modeAuto' },
@@ -334,298 +334,300 @@ export default function LanSettingsScreen() {
     };
 
     return (
-        <MeshGradientBackground>
-            <PageHeader title={t('settings.lanSettings')} showBackButton />
-            <ScrollView
-                style={[styles.container, { backgroundColor: 'transparent' }]}
-                contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
-            >
-                {/* Ethernet Section */}
-                <SettingsSection title={t('networkSettings.ethernet')}>
-                    <SettingsItem
-                        title={t('networkSettings.connectionMode')}
-                        value={(() => { const mode = ETHERNET_MODES.find(m => m.value === ethernetMode); return mode ? t(mode.labelKey) : t('networkSettings.modeAuto'); })()}
-                        onPress={() => setShowEthernetModal(true)}
-                        rightElement={
-                            isChangingEthernet ? <BouncingDots size="small" color={colors.primary} /> : undefined
-                        }
-                        isLast={!ethernetStatus.connected}
-                    />
-
-                    {ethernetStatus.connected && (
-                        <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
-                            <InfoRow label={t('networkSettings.ipAddress')} value={ethernetStatus.ipAddress} />
-                            <InfoRow label={t('networkSettings.gateway')} value={ethernetStatus.gateway} />
-                        </View>
-                    )}
-                </SettingsSection>
-
-                <SelectionModal
-                    visible={showEthernetModal}
-                    title={t('networkSettings.connectionMode')}
-                    options={ETHERNET_MODES.map(mode => ({
-                        label: t(mode.labelKey),
-                        value: mode.value
-                    }))}
-                    selectedValue={ethernetMode}
-                    onSelect={(val) => {
-                        setShowEthernetModal(false);
-                        handleEthernetModeChange(val);
-                    }}
-                    onClose={() => setShowEthernetModal(false)}
-                />
-
-                {/* DHCP Section */}
-                <SettingsSection title={t('networkSettings.dhcpSettings')}>
-                    <SettingsItem
-                        title={t('networkSettings.dhcpServer')}
-                        rightElement={
-                            isTogglingDhcp ? <BouncingDots size="small" color={colors.primary} /> : (
-                                <ThemedSwitch value={dhcpSettings.dhcpStatus} onValueChange={handleDHCPToggle} />
-                            )
-                        }
-                        showChevron={false}
-                        isLast={!dhcpSettings.dhcpStatus}
-                    />
-
-                    {dhcpSettings.dhcpStatus && (
-                        <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
-                            <View style={styles.inputRow}>
-                                <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>{t('networkSettings.dhcpIpRange')}</Text>
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    <Text style={{ color: colors.textSecondary }}>{dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.')}.</Text>
-                                    <TextInput
-                                        style={[styles.smallInput, { color: colors.text, borderColor: colors.border }]}
-                                        value={dhcpSettings.dhcpStartIPAddress.split('.').pop()}
-                                        onChangeText={t => {
-                                            const base = dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.');
-                                            setDhcpSettings(p => ({ ...p, dhcpStartIPAddress: `${base}.${t}` }))
-                                        }}
-                                        keyboardType="numeric"
-                                    />
-                                    <Text style={{ marginHorizontal: 8, color: colors.text }}>-</Text>
-                                    <TextInput
-                                        style={[styles.smallInput, { color: colors.text, borderColor: colors.border }]}
-                                        value={dhcpSettings.dhcpEndIPAddress.split('.').pop()}
-                                        onChangeText={t => {
-                                            const base = dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.');
-                                            setDhcpSettings(p => ({ ...p, dhcpEndIPAddress: `${base}.${t}` }))
-                                        }}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                            </View>
-
-                            <SettingsItem
-                                title={t('networkSettings.dhcpLeaseTime')}
-                                value={getLeaseTimeLabel(dhcpSettings.dhcpLeaseTime)}
-                                onPress={() => setShowLeaseTimeDropdown(!showLeaseTimeDropdown)}
-                                showChevron={false}
-                                rightElement={<MaterialIcons name={showLeaseTimeDropdown ? "expand-less" : "expand-more"} size={24} color={colors.primary} />}
-                            />
-
-                            {showLeaseTimeDropdown && (
-                                <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
-                                    {[3600, 43200, 86400, 604800].map(val => (
-                                        <TouchableOpacity key={val} style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => {
-                                            setDhcpSettings(p => ({ ...p, dhcpLeaseTime: val }));
-                                            setShowLeaseTimeDropdown(false);
-                                        }}>
-                                            <Text style={{ color: colors.text }}>{getLeaseTimeLabel(val)}</Text>
-                                            {dhcpSettings.dhcpLeaseTime === val && <MaterialIcons name="check" size={18} color={colors.primary} />}
-                                        </TouchableOpacity>
-                                    ))}
-                                </View>
-                            )}
-
-                            <View style={{ padding: 16 }}>
-                                <Button
-                                    title={t('common.save')}
-                                    onPress={handleSaveDHCPSettings}
-                                    loading={isSavingDhcp}
-                                />
-                            </View>
-                        </View>
-                    )}
-                </SettingsSection>
-
-                <SettingsSection title={t('networkSettings.apnProfiles')}>
-
-                    {apnProfiles.map((profile, index) => (
-                        <SettingsItem
-                            key={profile.id}
-                            title={profile.name}
-                            subtitle={profile.apn}
-                            onPress={() => openEditApnModal(profile)}
-                            showChevron={true}
-                            rightElement={
-                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                    {profile.id === activeApnProfileId ? (
-                                        <MaterialIcons name="check-circle" size={22} color={colors.primary} style={{ marginRight: 8 }} />
-                                    ) : (
-                                        <TouchableOpacity onPress={(e) => { e.stopPropagation(); handleSetDefaultApn(profile.id); }} style={{ padding: 4, marginRight: 4 }}>
-                                            <MaterialIcons name="radio-button-unchecked" size={22} color={colors.textSecondary} />
-                                        </TouchableOpacity>
-                                    )}
-                                    {/* Show lock icon for readOnly profiles, disabled delete for active/readOnly */}
-                                    {profile.readOnly ? (
-                                        <View style={{ padding: 4, opacity: 0.5 }}>
-                                            <MaterialIcons name="lock" size={18} color={colors.textSecondary} />
-                                        </View>
-                                    ) : profile.id === activeApnProfileId ? (
-                                        <View style={{ padding: 4, opacity: 0.3 }}>
-                                            <MaterialIcons name="delete-outline" size={20} color={colors.textSecondary} />
-                                        </View>
-                                    ) : (
-                                        <TouchableOpacity onPress={(e) => { e.stopPropagation(); handleDeleteApnProfile(profile.id); }} style={{ padding: 4 }}>
-                                            <MaterialIcons name="delete-outline" size={20} color={colors.error} />
-                                        </TouchableOpacity>
-                                    )}
-                                </View>
-                            }
-                        />
-                    ))}
-                    <SettingsItem
-                        title={t('networkSettings.addApn')}
-                        onPress={openAddApnModal}
-                        icon="add"
-                        color={colors.primary}
-                        isLast
-                    />
-                </SettingsSection>
-
-                {/* APN Modal */}
-                <Modal
-                    visible={showApnModal}
-                    animationType="slide"
-                    presentationStyle="pageSheet"
-                    onRequestClose={handleCloseApnModal}
+        <AnimatedScreen noAnimation>
+            <MeshGradientBackground>
+                <PageHeader title={t('settings.lanSettings')} showBackButton />
+                <ScrollView
+                    style={[styles.container, { backgroundColor: 'transparent' }]}
+                    contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
                 >
-                    <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
-                        <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                            <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
-                                {editingApn ? t('networkSettings.editApn') : t('networkSettings.addApn')}
-                            </Text>
-                            <TouchableOpacity onPress={handleCloseApnModal}>
-                                <MaterialIcons name="close" size={28} color={colors.primary} />
-                            </TouchableOpacity>
-                        </View>
+                    {/* Ethernet Section */}
+                    <SettingsSection title={t('networkSettings.ethernet')}>
+                        <SettingsItem
+                            title={t('networkSettings.connectionMode')}
+                            value={(() => { const mode = ETHERNET_MODES.find(m => m.value === ethernetMode); return mode ? t(mode.labelKey) : t('networkSettings.modeAuto'); })()}
+                            onPress={() => setShowEthernetModal(true)}
+                            rightElement={
+                                isChangingEthernet ? <BouncingDots size="small" color={colors.primary} /> : undefined
+                            }
+                            isLast={!ethernetStatus.connected}
+                        />
 
-                        <KeyboardAvoidingView
-                            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                            style={{ flex: 1 }}
-                        >
-                            <ScrollView
-                                style={{ flex: 1, padding: 20 }}
-                                contentContainerStyle={{ paddingBottom: 20 }}
-                                keyboardShouldPersistTaps="handled"
-                            >
-                                {/* Profile Name */}
-                                <View style={{ marginBottom: 16 }}>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('networkSettings.profileName')}</Text>
-                                    <TextInput
-                                        placeholder={t('networkSettings.profileName')}
-                                        placeholderTextColor={colors.textSecondary}
-                                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                        value={apnName}
-                                        onChangeText={setApnName}
-                                    />
-                                </View>
-
-                                {/* APN */}
-                                <View style={{ marginBottom: 16 }}>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>APN</Text>
-                                    <TextInput
-                                        placeholder="APN"
-                                        placeholderTextColor={colors.textSecondary}
-                                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                        value={apnApn}
-                                        onChangeText={setApnApn}
-                                    />
-                                </View>
-
-                                {/* Username */}
-                                <View style={{ marginBottom: 16 }}>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.usernameLabel')}</Text>
-                                    <TextInput
-                                        placeholder={t('settings.usernameLabel')}
-                                        placeholderTextColor={colors.textSecondary}
-                                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                        value={apnUsername}
-                                        onChangeText={setApnUsername}
-                                    />
-                                </View>
-
-                                {/* Password */}
-                                <View style={{ marginBottom: 16 }}>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.passwordLabel')}</Text>
-                                    <TextInput
-                                        placeholder={t('settings.passwordLabel')}
-                                        placeholderTextColor={colors.textSecondary}
-                                        style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                        secureTextEntry
-                                        value={apnPassword}
-                                        onChangeText={setApnPassword}
-                                    />
-                                </View>
-
-                                {/* Set as Default Toggle */}
-                                <View style={{
-                                    flexDirection: 'row',
-                                    alignItems: 'center',
-                                    justifyContent: 'space-between',
-                                    marginBottom: 16,
-                                    backgroundColor: colors.card,
-                                    padding: 12,
-                                    borderRadius: 8,
-                                    borderWidth: 1,
-                                    borderColor: colors.border
-                                }}>
-                                    <View style={{ flex: 1, marginRight: 12 }}>
-                                        <Text style={[typography.body, { color: colors.text, fontWeight: 'bold' }]}>{t('networkSettings.setAsDefault')}</Text>
-                                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('networkSettings.setAsDefaultHint')}</Text>
-                                    </View>
-                                    <ThemedSwitch
-                                        value={apnIsDefault}
-                                        onValueChange={setApnIsDefault}
-                                        disabled={editingApn === activeApnProfileId}
-                                    />
-                                </View>
-                            </ScrollView>
-
-                            {/* Footer Button - Inside KeyboardAvoidingView */}
-                            <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
-                                <Pressable
-                                    style={({ pressed }) => [
-                                        styles.saveButton,
-                                        { backgroundColor: hasApnChanges() ? colors.primary : colors.textSecondary },
-                                        pressed && { opacity: 0.8 }
-                                    ]}
-                                    onPress={() => {
-                                        Keyboard.dismiss();
-                                        if (hasApnChanges()) {
-                                            handleSaveApnProfile();
-                                        } else {
-                                            setShowApnModal(false);
-                                        }
-                                    }}
-                                    disabled={isSavingApn}
-                                >
-                                    {isSavingApn ? (
-                                        <BouncingDots size="small" color="#FFF" />
-                                    ) : (
-                                        <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>
-                                            {hasApnChanges() ? t('common.save') : t('common.cancel')}
-                                        </Text>
-                                    )}
-                                </Pressable>
+                        {ethernetStatus.connected && (
+                            <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.border }}>
+                                <InfoRow label={t('networkSettings.ipAddress')} value={ethernetStatus.ipAddress} />
+                                <InfoRow label={t('networkSettings.gateway')} value={ethernetStatus.gateway} />
                             </View>
-                        </KeyboardAvoidingView>
-                    </View>
-                </Modal>
+                        )}
+                    </SettingsSection>
 
-            </ScrollView>
-        </MeshGradientBackground>
+                    <SelectionModal
+                        visible={showEthernetModal}
+                        title={t('networkSettings.connectionMode')}
+                        options={ETHERNET_MODES.map(mode => ({
+                            label: t(mode.labelKey),
+                            value: mode.value
+                        }))}
+                        selectedValue={ethernetMode}
+                        onSelect={(val) => {
+                            setShowEthernetModal(false);
+                            handleEthernetModeChange(val);
+                        }}
+                        onClose={() => setShowEthernetModal(false)}
+                    />
+
+                    {/* DHCP Section */}
+                    <SettingsSection title={t('networkSettings.dhcpSettings')}>
+                        <SettingsItem
+                            title={t('networkSettings.dhcpServer')}
+                            rightElement={
+                                isTogglingDhcp ? <BouncingDots size="small" color={colors.primary} /> : (
+                                    <ThemedSwitch value={dhcpSettings.dhcpStatus} onValueChange={handleDHCPToggle} />
+                                )
+                            }
+                            showChevron={false}
+                            isLast={!dhcpSettings.dhcpStatus}
+                        />
+
+                        {dhcpSettings.dhcpStatus && (
+                            <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+                                <View style={styles.inputRow}>
+                                    <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>{t('networkSettings.dhcpIpRange')}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={{ color: colors.textSecondary }}>{dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.')}.</Text>
+                                        <TextInput
+                                            style={[styles.smallInput, { color: colors.text, borderColor: colors.border }]}
+                                            value={dhcpSettings.dhcpStartIPAddress.split('.').pop()}
+                                            onChangeText={t => {
+                                                const base = dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.');
+                                                setDhcpSettings(p => ({ ...p, dhcpStartIPAddress: `${base}.${t}` }))
+                                            }}
+                                            keyboardType="numeric"
+                                        />
+                                        <Text style={{ marginHorizontal: 8, color: colors.text }}>-</Text>
+                                        <TextInput
+                                            style={[styles.smallInput, { color: colors.text, borderColor: colors.border }]}
+                                            value={dhcpSettings.dhcpEndIPAddress.split('.').pop()}
+                                            onChangeText={t => {
+                                                const base = dhcpSettings.dhcpIPAddress.split('.').slice(0, 3).join('.');
+                                                setDhcpSettings(p => ({ ...p, dhcpEndIPAddress: `${base}.${t}` }))
+                                            }}
+                                            keyboardType="numeric"
+                                        />
+                                    </View>
+                                </View>
+
+                                <SettingsItem
+                                    title={t('networkSettings.dhcpLeaseTime')}
+                                    value={getLeaseTimeLabel(dhcpSettings.dhcpLeaseTime)}
+                                    onPress={() => setShowLeaseTimeDropdown(!showLeaseTimeDropdown)}
+                                    showChevron={false}
+                                    rightElement={<MaterialIcons name={showLeaseTimeDropdown ? "expand-less" : "expand-more"} size={24} color={colors.primary} />}
+                                />
+
+                                {showLeaseTimeDropdown && (
+                                    <View style={{ borderTopWidth: StyleSheet.hairlineWidth, borderColor: colors.border }}>
+                                        {[3600, 43200, 86400, 604800].map(val => (
+                                            <TouchableOpacity key={val} style={[styles.dropdownItem, { borderBottomColor: colors.border }]} onPress={() => {
+                                                setDhcpSettings(p => ({ ...p, dhcpLeaseTime: val }));
+                                                setShowLeaseTimeDropdown(false);
+                                            }}>
+                                                <Text style={{ color: colors.text }}>{getLeaseTimeLabel(val)}</Text>
+                                                {dhcpSettings.dhcpLeaseTime === val && <MaterialIcons name="check" size={18} color={colors.primary} />}
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
+
+                                <View style={{ padding: 16 }}>
+                                    <Button
+                                        title={t('common.save')}
+                                        onPress={handleSaveDHCPSettings}
+                                        loading={isSavingDhcp}
+                                    />
+                                </View>
+                            </View>
+                        )}
+                    </SettingsSection>
+
+                    <SettingsSection title={t('networkSettings.apnProfiles')}>
+
+                        {apnProfiles.map((profile, index) => (
+                            <SettingsItem
+                                key={profile.id}
+                                title={profile.name}
+                                subtitle={profile.apn}
+                                onPress={() => openEditApnModal(profile)}
+                                showChevron={true}
+                                rightElement={
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        {profile.id === activeApnProfileId ? (
+                                            <MaterialIcons name="check-circle" size={22} color={colors.primary} style={{ marginRight: 8 }} />
+                                        ) : (
+                                            <TouchableOpacity onPress={(e) => { e.stopPropagation(); handleSetDefaultApn(profile.id); }} style={{ padding: 4, marginRight: 4 }}>
+                                                <MaterialIcons name="radio-button-unchecked" size={22} color={colors.textSecondary} />
+                                            </TouchableOpacity>
+                                        )}
+                                        {/* Show lock icon for readOnly profiles, disabled delete for active/readOnly */}
+                                        {profile.readOnly ? (
+                                            <View style={{ padding: 4, opacity: 0.5 }}>
+                                                <MaterialIcons name="lock" size={18} color={colors.textSecondary} />
+                                            </View>
+                                        ) : profile.id === activeApnProfileId ? (
+                                            <View style={{ padding: 4, opacity: 0.3 }}>
+                                                <MaterialIcons name="delete-outline" size={20} color={colors.textSecondary} />
+                                            </View>
+                                        ) : (
+                                            <TouchableOpacity onPress={(e) => { e.stopPropagation(); handleDeleteApnProfile(profile.id); }} style={{ padding: 4 }}>
+                                                <MaterialIcons name="delete-outline" size={20} color={colors.error} />
+                                            </TouchableOpacity>
+                                        )}
+                                    </View>
+                                }
+                            />
+                        ))}
+                        <SettingsItem
+                            title={t('networkSettings.addApn')}
+                            onPress={openAddApnModal}
+                            icon="add"
+                            color={colors.primary}
+                            isLast
+                        />
+                    </SettingsSection>
+
+                    {/* APN Modal */}
+                    <Modal
+                        visible={showApnModal}
+                        animationType="slide"
+                        presentationStyle="pageSheet"
+                        onRequestClose={handleCloseApnModal}
+                    >
+                        <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
+                            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                                <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
+                                    {editingApn ? t('networkSettings.editApn') : t('networkSettings.addApn')}
+                                </Text>
+                                <TouchableOpacity onPress={handleCloseApnModal}>
+                                    <MaterialIcons name="close" size={28} color={colors.primary} />
+                                </TouchableOpacity>
+                            </View>
+
+                            <KeyboardAvoidingView
+                                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                                style={{ flex: 1 }}
+                            >
+                                <ScrollView
+                                    style={{ flex: 1, padding: 20 }}
+                                    contentContainerStyle={{ paddingBottom: 20 }}
+                                    keyboardShouldPersistTaps="handled"
+                                >
+                                    {/* Profile Name */}
+                                    <View style={{ marginBottom: 16 }}>
+                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('networkSettings.profileName')}</Text>
+                                        <TextInput
+                                            placeholder={t('networkSettings.profileName')}
+                                            placeholderTextColor={colors.textSecondary}
+                                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                            value={apnName}
+                                            onChangeText={setApnName}
+                                        />
+                                    </View>
+
+                                    {/* APN */}
+                                    <View style={{ marginBottom: 16 }}>
+                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>APN</Text>
+                                        <TextInput
+                                            placeholder="APN"
+                                            placeholderTextColor={colors.textSecondary}
+                                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                            value={apnApn}
+                                            onChangeText={setApnApn}
+                                        />
+                                    </View>
+
+                                    {/* Username */}
+                                    <View style={{ marginBottom: 16 }}>
+                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.usernameLabel')}</Text>
+                                        <TextInput
+                                            placeholder={t('settings.usernameLabel')}
+                                            placeholderTextColor={colors.textSecondary}
+                                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                            value={apnUsername}
+                                            onChangeText={setApnUsername}
+                                        />
+                                    </View>
+
+                                    {/* Password */}
+                                    <View style={{ marginBottom: 16 }}>
+                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.passwordLabel')}</Text>
+                                        <TextInput
+                                            placeholder={t('settings.passwordLabel')}
+                                            placeholderTextColor={colors.textSecondary}
+                                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                            secureTextEntry
+                                            value={apnPassword}
+                                            onChangeText={setApnPassword}
+                                        />
+                                    </View>
+
+                                    {/* Set as Default Toggle */}
+                                    <View style={{
+                                        flexDirection: 'row',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        marginBottom: 16,
+                                        backgroundColor: colors.card,
+                                        padding: 12,
+                                        borderRadius: 8,
+                                        borderWidth: 1,
+                                        borderColor: colors.border
+                                    }}>
+                                        <View style={{ flex: 1, marginRight: 12 }}>
+                                            <Text style={[typography.body, { color: colors.text, fontWeight: 'bold' }]}>{t('networkSettings.setAsDefault')}</Text>
+                                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('networkSettings.setAsDefaultHint')}</Text>
+                                        </View>
+                                        <ThemedSwitch
+                                            value={apnIsDefault}
+                                            onValueChange={setApnIsDefault}
+                                            disabled={editingApn === activeApnProfileId}
+                                        />
+                                    </View>
+                                </ScrollView>
+
+                                {/* Footer Button - Inside KeyboardAvoidingView */}
+                                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                                    <Pressable
+                                        style={({ pressed }) => [
+                                            styles.saveButton,
+                                            { backgroundColor: hasApnChanges() ? colors.primary : colors.textSecondary },
+                                            pressed && { opacity: 0.8 }
+                                        ]}
+                                        onPress={() => {
+                                            Keyboard.dismiss();
+                                            if (hasApnChanges()) {
+                                                handleSaveApnProfile();
+                                            } else {
+                                                setShowApnModal(false);
+                                            }
+                                        }}
+                                        disabled={isSavingApn}
+                                    >
+                                        {isSavingApn ? (
+                                            <BouncingDots size="small" color="#FFF" />
+                                        ) : (
+                                            <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>
+                                                {hasApnChanges() ? t('common.save') : t('common.cancel')}
+                                            </Text>
+                                        )}
+                                    </Pressable>
+                                </View>
+                            </KeyboardAvoidingView>
+                        </View>
+                    </Modal>
+
+                </ScrollView>
+            </MeshGradientBackground>
+        </AnimatedScreen>
     );
 }
 

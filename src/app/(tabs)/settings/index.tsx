@@ -51,7 +51,7 @@ export default function SettingsIndex() {
     };
 
     return (
-        <AnimatedScreen>
+        <AnimatedScreen noAnimation>
             <MeshGradientBackground>
                 <PageHeader title={t('tabs.settings')} />
                 <ScrollView

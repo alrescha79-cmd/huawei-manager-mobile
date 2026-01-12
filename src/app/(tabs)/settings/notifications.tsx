@@ -101,7 +101,7 @@ export default function NotificationSettingsScreen() {
                 <View style={{ width: 40 }} />
             </View>
 
-            <AnimatedScreen>
+            <AnimatedScreen noAnimation>
                 <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
 
                     {/* Usage Data Notifications */}

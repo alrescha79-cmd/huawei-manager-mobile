@@ -55,6 +55,7 @@ export default function WiFiScreen() {
   } = useWiFiStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullProgress, setPullProgress] = useState(0); // 0-1 for pull-to-refresh feedback
   const [wifiService, setWiFiService] = useState<WiFiService | null>(null);
 
 
@@ -666,7 +667,7 @@ export default function WiFiScreen() {
   return (
     <AnimatedScreen>
       <MeshGradientBackground>
-        {/* Modern Refresh Indicator */}
+        {/* Modern Refresh Indicator - shows when refreshing */}
         <ModernRefreshIndicator refreshing={isRefreshing} />
 
         <ScrollView
@@ -679,12 +680,11 @@ export default function WiFiScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              // Hide native spinner completely - use ModernRefreshIndicator instead
+              // Hide native spinner - ModernRefreshIndicator handles visual
               tintColor="transparent"
               colors={['transparent']}
               progressBackgroundColor="transparent"
               progressViewOffset={-1000}
-              style={{ backgroundColor: 'transparent' }}
             />
           }
           keyboardShouldPersistTaps="handled"

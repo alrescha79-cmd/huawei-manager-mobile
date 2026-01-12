@@ -399,6 +399,9 @@ export default function RootLayout() {
                         },
                         headerTintColor: colors.text,
                         headerShadowVisible: false,
+                        contentStyle: { backgroundColor: colors.background },
+                        animation: 'fade',
+                        animationDuration: 200,
                     }}
                 >
                     <Stack.Screen
