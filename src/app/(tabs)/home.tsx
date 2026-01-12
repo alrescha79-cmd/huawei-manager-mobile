@@ -774,10 +774,12 @@ export default function HomeScreen() {
             <RefreshControl
               refreshing={isRefreshing}
               onRefresh={handleRefresh}
-              tintColor={isDark ? '#FFFFFF' : 'transparent'}
-              colors={isDark ? ['#FFFFFF'] : ['transparent']}
+              // Hide native spinner completely - use ModernRefreshIndicator instead
+              tintColor="transparent"
+              colors={['transparent']}
               progressBackgroundColor="transparent"
-              progressViewOffset={50}
+              progressViewOffset={-1000}
+              style={{ backgroundColor: 'transparent' }}
             />
           }
         >

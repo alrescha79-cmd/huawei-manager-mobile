@@ -75,22 +75,22 @@ export default function RootLayout() {
     const [isRestoringSession, setIsRestoringSession] = useState(false);
     const [authReady, setAuthReady] = useState(false); // Track when auth check is complete
 
-    // Hide splash screen when BOTH fonts loaded AND auth checked
+    // Hide native splash screen when fonts loaded (show AnimatedSplashScreen during login)
     const onLayoutRootView = useCallback(async () => {
-        if (fontsLoaded && authReady) {
-            // Small delay for smoother transition
-            await new Promise(resolve => setTimeout(resolve, 200));
+        if (fontsLoaded) {
+            // Hide native splash immediately when fonts ready
+            // AnimatedSplashScreen will show until auth is complete
             await SplashScreen.hideAsync();
             setAppIsReady(true);
         }
-    }, [fontsLoaded, authReady]);
+    }, [fontsLoaded]);
 
-    // Trigger splash hide when ready
+    // Trigger native splash hide when fonts ready
     useEffect(() => {
-        if (fontsLoaded && authReady) {
+        if (fontsLoaded) {
             onLayoutRootView();
         }
-    }, [fontsLoaded, authReady, onLayoutRootView]);
+    }, [fontsLoaded, onLayoutRootView]);
 
     // Handle Android Navigation Bar Colors
     useEffect(() => {
@@ -384,8 +384,8 @@ export default function RootLayout() {
         }
     }, [isAuthenticated, segments]);
 
-    // Show animated splash screen while loading
-    if (!fontsLoaded || !appIsReady) {
+    // Show animated splash screen while loading fonts or during login
+    if (!fontsLoaded || !authReady) {
         return <AnimatedSplashScreen isLoading={true} />;
     }
 
