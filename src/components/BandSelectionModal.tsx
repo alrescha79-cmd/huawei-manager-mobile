@@ -489,6 +489,12 @@ const styles = StyleSheet.create({
 
 export function getSelectedBandsDisplay(lteBandHex: string): string[] {
     try {
+        // If the hex pattern indicates all bands (7F...F or similar), return "All"
+        const normalizedHex = lteBandHex.toUpperCase();
+        if (normalizedHex === '7FFFFFFFFFFFFFFF' || normalizedHex === 'FFFFFFFFFFFFFFFF') {
+            return ['All'];
+        }
+
         const lteBandValue = BigInt('0x' + lteBandHex);
         const activeBands: string[] = [];
         for (const band of LTE_BANDS) {
@@ -496,6 +502,12 @@ export function getSelectedBandsDisplay(lteBandHex: string): string[] {
                 activeBands.push(band.name);
             }
         }
+
+        // If most bands are selected (25+), consider it "All"
+        if (activeBands.length >= 25) {
+            return ['All'];
+        }
+
         return activeBands.length > 0 ? activeBands : ['All'];
     } catch {
         return ['All'];

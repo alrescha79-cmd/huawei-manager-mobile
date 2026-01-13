@@ -3,7 +3,9 @@
 # dependencies
 node_modules/
 
+# others
 notes.txt
+.agent/
 
 # Expo
 .expo/

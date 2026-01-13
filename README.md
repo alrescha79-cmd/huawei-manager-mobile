@@ -163,7 +163,10 @@ Jika tidak bisa login ke aplikasi, gunakan browser DevTools:
 4. Ketik `downloadAPILogs()` dan kirim file-nya
 
 ### 📤 Kirim Laporan
-[![Report Bug](https://img.shields.io/badge/Report-Bug-red?style=for-the-badge&logo=github)](https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=bug&projects=&template=bug_report.md&title=%5BBUG%5D+)
+[![Report Bug](https://img.shields.io/badge/🐛_Report_Bug-red?style=for-the-badge&logo=github)](https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=bug&projects=&template=bug_report.md&title=%5BBUG%5D+)
+[![Feature Request](https://img.shields.io/badge/💡_Feature_Request-blue?style=for-the-badge&logo=github)](https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=enhancement&projects=&template=feature_request.md&title=%5BFEATURE%5D+)
+
+> **Tip**: Sertakan file debug log untuk mempercepat proses investigasi bug!
 
 
 ---

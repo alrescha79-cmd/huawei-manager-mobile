@@ -55,6 +55,7 @@ export class ModemService {
   async getSignalInfo(): Promise<SignalInfo> {
     try {
       const response = await this.apiClient.get('/api/device/signal');
+      const lteBandwidth = parseXMLValue(response, 'lte_bandwidth');
 
       return {
         rssi: parseXMLValue(response, 'rssi'),
@@ -66,9 +67,9 @@ export class ModemService {
         mode: parseXMLValue(response, 'mode'),
         pci: parseXMLValue(response, 'pci'),
         cellId: parseXMLValue(response, 'cell_id'),
-        band: parseXMLValue(response, 'band'),
-        dlbandwidth: parseXMLValue(response, 'dlbandwidth'),
-        ulbandwidth: parseXMLValue(response, 'ulbandwidth'),
+        band: parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo'),
+        dlbandwidth: parseXMLValue(response, 'dlbandwidth') || lteBandwidth,
+        ulbandwidth: parseXMLValue(response, 'ulbandwidth') || lteBandwidth,
       };
     } catch (error) {
       console.error('Error getting signal info:', error);

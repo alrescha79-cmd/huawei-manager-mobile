@@ -268,6 +268,10 @@ export default function WiFiScreen() {
       await wifiService.toggleGuestWiFi(enabled);
       setGuestWifiEnabled(enabled);
       ThemedAlertHelper.alert(t('common.success'), enabled ? t('wifi.guestWifiEnabled') : t('wifi.guestWifiDisabled'));
+      // Refresh data to update time remaining display
+      if (enabled) {
+        setTimeout(() => handleRefresh(), 500);
+      }
     } catch (error) {
       ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleGuestWifi'));
     } finally {
