@@ -23,7 +23,7 @@ interface PageSheetModalProps {
     isSaving?: boolean;
     saveText?: string;
     cancelText?: string;
-    hasChanges?: boolean; // Track if there are unsaved changes
+    hasChanges?: boolean;
     children: React.ReactNode;
 }
 

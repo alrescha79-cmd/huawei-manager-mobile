@@ -1,12 +1,11 @@
 import React from 'react';
 import { StyleSheet, ViewStyle, StyleProp } from 'react-native';
-import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import { useKeyboardHandler } from 'react-native-keyboard-controller';
 
 interface KeyboardAnimatedViewProps {
     children: React.ReactNode;
     style?: StyleProp<ViewStyle>;
-    /** Extra padding above keyboard */
     extraPadding?: number;
 }
 
@@ -20,23 +19,22 @@ export function KeyboardAnimatedView({
     style,
     extraPadding = 0,
 }: KeyboardAnimatedViewProps) {
-    const [keyboardHeight, setKeyboardHeight] = React.useState(0);
+    const keyboardHeight = useSharedValue(0);
 
     useKeyboardHandler({
         onMove: (e) => {
             'worklet';
-            // Update keyboard height on the JS thread
-            setKeyboardHeight(e.height);
+            keyboardHeight.value = e.height;
         },
         onEnd: (e) => {
             'worklet';
-            setKeyboardHeight(e.height);
+            keyboardHeight.value = e.height;
         },
     }, []);
 
     const animatedStyle = useAnimatedStyle(() => {
         return {
-            paddingBottom: keyboardHeight + extraPadding,
+            paddingBottom: keyboardHeight.value + extraPadding,
         };
     });
 
@@ -54,3 +52,4 @@ const styles = StyleSheet.create({
 });
 
 export default KeyboardAnimatedView;
+

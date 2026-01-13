@@ -4,17 +4,13 @@ import { useTheme } from '@/theme';
 import Svg, { Path, Line, Defs, LinearGradient, Stop } from 'react-native-svg';
 
 interface SpeedGaugeProps {
-    downloadSpeed: number; // in bps
-    uploadSpeed: number; // in bps
+    downloadSpeed: number;
+    uploadSpeed: number;
 }
 
-/**
- * Classic Speedometer-style gauge
- */
 export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
     const { colors, typography, spacing } = useTheme();
 
-    // Format speed to human readable
     const formatSpeed = (bps: number): { value: string; unit: string } => {
         if (bps === 0) return { value: '0.0', unit: 'bps' };
         const k = 1000;
@@ -27,25 +23,20 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
     const dlSpeed = formatSpeed(downloadSpeed);
     const ulSpeed = formatSpeed(uploadSpeed);
 
-    // SVG parameters  
     const size = 140;
     const strokeWidth = 10;
     const radius = (size / 2) - strokeWidth - 8;
     const center = size / 2;
 
-    // Arc: from 135° (bottom-left) to 405° (bottom-right) = 270° sweep
-    // In radians: startAngle = 0.75π, endAngle = 2.25π
-    const startAngle = 0.75 * Math.PI; // 135°
-    const endAngle = 2.25 * Math.PI;   // 405° (= 45°)
-    const totalAngle = endAngle - startAngle; // 270°
+    const startAngle = 0.75 * Math.PI;
+    const endAngle = 2.25 * Math.PI;
+    const totalAngle = endAngle - startAngle;
 
-    // Get point on circle
     const getPoint = (angle: number, r: number) => ({
         x: center + Math.cos(angle) * r,
         y: center + Math.sin(angle) * r,
     });
 
-    // Create arc path
     const createArc = (start: number, end: number, r: number) => {
         const p1 = getPoint(start, r);
         const p2 = getPoint(end, r);
@@ -54,7 +45,6 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
         return `M ${p1.x} ${p1.y} A ${r} ${r} 0 ${largeArc} 1 ${p2.x} ${p2.y}`;
     };
 
-    // Draw ticks (40 total, every 10th is major)
     const renderTicks = () => {
         const ticks = [];
         const numTicks = 40;
@@ -92,18 +82,14 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
         icon: string,
         gradientId: string
     ) => {
-        // Dynamic max scale based on unit
-        // Kbps: max 1000 Kbps, Mbps: max 100 Mbps, Gbps: max 10 Gbps
         let progressRatio = 0;
         if (speedBps > 0) {
             if (speedUnit === 'Kbps' || speedUnit === 'bps') {
-                // For Kbps/bps: max scale is 1000 Kbps (1,000,000 bps)
+                progressRatio = Math.min(speedBps / (1000 * 1000), 1);
                 progressRatio = Math.min(speedBps / (1000 * 1000), 1);
             } else if (speedUnit === 'Mbps') {
-                // For Mbps: max scale is 100 Mbps
                 progressRatio = Math.min(speedBps / (100 * 1000 * 1000), 1);
             } else {
-                // For Gbps: max scale is 10 Gbps
                 progressRatio = Math.min(speedBps / (10 * 1000 * 1000 * 1000), 1);
             }
         }
@@ -119,7 +105,6 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         </LinearGradient>
                     </Defs>
 
-                    {/* Background arc (track) */}
                     <Path
                         d={createArc(startAngle, endAngle, radius)}
                         stroke={colors.border}
@@ -128,7 +113,6 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         strokeLinecap="round"
                     />
 
-                    {/* Progress arc - always render if there's any progress */}
                     {progressRatio > 0 && (
                         <Path
                             d={createArc(startAngle, progressEndAngle, radius)}
@@ -139,11 +123,9 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                         />
                     )}
 
-                    {/* Ticks */}
                     {renderTicks()}
                 </Svg>
 
-                {/* Center value */}
                 <View style={styles.centerValue}>
                     <Text style={[styles.speedValue, { color: primaryColor }]}>
                         {speedValue}
@@ -153,7 +135,6 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                     </Text>
                 </View>
 
-                {/* Label */}
                 <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]}>
                     {icon} {label}
                 </Text>
@@ -161,9 +142,8 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
         );
     };
 
-    // Colors from HTML design
-    const downloadColors = { primary: '#22d3ee', secondary: '#0e7490' }; // Cyan
-    const uploadColors = { primary: '#e879f9', secondary: '#a21caf' };   // Fuchsia
+    const downloadColors = { primary: '#22d3ee', secondary: '#0e7490' };
+    const uploadColors = { primary: '#e879f9', secondary: '#a21caf' };
 
     return (
         <View style={styles.container}>

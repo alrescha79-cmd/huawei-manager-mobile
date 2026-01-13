@@ -58,7 +58,6 @@ export function DiagnosisResultModal({
                     ]}
                 >
                     <ModalMeshGradient />
-                    {/* Header */}
                     <View style={[styles.header, { borderBottomColor: colors.border }]}>
                         <MaterialIcons name="fact-check" size={28} color={colors.primary} />
                         <Text style={[typography.headline, { color: colors.text, marginLeft: spacing.sm, textAlign: 'center' }]}>
@@ -66,7 +65,6 @@ export function DiagnosisResultModal({
                         </Text>
                     </View>
 
-                    {/* Results */}
                     <View style={styles.resultsContainer}>
                         {results.map((result, index) => (
                             <View
@@ -96,7 +94,6 @@ export function DiagnosisResultModal({
                         ))}
                     </View>
 
-                    {/* Summary */}
                     {summary && (
                         <View style={[styles.summaryContainer, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                             <Text style={[typography.body, { color: colors.text, textAlign: 'center' }]}>
@@ -105,7 +102,6 @@ export function DiagnosisResultModal({
                         </View>
                     )}
 
-                    {/* Close Button */}
                     <TouchableOpacity
                         style={[styles.closeButton, { backgroundColor: colors.primary }]}
                         onPress={onClose}

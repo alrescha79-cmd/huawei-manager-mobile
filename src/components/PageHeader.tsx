@@ -20,7 +20,6 @@ export const PageHeader = ({ title, showBackButton = false, rightElement }: Page
             { paddingTop: 16 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
         ]}>
             <View style={styles.content}>
-                {/* Left: Back button or empty space */}
                 <View style={styles.left}>
                     {showBackButton && (
                         <TouchableOpacity
@@ -33,12 +32,10 @@ export const PageHeader = ({ title, showBackButton = false, rightElement }: Page
                     )}
                 </View>
 
-                {/* Center: Title */}
                 <Text style={[styles.title, typography.headline, { color: colors.text }]} numberOfLines={1}>
                     {title}
                 </Text>
 
-                {/* Right: Optional element or empty space for balance */}
                 <View style={styles.right}>
                     {rightElement}
                 </View>

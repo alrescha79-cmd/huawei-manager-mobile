@@ -30,14 +30,14 @@ interface SettingsItemProps {
     icon?: keyof typeof MaterialIcons.glyphMap;
     title: string;
     subtitle?: string;
-    value?: string; // For displaying a value on the right
+    value?: string;
     onPress?: () => void;
     showChevron?: boolean;
     color?: string;
     destructive?: boolean;
     isLast?: boolean;
-    loading?: boolean; // For showing activity indicator
-    rightElement?: React.ReactNode; // For switches or custom right elements
+    loading?: boolean;
+    rightElement?: React.ReactNode;
 }
 
 export const SettingsItem = ({
@@ -55,7 +55,6 @@ export const SettingsItem = ({
 }: SettingsItemProps) => {
     const { colors, typography } = useTheme();
 
-    // Determine if we should render as TouchableOpacity or generic View
     const Wrapper = onPress ? TouchableOpacity : View;
     const wrapperProps = onPress ? { activeOpacity: 0.7, onPress } : {};
 
@@ -78,11 +77,11 @@ export const SettingsItem = ({
                 <View style={[
                     styles.contentContainer,
                     !isLast && { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-                    !icon && { paddingLeft: 0 } // Remove left padding if no icon
+                    !icon && { paddingLeft: 0 }
                 ]}>
                     <View style={styles.textContainer}>
                         <Text style={[
-                            typography.body,  // Changed from subheadline to body for consistency
+                            typography.body,
                             { color: destructive ? colors.error : colors.text, fontWeight: '500' }
                         ]}>
                             {title}
@@ -117,7 +116,7 @@ export const SettingsItem = ({
 
 const styles = StyleSheet.create({
     sectionWrapper: {
-        marginBottom: 16,  // Changed from 24 to match Card spacing
+        marginBottom: 16,
         marginHorizontal: 16,
     },
     sectionTitle: {
@@ -129,7 +128,6 @@ const styles = StyleSheet.create({
     sectionContent: {
         borderRadius: 16,
         overflow: 'hidden',
-        // No shadow - keep clean look
     },
     itemTouchable: {
         minHeight: 50,

@@ -12,7 +12,6 @@ export function ModernLoading({ size = 'medium', color, style }: ModernLoadingPr
     const { colors, isDark } = useTheme();
     const spinnerColor = color || colors.primary;
 
-    // Animation values
     const rotation = useRef(new Animated.Value(0)).current;
     const scale = useRef(new Animated.Value(0.8)).current;
     const opacity = useRef(new Animated.Value(0.6)).current;
@@ -26,7 +25,6 @@ export function ModernLoading({ size = 'medium', color, style }: ModernLoadingPr
     const { container, dot, radius } = sizeMap[size];
 
     useEffect(() => {
-        // Rotation animation
         const rotationAnim = Animated.loop(
             Animated.timing(rotation, {
                 toValue: 1,
@@ -36,7 +34,6 @@ export function ModernLoading({ size = 'medium', color, style }: ModernLoadingPr
             })
         );
 
-        // Pulse animation
         const pulseAnim = Animated.loop(
             Animated.sequence([
                 Animated.parallel([
@@ -84,7 +81,6 @@ export function ModernLoading({ size = 'medium', color, style }: ModernLoadingPr
         outputRange: ['0deg', '360deg'],
     });
 
-    // Create 8 dots around circle
     const dots = Array.from({ length: 8 }, (_, i) => {
         const angle = (i * 45 * Math.PI) / 180;
         const x = Math.cos(angle) * radius;
@@ -133,7 +129,6 @@ export function ModernLoading({ size = 'medium', color, style }: ModernLoadingPr
     );
 }
 
-// Bouncing dots loading - alternative style
 interface BouncingDotsProps {
     size?: 'small' | 'medium' | 'large';
     color?: string;
@@ -238,7 +233,6 @@ export function BouncingDots({ size = 'medium', color, style }: BouncingDotsProp
     );
 }
 
-// Pulse ring loading
 interface PulseRingProps {
     size?: number;
     color?: string;

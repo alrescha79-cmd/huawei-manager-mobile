@@ -81,7 +81,6 @@ export default function SettingsIndex() {
                     </SettingsSection>
 
                     <SettingsSection title={t('settings.general')}>
-                        {/* System Settings First */}
                         <SettingsItem
                             icon="settings"
                             title={t('settings.system')}
@@ -89,7 +88,6 @@ export default function SettingsIndex() {
                             onPress={() => router.push('/settings/system')}
                         />
 
-                        {/* Data Usage View */}
                         <SettingsItem
                             icon="data-usage"
                             title="Data Usage View"
@@ -107,7 +105,6 @@ export default function SettingsIndex() {
                             }
                         />
 
-                        {/* Theme Settings */}
                         <SettingsItem
                             icon="brightness-6"
                             title={t('settings.theme')}
@@ -125,7 +122,6 @@ export default function SettingsIndex() {
                             }
                         />
 
-                        {/* Language Settings */}
                         <SettingsItem
                             icon="translate"
                             title={t('settings.language')}
@@ -143,7 +139,6 @@ export default function SettingsIndex() {
                             }
                         />
 
-                        {/* Notification Settings */}
                         <SettingsItem
                             icon="notifications"
                             title={t('notifications.title')}
@@ -157,7 +152,6 @@ export default function SettingsIndex() {
                             icon="info-outline"
                             title={t('settings.appVersion')}
                             subtitle={`v${Constants.expoConfig?.version}`}
-                            // onPress={() => { }} // Remove pressable effect for info items if desired
                             showChevron={false}
                         />
                         <SettingsItem
@@ -181,7 +175,6 @@ export default function SettingsIndex() {
                         />
                     </SettingsSection>
 
-                    {/* Developer Section */}
                     <SettingsSection title={t('settings.developer')}>
                         <SettingsItem
                             icon="developer-mode"
@@ -193,7 +186,6 @@ export default function SettingsIndex() {
                                     value={debugEnabled}
                                     onValueChange={(enabled) => {
                                         if (enabled) {
-                                            // Confirmation before enabling
                                             ThemedAlertHelper.alert(
                                                 t('settings.enableDebugConfirm'),
                                                 t('settings.enableDebugMessage'),
@@ -203,7 +195,6 @@ export default function SettingsIndex() {
                                                 ]
                                             );
                                         } else {
-                                            // Confirmation before disabling (will clear logs)
                                             if (apiLogs.length > 0) {
                                                 ThemedAlertHelper.alert(
                                                     t('settings.disableDebugConfirm'),
@@ -237,7 +228,6 @@ export default function SettingsIndex() {
                                                         try {
                                                             await shareDebugLog();
                                                         } catch (e) {
-                                                            // Silent fail
                                                         }
                                                     }}
                                                 >
@@ -246,7 +236,6 @@ export default function SettingsIndex() {
                                                 <TouchableOpacity
                                                     style={[styles.iconButton, { backgroundColor: colors.error + '20' }]}
                                                     onPress={() => {
-                                                        // Confirmation before clearing
                                                         ThemedAlertHelper.alert(
                                                             t('settings.clearLogsConfirm'),
                                                             t('settings.clearLogsMessage'),
@@ -286,7 +275,6 @@ export default function SettingsIndex() {
                                         try {
                                             const emailOpened = await sendDebugEmail();
                                             if (!emailOpened) {
-                                                // Email client not available, offer share fallback
                                                 ThemedAlertHelper.alert(
                                                     t('settings.emailClientError'),
                                                     t('settings.sendDebugLogHint'),
@@ -298,7 +286,6 @@ export default function SettingsIndex() {
                                                                 try {
                                                                     await shareDebugLog();
                                                                 } catch (e) {
-                                                                    // Silent fail
                                                                 }
                                                             }
                                                         }
@@ -325,7 +312,6 @@ export default function SettingsIndex() {
                         )}
                     </SettingsSection>
 
-                    {/* Theme Modal */}
                     <SelectionModal
                         visible={showThemeModal}
                         title={t('settings.theme')}
@@ -342,7 +328,6 @@ export default function SettingsIndex() {
                         onClose={() => setShowThemeModal(false)}
                     />
 
-                    {/* Language Modal */}
                     <SelectionModal
                         visible={showLanguageModal}
                         title={t('settings.language')}
@@ -358,7 +343,6 @@ export default function SettingsIndex() {
                         onClose={() => setShowLanguageModal(false)}
                     />
 
-                    {/* Usage View Modal */}
                     <SelectionModal
                         visible={showUsageModal}
                         title="Data Usage View"

@@ -75,7 +75,6 @@ export default function LanSettingsScreen() {
     const [showApnAuthDropdown, setShowApnAuthDropdown] = useState(false);
     const [showApnIpDropdown, setShowApnIpDropdown] = useState(false);
 
-    // Initial values for tracking changes
     const [initialApnValues, setInitialApnValues] = useState<{
         name: string;
         apn: string;
@@ -124,7 +123,6 @@ export default function LanSettingsScreen() {
     const handleEthernetModeChange = async (mode: typeof ethernetMode) => {
         if (!networkSettingsService || isChangingEthernet) return;
         setIsChangingEthernet(true);
-        // Modal is closed by onSelect
         try {
             await networkSettingsService.setEthernetConnectionMode(mode);
             setEthernetMode(mode);
@@ -262,7 +260,7 @@ export default function LanSettingsScreen() {
                 authType: apnAuthType,
                 ipType: apnIpType,
                 isDefault: apnIsDefault,
-                readOnly: false, // New profiles are never readOnly
+                readOnly: false,
             };
 
             if (editingApn) {
@@ -281,7 +279,6 @@ export default function LanSettingsScreen() {
     };
 
     const handleDeleteApnProfile = (profileId: string) => {
-        // Find profile name for confirmation message
         const profile = apnProfiles.find(p => p.id === profileId);
         const profileName = profile?.name || profileId;
 
@@ -308,7 +305,6 @@ export default function LanSettingsScreen() {
     };
 
     const handleSetDefaultApn = async (profileId: string) => {
-        // Find profile name for confirmation message
         const profile = apnProfiles.find(p => p.id === profileId);
         const profileName = profile?.name || profileId;
 
@@ -468,7 +464,6 @@ export default function LanSettingsScreen() {
                                                 <MaterialIcons name="radio-button-unchecked" size={22} color={colors.textSecondary} />
                                             </TouchableOpacity>
                                         )}
-                                        {/* Show lock icon for readOnly profiles, disabled delete for active/readOnly */}
                                         {profile.readOnly ? (
                                             <View style={{ padding: 4, opacity: 0.5 }}>
                                                 <MaterialIcons name="lock" size={18} color={colors.textSecondary} />
@@ -594,7 +589,6 @@ export default function LanSettingsScreen() {
                                     </View>
                                 </ScrollView>
 
-                                {/* Footer Button - Inside KeyboardAvoidingView */}
                                 <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                                     <Pressable
                                         style={({ pressed }) => [

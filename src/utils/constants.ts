@@ -6,8 +6,8 @@ export const MODEM_CONFIG = {
   DEFAULT_IPS: ['192.168.8.1', '192.168.1.1', '192.168.100.1'],
   DEFAULT_USERNAME: 'admin',
   DEFAULT_PASSWORD: '',
-  CONNECTION_TIMEOUT: 10000, // 10 seconds
-  REFRESH_INTERVAL: 5000, // 5 seconds
+  CONNECTION_TIMEOUT: 10000,
+  REFRESH_INTERVAL: 5000,
 };
 
 export const API_ENDPOINTS = {
@@ -35,7 +35,7 @@ export const API_ENDPOINTS = {
 
 export const APP_CONFIG = {
   NAME: 'Huawei Manager',
-  VERSION: '1.0.1',
+  VERSION: '1.1.1',
   DEVELOPER: 'Anggun Caksono',
 };
 

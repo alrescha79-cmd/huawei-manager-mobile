@@ -20,10 +20,7 @@ import { ThemedAlertHelper } from './ThemedAlert';
 import { ModemService } from '@/services/modem.service';
 import { ModalMeshGradient } from './ModalMeshGradient';
 
-// LTE Band definitions - Comprehensive FDD and TDD bands
-// Added type property for filtering/rendering
 const LTE_BANDS = [
-    // === FDD Bands ===
     { bit: 0, name: 'B1', freq: '2100 MHz', region: 'Global', type: 'FDD' },
     { bit: 1, name: 'B2', freq: '1900 MHz', region: 'Americas', type: 'FDD' },
     { bit: 2, name: 'B3', freq: '1800 MHz', region: 'Global', type: 'FDD' },
@@ -46,7 +43,6 @@ const LTE_BANDS = [
     { bit: 31, name: 'B32', freq: '1500 MHz SDL', region: 'Europe', type: 'FDD' },
     { bit: 65, name: 'B66', freq: '1700/2100 MHz', region: 'Americas', type: 'FDD' },
     { bit: 70, name: 'B71', freq: '600 MHz', region: 'Americas', type: 'FDD' },
-    // === TDD Bands ===
     { bit: 33, name: 'B34', freq: '2010 MHz', region: 'China', type: 'TDD' },
     { bit: 37, name: 'B38', freq: '2600 MHz', region: 'Global', type: 'TDD' },
     { bit: 38, name: 'B39', freq: '1900 MHz', region: 'China', type: 'TDD' },
@@ -80,10 +76,8 @@ export function BandSelectionModal({
     const [searchQuery, setSearchQuery] = useState('');
     const [filterType, setFilterType] = useState<'ALL' | 'TDD' | 'FDD'>('ALL');
 
-    // Check if there are changes
     const hasChanges = JSON.stringify([...selectedBandBits].sort()) !== JSON.stringify([...initialBandBits].sort());
 
-    // Handle close with confirmation if there are unsaved changes
     const handleClose = () => {
         if (hasChanges) {
             ThemedAlertHelper.alert(
@@ -99,7 +93,6 @@ export function BandSelectionModal({
         }
     };
 
-    // Load current band settings when modal opens
     useEffect(() => {
         if (visible && modemService) {
             loadBands();
@@ -111,7 +104,6 @@ export function BandSelectionModal({
         try {
             const bands = await modemService.getBandSettings();
             if (bands && bands.lteBand) {
-                // Use BigInt for handling large bit positions
                 const lteBandValue = BigInt('0x' + bands.lteBand);
                 const activeBits: number[] = [];
                 for (const band of LTE_BANDS) {
@@ -120,10 +112,10 @@ export function BandSelectionModal({
                     }
                 }
                 setSelectedBandBits(activeBits);
-                setInitialBandBits(activeBits);  // Store initial state
+                setInitialBandBits(activeBits);
             }
         } catch (error) {
-            // Silent fail
+            throw error;
         }
     };
 
@@ -134,16 +126,14 @@ export function BandSelectionModal({
     };
 
     const handleSave = async () => {
-        Keyboard.dismiss(); // Dismiss keyboard first
+        Keyboard.dismiss();
         if (!modemService || isSaving) return;
         setIsSaving(true);
         try {
-            // Use BigInt for handling large bit positions
             let lteBandValue = BigInt(0);
             for (const bit of selectedBandBits) {
                 lteBandValue |= (BigInt(1) << BigInt(bit));
             }
-            // If no bands selected, use all bands
             if (lteBandValue === BigInt(0)) {
                 lteBandValue = BigInt('0x7FFFFFFFFFFFFFFF');
             }
@@ -162,17 +152,12 @@ export function BandSelectionModal({
     };
 
     const handleSelectAll = () => {
-        // If items are filtered, only select visible items? 
-        // Or select absolutely all? Usually select all visible in list.
         const visibleBits = filteredBands.map(b => b.bit);
-        // Check if all visible are selected
         const allVisibleSelected = visibleBits.every(bit => selectedBandBits.includes(bit));
 
         if (allVisibleSelected) {
-            // Deselect visible
             setSelectedBandBits(prev => prev.filter(bit => !visibleBits.includes(bit)));
         } else {
-            // Select all visible
             const newSelected = new Set([...selectedBandBits, ...visibleBits]);
             setSelectedBandBits(Array.from(newSelected));
         }
@@ -202,7 +187,7 @@ export function BandSelectionModal({
             onRequestClose={handleClose}
         >
             <BlurView
-                intensity={isDark ? 80 : glassmorphism.blur.modal}  // Higher intensity for dark mode = more solid
+                intensity={isDark ? 80 : glassmorphism.blur.modal}
                 tint={isDark ? 'dark' : 'light'}
                 experimentalBlurMethod='dimezisBlurView'
                 style={[
@@ -323,7 +308,7 @@ export function BandSelectionModal({
                     tint={isDark ? 'dark' : 'light'}
                     experimentalBlurMethod='dimezisBlurView'
                     style={[styles.footer, {
-                        backgroundColor: isDark ? 'rgba(10, 10, 10, 0.1)' : 'rgba(255, 255, 255, 0.1)',  // Very transparent
+                        backgroundColor: isDark ? 'rgba(10, 10, 10, 0.1)' : 'rgba(255, 255, 255, 0.1)',
                         borderTopColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
                     }]}
                 >
@@ -373,7 +358,7 @@ const styles = StyleSheet.create({
     searchBar: {
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: '#1E1E1E', // Slightly lighter than bg
+        backgroundColor: '#1E1E1E',
         borderRadius: 12,
         paddingHorizontal: 12,
         height: 44,
@@ -418,7 +403,7 @@ const styles = StyleSheet.create({
         letterSpacing: 1,
     },
     selectAllText: {
-        color: '#007AFF', // Blue
+        color: '#007AFF',
         fontSize: 14,
         fontWeight: '600',
     },
@@ -430,7 +415,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        backgroundColor: '#1C1C1E', // Card bg
+        backgroundColor: '#1C1C1E',
         padding: 16,
         borderRadius: 16,
         marginBottom: 12,
@@ -483,8 +468,8 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         padding: 20,
-        paddingBottom: 40, // Extra padding for safe area
-        backgroundColor: '#121212', // Match bg
+        paddingBottom: 40,
+        backgroundColor: '#121212',
         borderTopWidth: 1,
         borderTopColor: '#222',
     },
@@ -504,6 +489,12 @@ const styles = StyleSheet.create({
 
 export function getSelectedBandsDisplay(lteBandHex: string): string[] {
     try {
+        // If the hex pattern indicates all bands (7F...F or similar), return "All"
+        const normalizedHex = lteBandHex.toUpperCase();
+        if (normalizedHex === '7FFFFFFFFFFFFFFF' || normalizedHex === 'FFFFFFFFFFFFFFFF') {
+            return ['All'];
+        }
+
         const lteBandValue = BigInt('0x' + lteBandHex);
         const activeBands: string[] = [];
         for (const band of LTE_BANDS) {
@@ -511,6 +502,12 @@ export function getSelectedBandsDisplay(lteBandHex: string): string[] {
                 activeBands.push(band.name);
             }
         }
+
+        // If most bands are selected (25+), consider it "All"
+        if (activeBands.length >= 25) {
+            return ['All'];
+        }
+
         return activeBands.length > 0 ? activeBands : ['All'];
     } catch {
         return ['All'];

@@ -13,7 +13,6 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ModalMeshGradient } from './ModalMeshGradient';
 
-// ... (keep interface SelectionOption)
 
 export interface SelectionOption {
     label: string;
@@ -48,10 +47,8 @@ export function SelectionModal({
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                {/* Dark mode: BlurView with low intensity + solid dark background for readability */}
-                {/* Light mode: BlurView with glassmorphism effect */}
                 <BlurView
-                    intensity={isDark ? 80 : glassmorphism.blur.card}  // Higher intensity for dark mode = more solid
+                    intensity={isDark ? 80 : glassmorphism.blur.card}
                     tint={isDark ? 'dark' : 'light'}
                     experimentalBlurMethod='dimezisBlurView'
                     style={[
@@ -129,7 +126,7 @@ const styles = StyleSheet.create({
     modalContent: {
         borderRadius: 16,
         overflow: 'hidden',
-        maxHeight: 500, // Increased slightly to accommodate larger lists if needed
+        maxHeight: 500,
         width: '85%',
         borderWidth: 1,
         alignSelf: 'center',

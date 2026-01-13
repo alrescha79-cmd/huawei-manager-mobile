@@ -26,13 +26,12 @@ interface TrafficStats {
 
 interface CompactUsageCardProps {
     stats: TrafficStats;
-    dataLimit?: number; // For monthly progress
+    dataLimit?: number;
     style?: StyleProp<ViewStyle>;
 }
 
 type TabType = 'session' | 'monthly' | 'total';
 
-// Helper to format bytes
 const formatBytesWithUnit = (bytes: number): { value: string; unit: string } => {
     if (!bytes || isNaN(bytes) || bytes === 0) return { value: '0', unit: 'B' };
     const k = 1024;
@@ -47,14 +46,12 @@ const formatBytesWithUnit = (bytes: number): { value: string; unit: string } => 
 export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardProps) {
     const { colors, typography, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
-    const [activeTab, setActiveTab] = useState<TabType>('monthly'); // Default to Monthly as in image
+    const [activeTab, setActiveTab] = useState<TabType>('monthly');
 
-    // Highlight Colors
     const blueColor = '#3b82f6';
     const greenColor = '#22c55e';
     const purpleColor = '#a855f7';
 
-    // Get current active stats
     const getActiveStats = () => {
         switch (activeTab) {
             case 'session':
@@ -66,7 +63,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                 };
             case 'monthly':
                 return {
-                    download: stats.monthDownload > 0 ? stats.monthDownload : stats.totalDownload, // Fallback logic from home.tsx
+                    download: stats.monthDownload > 0 ? stats.monthDownload : stats.totalDownload,
                     upload: stats.monthUpload > 0 ? stats.monthUpload : stats.totalUpload,
                     duration: stats.monthDuration,
                     label: t('home.thisMonth')
@@ -87,10 +84,8 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
     const dlFormatted = formatBytesWithUnit(currentStats.download);
     const ulFormatted = formatBytesWithUnit(currentStats.upload);
 
-    // Duration Badge
     const durationText = currentStats.duration ? formatDuration(currentStats.duration) : '0s';
 
-    // Progress Bar (Only for Monthly with Limit)
     let percent = 0;
     let limitFormatted = { value: '0', unit: 'GB' };
     const showProgress = activeTab === 'monthly' && dataLimit && dataLimit > 0;
@@ -100,19 +95,17 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
         limitFormatted = formatBytesWithUnit(dataLimit);
     }
 
-    // Dynamic color based on percentage
     const getProgressColor = (pct: number): string => {
-        if (pct >= 90) return '#ef4444'; // Red
-        if (pct >= 75) return '#f97316'; // Orange
-        if (pct >= 50) return '#eab308'; // Yellow
-        return '#22c55e'; // Green
+        if (pct >= 90) return '#ef4444';
+        if (pct >= 75) return '#f97316';
+        if (pct >= 50) return '#eab308';
+        return '#22c55e';
     };
 
     const progressColor = showProgress ? getProgressColor(percent) : blueColor;
 
     return (
         <Card style={[styles.container, style]}>
-            {/* Header: Title + Tabs */}
             <View style={styles.header}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <MaterialIcons name="insert-chart" size={18} color={blueColor} style={{ marginRight: 8 }} />
@@ -121,7 +114,6 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                     </Text>
                 </View>
 
-                {/* Tabs */}
                 <View style={[styles.tabsContainer, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                     {(['session', 'monthly', 'total'] as TabType[]).map((tab) => {
                         let tabLabel = '';
@@ -152,14 +144,12 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                 </View>
             </View>
 
-            {/* Main Stats Area - Animated on tab change */}
             <Animated.View
                 key={activeTab}
                 entering={FadeIn.duration(200)}
                 exiting={FadeOut.duration(100)}
             >
                 <View style={styles.mainStatsRow}>
-                    {/* Left Side: Usage Value + Unit/Label */}
                     <View style={styles.leftStatsGroup}>
                         <Text style={[styles.mainValue, { color: blueColor }]}>
                             {totalFormatted.value}
@@ -170,7 +160,6 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                         </Text>
                     </View>
 
-                    {/* Right Side: Progress Info (Monthly) OR Duration (Session/Total) */}
                     <View style={styles.rightStatsGroup}>
                         {showProgress ? (
                             <>
@@ -194,7 +183,6 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                     </View>
                 </View>
 
-                {/* Progress Bar (Full Width if Monthly) */}
                 {showProgress && (
                     <View style={[styles.progressBarTrack, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, marginBottom: 20 }]}>
                         <View
@@ -209,12 +197,9 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                     </View>
                 )}
 
-                {/* Spacer if no progress bar to align footer */}
                 {!showProgress && <View style={{ height: 20 }} />}
 
-                {/* Footer Grid */}
                 <View style={styles.footerGrid}>
-                    {/* Download */}
                     <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View style={[styles.iconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
                             <MaterialIcons name="arrow-downward" size={16} color={greenColor} />
@@ -227,7 +212,6 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                         </View>
                     </View>
 
-                    {/* Upload */}
                     <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View style={[styles.iconCircle, { backgroundColor: 'rgba(168, 85, 247, 0.2)' }]}>
                             <MaterialIcons name="arrow-upward" size={16} color={purpleColor} />
@@ -275,7 +259,7 @@ const styles = StyleSheet.create({
     mainStatsRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        alignItems: 'center', // baseline can be tricky with different fonts, center often looks cleaner for side-by-side
+        alignItems: 'center',
         marginBottom: 10,
     },
     leftStatsGroup: {
@@ -350,6 +334,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         marginLeft: 8,
-        marginTop: 12, // Align roughly with baseline of big number
+        marginTop: 12, 
     },
 });

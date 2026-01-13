@@ -15,13 +15,9 @@ import {
 import { useTheme } from '@/theme';
 
 interface CustomRefreshScrollViewProps extends ScrollViewProps {
-    /** Called when user pulls down and releases */
     onRefresh: () => void;
-    /** Whether currently refreshing */
     refreshing: boolean;
-    /** Called with pull progress 0-1 */
     onPullProgress?: (progress: number) => void;
-    /** Pull distance required to trigger refresh (default: 80) */
     pullThreshold?: number;
 }
 
@@ -46,12 +42,10 @@ export const CustomRefreshScrollView: React.FC<CustomRefreshScrollViewProps> = (
     const startY = useRef(0);
     const [currentPullProgress, setCurrentPullProgress] = useState(0);
 
-    // For iOS, use native bounces
     const handleScroll = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         const offsetY = event.nativeEvent.contentOffset.y;
         isAtTop.current = offsetY <= 0;
 
-        // iOS: Use negative offset for pull progress
         if (Platform.OS === 'ios' && offsetY < 0 && !refreshing) {
             const progress = Math.min(Math.abs(offsetY) / pullThreshold, 1);
             setCurrentPullProgress(progress);
@@ -66,12 +60,10 @@ export const CustomRefreshScrollView: React.FC<CustomRefreshScrollViewProps> = (
         onScroll?.(event);
     }, [refreshing, onPullProgress, pullThreshold, onScroll, currentPullProgress]);
 
-    // For Android, we need to track touch movement when at top
     const panResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => false,
             onMoveShouldSetPanResponder: (e, gestureState) => {
-                // Only become responder if at top and pulling down on Android
                 if (Platform.OS === 'android' && isAtTop.current && gestureState.dy > 10) {
                     return true;
                 }
@@ -92,10 +84,7 @@ export const CustomRefreshScrollView: React.FC<CustomRefreshScrollViewProps> = (
                 const shouldRefresh = Platform.OS === 'android' && pullDistance.current >= pullThreshold && !refreshing;
                 if (shouldRefresh) {
                     onRefresh();
-                    // Keep progress at 1 when refresh is triggered
-                    // refreshing state in parent will control indicator
                 } else {
-                    // Only reset if not refreshing
                     setCurrentPullProgress(0);
                     onPullProgress?.(0);
                 }
@@ -109,7 +98,6 @@ export const CustomRefreshScrollView: React.FC<CustomRefreshScrollViewProps> = (
         })
     ).current;
 
-    // iOS: Handle scroll end drag for refresh trigger
     const handleScrollEndDrag = useCallback((event: NativeSyntheticEvent<NativeScrollEvent>) => {
         if (Platform.OS === 'ios') {
             const offsetY = event.nativeEvent.contentOffset.y;
@@ -121,9 +109,8 @@ export const CustomRefreshScrollView: React.FC<CustomRefreshScrollViewProps> = (
         }
     }, [pullThreshold, refreshing, onRefresh, onPullProgress]);
 
-    // Create transformed content container for Android pull effect
     const pullTransform = Platform.OS === 'android' ? {
-        transform: [{ translateY: currentPullProgress * 30 }], // Move content down during pull
+        transform: [{ translateY: currentPullProgress * 30 }],
     } : {};
 
     return (

@@ -9,15 +9,15 @@ interface ThemeState {
   themeMode: ThemeMode;
   refreshInterval: number;
   language: string;
-  isLanguageInitialized: boolean; // Track if language was auto-detected
-  badgesEnabled: boolean; // Tab badge visibility
+  isLanguageInitialized: boolean;
+  badgesEnabled: boolean;
 
   setThemeMode: (mode: ThemeMode) => void;
   usageCardStyle: 'split' | 'compact';
   setUsageCardStyle: (style: 'split' | 'compact') => void;
   setRefreshInterval: (interval: number) => void;
   setLanguage: (language: string) => void;
-  initializeLanguage: () => void; // Auto-detect device language on first install
+  initializeLanguage: () => void;
   setBadgesEnabled: (enabled: boolean) => void;
 }
 
@@ -25,7 +25,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
       themeMode: 'system',
-      refreshInterval: 5000, // 5 seconds
+      refreshInterval: 5000,
       language: 'en',
       isLanguageInitialized: false,
       badgesEnabled: true,
@@ -39,17 +39,13 @@ export const useThemeStore = create<ThemeState>()(
       setLanguage: (language) => set({ language }),
       setBadgesEnabled: (enabled) => set({ badgesEnabled: enabled }),
 
-      // Auto-detect device language on first install
       initializeLanguage: () => {
         const { isLanguageInitialized } = get();
 
-        // Only auto-detect if not already initialized
         if (!isLanguageInitialized) {
-          // Get device locale using getLocales()
           const locales = Localization.getLocales();
           const deviceLanguage = locales[0]?.languageCode || 'en';
 
-          // Check if device language is Indonesian
           const isIndonesian = deviceLanguage.toLowerCase() === 'id';
 
           set({

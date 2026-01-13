@@ -18,6 +18,8 @@ import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView } from '@/components';
+import { SMSListItem, SMSStatsCard } from '@/components/sms';
+import { formatTimeAgo } from '@/utils/formatters';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
@@ -39,7 +41,7 @@ export default function SMSScreen() {
   } = useSMSStore();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pullProgress, setPullProgress] = useState(0); // 0-1 for pull-to-refresh feedback
+  const [pullProgress, setPullProgress] = useState(0);
   const [smsService, setSMSService] = useState<SMSService | null>(null);
   const [showCompose, setShowCompose] = useState(false);
   const [newPhone, setNewPhone] = useState('');
@@ -47,29 +49,24 @@ export default function SMSScreen() {
   const [isSending, setIsSending] = useState(false);
   const [smsSupported, setSmsSupported] = useState(true);
 
-  // Detail view state
   const [selectedMessage, setSelectedMessage] = useState<SMSMessage | null>(null);
   const [showDetail, setShowDetail] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
 
 
-  // Auto-refresh SMS every 10 seconds
   useEffect(() => {
     if (credentials?.modemIp) {
       const service = new SMSService(credentials.modemIp);
       setSMSService(service);
 
-      // Reset SMS cache when credentials change (happens after re-login)
       service.resetSMSCache();
 
-      // Initial load with SMS support check
       loadData(service);
 
-      // Setup auto-refresh interval
       const intervalId = setInterval(() => {
         loadDataSilent(service);
-      }, 10000); // Update every 10 seconds
+      }, 10000);
 
       return () => clearInterval(intervalId);
     }
@@ -79,12 +76,10 @@ export default function SMSScreen() {
     try {
       setIsRefreshing(true);
 
-      // First, check if SMS is supported on this modem
       let isSupported = false;
       try {
         isSupported = await service.isSMSSupported();
       } catch (error: any) {
-        // Session error during support check - trigger re-login
         if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
           const { requestRelogin } = useAuthStore.getState();
           requestRelogin();
@@ -93,7 +88,6 @@ export default function SMSScreen() {
         return;
       }
 
-      // If SMS is not supported, just show unsupported message
       if (!isSupported) {
         setSmsSupported(false);
         setMessages([]);
@@ -115,7 +109,6 @@ export default function SMSScreen() {
         return;
       }
 
-      // SMS is supported, load the data
       try {
         const [messagesList, count] = await Promise.all([
           service.getSMSList(),
@@ -126,7 +119,6 @@ export default function SMSScreen() {
         setSMSCount(count);
         setSmsSupported(true);
 
-        // Check for new SMS notification
         if (count.localUnread > 0) {
           checkNewSMSNotification(count.localUnread, {
             title: t('notifications.newSms'),
@@ -134,12 +126,10 @@ export default function SMSScreen() {
           });
         }
       } catch (error: any) {
-        // Check if this is a session error
         if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
           const { requestRelogin } = useAuthStore.getState();
           requestRelogin();
         } else {
-          // Some other error - mark SMS as unsupported rather than crashing
           setSmsSupported(false);
         }
       }
@@ -148,17 +138,14 @@ export default function SMSScreen() {
     }
   };
 
-  // Silent background refresh
   const loadDataSilent = async (service: SMSService) => {
     try {
-      // Check if SMS is still supported
       const isSupported = await service.isSMSSupported();
       if (!isSupported) {
         setSmsSupported(false);
         return;
       }
 
-      // Load SMS data silently
       try {
         const [messagesList, count] = await Promise.all([
           service.getSMSList(),
@@ -168,15 +155,12 @@ export default function SMSScreen() {
         setMessages(messagesList);
         setSMSCount(count);
       } catch (error: any) {
-        // Check for session errors - trigger re-login silently
         if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
           const { requestRelogin } = useAuthStore.getState();
           requestRelogin();
         }
-        // Otherwise silently ignore - keep showing existing data
       }
     } catch (error: any) {
-      // Support check failed - silently ignore in background
       if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
         const { requestRelogin } = useAuthStore.getState();
         requestRelogin();
@@ -236,23 +220,20 @@ export default function SMSScreen() {
     }
   };
 
-  // Open message detail
   const handleOpenDetail = async (message: SMSMessage) => {
     setSelectedMessage(message);
     setReplyMessage('');
     setShowDetail(true);
 
-    // Mark as read if unread (smstat === '0')
     if (smsService && message.smstat === '0') {
       try {
         await smsService.markAsRead(message.index);
       } catch (error) {
-        // Silently fail
+        console.error('Failed to mark SMS as read:', error);
       }
     }
   };
 
-  // Send reply
   const handleReply = async () => {
     if (!smsService || !selectedMessage || !replyMessage) {
       ThemedAlertHelper.alert(t('common.error'), t('sms.fillAllFields'));
@@ -274,7 +255,6 @@ export default function SMSScreen() {
     }
   };
 
-  // Filter messages based on search query
   const filteredMessages = messages.filter(msg => {
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
@@ -284,22 +264,7 @@ export default function SMSScreen() {
     );
   });
 
-  // Format time as "Xm ago", "Xh ago", etc.
-  const formatTimeAgo = (dateStr: string): string => {
-    const messageDate = dayjs(dateStr);
-    const now = dayjs();
-    const diffMinutes = now.diff(messageDate, 'minute');
-    const diffHours = now.diff(messageDate, 'hour');
-    const diffDays = now.diff(messageDate, 'day');
 
-    if (diffMinutes < 1) return 'now';
-    if (diffMinutes < 60) return `${diffMinutes}m ago`;
-    if (diffHours < 24) return `${diffHours}h ago`;
-    if (diffDays < 7) return `${diffDays}d ago`;
-    return messageDate.format('MMM D');
-  };
-
-  // Mark all messages as read
   const handleMarkAllAsRead = async () => {
     if (!smsService) return;
     const unreadMessages = messages.filter(m => m.smstat === '0');
@@ -307,21 +272,18 @@ export default function SMSScreen() {
       try {
         await smsService.markAsRead(msg.index);
       } catch (error) {
-        // Silent fail for individual messages
+        console.error('Failed to mark SMS as read:', error);
       }
     }
     handleRefresh();
   };
 
-  // Render message content with clickable links
   const renderMessageWithLinks = (content: string) => {
-    // URL regex pattern - matches http, https, and www
     const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
 
     const parts = content.split(urlRegex).filter(Boolean);
 
     if (parts.length === 1 && !urlRegex.test(content)) {
-      // No links found, return plain text
       return (
         <Text style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
           {content}
@@ -329,7 +291,6 @@ export default function SMSScreen() {
       );
     }
 
-    // Reset regex lastIndex
     urlRegex.lastIndex = 0;
 
     const elements: React.ReactNode[] = [];
@@ -338,7 +299,6 @@ export default function SMSScreen() {
     let key = 0;
 
     while ((match = urlRegex.exec(content)) !== null) {
-      // Add text before the match
       if (match.index > lastIndex) {
         elements.push(
           <Text key={key++} style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
@@ -347,7 +307,6 @@ export default function SMSScreen() {
         );
       }
 
-      // Add the URL as a clickable link
       const url = match[0];
       const fullUrl = url.startsWith('http') ? url : `https://${url}`;
 
@@ -364,7 +323,6 @@ export default function SMSScreen() {
       lastIndex = match.index + match[0].length;
     }
 
-    // Add remaining text after last match
     if (lastIndex < content.length) {
       elements.push(
         <Text key={key++} style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
@@ -380,7 +338,6 @@ export default function SMSScreen() {
     <>
       <AnimatedScreen>
         <MeshGradientBackground>
-          {/* Modern Refresh Indicator - shows when refreshing */}
           <ModernRefreshIndicator refreshing={isRefreshing} />
 
           <ScrollView
@@ -393,7 +350,6 @@ export default function SMSScreen() {
               <RefreshControl
                 refreshing={isRefreshing}
                 onRefresh={handleRefresh}
-                // Hide native spinner - ModernRefreshIndicator handles visual
                 tintColor="transparent"
                 colors={['transparent']}
                 progressBackgroundColor="transparent"
@@ -404,40 +360,12 @@ export default function SMSScreen() {
 
             {/* Stats Cards Row - Only show if SMS is supported */}
             {smsSupported && smsCount && (
-              <View style={styles.statsRow}>
-                <View style={[styles.statsCard, {
-                  backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                  borderWidth: 1,
-                  borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-                }]}>
-                  <Text style={[typography.caption2, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
-                    {t('sms.total')}
-                  </Text>
-                  <Text style={[typography.largeTitle, { color: colors.text, marginTop: 4 }]}>
-                    {smsCount.localInbox + smsCount.localOutbox}
-                  </Text>
-                </View>
-                <View style={[styles.statsCard, styles.statsCardHighlight, { backgroundColor: colors.primary }]}>
-                  <Text style={[typography.caption2, { color: '#FFF', textTransform: 'uppercase', letterSpacing: 0.5 }]}>
-                    {t('sms.unread')}
-                  </Text>
-                  <Text style={[typography.largeTitle, { color: '#FFF', marginTop: 4 }]}>
-                    {smsCount.localUnread}
-                  </Text>
-                </View>
-                <View style={[styles.statsCard, {
-                  backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                  borderWidth: 1,
-                  borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-                }]}>
-                  <Text style={[typography.caption2, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
-                    {t('sms.sent')}
-                  </Text>
-                  <Text style={[typography.largeTitle, { color: colors.text, marginTop: 4 }]}>
-                    {smsCount.localOutbox}
-                  </Text>
-                </View>
-              </View>
+              <SMSStatsCard
+                t={t}
+                total={smsCount.localInbox + smsCount.localOutbox}
+                unread={smsCount.localUnread}
+                sent={smsCount.localOutbox}
+              />
             )}
 
             {/* Search Bar - Only show if SMS is supported */}
@@ -497,78 +425,15 @@ export default function SMSScreen() {
                 borderWidth: 1,
                 borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
               }]}>
-                {filteredMessages.map((message, index) => {
-                  // Get first letter or icon for avatar
-                  const initials = message.phone.charAt(0).toUpperCase();
-                  // Use the formatTimeAgo helper
-                  const timeDisplay = formatTimeAgo(message.date);
-                  const isUnread = message.smstat === '0';
-                  const isLast = index === filteredMessages.length - 1;
-
-                  return (
-                    <TouchableOpacity
-                      key={message.index}
-                      onPress={() => handleOpenDetail(message)}
-                      activeOpacity={0.6}
-                      style={[
-                        styles.messageItem,
-                        !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border }
-                      ]}
-                    >
-                      {/* Avatar */}
-                      <View style={[
-                        styles.avatar,
-                        { backgroundColor: isUnread ? colors.primary : colors.textSecondary }
-                      ]}>
-                        <Text style={styles.avatarText}>{initials}</Text>
-                      </View>
-
-                      {/* Content */}
-                      <View style={styles.messageContent}>
-                        <View style={styles.messageTopRow}>
-                          <Text style={[
-                            typography.headline,
-                            {
-                              color: colors.text,
-                              fontWeight: isUnread ? '700' : '500',
-                              flex: 1,
-                            }
-                          ]} numberOfLines={1}>
-                            {message.phone}
-                          </Text>
-                          <Text style={[
-                            typography.caption1,
-                            {
-                              color: isUnread ? colors.primary : colors.textSecondary,
-                              fontWeight: isUnread ? '600' : '400',
-                              marginLeft: 8,
-                            }
-                          ]}>
-                            {timeDisplay}
-                          </Text>
-                        </View>
-                        <Text
-                          style={[
-                            typography.body,
-                            {
-                              color: isUnread ? colors.text : colors.textSecondary,
-                              fontWeight: isUnread ? '500' : '400',
-                              marginTop: 2,
-                            }
-                          ]}
-                          numberOfLines={1}
-                        >
-                          {message.content}
-                        </Text>
-                      </View>
-
-                      {/* Unread indicator */}
-                      {isUnread && (
-                        <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]} />
-                      )}
-                    </TouchableOpacity>
-                  );
-                })}
+                {filteredMessages.map((message, index) => (
+                  <SMSListItem
+                    key={message.index}
+                    message={message}
+                    isLast={index === filteredMessages.length - 1}
+                    timeDisplay={formatTimeAgo(message.date)}
+                    onPress={() => handleOpenDetail(message)}
+                  />
+                ))}
               </View>
             )}
           </ScrollView>
@@ -600,7 +465,6 @@ export default function SMSScreen() {
         <KeyboardAnimatedView
           style={[styles.modalContainer, { backgroundColor: colors.background }]}
         >
-          {/* Header */}
           <View style={[
             styles.composeHeader,
             {
@@ -620,9 +484,7 @@ export default function SMSScreen() {
             <View style={styles.headerButton} />
           </View>
 
-          {/* Content */}
           <View style={{ flex: 1 }}>
-            {/* To Field */}
             <View style={[styles.composeField, { borderBottomColor: colors.border }]}>
               <Text style={[typography.body, { color: colors.textSecondary, marginRight: 12 }]}>
                 {t('sms.to')}:
@@ -638,7 +500,6 @@ export default function SMSScreen() {
             </View>
           </View>
 
-          {/* Send Bar */}
           <View style={[styles.composeSendBar, { borderTopColor: colors.border, backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom, 12) }]}>
             <TextInput
               style={[
@@ -684,7 +545,6 @@ export default function SMSScreen() {
         <KeyboardAnimatedView
           style={[styles.modalContainer, { backgroundColor: colors.background }]}
         >
-          {/* Header with centered phone */}
           <View style={[
             styles.modalHeader,
             {
@@ -719,7 +579,6 @@ export default function SMSScreen() {
             >
               {selectedMessage && (
                 <>
-                  {/* Date above message */}
                   <View style={{ alignItems: 'center', marginBottom: spacing.md }}>
                     <Text style={[typography.caption1, { color: colors.textSecondary }]}>
                       {dayjs(selectedMessage.date).format('dddd, MMMM D, YYYY')}
@@ -729,7 +588,6 @@ export default function SMSScreen() {
                     </Text>
                   </View>
 
-                  {/* Chat bubble */}
                   <View style={{ alignItems: 'flex-start' }}>
                     <View style={[
                       styles.chatBubble,
@@ -746,7 +604,6 @@ export default function SMSScreen() {
               )}
             </ScrollView>
 
-            {/* Modern Reply Bar */}
             <View style={[styles.modernReplyBar, {
               backgroundColor: colors.background,
               borderTopColor: colors.border,

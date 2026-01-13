@@ -24,12 +24,7 @@ const TRACK_HEIGHT = 31;
 const THUMB_SIZE = 27;
 const THUMB_MARGIN = 2;
 
-/**
- * iOS-style Toggle Switch with better visibility
- * - OFF: Gray track background
- * - ON: Primary/Green track background  
- * - Smooth spring animation
- */
+
 export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
     value,
     onValueChange,
@@ -39,7 +34,6 @@ export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
 
     const progress = useSharedValue(value ? 1 : 0);
 
-    // Update animation when value changes
     React.useEffect(() => {
         progress.value = withSpring(value ? 1 : 0, {
             mass: 0.5,
@@ -48,7 +42,6 @@ export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
         });
     }, [value]);
 
-    // Animated thumb position
     const thumbStyle = useAnimatedStyle(() => {
         const translateX = progress.value * (TRACK_WIDTH - THUMB_SIZE - THUMB_MARGIN * 2);
         return {
@@ -56,14 +49,13 @@ export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
         };
     });
 
-    // Animated track background color
     const trackStyle = useAnimatedStyle(() => {
         const backgroundColor = interpolateColor(
             progress.value,
             [0, 1],
             [
-                isDark ? '#78787b65' : '#d5d5dcff', // OFF color
-                colors.primary, // ON color (primary blue/green)
+                isDark ? '#78787b65' : '#d5d5dcff',
+                colors.primary,
             ]
         );
         return {
@@ -96,7 +88,6 @@ export const ThemedSwitch: React.FC<ThemedSwitchProps> = ({
                         thumbStyle,
                         {
                             backgroundColor: '#FFFFFF',
-                            // Subtle shadow for depth
                             shadowColor: '#000',
                             shadowOffset: { width: 0, height: 2 },
                             shadowOpacity: 0.2,

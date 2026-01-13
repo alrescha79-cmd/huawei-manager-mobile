@@ -62,7 +62,6 @@ export const Glassmorphism = {
     light: 25,
     heavy: 60,
   },
-  // Background opacity for glassmorphism effect
   background: {
     dark: {
       card: 'rgba(10, 10, 10, 0.4)',
@@ -77,12 +76,10 @@ export const Glassmorphism = {
       alert: 'rgba(255, 255, 255, 0.98)',
     },
   },
-  // Border opacity for subtle borders
   border: {
     dark: 'rgba(255, 255, 255, 0.1)',
     light: 'rgba(0, 0, 0, 0.05)',
   },
-  // Inner element backgrounds 
   innerBackground: {
     dark: 'rgba(255, 255, 255, 0.05)',
     light: 'rgba(0, 0, 0, 0.03)',
@@ -151,7 +148,6 @@ export const useTheme = () => {
   const systemColorScheme = useColorScheme();
   const { themeMode } = useThemeStore();
 
-  // Determine if dark mode should be used
   let isDark: boolean;
   if (themeMode === 'system') {
     isDark = systemColorScheme === 'dark';

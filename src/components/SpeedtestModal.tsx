@@ -21,13 +21,12 @@ interface SpeedtestModalProps {
 }
 
 interface SpeedtestResult {
-    downloadSpeed: number; // in Mbps
-    uploadSpeed: number; // in Mbps
-    latency: number; // in ms
-    jitter: number; // in ms
+    downloadSpeed: number;
+    uploadSpeed: number;
+    latency: number;
+    jitter: number;
 }
 
-// Speedometer gauge component with smooth needle animation
 const SpeedometerGauge: React.FC<{
     speed: number;
     maxSpeed: number;
@@ -39,7 +38,6 @@ const SpeedometerGauge: React.FC<{
     const needleAnim = useRef(new Animated.Value(0)).current;
     const glowAnim = useRef(new Animated.Value(0)).current;
 
-    // Animate needle with spring effect for more realistic movement
     useEffect(() => {
         const targetValue = Math.min(speed / maxSpeed, 1);
         Animated.spring(needleAnim, {
@@ -50,7 +48,6 @@ const SpeedometerGauge: React.FC<{
         }).start();
     }, [speed, maxSpeed]);
 
-    // Glow animation when active
     useEffect(() => {
         if (isActive) {
             Animated.loop(
@@ -72,19 +69,16 @@ const SpeedometerGauge: React.FC<{
         }
     }, [isActive]);
 
-    // Needle rotation: -135deg (0 speed) to +135deg (max speed)
     const needleRotation = needleAnim.interpolate({
         inputRange: [0, 1],
         outputRange: ['-135deg', '135deg'],
     });
 
-    // Dynamic glow opacity
     const glowOpacity = glowAnim.interpolate({
         inputRange: [0, 1],
         outputRange: [0.2, 0.6],
     });
 
-    // Speed marks for visual reference
     const speedMarks = [0, 25, 50, 75, 100].map(percent => {
         const displayValue = Math.round((percent / 100) * maxSpeed);
         return displayValue;
@@ -92,7 +86,6 @@ const SpeedometerGauge: React.FC<{
 
     return (
         <View style={gaugeStyles.container}>
-            {/* Outer ring with glow effect when active */}
             <Animated.View style={[
                 gaugeStyles.gaugeOuter,
                 {
@@ -103,10 +96,8 @@ const SpeedometerGauge: React.FC<{
                     elevation: isActive ? 8 : 0,
                 }
             ]}>
-                {/* Background arc gradient effect */}
                 <View style={[gaugeStyles.arcBackground, { borderColor: color + '30' }]} />
 
-                {/* Needle */}
                 <Animated.View
                     style={[
                         gaugeStyles.needleContainer,
@@ -119,7 +110,6 @@ const SpeedometerGauge: React.FC<{
                     }]} />
                 </Animated.View>
 
-                {/* Speed display in center */}
                 <View style={[gaugeStyles.centerCircle, { backgroundColor: colors.card }]}>
                     <Text style={[typography.title1, { color: colors.text, fontWeight: '700', fontSize: 28 }]}>
                         {speed.toFixed(1)}
@@ -130,7 +120,6 @@ const SpeedometerGauge: React.FC<{
                 </View>
             </Animated.View>
 
-            {/* Label */}
             <Text style={[typography.body, { color: colors.text, marginTop: spacing.sm, fontWeight: '600' }]}>
                 {label}
             </Text>
@@ -199,7 +188,6 @@ const gaugeStyles = StyleSheet.create({
     },
 });
 
-// Cloudflare speedtest endpoints
 const CF_DOWNLOAD_URL = 'https://speed.cloudflare.com/__down';
 const CF_UPLOAD_URL = 'https://speed.cloudflare.com/__up';
 
@@ -236,17 +224,14 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
         const signal = abortControllerRef.current.signal;
 
         try {
-            // Phase 1: Latency test using Cloudflare
             setPhase('latency');
 
             const latencyResults: number[] = [];
 
-            // Initial warmup
             try {
                 await fetch(`${CF_DOWNLOAD_URL}?bytes=0`, { signal });
             } catch { }
 
-            // Run 20 latency tests
             for (let i = 0; i < 20; i++) {
                 if (signal.aborted) throw new Error('Aborted');
                 const start = performance.now();
@@ -266,7 +251,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
 
             const validLatency = latencyResults.filter(l => l > 0 && l < 10000);
             const sorted = [...validLatency].sort((a, b) => a - b);
-            // Use median (50th percentile) for latency
             const median = sorted[Math.floor(sorted.length / 2)] || 100;
             const avg = validLatency.reduce((a, b) => a + b, 0) / validLatency.length;
             const jitter = Math.sqrt(validLatency.reduce((s, l) => s + Math.pow(l - avg, 2), 0) / validLatency.length);
@@ -274,16 +258,14 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
             setResult(prev => ({ ...prev, latency: median, jitter }));
             setProgress(20);
 
-            // Phase 2: Download test using Cloudflare
             setPhase('download');
 
-            // Download sizes in bytes (ramp up like Cloudflare does)
             const downloadSizes = [
-                { bytes: 100000, count: 1 },    // 100KB warmup
-                { bytes: 100000, count: 8 },    // 100KB x 8
-                { bytes: 1000000, count: 6 },   // 1MB x 6
-                { bytes: 10000000, count: 4 },  // 10MB x 4
-                { bytes: 25000000, count: 2 },  // 25MB x 2
+                { bytes: 100000, count: 1 },
+                { bytes: 100000, count: 8 },
+                { bytes: 1000000, count: 6 },
+                { bytes: 10000000, count: 4 },
+                { bytes: 25000000, count: 2 },
             ];
 
             const downloadSpeeds: number[] = [];
@@ -303,16 +285,14 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                             signal,
                         });
                         const buffer = await response.arrayBuffer();
-                        const duration = (performance.now() - start) / 1000; // seconds
+                        const duration = (performance.now() - start) / 1000;
 
-                        // Calculate speed: bits / seconds = bps, then convert to Mbps
                         const transferSize = buffer.byteLength;
                         const speedBps = (transferSize * 8) / duration;
                         const speedMbps = speedBps / 1000000;
 
                         downloadSpeeds.push(speedMbps);
 
-                        // Update with CURRENT speed (real-time display)
                         setResult(prev => ({ ...prev, downloadSpeed: speedMbps }));
 
                     } catch (e: any) {
@@ -325,7 +305,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                 }
             }
 
-            // Calculate 90th percentile (like Cloudflare does)
             const sortedSpeeds = [...downloadSpeeds].sort((a, b) => a - b);
             const p90Index = Math.floor(sortedSpeeds.length * 0.9);
             const downloadP90 = sortedSpeeds[p90Index] || sortedSpeeds[sortedSpeeds.length - 1] || 0;
@@ -333,28 +312,23 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
             setResult(prev => ({ ...prev, downloadSpeed: downloadP90 }));
             setProgress(60);
 
-            // Phase 3: Upload test (using postman-echo since CF __up has CORS issues in RN)
             setPhase('upload');
-
-            // Upload sizes in bytes - smaller sizes for faster results
             const uploadSizes = [
-                { bytes: 100000, count: 4 },    // 100KB x 4
-                { bytes: 500000, count: 4 },    // 500KB x 4
-                { bytes: 1000000, count: 2 },   // 1MB x 2
-                { bytes: 5000000, count: 1 },   // 5MB x 1
+                { bytes: 100000, count: 4 },
+                { bytes: 500000, count: 4 },
+                { bytes: 1000000, count: 2 },
+                { bytes: 5000000, count: 1 },
             ];
 
             const uploadSpeeds: number[] = [];
             let uploadCount = 0;
             const totalUploads = uploadSizes.reduce((sum, s) => sum + s.count, 0);
 
-            // Use postman-echo as upload target (reliable and fast)
             const uploadUrl = 'https://postman-echo.com/post';
 
             for (const { bytes, count } of uploadSizes) {
                 if (signal.aborted) break;
 
-                // Create data for this size
                 const uploadData = new Uint8Array(bytes);
                 for (let i = 0; i < bytes; i++) {
                     uploadData[i] = Math.floor(Math.random() * 256);
@@ -378,7 +352,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
 
                         uploadSpeeds.push(speedMbps);
 
-                        // Update with CURRENT speed (real-time display)
                         setResult(prev => ({ ...prev, uploadSpeed: speedMbps }));
 
                     } catch (e: any) {
@@ -391,7 +364,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                 }
             }
 
-            // Calculate 90th percentile for upload
             const sortedUploadSpeeds = [...uploadSpeeds].sort((a, b) => a - b);
             const uploadP90Index = Math.floor(sortedUploadSpeeds.length * 0.9);
             const uploadP90 = sortedUploadSpeeds[uploadP90Index] || sortedUploadSpeeds[sortedUploadSpeeds.length - 1] || 0;
@@ -459,7 +431,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                 >
                     <View style={[styles.modalContent, { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }]}>
                         <ModalMeshGradient />
-                        {/* Header */}
                         <View style={styles.header}>
                             <Text style={[typography.title2, { color: colors.text, fontWeight: '700' }]}>
                                 {t('home.speedtestTitle')}
@@ -469,7 +440,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                             </TouchableOpacity>
                         </View>
 
-                        {/* Progress bar */}
                         {isRunning && (
                             <View style={[styles.progressContainer, { backgroundColor: colors.border }]}>
                                 <Animated.View
@@ -481,12 +451,10 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                             </View>
                         )}
 
-                        {/* Phase indicator */}
                         <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginVertical: spacing.md }]}>
                             {getPhaseText()}
                         </Text>
 
-                        {/* Speedometers */}
                         <View style={styles.gaugesContainer}>
                             <SpeedometerGauge
                                 speed={result.downloadSpeed}
@@ -504,7 +472,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                             />
                         </View>
 
-                        {/* Latency & Jitter */}
                         <View style={[styles.statsRow, { marginTop: spacing.lg }]}>
                             <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                                 <MaterialIcons name="timer" size={20} color={colors.primary} />
@@ -526,7 +493,6 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                             </View>
                         </View>
 
-                        {/* Action Button */}
                         <TouchableOpacity
                             style={[
                                 styles.actionButton,

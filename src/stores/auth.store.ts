@@ -11,7 +11,6 @@ import {
 import { ModemAPIClient } from '@/services/api.service';
 import { DirectAuthService } from '@/services/direct-auth.service';
 
-// Session keep-alive interval (2 minutes)
 const SESSION_KEEPALIVE_INTERVAL_MS = 2 * 60 * 1000;
 
 interface AuthState {
@@ -19,25 +18,24 @@ interface AuthState {
   credentials: ModemCredentials | null;
   isLoading: boolean;
   isAutoLogging: boolean;
-  isRelogging: boolean; // Flag to prevent multiple re-login attempts
-  sessionExpired: boolean; // Flag to indicate session needs re-login
+  isRelogging: boolean;
+  sessionExpired: boolean;
   error: string | null;
-  keepAliveIntervalId: NodeJS.Timeout | null; // For session keep-alive
+  keepAliveIntervalId: NodeJS.Timeout | null;
 
   login: (credentials: ModemCredentials) => Promise<void>;
   logout: () => Promise<void>;
   loadCredentials: () => Promise<void>;
   autoLogin: () => Promise<boolean>;
   setError: (error: string | null) => void;
-  requestRelogin: () => void; // Request re-login from any tab
-  setRelogging: (value: boolean) => void; // Set re-logging state
-  clearSessionExpired: () => void; // Clear session expired flag
+  requestRelogin: () => void;
+  setRelogging: (value: boolean) => void;
+  clearSessionExpired: () => void;
 
-  // New session management functions
-  tryQuietSessionRestore: () => Promise<boolean>; // Try to restore session silently
-  tryDirectApiLogin: () => Promise<boolean>; // Try direct API login without WebView
-  startSessionKeepAlive: () => void; // Start background keep-alive
-  stopSessionKeepAlive: () => void; // Stop background keep-alive
+  tryQuietSessionRestore: () => Promise<boolean>;
+  tryDirectApiLogin: () => Promise<boolean>;
+  startSessionKeepAlive: () => void;
+  stopSessionKeepAlive: () => void;
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -59,7 +57,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       };
       await saveCredentials(credentialsWithTimestamp);
 
-      // Save session state on successful login
       await saveSessionState({
         lastSuccessfulLogin: Date.now(),
         lastSessionActivity: Date.now(),
@@ -74,7 +71,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isRelogging: false,
       });
 
-      // Start session keep-alive
       get().startSessionKeepAlive();
     } catch (error) {
       set({
@@ -88,7 +84,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   logout: async () => {
     set({ isLoading: true });
     try {
-      // Stop keep-alive before logout
       get().stopSessionKeepAlive();
 
       await deleteCredentials();
@@ -131,7 +126,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   requestRelogin: () => {
     const { isRelogging } = get();
-    // Only set sessionExpired if not already relogging
     if (!isRelogging) {
       set({ sessionExpired: true });
     }
@@ -157,14 +151,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const success = await apiClient.login(credentials.username, credentials.password);
 
       if (success) {
-        // Update session state on successful auto-login
         await saveSessionState({
           lastSuccessfulLogin: Date.now(),
           lastSessionActivity: Date.now(),
           sessionHealthy: true,
         });
 
-        // Start session keep-alive
         get().startSessionKeepAlive();
       }
 
@@ -179,28 +171,22 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // Try to restore session silently without showing any UI
-  // Returns true if session is likely valid, false if re-login is needed
   tryQuietSessionRestore: async () => {
     const { credentials, setRelogging } = get();
     if (!credentials) {
       return false;
     }
 
-    // Set relogging state so UI can respond
     setRelogging(true);
 
-    // First, check if session is likely still valid based on last activity
     const sessionLikelyValid = await isSessionLikelyValid();
 
     if (sessionLikelyValid) {
-      // Session might still be valid, try a quick API call to verify
       try {
         const apiClient = new ModemAPIClient(credentials.modemIp);
         const isLoggedIn = await apiClient.isLoggedIn();
 
         if (isLoggedIn) {
-          // Session is valid, update activity timestamp
           await updateSessionActivity();
           get().startSessionKeepAlive();
           setRelogging(false);
@@ -229,7 +215,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     //   console.log('[Auth] Direct SCRAM login failed:', error.message);
     // }
 
-    // Try ModemAPIClient password_type 4 method (this works!)
     try {
       console.log('[Auth] Trying ModemAPIClient login...');
       const apiClient = new ModemAPIClient(credentials.modemIp);
@@ -250,13 +235,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       // Direct login failed
     }
 
-    // All silent methods failed, need WebView
     console.log('[Auth] All direct methods failed, WebView required');
     setRelogging(false);
     return false;
   },
 
-  // Try direct API login without WebView (exposed for manual use)
   tryDirectApiLogin: async () => {
     const { credentials } = get();
     if (!credentials) {
@@ -282,18 +265,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  // Start background session keep-alive
   startSessionKeepAlive: () => {
     const { credentials, keepAliveIntervalId } = get();
 
-    // Clear existing interval if any
     if (keepAliveIntervalId) {
       clearInterval(keepAliveIntervalId);
     }
 
     if (!credentials) return;
 
-    // Set up interval to make a lightweight API call to keep session alive
     const intervalId = setInterval(async () => {
       const { credentials: currentCredentials } = get();
       if (!currentCredentials) {
@@ -303,18 +283,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       try {
         const apiClient = new ModemAPIClient(currentCredentials.modemIp);
-        // Make a lightweight call to refresh the session
-        // getToken internally calls /api/webserver/SesTokInfo which keeps session alive
         await apiClient.isLoggedIn();
       } catch (error) {
-        // Silent fail - if session expires, the next data fetch will trigger re-login
       }
     }, SESSION_KEEPALIVE_INTERVAL_MS);
 
     set({ keepAliveIntervalId: intervalId });
   },
 
-  // Stop background session keep-alive
   stopSessionKeepAlive: () => {
     const { keepAliveIntervalId } = get();
     if (keepAliveIntervalId) {

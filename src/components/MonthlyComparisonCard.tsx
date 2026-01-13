@@ -22,7 +22,6 @@ interface MonthlyComparisonCardProps {
     style?: StyleProp<ViewStyle>;
 }
 
-// Helper to format bytes
 const formatBytesWithUnit = (bytes: number): { value: string; unit: string } => {
     if (!bytes || isNaN(bytes) || bytes === 0) return { value: '0', unit: 'B' };
     const k = 1024;
@@ -46,14 +45,12 @@ export function MonthlyComparisonCard({
     const { language } = useThemeStore();
     const [lastMonthData, setLastMonthData] = useState<MonthlyUsageData | null>(null);
 
-    // Get locale for month formatting
     const locale = language === 'id' ? 'id-ID' : 'en-US';
 
     const thisMonthTotal = monthDownload + monthUpload;
     const thisMonthFormatted = formatBytesWithUnit(thisMonthTotal);
     const lastMonthFormatted = lastMonthData ? formatBytesWithUnit(lastMonthData.total) : { value: '0', unit: 'GB' };
 
-    // Calculate percentage change
     const getPercentageChange = (): { value: number; isIncrease: boolean } | null => {
         if (!lastMonthData || lastMonthData.total === 0) return null;
         const change = ((thisMonthTotal - lastMonthData.total) / lastMonthData.total) * 100;
@@ -62,16 +59,12 @@ export function MonthlyComparisonCard({
 
     const percentChange = getPercentageChange();
 
-    // Get max value for bar scaling
     const maxValue = Math.max(thisMonthTotal, lastMonthData?.total || 0);
 
-    // Load data on mount
     useEffect(() => {
         const loadData = async () => {
-            // Save current month data for future reference
             await checkAndSaveMonthlyUsage(totalDownload, totalUpload, monthDownload, monthUpload);
 
-            // Get last month data
             const lastMonth = await getLastMonthUsage(totalDownload, totalUpload, monthDownload, monthUpload);
             setLastMonthData(lastMonth);
         };
@@ -88,7 +81,6 @@ export function MonthlyComparisonCard({
 
     return (
         <Card style={[styles.container, style]}>
-            {/* Header */}
             <View style={styles.header}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <MaterialIcons name="history" size={18} color={blueColor} style={{ marginRight: 8 }} />
@@ -97,7 +89,6 @@ export function MonthlyComparisonCard({
                     </Text>
                 </View>
 
-                {/* Percentage Change Badge */}
                 {percentChange && (
                     <View style={[
                         styles.changeBadge,
@@ -115,9 +106,7 @@ export function MonthlyComparisonCard({
                 )}
             </View>
 
-            {/* Chart Area */}
             <View style={styles.chartContainer}>
-                {/* This Month */}
                 <View style={styles.barRow}>
                     <View style={styles.barLabel}>
                         <Text style={[styles.monthText, { color: colors.text }]}>
@@ -140,7 +129,6 @@ export function MonthlyComparisonCard({
                     </View>
                 </View>
 
-                {/* Last Month */}
                 <View style={styles.barRow}>
                     <View style={styles.barLabel}>
                         <Text style={[styles.monthText, { color: colors.textSecondary }]}>
@@ -165,7 +153,6 @@ export function MonthlyComparisonCard({
                 </View>
             </View>
 
-            {/* Legend / Hint */}
             {!lastMonthData && (
                 <Text style={[styles.hint, { color: colors.textSecondary }]}>
                     {t('home.noLastMonthData')}

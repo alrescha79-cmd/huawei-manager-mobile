@@ -5,7 +5,6 @@ import { saveModemDataCache, getModemDataCache, clearModemDataCache } from '@/ut
 
 const PREVIOUS_WAN_IP_KEY = 'previous_wan_ip';
 
-// Monthly data settings interface
 export interface MonthlySettings {
   enabled: boolean;
   startDay: number;
@@ -26,7 +25,7 @@ interface ModemState {
   monthlySettings: MonthlySettings | null;
   previousWanIp: string | null;
   isLoading: boolean;
-  isUsingCache: boolean; // Flag to indicate showing cached data
+  isUsingCache: boolean;
   error: string | null;
 
   setModemInfo: (info: ModemInfo) => void;
@@ -43,10 +42,9 @@ interface ModemState {
   setError: (error: string | null) => void;
   reset: () => void;
 
-  // Cache functions for invisible auto-login
-  loadFromCache: () => Promise<boolean>; // Returns true if cache was loaded
-  saveToCache: () => Promise<void>; // Save current state to cache
-  clearCache: () => Promise<void>; // Clear cache on logout
+  loadFromCache: () => Promise<boolean>;
+  saveToCache: () => Promise<void>;
+  clearCache: () => Promise<void>;
   setUsingCache: (value: boolean) => void;
 }
 
@@ -66,7 +64,6 @@ export const useModemStore = create<ModemState>((set, get) => ({
 
   setModemInfo: (info) => {
     set({ modemInfo: info });
-    // Update debug store with modem info
     try {
       const { useDebugStore } = require('./debug.store');
       const debugStore = useDebugStore.getState();
@@ -85,9 +82,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
 
   setSignalInfo: (info) => {
     set({ signalInfo: info, isUsingCache: false });
-    // Auto-save to cache when data is updated
     get().saveToCache();
-    // Update debug store with signal info
     try {
       const { useDebugStore } = require('./debug.store');
       const debugStore = useDebugStore.getState();
@@ -104,7 +99,6 @@ export const useModemStore = create<ModemState>((set, get) => ({
 
   setNetworkInfo: (info) => {
     set({ networkInfo: info, isUsingCache: false });
-    // Update debug store with network info
     try {
       const { useDebugStore } = require('./debug.store');
       const debugStore = useDebugStore.getState();
@@ -133,9 +127,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
     const currentIp = currentWanInfo?.wanIPAddress;
     const newIp = info?.wanIPAddress;
 
-    // If IP changed and we had a valid previous IP, save it
     if (currentIp && newIp && currentIp !== newIp) {
-      // Save the old IP as previous
       set({ previousWanIp: currentIp });
       AsyncStorage.setItem(PREVIOUS_WAN_IP_KEY, currentIp).catch(console.error);
     }
@@ -173,7 +165,6 @@ export const useModemStore = create<ModemState>((set, get) => ({
   setError: (error) => set({ error }),
   setUsingCache: (value) => set({ isUsingCache: value }),
 
-  // Load cached modem data for instant display
   loadFromCache: async () => {
     try {
       const cached = await getModemDataCache();
@@ -196,10 +187,8 @@ export const useModemStore = create<ModemState>((set, get) => ({
     }
   },
 
-  // Save current modem data to cache
   saveToCache: async () => {
     const state = get();
-    // Only save if we have valid data (not using cache)
     if (state.signalInfo && !state.isUsingCache) {
       await saveModemDataCache({
         signalInfo: state.signalInfo,
@@ -212,7 +201,6 @@ export const useModemStore = create<ModemState>((set, get) => ({
     }
   },
 
-  // Clear cache on logout
   clearCache: async () => {
     await clearModemDataCache();
     set({ isUsingCache: false });
@@ -226,7 +214,6 @@ export const useModemStore = create<ModemState>((set, get) => ({
     modemStatus: null,
     wanInfo: null,
     mobileDataStatus: null,
-    // Don't reset previousWanIp on reset - keep it for reference
     isLoading: false,
     isUsingCache: false,
     error: null,

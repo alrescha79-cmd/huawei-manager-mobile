@@ -16,7 +16,6 @@ import Animated, {
     Extrapolation,
 } from 'react-native-reanimated';
 import { useTheme } from '@/theme';
-// Import only specific icons we need or allow dynamic icon rendering
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -26,9 +25,8 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 const AnimatedText = Animated.createAnimatedComponent(Text);
 
 const TAB_HEIGHT = 50;
-const SVG_TOP_OFFSET = 30; // Extra space at top for circle overflow
+const SVG_TOP_OFFSET = 30;
 
-// Helper to generate path
 const getPath = (width: number, tabWidth: number, currentX: number) => {
     'worklet';
     'worklet';
@@ -84,10 +82,8 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
             onLayout={onLayout}
             pointerEvents="box-none"
         >
-            {/* The SVG Background */}
             <View style={styles.svgContainer} pointerEvents="none">
                 <Svg width={layout.width} height={TAB_HEIGHT + 100 + SVG_TOP_OFFSET} style={styles.svg}>
-                    {/* Gradient Definitions */}
                     <Defs>
                         <LinearGradient id="tabBarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                             <Stop offset="0%" stopColor={isDark ? '#1A1A2E' : '#FFFFFF'} stopOpacity="1" />
@@ -104,17 +100,14 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                         </RadialGradient>
                     </Defs>
 
-                    {/* Base gradient */}
                     <AnimatedPath
                         animatedProps={animatedPathProps}
                         fill="url(#tabBarGradient)"
                         stroke="none"
                     />
-                    {/* Mesh blob overlays */}
                     <Rect x="0" y={SVG_TOP_OFFSET} width={layout.width} height={TAB_HEIGHT + 100} fill="url(#tabBarBlob1)" />
                     <Rect x="0" y={SVG_TOP_OFFSET} width={layout.width} height={TAB_HEIGHT + 100} fill="url(#tabBarBlob2)" />
 
-                    {/* Top border line */}
                     <Line
                         x1="0"
                         y1={SVG_TOP_OFFSET}
@@ -134,7 +127,6 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                 </Svg>
             </View>
 
-            {/* Tab Items */}
             <View style={[styles.tabsContainer, { height: TAB_HEIGHT }]}>
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key];
@@ -166,11 +158,7 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                         });
                     };
 
-                    // Icon setup
-                    // We assume options.tabBarIcon is a function that returns a component
                     const IconComp = options.tabBarIcon;
-
-                    // Animations with enhanced scale and bounce
                     const animatedIconContainerStyle = useAnimatedStyle(() => {
                         'worklet';
                         const diff = Math.abs(activeIndex.value - index);
@@ -202,15 +190,6 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                         };
                     });
 
-                    // Icon Color interpolation
-                    // Since color is passed to IconComp, we can't easily animate the prop inside usage without context.
-                    // But we can just use conditional rendering or "active" color prop.
-                    // The "active" icon sits in the cloud, so it should be white.
-                    // The "inactive" icon sits in the bar, so it should be gray.
-
-                    // BUT: The circle moves. If we put the icon in the tab item, it needs to move with the circle? 
-                    // No, the icon STAYS in its column, but moves UP vertically.
-                    // The circle horizontally moves to catch it.
 
                     return (
                         <TouchableOpacity

@@ -10,7 +10,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card } from './Card';
 
-// Note: LayoutAnimation is enabled by default in New Architecture
 
 interface CollapsibleCardProps {
     title: string;
@@ -41,7 +40,6 @@ export function CollapsibleCard({
 
     return (
         <Card style={{ marginBottom: spacing.md }}>
-            {/* Header - always visible */}
             <TouchableOpacity
                 style={styles.header}
                 onPress={toggleExpand}
@@ -55,14 +53,11 @@ export function CollapsibleCard({
                 <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>
                     {title}
                 </Text>
-                {/* Spacer to balance the icon on the left */}
                 <View style={{ width: 24 }} />
             </TouchableOpacity>
 
-            {/* Content - only visible when expanded */}
             {isExpanded && (
                 <>
-                    {/* Divider */}
                     <View style={[styles.divider, { backgroundColor: colors.border }]} />
                     <View style={styles.content}>
                         {children}

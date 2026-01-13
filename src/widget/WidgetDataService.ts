@@ -2,25 +2,19 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface WidgetData {
-    // Speed data (realtime)
     currentDownloadRate: number;
     currentUploadRate: number;
-    // Session data
     currentDownload: number;
     currentUpload: number;
     currentConnectTime: number;
-    // Monthly data
     monthDownload: number;
     monthUpload: number;
     monthDuration: number;
-    // Daily data
     dayUsed: number;
     dayDuration: number;
-    // Total data
     totalDownload: number;
     totalUpload: number;
     totalConnectTime: number;
-    // Connection info
     connectionStatus: string;
     networkType: string;
     signalStrength: string;
@@ -38,20 +32,17 @@ export interface SpeedData {
 const CACHE_KEY = 'widget_data_cache';
 const DEFAULT_MODEM_IP = '192.168.8.1';
 
-// Parse XML value helper
 function parseXMLValue(xml: string, tag: string): string {
     const regex = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`, 'i');
     const match = xml.match(regex);
     return match ? match[1].trim() : '';
 }
 
-// Safe parseInt with fallback
 function safeParseInt(value: string): number {
     const parsed = parseInt(value);
     return isNaN(parsed) ? 0 : parsed;
 }
 
-// Get modem IP from stored credentials
 async function getModemIp(): Promise<string> {
     try {
         const credentialsStr = await AsyncStorage.getItem('modem_credentials');
@@ -65,16 +56,13 @@ async function getModemIp(): Promise<string> {
     return DEFAULT_MODEM_IP;
 }
 
-// Cache widget data for offline access
 async function cacheWidgetData(data: WidgetData): Promise<void> {
     try {
         await AsyncStorage.setItem(CACHE_KEY, JSON.stringify(data));
     } catch {
-        // Ignored - caching is optional
     }
 }
 
-// Get cached widget data
 async function getCachedWidgetData(): Promise<WidgetData | null> {
     try {
         const cached = await AsyncStorage.getItem(CACHE_KEY);
@@ -87,21 +75,13 @@ async function getCachedWidgetData(): Promise<WidgetData | null> {
     return null;
 }
 
-/**
- * Fetch ONLY speed data - fast, for realtime updates
- * Only fetches traffic-statistics endpoint (fastest)
- * 
- * IMPORTANT: This endpoint does NOT require authentication!
- * The modem allows read access to traffic statistics without login.
- */
 export async function fetchSpeedData(): Promise<SpeedData> {
     const modemIp = await getModemIp();
     const baseURL = `http://${modemIp}`;
 
     try {
-        // No authentication needed - traffic-statistics is public
         const response = await axios.get(`${baseURL}/api/monitoring/traffic-statistics`, {
-            timeout: 2000, // Fast timeout for realtime
+            timeout: 2000,
             headers: {
                 'Accept': '*/*',
                 'X-Requested-With': 'XMLHttpRequest',
@@ -126,23 +106,12 @@ export async function fetchSpeedData(): Promise<SpeedData> {
     }
 }
 
-/**
- * Fetch ALL widget data - slower, for full updates
- * Fetches multiple endpoints
- * 
- * IMPORTANT: These endpoints do NOT require authentication!
- * The modem allows read access to monitoring data without login:
- * - /api/monitoring/traffic-statistics (speeds, session, total traffic)
- * - /api/monitoring/month_statistics (monthly and daily usage)
- * - /api/monitoring/status (connection status, network type, signal)
- */
 export async function fetchWidgetData(): Promise<WidgetData> {
     const modemIp = await getModemIp();
     const baseURL = `http://${modemIp}`;
     const timeout = 5000;
 
     try {
-        // Fetch traffic statistics (NO LOGIN REQUIRED)
         const trafficResponse = await axios.get(`${baseURL}/api/monitoring/traffic-statistics`, {
             timeout,
             headers: {
@@ -153,7 +122,6 @@ export async function fetchWidgetData(): Promise<WidgetData> {
 
         const trafficData = trafficResponse.data;
 
-        // Fetch monthly statistics
         let monthDownload = 0;
         let monthUpload = 0;
         let monthDuration = 0;
@@ -169,7 +137,6 @@ export async function fetchWidgetData(): Promise<WidgetData> {
             });
             const monthData = monthResponse.data;
             
-            // Monthly download/upload
             monthDownload = safeParseInt(
                 parseXMLValue(monthData, 'CurrentMonthDownload') ||
                 parseXMLValue(monthData, 'monthDownload') ||
@@ -181,21 +148,18 @@ export async function fetchWidgetData(): Promise<WidgetData> {
                 parseXMLValue(monthData, 'MonthUpload')
             );
             
-            // Monthly duration
             monthDuration = safeParseInt(
                 parseXMLValue(monthData, 'CurrentMonthDuration') ||
                 parseXMLValue(monthData, 'monthDuration') ||
                 parseXMLValue(monthData, 'MonthDuration')
             );
             
-            // Daily usage (combined download + upload)
             dayUsed = safeParseInt(
                 parseXMLValue(monthData, 'CurrentDayUsed') ||
                 parseXMLValue(monthData, 'dayUsed') ||
                 parseXMLValue(monthData, 'DayUsed')
             );
             
-            // Daily duration
             dayDuration = safeParseInt(
                 parseXMLValue(monthData, 'CurrentDayDuration') ||
                 parseXMLValue(monthData, 'dayDuration') ||
@@ -205,7 +169,6 @@ export async function fetchWidgetData(): Promise<WidgetData> {
             // Monthly stats not available
         }
 
-        // Fetch modem status
         let connectionStatus = 'Unknown';
         let networkType = '';
         let signalStrength = '0';
@@ -226,37 +189,29 @@ export async function fetchWidgetData(): Promise<WidgetData> {
         }
 
         const widgetData: WidgetData = {
-            // Speed data
             currentDownloadRate: safeParseInt(parseXMLValue(trafficData, 'CurrentDownloadRate')),
             currentUploadRate: safeParseInt(parseXMLValue(trafficData, 'CurrentUploadRate')),
-            // Session data
             currentDownload: safeParseInt(parseXMLValue(trafficData, 'CurrentDownload')),
             currentUpload: safeParseInt(parseXMLValue(trafficData, 'CurrentUpload')),
             currentConnectTime: safeParseInt(parseXMLValue(trafficData, 'CurrentConnectTime')),
-            // Monthly data
             monthDownload,
             monthUpload,
             monthDuration,
-            // Daily data
             dayUsed,
             dayDuration,
-            // Total data
             totalDownload: safeParseInt(parseXMLValue(trafficData, 'TotalDownload')),
             totalUpload: safeParseInt(parseXMLValue(trafficData, 'TotalUpload')),
             totalConnectTime: safeParseInt(parseXMLValue(trafficData, 'TotalConnectTime')),
-            // Connection info
             connectionStatus,
             networkType,
             signalStrength,
             lastUpdated: Date.now(),
         };
 
-        // Cache for offline access
         await cacheWidgetData(widgetData);
 
         return widgetData;
     } catch (error: any) {
-        // Return cached data with error flag
         const cachedData = await getCachedWidgetData();
         if (cachedData) {
             return {
@@ -265,7 +220,6 @@ export async function fetchWidgetData(): Promise<WidgetData> {
             };
         }
 
-        // Return empty data with error
         return {
             currentDownloadRate: 0,
             currentUploadRate: 0,
@@ -289,7 +243,6 @@ export async function fetchWidgetData(): Promise<WidgetData> {
     }
 }
 
-// Format bytes to human readable string
 export function formatBytes(bytes: number): string {
     if (bytes === 0) return '0 B';
 
@@ -300,7 +253,6 @@ export function formatBytes(bytes: number): string {
     return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-// Format speed (bytes per second) to human readable string
 export function formatSpeed(bytesPerSecond: number): string {
     if (bytesPerSecond === 0) return '0 B/s';
 
@@ -311,7 +263,6 @@ export function formatSpeed(bytesPerSecond: number): string {
     return `${parseFloat((bytesPerSecond / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
 }
 
-// Get network type display name
 export function getNetworkTypeName(networkType: string): string {
     const types: Record<string, string> = {
         '0': 'No Service',
@@ -343,7 +294,6 @@ export function getNetworkTypeName(networkType: string): string {
     return types[networkType] || networkType || 'Unknown';
 }
 
-// Get connection status display name  
 export function getConnectionStatusName(status: string): string {
     const statuses: Record<string, string> = {
         '900': 'Connecting',

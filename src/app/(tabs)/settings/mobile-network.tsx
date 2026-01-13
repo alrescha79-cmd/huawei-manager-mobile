@@ -3,7 +3,7 @@ import {
     StyleSheet,
     ScrollView,
     ActivityIndicator,
-    View, // Added View
+    View,
     TouchableOpacity,
     Text,
 } from 'react-native';
@@ -29,7 +29,6 @@ export default function MobileNetworkSettingsScreen() {
 
     const [modemService, setModemService] = useState<ModemService | null>(null);
 
-    // Toggles
     const [mobileDataEnabled, setMobileDataEnabled] = useState(false);
     const [dataRoamingEnabled, setDataRoamingEnabled] = useState(false);
     const [autoNetworkEnabled, setAutoNetworkEnabled] = useState(true);
@@ -38,16 +37,13 @@ export default function MobileNetworkSettingsScreen() {
     const [isTogglingRoaming, setIsTogglingRoaming] = useState(false);
     const [isTogglingAutoNetwork, setIsTogglingAutoNetwork] = useState(false);
 
-    // Network Mode
     const [networkMode, setNetworkMode] = useState('00');
     const [showNetworkModeModal, setShowNetworkModeModal] = useState(false);
     const [isChangingNetwork, setIsChangingNetwork] = useState(false);
 
-    // Bands
     const [showBandModal, setShowBandModal] = useState(false);
     const [selectedBandsDisplay, setSelectedBandsDisplay] = useState<string[]>([]);
 
-    // Monthly Settings
     const [showMonthlyModal, setShowMonthlyModal] = useState(false);
     const [monthlySettings, setMonthlySettings] = useState({
         enabled: false,
@@ -113,7 +109,6 @@ export default function MobileNetworkSettingsScreen() {
         if (!modemService || isTogglingMobileData) return;
 
         if (!value) {
-            // Turning OFF - Ask for confirmation
             ThemedAlertHelper.alert(
                 t('settings.mobileData'),
                 t('home.confirmDisableData'),
@@ -127,7 +122,6 @@ export default function MobileNetworkSettingsScreen() {
                 ]
             );
         } else {
-            // Turning ON - No confirmation
             executeToggleMobileData(value);
         }
     };
@@ -279,9 +273,6 @@ export default function MobileNetworkSettingsScreen() {
                         />
                     </SettingsSection>
 
-                    {/* Network Mode Modal */}
-                    {/* Network Mode Modal */}
-                    {/* Network Mode Modal */}
                     <SelectionModal
                         visible={showNetworkModeModal}
                         title={t('settings.preferredNetwork')}

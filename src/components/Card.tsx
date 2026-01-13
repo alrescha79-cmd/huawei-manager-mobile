@@ -13,12 +13,11 @@ interface CardProps {
 export const Card: React.FC<CardProps> = ({
   children,
   style,
-  blur = false,  // Changed to false - no glassmorphism on cards by default
+  blur = false,
   intensity
 }) => {
   const { colors, borderRadius, glassmorphism, isDark } = useTheme();
 
-  // Use theme default if intensity not provided
   const blurIntensity = intensity ?? glassmorphism.blur.card;
 
   if (blur) {
@@ -26,7 +25,7 @@ export const Card: React.FC<CardProps> = ({
       <BlurView
         intensity={blurIntensity}
         tint={isDark ? 'dark' : 'light'}
-        experimentalBlurMethod='dimezisBlurView' // Better quality on Android if available in version, otherwise ignores
+        experimentalBlurMethod='dimezisBlurView'
         style={[
           styles.card,
           {
@@ -53,7 +52,6 @@ export const Card: React.FC<CardProps> = ({
           borderRadius: borderRadius.lg,
           borderWidth: 1,
           borderColor: colors.border,
-          // No shadow - keep clean look
         },
         style,
       ]}
