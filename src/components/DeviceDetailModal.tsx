@@ -28,14 +28,12 @@ interface DeviceDetailModalProps {
     onBlock: (macAddress: string, hostName: string) => void;
 }
 
-// Helper to format MAC address
 const formatMacAddress = (mac: string): string => {
     if (!mac) return '';
     const cleanMac = mac.replace(/[:-]/g, '').toUpperCase();
     return cleanMac.match(/.{1,2}/g)?.join(':') || mac;
 };
 
-// Helper to format lease/associated time
 const formatLeaseTime = (seconds: string): string => {
     const secs = parseInt(seconds) || 0;
     if (secs === 0) return '-';
@@ -49,7 +47,6 @@ const formatLeaseTime = (seconds: string): string => {
     return `${minutes}m`;
 };
 
-// Helper to parse IPv4 and IPv6 from combined IP string
 const parseIpAddresses = (ipString: string): { ipv4: string | null; ipv6: string | null } => {
     if (!ipString) return { ipv4: null, ipv6: null };
 
@@ -131,7 +128,6 @@ export function DeviceDetailModal({
             onRequestClose={onClose}
         >
             <MeshGradientBackground style={styles.modalContainer}>
-                {/* Header - Same style as MonthlySettingsModal */}
                 <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
                     <Text style={[styles.title, { color: colors.text }]}>
                         {t('wifi.deviceDetails')}
@@ -150,7 +146,6 @@ export function DeviceDetailModal({
                         contentContainerStyle={{ paddingBottom: 20 }}
                         keyboardShouldPersistTaps="handled"
                     >
-                        {/* Device Name Section */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>
                                 {t('wifi.deviceName')}
@@ -166,13 +161,11 @@ export function DeviceDetailModal({
                             </View>
                         </View>
 
-                        {/* Network Info Section */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>
                                 {t('wifi.networkInfo') || 'Network Information'}
                             </Text>
                             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                                {/* IPv4 */}
                                 {ipv4 && (
                                     <View style={[styles.infoRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
                                         <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>IPv4</Text>
@@ -180,7 +173,6 @@ export function DeviceDetailModal({
                                     </View>
                                 )}
 
-                                {/* IPv6 */}
                                 {ipv6 && (
                                     <View style={[styles.infoRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
                                         <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>IPv6</Text>
@@ -190,7 +182,6 @@ export function DeviceDetailModal({
                                     </View>
                                 )}
 
-                                {/* MAC Address */}
                                 <View style={[styles.infoRow, { borderBottomColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
                                     <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>MAC</Text>
                                     <Text style={[styles.infoValue, { color: colors.text }]}>
@@ -198,7 +189,6 @@ export function DeviceDetailModal({
                                     </Text>
                                 </View>
 
-                                {/* Lease Time */}
                                 <View style={[styles.infoRow, { borderBottomWidth: 0 }]}>
                                     <Text style={[styles.infoLabel, { color: colors.textSecondary }]}>{t('wifi.leaseTime')}</Text>
                                     <Text style={[styles.infoValue, { color: colors.text }]}>
@@ -208,7 +198,6 @@ export function DeviceDetailModal({
                             </View>
                         </View>
 
-                        {/* Actions Section */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>
                                 {t('settings.actions') || 'Actions'}
@@ -225,7 +214,6 @@ export function DeviceDetailModal({
                         </View>
                     </ScrollView>
 
-                    {/* Footer - Inside KeyboardAvoidingView */}
                     <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                         <Pressable
                             style={({ pressed }) => [

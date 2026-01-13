@@ -40,7 +40,6 @@ interface MonthlySettingsModalProps {
     };
 }
 
-// Generate days 1-31
 const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
 
 export function MonthlySettingsModal({
@@ -62,13 +61,11 @@ export function MonthlySettingsModal({
     const [hasChanges, setHasChanges] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
 
-    // Track keyboard visibility to prevent button flicker
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
             setKeyboardVisible(true);
         });
         const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-            // Small delay to prevent button text flicker
             setTimeout(() => setKeyboardVisible(false), 100);
         });
 
@@ -78,7 +75,6 @@ export function MonthlySettingsModal({
         };
     }, []);
 
-    // Load initial settings when modal opens
     useEffect(() => {
         if (visible && initialSettings) {
             setEnabled(initialSettings.enabled);
@@ -90,7 +86,6 @@ export function MonthlySettingsModal({
         }
     }, [visible, initialSettings]);
 
-    // Track changes
     useEffect(() => {
         if (initialSettings) {
             const changed =
@@ -104,7 +99,7 @@ export function MonthlySettingsModal({
     }, [enabled, startDay, dataLimit, dataLimitUnit, monthThreshold, initialSettings]);
 
     const handleSave = async () => {
-        Keyboard.dismiss(); // Dismiss keyboard first to prevent double-click issue
+        Keyboard.dismiss();
         setIsSaving(true);
         try {
             await onSave({
@@ -124,7 +119,6 @@ export function MonthlySettingsModal({
 
     const [sliderWidth, setSliderWidth] = useState(0);
 
-    // Handle close with confirmation if there are unsaved changes
     const handleClose = () => {
         if (hasChanges) {
             ThemedAlertHelper.alert(
@@ -165,7 +159,6 @@ export function MonthlySettingsModal({
                 >
                     <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
 
-                        {/* Enable Toggle Box */}
                         <View style={[styles.toggleBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
                             <Text style={[styles.label, { color: colors.text, fontSize: 16 }]}>
                                 {t('home.enableMonthlyLimit')}
@@ -176,7 +169,6 @@ export function MonthlySettingsModal({
                             />
                         </View>
 
-                        {/* Cycle Start Date */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.startDate')}</Text>
                             <View style={[styles.dateCard, { borderColor: colors.border, backgroundColor: colors.background }]}>
@@ -184,7 +176,6 @@ export function MonthlySettingsModal({
                                     {t('home.everyDate')} <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 18 }}>{startDay}</Text>
                                 </Text>
 
-                                {/* Horizontal Scroll Date Picker */}
                                 <ScrollView
                                     horizontal
                                     showsHorizontalScrollIndicator={false}
@@ -218,7 +209,6 @@ export function MonthlySettingsModal({
                             </View>
                         </View>
 
-                        {/* Monthly Data Plan Input */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.monthlyDataPlan')}</Text>
                             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -256,11 +246,9 @@ export function MonthlySettingsModal({
                             )}
                         </View>
 
-                        {/* Threshold Selection - Modern Design */}
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.threshold').replace(' (%)', '')}</Text>
 
-                            {/* Preset Buttons */}
                             <View style={styles.presetContainer}>
                                 {[50, 70, 80, 90, 95].map((preset) => {
                                     const isSelected = monthThreshold === preset;
@@ -286,7 +274,6 @@ export function MonthlySettingsModal({
                                 })}
                             </View>
 
-                            {/* Custom Input Row */}
                             <View style={[styles.customInputRow, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: colors.border }]}>
                                 <Text style={[styles.customLabel, { color: colors.textSecondary }]}>
                                     {t('common.custom') || 'Custom'}
@@ -314,7 +301,6 @@ export function MonthlySettingsModal({
 
                     </ScrollView>
 
-                    {/* Footer Button - Inside KeyboardAvoidingView */}
                     <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                         {hasChanges ? (
                             <TouchableOpacity
@@ -345,7 +331,6 @@ export function MonthlySettingsModal({
                                 ]}
                                 onPress={() => {
                                     Keyboard.dismiss();
-                                    // Small delay to let keyboard dismiss first
                                     setTimeout(() => onClose(), 150);
                                 }}
                                 activeOpacity={0.8}
@@ -429,7 +414,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '500',
     },
-    // Horizontal scroll date picker styles
     dateScrollContainer: {
         paddingVertical: 8,
         paddingHorizontal: 4,

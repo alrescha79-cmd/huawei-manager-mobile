@@ -118,7 +118,7 @@ export interface SMSMessage {
   phone: string;
   content: string;
   date: string;
-  smstat: string; // 0: unread, 1: read, 2: draft, 3: sent
+  smstat: string;
 }
 
 export interface SMSCount {
@@ -184,7 +184,7 @@ export interface APNProfile {
   authType: 'none' | 'pap' | 'chap' | 'pap_chap';
   ipType: 'ipv4' | 'ipv6' | 'ipv4v6';
   isDefault: boolean;
-  readOnly: boolean; // Carrier preset profiles that cannot be edited/deleted
+  readOnly: boolean;
 }
 
 export interface EthernetSettings {
@@ -239,32 +239,32 @@ export interface ParentalControlProfile {
   id: string;
   name: string;
   deviceMacs: string[];
-  startTime: string; // HH:mm format
-  endTime: string; // HH:mm format
-  activeDays: number[]; // 0-6, 0=Sunday
+  startTime: string;
+  endTime: string;
+  activeDays: number[];
   enabled: boolean;
 }
 
 // DHCP Settings Types
 export interface DHCPSettings {
-  dhcpIPAddress: string;       // LAN IP Address (e.g., "192.168.8.1")
-  dhcpLanNetmask: string;      // Subnet mask (e.g., "255.255.255.0")
-  dhcpStatus: boolean;         // DHCP server on/off
-  dhcpStartIPAddress: string;  // Start of IP range (e.g., "192.168.8.100")
-  dhcpEndIPAddress: string;    // End of IP range (e.g., "192.168.8.200")
-  dhcpLeaseTime: number;       // Lease time in seconds
-  dnsStatus: boolean;          // DNS status
-  primaryDns: string;          // Primary DNS server
-  secondaryDns: string;        // Secondary DNS server
+  dhcpIPAddress: string;
+  dhcpLanNetmask: string;
+  dhcpStatus: boolean;
+  dhcpStartIPAddress: string;
+  dhcpEndIPAddress: string;
+  dhcpLeaseTime: number;
+  dnsStatus: boolean;
+  primaryDns: string;
+  secondaryDns: string;
 }
 
 // Monthly Data Usage Settings
 export interface MonthlyDataSettings {
-  enabled: boolean;          // SetMonthData: 0/1
-  startDay: number;          // StartDay: 1-31
-  dataLimit: number;         // DataLimit in bytes
+  enabled: boolean;
+  startDay: number;
+  dataLimit: number;
   dataLimitUnit: 'MB' | 'GB';
-  monthThreshold: number;    // MonthThreshold: percentage
-  trafficMaxLimit: number;   // trafficmaxlimit in bytes
+  monthThreshold: number;
+  trafficMaxLimit: number;
 }
 

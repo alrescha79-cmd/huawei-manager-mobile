@@ -6,7 +6,6 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface ModernRefreshIndicatorProps {
     refreshing: boolean;
-    /** Pull progress from 0 to 1 - controls opacity/position during pull */
     pullProgress?: number;
 }
 
@@ -14,11 +13,9 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
 
-    // Animation values for refreshing state
     const scaleAnim = useRef(new Animated.Value(0.8)).current;
     const opacityAnim = useRef(new Animated.Value(0)).current;
 
-    // Data packets animation - 3 dots moving from left to right
     const dot1X = useRef(new Animated.Value(0)).current;
     const dot2X = useRef(new Animated.Value(0)).current;
     const dot3X = useRef(new Animated.Value(0)).current;
@@ -28,7 +25,6 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
 
     useEffect(() => {
         if (refreshing) {
-            // Show animation
             Animated.parallel([
                 Animated.spring(scaleAnim, {
                     toValue: 1,
@@ -43,12 +39,10 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                 }),
             ]).start();
 
-            // Create data packet animation - dots moving from router to phone
             const createPacketAnim = (dotX: Animated.Value, dotOpacity: Animated.Value, delay: number) => {
                 return Animated.loop(
                     Animated.sequence([
                         Animated.delay(delay),
-                        // Fade in and move
                         Animated.parallel([
                             Animated.timing(dotOpacity, {
                                 toValue: 1,
@@ -62,19 +56,16 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                                 useNativeDriver: true,
                             }),
                         ]),
-                        // Fade out at end
                         Animated.timing(dotOpacity, {
                             toValue: 0,
                             duration: 100,
                             useNativeDriver: true,
                         }),
-                        // Reset position instantly
                         Animated.timing(dotX, {
                             toValue: 0,
                             duration: 0,
                             useNativeDriver: true,
                         }),
-                        // Wait for cycle
                         Animated.delay(300),
                     ])
                 );
@@ -94,7 +85,6 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                 anim3.stop();
             };
         } else {
-            // Hide animation
             Animated.parallel([
                 Animated.timing(scaleAnim, {
                     toValue: 0.8,
@@ -108,7 +98,6 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                 }),
             ]).start();
 
-            // Reset dot positions
             dot1X.setValue(0);
             dot2X.setValue(0);
             dot3X.setValue(0);
@@ -118,19 +107,15 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
         }
     }, [refreshing]);
 
-    // Calculate visibility: either from pullProgress during pull, or from opacityAnim when refreshing
     const isPulling = pullProgress > 0 && !refreshing;
     const showIndicator = refreshing || isPulling;
 
     if (!showIndicator) return null;
 
-    const dotTravelDistance = 50; // pixels to travel
-
-    // During pull: use pullProgress for opacity and position
-    // During refresh: use animated values
-    const pullOpacity = Math.min(pullProgress * 1.5, 1); // Fade in faster than pull
-    const pullScale = 0.8 + (pullProgress * 0.2); // Scale from 0.8 to 1
-    const pullTranslateY = -30 + (pullProgress * 30); // Slide in from -30 to 0
+    const dotTravelDistance = 50;
+    const pullOpacity = Math.min(pullProgress * 1.5, 1);
+    const pullScale = 0.8 + (pullProgress * 0.2);
+    const pullTranslateY = -30 + (pullProgress * 30);
 
     return (
         <Animated.View
@@ -147,18 +132,14 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                 },
             ]}
         >
-            {/* Animation container: Router -> Data -> Phone */}
             <View style={styles.animationContainer}>
-                {/* Router/Modem Icon */}
                 <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
                     <MaterialIcons name="router" size={22} color={colors.primary} />
                 </View>
 
-                {/* Data packets flowing - only animate when refreshing */}
                 <View style={styles.dataFlowContainer}>
                     {refreshing ? (
                         <>
-                            {/* Dot 1 */}
                             <Animated.View
                                 style={[
                                     styles.dataDot,
@@ -174,7 +155,6 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                                     },
                                 ]}
                             />
-                            {/* Dot 2 */}
                             <Animated.View
                                 style={[
                                     styles.dataDot,
@@ -190,7 +170,6 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                                     },
                                 ]}
                             />
-                            {/* Dot 3 */}
                             <Animated.View
                                 style={[
                                     styles.dataDot,
@@ -208,7 +187,6 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                             />
                         </>
                     ) : (
-                        // Static dots during pull (not moving yet)
                         <>
                             <View style={[styles.dataDot, { backgroundColor: colors.primary, opacity: 0.3, left: 10 }]} />
                             <View style={[styles.dataDot, { backgroundColor: colors.primary, opacity: 0.3, left: 27 }]} />
@@ -217,13 +195,11 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
                     )}
                 </View>
 
-                {/* Phone Icon */}
                 <View style={[styles.iconContainer, { backgroundColor: colors.primary + '20' }]}>
                     <MaterialIcons name="smartphone" size={20} color={colors.primary} />
                 </View>
             </View>
 
-            {/* Loading text */}
             <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
                 {refreshing ? 'Syncing...' : 'Pull to refresh'}
             </Text>
@@ -231,7 +207,6 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
     );
 }
 
-// Custom RefreshControl wrapper for use in ScrollView
 export function useCustomRefresh(refreshing: boolean, onRefresh: () => void) {
     return {
         refreshIndicator: <ModernRefreshIndicator refreshing={refreshing} />,

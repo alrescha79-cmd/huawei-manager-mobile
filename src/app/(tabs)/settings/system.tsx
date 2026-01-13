@@ -28,7 +28,6 @@ const TIMEZONES = [
 const formatModemTime = (time: string) => {
     if (!time) return '...';
     try {
-        // Handle ISO-like strings (e.g., 2025-12-29T13:04:25.23Z)
         if (time.includes('T')) {
             const dateObj = new Date(time);
             if (!isNaN(dateObj.getTime())) {
@@ -40,15 +39,12 @@ const formatModemTime = (time: string) => {
                 const seconds = String(dateObj.getSeconds()).padStart(2, '0');
                 return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
             }
-            // Fallback for weirdly formatted ISO strings if Date parse fails but includes T
-            // Try to just take the part before T and part after T (stripping Z)
             const parts = time.split('T');
             const datePart = parts[0];
             const timePart = parts[1]?.split('.')[0].replace('Z', '');
             return `${datePart} ${timePart}`;
         }
 
-        // Standard logic for other formats
         let cleaned = time.replace(',', '');
         const parts = cleaned.split(' ');
         if (parts.length < 2) return time.replace(/\//g, '-');
@@ -56,14 +52,11 @@ const formatModemTime = (time: string) => {
         let datePart = parts[0];
         let timePart = parts[1];
 
-        // Fix time part: HH.MM.SS -> HH:MM:SS
         timePart = timePart.replace(/\./g, ':');
 
-        // Fix date part: DD/MM/YYYY -> YYYY-MM-DD
         if (datePart.includes('/')) {
             const dateSegments = datePart.split('/');
             if (dateSegments[2].length === 4) {
-                // DD/MM/YYYY
                 datePart = `${dateSegments[2]}-${dateSegments[1]}-${dateSegments[0]}`;
             } else {
                 datePart = datePart.replace(/\//g, '-');
@@ -86,7 +79,6 @@ export default function SystemSettingsScreen() {
 
     const [modemService, setModemService] = useState<ModemService | null>(null);
 
-    // Time
     const [currentTime, setCurrentTime] = useState('');
     const [sntpEnabled, setSntpEnabled] = useState(true);
     const [ntpServer, setNtpServer] = useState('pool.ntp.org');
@@ -94,7 +86,6 @@ export default function SystemSettingsScreen() {
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
     const [isTogglingSntp, setIsTogglingSntp] = useState(false);
 
-    // Credentials
     const [modemIp, setModemIp] = useState(credentials?.modemIp || '192.168.8.1');
     const [modemUsername, setModemUsername] = useState(credentials?.username || 'admin');
     const [modemPassword, setModemPassword] = useState(credentials?.password || '');
@@ -112,7 +103,6 @@ export default function SystemSettingsScreen() {
             setModemService(service);
             loadTime(service);
 
-            // Clock
             const interval = setInterval(() => {
                 service.getCurrentTime().then(setTime => setCurrentTime(setTime)).catch(() => { });
             }, 1000);

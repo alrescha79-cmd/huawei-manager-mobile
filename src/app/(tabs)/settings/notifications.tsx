@@ -54,7 +54,6 @@ export default function NotificationSettingsScreen() {
     };
 
     const updateSetting = async (key: keyof NotificationSettings, value: boolean) => {
-        // Check if usage limit is enabled for usage notifications
         if ((key === 'dailyUsageEnabled' || key === 'monthlyUsageEnabled') && value) {
             if (!monthlySettings?.enabled) {
                 ThemedAlertHelper.alert(
@@ -69,7 +68,6 @@ export default function NotificationSettingsScreen() {
         setSettings(newSettings);
         await saveNotificationSettings(newSettings);
 
-        // Sync badge setting to store for reactive updates
         if (key === 'badgesEnabled') {
             setBadgesEnabled(value);
         }

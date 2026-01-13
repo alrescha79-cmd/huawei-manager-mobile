@@ -11,7 +11,6 @@ import { useThemeStore } from '@/stores/theme.store';
 import { useTranslation } from '@/i18n';
 import { CustomTabBar } from '@/components';
 
-// Status bar header component for Android
 const StatusBarHeader = () => {
   const { colors, isDark } = useTheme();
 
@@ -22,7 +21,6 @@ const StatusBarHeader = () => {
         backgroundColor={colors.background}
         translucent={true}
       />
-      {/* Solid background behind status bar to prevent content overlap */}
       {Platform.OS === 'android' && (
         <View
           style={{
@@ -40,7 +38,6 @@ const StatusBarHeader = () => {
   );
 };
 
-// Tab icon component using Material Icons with optional badge
 const TabIcon = ({ name, color, focused, badge }: { name: string; color: string; focused: boolean; badge?: number }) => {
   const { colors } = useTheme();
   const iconNames: { [key: string]: keyof typeof MaterialIcons.glyphMap } = {

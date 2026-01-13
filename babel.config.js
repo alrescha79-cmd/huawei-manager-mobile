@@ -14,7 +14,6 @@ module.exports = function (api) {
     'react-native-reanimated/plugin',
   ];
 
-  // Remove console.log in production builds
   if (process.env.NODE_ENV === 'production') {
     plugins.push('transform-remove-console');
   }

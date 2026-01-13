@@ -23,15 +23,14 @@ interface SignalCardProps {
 // Get quality color
 const getQualityColor = (quality: SignalMetric['quality']): string => {
     switch (quality) {
-        case 'excellent': return '#22c55e'; // Green
-        case 'good': return '#84cc16';      // Lime
-        case 'fair': return '#facc15';      // Yellow
-        case 'poor': return '#ef4444';      // Red
-        default: return '#6b7280';          // Gray
+        case 'excellent': return '#22c55e';
+        case 'good': return '#84cc16';
+        case 'fair': return '#facc15';
+        case 'poor': return '#ef4444';
+        default: return '#6b7280';
     }
 };
 
-// Get quality width percentage (dynamic bar width)
 const getQualityWidth = (quality: SignalMetric['quality']): number => {
     switch (quality) {
         case 'excellent': return 100;
@@ -42,9 +41,6 @@ const getQualityWidth = (quality: SignalMetric['quality']): number => {
     }
 };
 
-/**
- * Modern signal card with glassmorphism style
- */
 export function SignalCard({
     title,
     badge,
@@ -56,7 +52,6 @@ export function SignalCard({
 }: SignalCardProps) {
     const { colors, typography, spacing } = useTheme();
 
-    // Color themes
     const colorThemes = {
         cyan: {
             primary: '#22d3ee',
@@ -99,7 +94,6 @@ export function SignalCard({
                 backgroundColor: 'transparent',
             }
         ]}>
-            {/* Header */}
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <MaterialIcons name={icon} size={18} color={theme.primary} />
@@ -116,7 +110,6 @@ export function SignalCard({
                 )}
             </View>
 
-            {/* Signal Metrics Grid */}
             <View style={styles.metricsGrid}>
                 {metrics.map((metric, index) => {
                     const qualityColor = getQualityColor(metric.quality);
@@ -130,7 +123,6 @@ export function SignalCard({
                                     {metric.value}
                                 </Text>
                             </View>
-                            {/* Dynamic quality bar */}
                             <View style={[styles.qualityBarContainer, { backgroundColor: colors.border }]}>
                                 <View style={[styles.qualityBar, { width: `${getQualityWidth(metric.quality)}%`, backgroundColor: qualityColor }]} />
                             </View>
@@ -139,7 +131,6 @@ export function SignalCard({
                 })}
             </View>
 
-            {/* Additional Info */}
             {(band || cellId) && (
                 <View style={[styles.footer, { borderTopColor: colors.border }]}>
                     {band && (

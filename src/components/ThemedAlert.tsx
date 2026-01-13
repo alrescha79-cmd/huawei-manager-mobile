@@ -67,7 +67,6 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
                     style={[
                         styles.alertContainer,
                         {
-                            // Use fully opaque backgrounds for better visibility
                             backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
                             borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
                             borderWidth: 1,
@@ -121,7 +120,6 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
     );
 };
 
-// Global alert state management
 type AlertConfig = {
     visible: boolean;
     title: string;
@@ -135,7 +133,6 @@ export const setAlertListener = (listener: (config: AlertConfig) => void) => {
     alertListener = listener;
 };
 
-// Drop-in replacement for React Native's Alert.alert()
 export const ThemedAlertHelper = {
     alert: (
         title: string,

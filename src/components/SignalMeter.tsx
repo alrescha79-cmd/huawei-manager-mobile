@@ -14,7 +14,7 @@ interface SignalMeterProps {
         fair: number;
         poor: number;
     };
-    reverseScale?: boolean; // true if lower values are better (like RSSI: -50 better than -90)
+    reverseScale?: boolean;
 }
 
 /**
@@ -34,27 +34,20 @@ export function SignalMeter({
 
     const numValue = typeof value === 'string' ? parseFloat(value) : value;
 
-    // Calculate percentage (0-100) for bar width
     let percentage: number;
     if (reverseScale) {
-        // For values like RSSI where higher (less negative) is better
         percentage = ((numValue - min) / (max - min)) * 100;
     } else {
-        // For values like SINR where higher is better
         percentage = ((numValue - min) / (max - min)) * 100;
     }
     percentage = Math.max(0, Math.min(100, percentage));
-
-    // Determine quality level and color based on value
     const getQualityInfo = (): { color: string; label: string } => {
         if (reverseScale) {
-            // For RSSI/RSRP (higher = better, e.g., -50 > -90)
             if (numValue >= thresholds.excellent) return { color: '#007AFF', label: 'Excellent' };
             if (numValue >= thresholds.good) return { color: '#34C759', label: 'Good' };
             if (numValue >= thresholds.fair) return { color: '#FF9500', label: 'Fair' };
             return { color: '#FF3B30', label: 'Poor' };
         } else {
-            // For SINR (higher = better)
             if (numValue >= thresholds.excellent) return { color: '#007AFF', label: 'Excellent' };
             if (numValue >= thresholds.good) return { color: '#34C759', label: 'Good' };
             if (numValue >= thresholds.fair) return { color: '#FF9500', label: 'Fair' };
@@ -66,7 +59,6 @@ export function SignalMeter({
 
     return (
         <View style={styles.container}>
-            {/* Label and Value Row */}
             <View style={styles.labelRow}>
                 <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
                     {label}
@@ -81,7 +73,6 @@ export function SignalMeter({
                 </View>
             </View>
 
-            {/* Bar Chart */}
             <View style={[styles.barBackground, { backgroundColor: colors.border }]}>
                 <View
                     style={[
@@ -92,7 +83,6 @@ export function SignalMeter({
                         }
                     ]}
                 />
-                {/* Value indicator on bar */}
                 <View style={[styles.barValueContainer, { left: `${Math.min(percentage, 85)}%` }]}>
                     <Text style={[
                         styles.barValueText,
@@ -108,7 +98,6 @@ export function SignalMeter({
                 </View>
             </View>
 
-            {/* Scale indicators */}
             <View style={styles.scaleRow}>
                 <Text style={[typography.caption2, { color: colors.textSecondary }]}>
                     {reverseScale ? 'Poor' : min}

@@ -6,7 +6,6 @@ import { useKeyboardHandler } from 'react-native-keyboard-controller';
 interface KeyboardAnimatedViewProps {
     children: React.ReactNode;
     style?: StyleProp<ViewStyle>;
-    /** Extra padding above keyboard */
     extraPadding?: number;
 }
 
@@ -25,7 +24,6 @@ export function KeyboardAnimatedView({
     useKeyboardHandler({
         onMove: (e) => {
             'worklet';
-            // Update keyboard height on the JS thread
             setKeyboardHeight(e.height);
         },
         onEnd: (e) => {

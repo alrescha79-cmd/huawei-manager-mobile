@@ -19,19 +19,15 @@ interface WebViewLoginProps {
     username?: string;
     password?: string;
     visible: boolean;
-    hidden?: boolean; // If true, runs in background showing only loading overlay
+    hidden?: boolean;
     onClose: () => void;
     onLoginSuccess: () => void;
-    onTimeout?: () => void; // Called when login times out after max attempts
+    onTimeout?: () => void;
 }
 
-const LOGIN_TIMEOUT_MS = 30000; // 30 seconds timeout
+const LOGIN_TIMEOUT_MS = 30000;
 const MAX_RETRY_ATTEMPTS = 3;
 
-/**
- * WebView-based login component for Huawei modem.
- * Uses WebView to handle login since React Native cannot send Cookie headers properly.
- */
 export function WebViewLogin({
     modemIp,
     username,
@@ -49,15 +45,12 @@ export function WebViewLogin({
     const [loginDetected, setLoginDetected] = useState(false);
     const [autoFillAttempted, setAutoFillAttempted] = useState(false);
 
-    // Timeout state
     const [isTimedOut, setIsTimedOut] = useState(false);
     const [retryAttempts, setRetryAttempts] = useState(0);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-    // Huawei modem login page URL
     const loginUrl = `http://${modemIp}/html/index.html`;
 
-    // Clear timeout on unmount or visibility change
     useEffect(() => {
         return () => {
             if (timeoutRef.current) {
@@ -66,15 +59,12 @@ export function WebViewLogin({
         };
     }, []);
 
-    // Start timeout timer when visible in hidden mode
     useEffect(() => {
         if (visible && hidden && !loginDetected && !isTimedOut) {
-            // Clear any existing timeout
             if (timeoutRef.current) {
                 clearTimeout(timeoutRef.current);
             }
 
-            // Set new timeout
             timeoutRef.current = setTimeout(() => {
                 setIsTimedOut(true);
             }, LOGIN_TIMEOUT_MS);
@@ -87,7 +77,6 @@ export function WebViewLogin({
         };
     }, [visible, hidden, loginDetected, isTimedOut, retryAttempts]);
 
-    // Reset states when visibility changes
     useEffect(() => {
         if (!visible) {
             setIsTimedOut(false);
@@ -100,10 +89,8 @@ export function WebViewLogin({
         }
     }, [visible]);
 
-    // Handle retry
     const handleRetry = useCallback(() => {
         if (retryAttempts >= MAX_RETRY_ATTEMPTS - 1) {
-            // Max retries reached, fallback to manual login
             onTimeout?.();
             onClose();
             return;
@@ -113,19 +100,16 @@ export function WebViewLogin({
         setIsTimedOut(false);
         setAutoFillAttempted(false);
 
-        // Reload WebView
         if (webViewRef.current) {
             webViewRef.current.reload();
         }
     }, [retryAttempts, onTimeout, onClose]);
 
-    // Handle manual login fallback
     const handleLoginManually = useCallback(() => {
         onTimeout?.();
         onClose();
     }, [onTimeout, onClose]);
 
-    // JavaScript to inject for auto-filling credentials
     const autoFillJs = username && password ? `
     (function() {
       // Wait for page to load
@@ -171,7 +155,6 @@ export function WebViewLogin({
     })();
     ` : '';
 
-    // JavaScript to inject for detecting login state
     const injectedJs = `
     (function() {
       // Function to check login status
@@ -223,19 +206,16 @@ export function WebViewLogin({
     })();
   `;
 
-    // Handle messages from WebView
     const handleMessage = useCallback((event: { nativeEvent: { data: string } }) => {
         try {
             const message = JSON.parse(event.nativeEvent.data);
 
             if (message.type === 'LOGIN_SUCCESS') {
-                // Clear timeout on success
                 if (timeoutRef.current) {
                     clearTimeout(timeoutRef.current);
                 }
                 setLoginDetected(true);
 
-                // Wait a bit to ensure cookies are set, then notify parent
                 setTimeout(() => {
                     onLoginSuccess();
                 }, 500);
@@ -246,15 +226,12 @@ export function WebViewLogin({
         }
     }, [onLoginSuccess]);
 
-    // Handle navigation state changes
     const handleNavigationChange = useCallback((navState: WebViewNavigation) => {
 
-        // Check if navigated to a logged-in page
         if (navState.url.includes('home.html') ||
             navState.url.includes('content.html') ||
             navState.url.includes('index.html#home')) {
 
-            // Inject JS to verify login
             if (webViewRef.current) {
                 webViewRef.current.injectJavaScript(injectedJs);
             }
@@ -285,11 +262,9 @@ export function WebViewLogin({
             onRequestClose={handleClose}
         >
             {hidden ? (
-                // Hidden mode - show loading overlay or timeout UI
                 <View style={[styles.hiddenContainer, { backgroundColor: 'rgba(0,0,0,0.85)' }]}>
                     <View style={[styles.hiddenContent, { backgroundColor: colors.card }]}>
                         {isTimedOut ? (
-                            // Timeout UI with retry options
                             <>
                                 <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm, textAlign: 'center' }]}>
                                     ⏱ {t('webViewLogin.loginTimeout')}
@@ -320,7 +295,6 @@ export function WebViewLogin({
                                 </TouchableOpacity>
                             </>
                         ) : (
-                            // Normal loading UI
                             <>
                                 <ActivityIndicator size="large" color={colors.primary} />
                                 <Text style={[typography.body, { color: colors.text, marginTop: spacing.md, textAlign: 'center' }]}>
@@ -333,7 +307,6 @@ export function WebViewLogin({
                         )}
                     </View>
 
-                    {/* WebView runs hidden but functional */}
                     {!isTimedOut && (
                         <View style={{ position: 'absolute', width: 1, height: 1, opacity: 0 }}>
                             <WebView
@@ -363,9 +336,7 @@ export function WebViewLogin({
                     )}
                 </View>
             ) : (
-                // Normal mode - show full WebView UI
                 <View style={[styles.container, { backgroundColor: colors.background }]}>
-                    {/* Header */}
                     <View style={[styles.header, {
                         backgroundColor: colors.card,
                         borderBottomColor: colors.border,
@@ -382,14 +353,12 @@ export function WebViewLogin({
                         <View style={styles.closeButton} />
                     </View>
 
-                    {/* Instructions */}
                     <View style={[styles.instructions, { backgroundColor: colors.card }]}>
                         <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
                             {t('webViewLogin.instructions')}
                         </Text>
                     </View>
 
-                    {/* WebView */}
                     <WebView
                         ref={webViewRef}
                         source={{ uri: loginUrl }}
@@ -399,10 +368,8 @@ export function WebViewLogin({
                         onLoadStart={() => setLoading(true)}
                         onLoadEnd={() => {
                             setLoading(false);
-                            // Inject detection script
                             if (webViewRef.current) {
                                 webViewRef.current.injectJavaScript(injectedJs);
-                                // Inject auto-fill script if credentials provided
                                 if (autoFillJs && !autoFillAttempted) {
                                     webViewRef.current.injectJavaScript(autoFillJs);
                                     setAutoFillAttempted(true);
@@ -435,14 +402,12 @@ export function WebViewLogin({
                         }}
                     />
 
-                    {/* Loading overlay */}
                     {loading && (
                         <View style={styles.loadingOverlay}>
                             <ActivityIndicator size="large" color={colors.primary} />
                         </View>
                     )}
 
-                    {/* Success overlay */}
                     {loginDetected && (
                         <View style={[styles.successOverlay, { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
                             <Text style={[typography.title2, { color: '#fff', marginBottom: spacing.md }]}>

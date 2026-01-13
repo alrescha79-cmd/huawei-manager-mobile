@@ -114,7 +114,7 @@ const MOCK_SMS_COUNT: SMSCount = {
 };
 
 // Global flag to enable mock mode for testing
-let useMockSMSData = false;
+let useMockSMSData = true;
 
 export function setMockSMSMode(enabled: boolean): void {
   useMockSMSData = enabled;
@@ -123,7 +123,7 @@ export function setMockSMSMode(enabled: boolean): void {
 
 export function isMockSMSMode(): boolean {
   return useMockSMSData;
-} 
+}
 
 export class SMSService {
   private apiClient: ModemAPIClient;
@@ -133,18 +133,12 @@ export class SMSService {
     this.apiClient = new ModemAPIClient(modemIp);
   }
 
-  /**
-   * Check if SMS is supported by the modem
-   * Reference: https://github.com/Salamek/huawei-lte-api/blob/master/huawei_lte_api/api/Sms.py
-   * Uses sms-feature-switch endpoint to check support
-   */
+
   async isSMSSupported(): Promise<boolean> {
-    // Mock mode always reports SMS as supported
     if (useMockSMSData) {
       return true;
     }
 
-    // Return cached result if available
     if (this._smsSupportCache !== null) {
       return this._smsSupportCache;
     }
@@ -152,23 +146,18 @@ export class SMSService {
     try {
       const response = await this.apiClient.get('/api/sms/sms-feature-switch');
 
-      // Check if we got a valid response (not an error)
-      // If the endpoint returns error 404 or similar, SMS is not supported
       if (!response || response.includes('<error>')) {
         this._smsSupportCache = false;
         return false;
       }
 
-      // If we get here, SMS is supported
       this._smsSupportCache = true;
       return true;
     } catch (error: any) {
-      // Check if it's a session error - those should be re-thrown
       if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
-        throw error; // Re-throw session errors so they trigger re-login
+        throw error;
       }
 
-      // Any other error (404, etc) means SMS is not supported
       this._smsSupportCache = false;
       return false;
     }
@@ -182,15 +171,12 @@ export class SMSService {
   }
 
   async getSMSList(page: number = 1, count: number = 20, boxType: number = 1): Promise<SMSMessage[]> {
-    // Return mock data if mock mode is enabled
     if (useMockSMSData) {
-      // Simulate pagination
       const start = (page - 1) * count;
       return MOCK_SMS_MESSAGES.slice(start, start + count);
     }
 
     try {
-      // SMS list requires POST with XML body
       const requestData = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
           <PageIndex>${page}</PageIndex>
@@ -204,14 +190,11 @@ export class SMSService {
       const response = await this.apiClient.post('/api/sms/sms-list', requestData);
 
       const messages: SMSMessage[] = [];
-      // Use [\s\S] instead of . to properly match content including newlines
       const messagesXML = response.match(/<Message>[\s\S]*?<\/Message>/g);
 
       if (messagesXML) {
         messagesXML.forEach((messageXML) => {
-          // Extract and decode content, handling potential CDATA and special characters
           let content = parseXMLValue(messageXML, 'Content');
-          // Decode HTML entities if present
           content = content
             .replace(/&lt;/g, '<')
             .replace(/&gt;/g, '>')
@@ -232,18 +215,15 @@ export class SMSService {
 
       return messages;
     } catch (error: any) {
-      // Re-throw session errors so the app can handle re-login
       if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
         throw error;
       }
 
-      // For other errors, return empty array - SMS not supported
       return [];
     }
   }
 
   async getSMSCount(): Promise<SMSCount> {
-    // Return mock data if mock mode is enabled
     if (useMockSMSData) {
       return MOCK_SMS_COUNT;
     }
@@ -267,12 +247,10 @@ export class SMSService {
         simMax: parseInt(parseXMLValue(response, 'SimMax')) || 0,
       };
     } catch (error: any) {
-      // Re-throw session errors so the app can handle re-login
       if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
         throw error;
       }
 
-      // For other errors, return default values - SMS not supported
       return {
         localUnread: 0,
         localInbox: 0,

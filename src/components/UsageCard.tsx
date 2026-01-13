@@ -8,28 +8,26 @@ import { LinearGradient } from 'expo-linear-gradient';
 
 interface UsageCardProps {
     title: string;
-    badge?: string; // e.g., "1d 2h 32m"
+    badge?: string;
     download: number;
     upload: number;
-    duration?: number; // In seconds
-    durationUnits?: DurationUnits; // Translated units
+    duration?: number;
+    durationUnits?: DurationUnits;
     icon?: keyof typeof MaterialIcons.glyphMap;
-    // New props for layout variant
     variant?: 'session' | 'monthly';
-    dataLimit?: number; // Total quota in bytes
-    color?: string; // Keep for compatibility but might override
+    dataLimit?: number;
+    color?: string;
     style?: StyleProp<ViewStyle>;
     totalOnly?: boolean;
 }
 
-// Helper to format bytes
 const formatBytesWithUnit = (bytes: number): { value: string; unit: string } => {
     if (!bytes || isNaN(bytes) || bytes === 0) return { value: '0', unit: 'B' };
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return {
-        value: (bytes / Math.pow(k, i)).toFixed(2), // 2 decimal places as per image "500.20"
+        value: (bytes / Math.pow(k, i)).toFixed(2),
         unit: sizes[i],
     };
 };
@@ -49,13 +47,10 @@ export function UsageCard({
 }: UsageCardProps) {
     const { colors, typography, glassmorphism, isDark } = useTheme();
 
-    // Calculate totals
     const total = download + upload;
     const totalFormatted = formatBytesWithUnit(total);
     const dlFormatted = formatBytesWithUnit(download);
     const ulFormatted = formatBytesWithUnit(upload);
-
-    // Calculate percentage if monthly
     let percent = 0;
     let limitFormatted = { value: '0', unit: 'GB' };
     if (variant === 'monthly' && dataLimit && dataLimit > 0) {
@@ -63,25 +58,21 @@ export function UsageCard({
         limitFormatted = formatBytesWithUnit(dataLimit);
     }
 
-    // Badge text (Duration or fallback)
     const badgeText = badge || (duration ? formatDuration(duration, durationUnits) : '');
 
-    // Highlight color (Blue for Usage as per image)
-    const highlightColor = '#3b82f6'; // Tailwind blue-500
+    const highlightColor = '#3b82f6';
 
-    // Dynamic color based on percentage for monthly variant
     const getProgressColor = (pct: number): string => {
-        if (pct >= 90) return '#ef4444'; // Red
-        if (pct >= 75) return '#f97316'; // Orange
-        if (pct >= 50) return '#eab308'; // Yellow
-        return '#22c55e'; // Green
+        if (pct >= 90) return '#ef4444';
+        if (pct >= 75) return '#f97316';
+        if (pct >= 50) return '#eab308';
+        return '#22c55e';
     };
 
     const progressColor = variant === 'monthly' && dataLimit ? getProgressColor(percent) : highlightColor;
 
     return (
         <Card style={[styles.container, style]}>
-            {/* Header: Title + Badge */}
             <View style={styles.header}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <MaterialIcons
@@ -103,7 +94,6 @@ export function UsageCard({
                 ) : null}
             </View>
 
-            {/* Main Stat: Large Number + Unit */}
             <View style={styles.mainStatContainer}>
                 <Text style={[styles.mainValue, { color: highlightColor }]}>
                     {totalFormatted.value}
@@ -113,10 +103,8 @@ export function UsageCard({
                 </Text>
             </View>
 
-            {/* Monthly Variant: Progress Bar */}
             {variant === 'monthly' && (
                 <View style={styles.progressSection}>
-                    {/* Progress Bar Track */}
                     <View style={[styles.progressBarTrack, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View
                             style={[
@@ -129,7 +117,6 @@ export function UsageCard({
                         />
                     </View>
 
-                    {/* Percentage Info */}
                     <View style={styles.progressInfo}>
                         <View style={[styles.percentBadge, { borderColor: progressColor, borderWidth: 1 }]}>
                             <Text style={[typography.caption2, { color: progressColor, fontWeight: 'bold' }]}>
@@ -143,10 +130,8 @@ export function UsageCard({
                 </View>
             )}
 
-            {/* Footer: Download / Upload Details */}
             {!totalOnly && (
                 <View style={styles.footerGrid}>
-                    {/* Download Item */}
                     <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View style={[styles.iconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
                             <MaterialIcons name="arrow-downward" size={16} color="#22c55e" />
@@ -159,7 +144,6 @@ export function UsageCard({
                         </View>
                     </View>
 
-                    {/* Upload Item */}
                     <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View style={[styles.iconCircle, { backgroundColor: 'rgba(168, 85, 247, 0.2)' }]}>
                             <MaterialIcons name="arrow-upward" size={16} color="#a855f7" />

@@ -20,12 +20,10 @@ export class NetworkSettingsService {
 
     async getAPNProfiles(): Promise<APNProfile[]> {
         try {
-            // Try primary endpoint first
             let response: string;
             try {
                 response = await this.apiClient.get('/api/dialup/profiles');
             } catch {
-                // Try alternative endpoint
                 try {
                     response = await this.apiClient.get('/api/dialup/profile-list');
                 } catch {
@@ -34,7 +32,6 @@ export class NetworkSettingsService {
             }
 
             const profiles: APNProfile[] = [];
-            // Use [\s\S] for multiline matching
             const profilesXML = response.match(/<Profile>[\s\S]*?<\/Profile>/g);
 
             if (profilesXML) {
@@ -76,7 +73,6 @@ export class NetworkSettingsService {
                 try {
                     response = await this.apiClient.get('/api/dialup/profile-list');
                 } catch {
-                    // Fallback to connection endpoint
                     response = await this.apiClient.get('/api/dialup/connection');
                 }
             }
@@ -90,8 +86,6 @@ export class NetworkSettingsService {
     async createAPNProfile(profile: Omit<APNProfile, 'id'>): Promise<boolean> {
         try {
 
-            // Format based on huawei-lte-api library
-            // Key differences: Modify=1 for create, iptype lowercase, ReadOnly field
             const data = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
 <SetDefault>${profile.isDefault ? '1' : '0'}</SetDefault>
@@ -119,12 +113,10 @@ export class NetworkSettingsService {
 
             const response = await this.apiClient.post('/api/dialup/profiles', data);
 
-            // Check if response indicates success
             if (response.includes('<response>OK</response>') || response.includes('OK')) {
                 return true;
             }
 
-            // Check for error
             if (response.includes('<error>')) {
                 const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
                 throw new Error(`APN creation failed with error code: ${errorCode}`);
@@ -166,12 +158,9 @@ export class NetworkSettingsService {
 
             const response = await this.apiClient.post('/api/dialup/profiles', data);
 
-            // Check if response indicates success
             if (response.includes('<response>OK</response>') || response.includes('OK')) {
                 return true;
             }
-
-            // Check for error
             if (response.includes('<error>')) {
                 const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
                 console.error('[APN] Update failed with error code:', errorCode);
@@ -187,7 +176,6 @@ export class NetworkSettingsService {
 
     async deleteAPNProfile(profileId: string): Promise<boolean> {
         try {
-            // Based on huawei-lte-api: Delete should be the index value directly
             const data = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
 <SetDefault>0</SetDefault>
@@ -196,12 +184,10 @@ export class NetworkSettingsService {
 </request>`;
 
             const response = await this.apiClient.post('/api/dialup/profiles', data);
-            // Check if response indicates success
             if (response.includes('<response>OK</response>') || response.includes('OK')) {
                 return true;
             }
 
-            // Check for error
             if (response.includes('<error>')) {
                 const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
                 console.error('[APN] Delete failed with error code:', errorCode);
@@ -217,7 +203,6 @@ export class NetworkSettingsService {
 
     async setActiveAPNProfile(profileId: string): Promise<boolean> {
         try {
-            // Based on huawei-lte-api: SetDefault should be the index value directly
             const data = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
 <SetDefault>${profileId}</SetDefault>
@@ -227,12 +212,10 @@ export class NetworkSettingsService {
 
             const response = await this.apiClient.post('/api/dialup/profiles', data);
 
-            // Check if response indicates success
             if (response.includes('<response>OK</response>') || response.includes('OK')) {
                 return true;
             }
 
-            // Check for error
             if (response.includes('<error>')) {
                 const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
                 console.error('[APN] Switch failed with error code:', errorCode);
@@ -265,7 +248,6 @@ export class NetworkSettingsService {
             };
         } catch (error) {
             console.error('Error getting DHCP settings:', error);
-            // Return default settings if API fails
             return {
                 dhcpIPAddress: '192.168.8.1',
                 dhcpLanNetmask: '255.255.255.0',
@@ -282,11 +264,9 @@ export class NetworkSettingsService {
 
     async setDHCPSettings(settings: Partial<DHCPSettings>): Promise<boolean> {
         try {
-            // First get current settings to merge with partial update
             const current = await this.getDHCPSettings();
             const merged = { ...current, ...settings };
 
-            // Build IP range from start/end
             const data = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
 <DhcpIPAddress>${merged.dhcpIPAddress}</DhcpIPAddress>
@@ -302,12 +282,10 @@ export class NetworkSettingsService {
 
             const response = await this.apiClient.post('/api/dhcp/settings', data);
 
-            // Check if response indicates success
             if (response.includes('<response>OK</response>') || response.includes('OK')) {
                 return true;
             }
 
-            // Check for error
             if (response.includes('<error>')) {
                 const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
                 throw new Error(`DHCP settings update failed with error code: ${errorCode}`);
@@ -328,16 +306,13 @@ export class NetworkSettingsService {
 
     async getEthernetSettings(): Promise<EthernetSettings> {
         try {
-            // Try primary endpoint first
             let response: string;
             try {
                 response = await this.apiClient.get('/api/cradle/basic-info');
             } catch (primaryError) {
-                // Try alternative endpoint
                 try {
                     response = await this.apiClient.get('/api/ethernet/settings');
                 } catch {
-                    // Return default if no endpoint available
                     return {
                         connectionMode: 'auto',
                         status: await this.getEthernetStatus(),
@@ -372,12 +347,10 @@ export class NetworkSettingsService {
 
     async getEthernetStatus(): Promise<EthernetStatus> {
         try {
-            // Try primary endpoint first
             let response: string;
             try {
                 response = await this.apiClient.get('/api/cradle/status-info');
             } catch {
-                // Try alternative endpoint
                 try {
                     response = await this.apiClient.get('/api/ethernet/status');
                 } catch {
@@ -431,12 +404,10 @@ export class NetworkSettingsService {
           <CradleMode>${modeValue}</CradleMode>
         </request>`;
 
-            // Try primary endpoint first
             try {
                 await this.apiClient.post('/api/cradle/basic-info', data);
                 return true;
             } catch {
-                // Try alternative endpoint
                 await this.apiClient.post('/api/ethernet/settings', data);
                 return true;
             }

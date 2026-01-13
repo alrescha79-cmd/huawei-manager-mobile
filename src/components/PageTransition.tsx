@@ -29,7 +29,6 @@ export const PageTransition: React.FC<PageTransitionProps> = ({ children, style 
             opacity.value = withTiming(1, config);
             translateY.value = withTiming(0, config);
         } else {
-            // Instant reset when invisible so it's ready to animate in next time
             opacity.value = 0;
             translateY.value = 20;
         }
@@ -39,7 +38,7 @@ export const PageTransition: React.FC<PageTransitionProps> = ({ children, style 
         return {
             opacity: opacity.value,
             transform: [{ translateY: translateY.value }],
-            flex: 1, // Ensure it fills space
+            flex: 1,
         };
     });
 

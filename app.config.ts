@@ -1,7 +1,6 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
 import type { WithAndroidWidgetsParams } from 'react-native-android-widget';
 
-// Widget configuration
 const widgetConfig: WithAndroidWidgetsParams = {
     widgets: [
         {

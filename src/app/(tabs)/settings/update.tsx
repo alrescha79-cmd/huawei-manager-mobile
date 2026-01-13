@@ -15,7 +15,6 @@ import { useTranslation } from '@/i18n';
 import Constants from 'expo-constants';
 import { MeshGradientBackground, PageHeader, AnimatedScreen } from '@/components';
 
-// GitHub repository info
 const GITHUB_OWNER = 'alrescha79-cmd';
 const GITHUB_REPO = 'huawei-manager-mobile';
 
@@ -56,20 +55,18 @@ export default function UpdateScreen() {
     const [error, setError] = useState<string | null>(null);
     const [hasChecked, setHasChecked] = useState(false);
 
-    // Rotation animation for sync icon
     const rotation = useSharedValue(0);
 
     const animatedStyle = useAnimatedStyle(() => ({
         transform: [{ rotate: `${rotation.value}deg` }],
     }));
 
-    // Start rotation animation when checking
     useEffect(() => {
         if (checking) {
             rotation.value = 0;
             rotation.value = withRepeat(
                 withTiming(360, { duration: 1000, easing: Easing.linear }),
-                -1, // infinite
+                -1,
                 false
             );
         } else {
@@ -78,7 +75,6 @@ export default function UpdateScreen() {
         }
     }, [checking]);
 
-    // Auto check on mount
     useEffect(() => {
         checkUpdate();
     }, []);
@@ -90,7 +86,6 @@ export default function UpdateScreen() {
         setReleaseInfo(null);
 
         try {
-            // Fetch latest release from GitHub API
             const response = await fetch(
                 `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
                 {
@@ -109,7 +104,6 @@ export default function UpdateScreen() {
             const latestVersion = data.tag_name?.replace(/^v/, '') || '';
             const currentVersion = Constants.expoConfig?.version || '0.0.0';
 
-            // Find APK download URL
             const apkAsset = data.assets?.find((asset: any) =>
                 asset.name?.endsWith('.apk') || asset.name?.includes('universal')
             );
@@ -124,7 +118,6 @@ export default function UpdateScreen() {
 
             setReleaseInfo(info);
 
-            // Compare versions
             const comparison = compareVersions(latestVersion, currentVersion);
             setUpdateAvailable(comparison > 0);
             setHasChecked(true);
@@ -166,7 +159,6 @@ export default function UpdateScreen() {
                     <Stack.Screen options={{ title: t('settings.checkUpdate') }} />
 
                     <View style={styles.content}>
-                        {/* Icon Container with Animation */}
                         <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
                             {checking ? (
                                 <Animated.View style={animatedStyle}>
@@ -185,7 +177,6 @@ export default function UpdateScreen() {
                             )}
                         </View>
 
-                        {/* Status Text */}
                         {checking ? (
                             <View style={styles.statusContainer}>
                                 <Text style={[typography.headline, { color: colors.text, marginBottom: 8, textAlign: 'center' }]}>

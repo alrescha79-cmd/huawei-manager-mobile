@@ -13,7 +13,7 @@ export interface ApiLog {
     requestData?: any;
     responseData?: any;
     error?: string;
-    duration: number; // ms
+    duration: number;
 }
 
 export interface ModemDebugInfo {
@@ -31,18 +31,17 @@ interface DebugState {
     apiLogs: ApiLog[];
     modemInfo: ModemDebugInfo;
 
-    // Actions
     setDebugEnabled: (enabled: boolean) => void;
     setModemInfo: (info: ModemDebugInfo) => void;
     addLog: (log: Omit<ApiLog, 'timestamp'>) => void;
     clearLogs: () => void;
     exportLogsAsText: () => string;
-    createDebugFile: () => Promise<string>; // Returns file URI
-    sendDebugEmail: () => Promise<boolean>; // Send email with file attachment
-    shareDebugLog: () => Promise<void>; // Share log as .txt file
+    createDebugFile: () => Promise<string>;
+    sendDebugEmail: () => Promise<boolean>;
+    shareDebugLog: () => Promise<void>;
 }
 
-const MAX_LOGS = 500; // Keep last 500 logs - can save to file if needed
+const MAX_LOGS = 500;
 
 export const useDebugStore = create<DebugState>()(
     persist(
@@ -54,7 +53,6 @@ export const useDebugStore = create<DebugState>()(
             setDebugEnabled: (enabled: boolean) => {
                 set({ debugEnabled: enabled });
                 if (enabled) {
-                    // Populate modem info from modem store when enabling debug mode
                     try {
                         const { useModemStore } = require('./modem.store');
                         const { useAuthStore } = require('./auth.store');
@@ -82,7 +80,6 @@ export const useDebugStore = create<DebugState>()(
                         // Silent fail if stores not available
                     }
                 } else {
-                    // Clear logs when disabling debug mode
                     set({ apiLogs: [], modemInfo: {} });
                 }
             },
@@ -100,7 +97,6 @@ export const useDebugStore = create<DebugState>()(
                     timestamp: Date.now(),
                 };
 
-                // Keep only last MAX_LOGS
                 const updatedLogs = [...apiLogs, newLog].slice(-MAX_LOGS);
                 set({ apiLogs: updatedLogs });
             },
@@ -112,11 +108,9 @@ export const useDebugStore = create<DebugState>()(
             exportLogsAsText: () => {
                 const { apiLogs, modemInfo } = get();
 
-                // Build device string
                 const deviceString = `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
                 const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
 
-                // Build modem string
                 const modemString = modemInfo.modemModel || 'Not connected';
                 const firmwareString = modemInfo.firmwareVersion || 'N/A';
 
@@ -165,15 +159,10 @@ ${log.error ? `Error: ${log.error}` : ''}
                 const { exportLogsAsText } = get();
                 const logText = exportLogsAsText();
 
-                // Generate filename with timestamp
                 const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
                 const deviceName = (Device.modelName || 'device').replace(/\s+/g, '_');
                 const filename = `huawei_manager_debug_${deviceName}_${timestamp}.txt`;
-
-                // Create file in cache directory
                 const file = new File(Paths.cache, filename);
-
-                // Write log to file
                 await file.write(logText);
 
                 return file.uri;
@@ -182,16 +171,12 @@ ${log.error ? `Error: ${log.error}` : ''}
             sendDebugEmail: async () => {
                 const { createDebugFile, modemInfo } = get();
 
-                // Check if mail composer is available
                 const isAvailable = await MailComposer.isAvailableAsync();
                 if (!isAvailable) {
                     return false;
                 }
 
-                // Create the debug file
                 const fileUri = await createDebugFile();
-
-                // Build info strings
                 const deviceString = `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
                 const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
                 const modemModel = modemInfo.modemModel || 'Unknown Modem';
@@ -199,7 +184,6 @@ ${log.error ? `Error: ${log.error}` : ''}
 
                 const subject = `[Huawei Manager] Bug Report / Feature Request - ${modemModel}`;
 
-                // Email body template
                 const body = `
 === BUG REPORT / FEATURE REQUEST ===
 
@@ -244,8 +228,6 @@ Thank you for your feedback!
             shareDebugLog: async () => {
                 const { createDebugFile } = get();
                 const fileUri = await createDebugFile();
-
-                // Check if sharing is available
                 const isAvailable = await isAvailableAsync();
                 if (isAvailable) {
                     await shareAsync(fileUri, {

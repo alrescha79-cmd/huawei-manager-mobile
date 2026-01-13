@@ -101,16 +101,13 @@ export class ModemService {
 
   async getTrafficStats(): Promise<TrafficStats> {
     try {
-      // Helper to safely parse int with fallback
       const safeParseInt = (value: string): number => {
         const parsed = parseInt(value);
         return isNaN(parsed) ? 0 : parsed;
       };
 
-      // Fetch traffic stats from main endpoint
       const response = await this.apiClient.get('/api/monitoring/traffic-statistics');
 
-      // Also fetch monthly stats from separate endpoint
       let monthDownload = 0;
       let monthUpload = 0;
       let monthDuration = 0;
@@ -119,7 +116,6 @@ export class ModemService {
       try {
         const monthResponse = await this.apiClient.get('/api/monitoring/month_statistics');
 
-        // Try different possible tag names for monthly
         monthDownload = safeParseInt(
           parseXMLValue(monthResponse, 'CurrentMonthDownload') ||
           parseXMLValue(monthResponse, 'monthDownload') ||
@@ -131,21 +127,18 @@ export class ModemService {
           parseXMLValue(monthResponse, 'MonthUpload')
         );
 
-        // Parse monthly duration (seconds)
         monthDuration = safeParseInt(
           parseXMLValue(monthResponse, 'CurrentMonthDuration') ||
           parseXMLValue(monthResponse, 'monthDuration') ||
           parseXMLValue(monthResponse, 'MonthDuration')
         );
 
-        // Parse daily usage (combined download + upload)
         dayUsed = safeParseInt(
           parseXMLValue(monthResponse, 'CurrentDayUsed') ||
           parseXMLValue(monthResponse, 'dayUsed') ||
           parseXMLValue(monthResponse, 'DayUsed')
         );
 
-        // Parse daily duration (seconds)
         dayDuration = safeParseInt(
           parseXMLValue(monthResponse, 'CurrentDayDuration') ||
           parseXMLValue(monthResponse, 'dayDuration') ||
@@ -231,7 +224,6 @@ export class ModemService {
 
   async getWanInfo(): Promise<WanInfo> {
     try {
-      // Use /api/device/information endpoint for WAN IP
       const response = await this.apiClient.get('/api/device/information');
 
       const safeParseInt = (value: string): number => {
@@ -282,8 +274,6 @@ export class ModemService {
 
   async triggerPlmnScan(): Promise<boolean> {
     try {
-      // Triggering PLMN list scan will cause the modem to re-register
-      // on the network, which typically results in a new IP address
       await this.apiClient.get('/api/net/plmn-list');
       return true;
     } catch (error) {
@@ -294,15 +284,12 @@ export class ModemService {
 
   async getAntennaMode(): Promise<string> {
     try {
-      // Read from antenna_set_type which stores the configured setting
-      // antenna_type returns the current detection state, not the setting
       const response = await this.apiClient.get('/api/device/antenna_set_type');
 
       const antennaValue = parseXMLValue(response, 'antennasettype') ||
         parseXMLValue(response, 'AntennaSetType') ||
         parseXMLValue(response, 'antenna_set_type');
 
-      // Map numeric values to string values (B312: 0=auto, 1=external, 2=internal)
       const modeMap: Record<string, string> = {
         '0': 'auto',
         '1': 'external',
@@ -315,13 +302,12 @@ export class ModemService {
       return modeMap[antennaValue] || 'auto';
     } catch (error) {
       console.error('Error getting antenna mode:', error);
-      return 'auto'; // Default to auto if endpoint not available
+      return 'auto';
     }
   }
 
   async setAntennaMode(mode: 'auto' | 'internal' | 'external'): Promise<boolean> {
     try {
-      // Map mode to API values: 0=auto, 2=internal, 1=external (B312 modem)
       const modeMap: Record<string, string> = {
         'auto': '0',
         'internal': '2',
@@ -330,7 +316,6 @@ export class ModemService {
 
       const modeValue = modeMap[mode];
 
-      // Try antenna_set_type endpoint first (discovered from modem)
       const data1 = `<?xml version="1.0" encoding="UTF-8"?><request><antennasettype>${modeValue}</antennasettype></request>`;
 
       try {
@@ -342,7 +327,6 @@ export class ModemService {
         // Fallback to antenna_type endpoint
       }
 
-      // Try antenna_type endpoint as fallback
       const data2 = `<?xml version="1.0" encoding="UTF-8"?><request><antennatype>${modeValue}</antennatype></request>`;
 
       try {
@@ -351,7 +335,6 @@ export class ModemService {
           return true;
         }
       } catch {
-        // Both endpoints failed
       }
 
       throw new Error('Antenna mode change not supported on this modem');
@@ -361,12 +344,10 @@ export class ModemService {
     }
   }
 
-  // Network Mode Settings
   async getNetworkMode(): Promise<string> {
     try {
       const response = await this.apiClient.get('/api/net/net-mode');
 
-      // NetworkMode values: 00=Auto, 01=GSM only, 02=WCDMA only, 03=LTE only, etc.
       return parseXMLValue(response, 'NetworkMode') || '00';
     } catch (error) {
       console.error('Error getting network mode:', error);
@@ -376,13 +357,6 @@ export class ModemService {
 
   async setNetworkMode(mode: string): Promise<boolean> {
     try {
-      // NetworkMode values:
-      // 00 = Auto
-      // 01 = GSM only (2G)
-      // 02 = WCDMA only (3G)
-      // 03 = LTE only (4G)
-      // 0302 = LTE/WCDMA (4G/3G)
-      // 030201 = LTE/WCDMA/GSM (Auto without 5G)
       const data = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
           <NetworkMode>${mode}</NetworkMode>
@@ -398,7 +372,6 @@ export class ModemService {
     }
   }
 
-  // Band Settings
   async getBandSettings(): Promise<{ networkBand: string; lteBand: string }> {
     try {
       const response = await this.apiClient.get('/api/net/net-mode');
@@ -418,7 +391,6 @@ export class ModemService {
 
   async setBandSettings(networkBand: string, lteBand: string): Promise<boolean> {
     try {
-      // First get current network mode
       const currentModeResponse = await this.apiClient.get('/api/net/net-mode');
       const currentMode = parseXMLValue(currentModeResponse, 'NetworkMode') || '00';
 
@@ -436,8 +408,6 @@ export class ModemService {
       throw error;
     }
   }
-
-  // ============ Mobile Network Settings ============
 
   async getDataRoamingStatus(): Promise<boolean> {
     try {
@@ -467,7 +437,6 @@ export class ModemService {
   async getAutoNetworkStatus(): Promise<boolean> {
     try {
       const response = await this.apiClient.get('/api/dialup/apn-retry');
-      // Auto network enabled when retrystatus is '1'
       return parseXMLValue(response, 'retrystatus') === '1';
     } catch (error) {
       console.error('Error getting auto network status:', error);
@@ -477,8 +446,6 @@ export class ModemService {
 
   async setAutoNetwork(enable: boolean): Promise<boolean> {
     try {
-      // Use dialup/apn-retry endpoint for auto network selection
-      // retrystatus: "1" = auto enabled, "0" = auto disabled
       const data = `<?xml version="1.0" encoding="UTF-8"?><request><retrystatus>${enable ? '1' : '0'}</retrystatus></request>`;
 
       const response = await this.apiClient.post('/api/dialup/apn-retry', data);
@@ -505,14 +472,12 @@ export class ModemService {
     timezone: string;
   }> {
     try {
-      // Get SNTP status from correct endpoint
       let sntpEnabled = false;
       try {
         const sntpResponse = await this.apiClient.get('/api/sntp/sntpswitch');
         const sntpValue = parseXMLValue(sntpResponse, 'SntpSwitch');
         sntpEnabled = sntpValue === '1';
       } catch {
-        // SNTP endpoint not available
       }
 
       return {
@@ -541,7 +506,6 @@ export class ModemService {
     timezone?: string;
   }): Promise<boolean> {
     try {
-      // Handle SNTP toggle separately using correct endpoint
       if (settings.sntpEnabled !== undefined) {
         const sntpData = `<?xml version="1.0" encoding="UTF-8"?><request><SntpSwitch>${settings.sntpEnabled ? '1' : '0'}</SntpSwitch></request>`;
         const sntpResponse = await this.apiClient.post('/api/sntp/sntpswitch', sntpData);
@@ -588,7 +552,6 @@ export class ModemService {
       const monthThreshold = parseInt(parseXMLValue(response, 'MonthThreshold') || '90');
       const trafficMaxLimit = parseInt(parseXMLValue(response, 'trafficmaxlimit') || '0');
 
-      // Parse data limit string (e.g., "500GB" or "1024MB")
       let dataLimit = 0;
       let dataLimitUnit: 'MB' | 'GB' = 'GB';
       const match = dataLimitStr.match(/^(\d+)(MB|GB)$/i);
@@ -689,10 +652,8 @@ export class ModemService {
     summaryKey: string;
   }> {
     try {
-      // Check internet connection with ping to google.com
       const pingResult = await this.diagnosisPing('google.com', 5000);
 
-      // Get network status
       const status = await this.getModemStatus();
       const signal = await this.getSignalInfo();
 
@@ -700,7 +661,6 @@ export class ModemService {
       const networkStatus = status.connectionStatus === '901' ? 'Connected' : 'Disconnected';
       const signalStrength = signal.rssi ? signal.rssi : 'Unknown';
 
-      // DNS check with cloudflare as fallback
       const dnsResult = await this.diagnosisPing('1.1.1.1', 5000);
       const dnsResolution = dnsResult.success;
 
@@ -734,9 +694,6 @@ export class ModemService {
     }
   }
 
-  /**
-   * Clear traffic history and reset all statistics to 0
-   */
   async clearTrafficHistory(): Promise<boolean> {
     try {
       const requestData = `<?xml version="1.0" encoding="UTF-8"?>

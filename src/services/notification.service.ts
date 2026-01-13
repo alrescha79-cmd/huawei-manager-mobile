@@ -12,14 +12,12 @@ const LAST_SESSION_DURATION_KEY = 'last_session_duration';
 const LAST_IP_CHANGE_TIME_KEY = 'last_ip_change_time';
 const LAST_SMS_COUNT_KEY = 'last_sms_count';
 
-// Cooldown to prevent duplicate notifications (in-memory, resets on app restart)
 let lastDailyNotifyTimestamp = 0;
 let lastMonthlyNotifyTimestamp = 0;
 let lastIpChangeNotifyTimestamp = 0;
 let lastSmsNotifyTimestamp = 0;
-const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000; // 5 minutes
+const NOTIFICATION_COOLDOWN_MS = 5 * 60 * 1000;
 
-// Notification settings interface
 export interface NotificationSettings {
     dailyUsageEnabled: boolean;
     monthlyUsageEnabled: boolean;
@@ -28,7 +26,6 @@ export interface NotificationSettings {
     badgesEnabled: boolean;
 }
 
-// Default notification settings
 const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     dailyUsageEnabled: true,
     monthlyUsageEnabled: true,
@@ -37,7 +34,6 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     badgesEnabled: true,
 };
 
-// Configure how notifications are handled when app is in foreground
 Notifications.setNotificationHandler({
     handleNotification: async () => ({
         shouldPlaySound: true,
@@ -81,7 +77,6 @@ export async function saveNotificationSettings(settings: NotificationSettings): 
  */
 async function registerForPushNotifications(): Promise<string | null> {
     try {
-        // Get project ID from Constants
         const Constants = require('expo-constants').default;
         const projectId = Constants.expoConfig?.extra?.eas?.projectId ||
             Constants.easConfig?.projectId;
@@ -94,7 +89,6 @@ async function registerForPushNotifications(): Promise<string | null> {
         const token = await Notifications.getExpoPushTokenAsync({ projectId });
         const pushToken = token.data;
 
-        // Store token locally
         await AsyncStorage.setItem(EXPO_PUSH_TOKEN_KEY, pushToken);
 
         // Log for easy copying during development
@@ -103,7 +97,6 @@ async function registerForPushNotifications(): Promise<string | null> {
         console.log(pushToken);
         console.log('===========================================');
 
-        // Subscribe to 'all_users' topic for broadcast notifications
         await Notifications.setNotificationChannelAsync?.('app-updates', {
             name: 'App Updates',
             importance: Notifications.AndroidImportance.HIGH,
@@ -152,7 +145,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
         return false;
     }
 
-    // Configure notification channels for Android
     if (Platform.OS === 'android') {
         await Notifications.setNotificationChannelAsync('usage-alerts', {
             name: 'Usage Alerts',
@@ -168,7 +160,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
             lightColor: '#4ECDC4',
         });
 
-        // Channel for app updates
         await Notifications.setNotificationChannelAsync('app-updates', {
             name: 'App Updates',
             importance: Notifications.AndroidImportance.HIGH,
@@ -177,7 +168,6 @@ export async function requestNotificationPermissions(): Promise<boolean> {
         });
     }
 
-    // Register for push notifications and get token
     await registerForPushNotifications();
 
     return true;
@@ -217,7 +207,6 @@ export async function checkDailyUsageNotification(
     const settings = await getNotificationSettings();
     if (!settings.dailyUsageEnabled) return;
 
-    // Cooldown check to prevent duplicate notifications
     const now = Date.now();
     if (now - lastDailyNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) return;
 
@@ -234,7 +223,6 @@ export async function checkDailyUsageNotification(
     const lastNotifyDate = await AsyncStorage.getItem(LAST_DAILY_USAGE_NOTIFY_KEY);
 
     if (dayUsed >= notifyThresholdBytes && lastNotifyDate !== today) {
-        // Update timestamp BEFORE sending to prevent race condition duplicates
         lastDailyNotifyTimestamp = now;
         await AsyncStorage.setItem(LAST_DAILY_USAGE_NOTIFY_KEY, today);
 
@@ -262,7 +250,6 @@ export async function checkMonthlyUsageNotification(
     const settings = await getNotificationSettings();
     if (!settings.monthlyUsageEnabled) return;
 
-    // Cooldown check to prevent duplicate notifications
     const now = Date.now();
     if (now - lastMonthlyNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) return;
 
@@ -273,7 +260,6 @@ export async function checkMonthlyUsageNotification(
     const lastNotifyMonth = await AsyncStorage.getItem(LAST_MONTHLY_USAGE_NOTIFY_KEY);
 
     if (monthUsed >= notifyThresholdBytes && lastNotifyMonth !== thisMonth) {
-        // Update timestamp BEFORE sending to prevent race condition duplicates
         lastMonthlyNotifyTimestamp = now;
         await AsyncStorage.setItem(LAST_MONTHLY_USAGE_NOTIFY_KEY, thisMonth);
 
@@ -308,10 +294,8 @@ export async function checkIPChangeNotification(
     const settings = await getNotificationSettings();
     if (!settings.ipChangeEnabled) return;
 
-    // Cooldown check to prevent duplicate notifications
     const now = Date.now();
     if (now - lastIpChangeNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) {
-        // Still update session duration even during cooldown
         await AsyncStorage.setItem(
             LAST_SESSION_DURATION_KEY,
             currentSessionDuration.toString()
@@ -323,11 +307,9 @@ export async function checkIPChangeNotification(
     const previousDuration = lastDuration ? parseInt(lastDuration, 10) : 0;
 
     if (currentSessionDuration < previousDuration && previousDuration > 60) {
-        // Update timestamp BEFORE sending to prevent race condition duplicates
         lastIpChangeNotifyTimestamp = now;
         await AsyncStorage.setItem(LAST_IP_CHANGE_TIME_KEY, now.toString());
 
-        // Format previous session duration for notification body
         const prevMinutes = Math.floor(previousDuration / 60);
         const prevHours = Math.floor(prevMinutes / 60);
         const remainingMinutes = prevMinutes % 60;
@@ -365,17 +347,13 @@ export async function checkNewSMSNotification(
     const settings = await getNotificationSettings();
     if (!settings.smsEnabled) return;
 
-    // Cooldown check to prevent duplicate notifications
     const now = Date.now();
     if (now - lastSmsNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) return;
 
-    // Get previously stored unread count
     const lastCountStr = await AsyncStorage.getItem(LAST_SMS_COUNT_KEY);
     const lastCount = lastCountStr ? parseInt(lastCountStr, 10) : 0;
 
-    // Check if there are new unread messages (count increased)
     if (currentUnreadCount > lastCount && currentUnreadCount > 0) {
-        // Update timestamp BEFORE sending to prevent race condition
         lastSmsNotifyTimestamp = now;
         await AsyncStorage.setItem(LAST_SMS_COUNT_KEY, currentUnreadCount.toString());
 
@@ -387,7 +365,6 @@ export async function checkNewSMSNotification(
             { route: '/sms' }
         );
     } else {
-        // Just update the stored count if it decreased (messages were read)
         await AsyncStorage.setItem(LAST_SMS_COUNT_KEY, currentUnreadCount.toString());
     }
 }
@@ -437,7 +414,7 @@ export async function sendDebugModeReminder(translations: {
         translations.title,
         translations.body,
         'debug-reminder',
-        { route: '/(tabs)/settings' } // Navigate to settings when tapped
+        { route: '/(tabs)/settings' }
     );
 }
 
@@ -461,7 +438,6 @@ export async function checkInactivityReminder(translations: {
     const lastActive = await getLastActiveTime();
 
     if (!lastActive) {
-        // First time, just save current time
         await saveLastActiveTime();
         return false;
     }
@@ -473,7 +449,7 @@ export async function checkInactivityReminder(translations: {
             translations.title,
             translations.body,
             'inactivity-reminder',
-            { route: '/(tabs)/home' } // Navigate to home when tapped
+            { route: '/(tabs)/home' }
         );
         return true;
     }

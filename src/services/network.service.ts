@@ -36,18 +36,15 @@ export class NetworkService {
       const isWiFi = await this.isConnectedToWiFi();
       
       if (!isWiFi) {
-        // Return default IP if not on WiFi
         return '192.168.8.1';
       }
 
-      // Try common Huawei modem IPs with manual timeout
       const commonIPs = ['192.168.8.1', '192.168.1.1', '192.168.100.1'];
       
       for (const ip of commonIPs) {
         try {
-          // Manual timeout implementation for React Native
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 1000); // 1 second timeout
+          const timeoutId = setTimeout(() => controller.abort(), 1000);
           
           const response = await fetch(`http://${ip}/html/home.html`, { 
             method: 'HEAD',
@@ -60,12 +57,10 @@ export class NetworkService {
             return ip;
           }
         } catch {
-          // Continue to next IP on error or timeout
           continue;
         }
       }
 
-      // Default to most common Huawei IP
       return '192.168.8.1';
     } catch (error) {
       console.error('Error detecting gateway IP:', error);

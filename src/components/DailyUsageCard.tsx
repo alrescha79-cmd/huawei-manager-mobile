@@ -11,12 +11,11 @@ import { Card } from './Card';
 */
 
 interface DailyUsageCardProps {
-    usage: number; // in bytes
-    duration: number; // in seconds
+    usage: number;
+    duration: number;
     style?: StyleProp<ViewStyle>;
 }
 
-// Helper to format bytes
 const formatBytesWithUnit = (bytes: number): { value: string; unit: string } => {
     if (!bytes || isNaN(bytes) || bytes === 0) return { value: '0', unit: 'B' };
     const k = 1024;
@@ -34,21 +33,17 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
 
     const formattedUsage = formatBytesWithUnit(usage);
 
-    // Calculate hours and minutes
     const hours = Math.floor(duration / 3600);
     const minutes = Math.floor((duration % 3600) / 60);
 
-    // Format with leading zeros
     const hh = hours.toString().padStart(2, '0');
     const mm = minutes.toString().padStart(2, '0');
 
-    // Colors from mockup
-    const blueColor = '#007AFF'; // Standard iOS Blue or custom bright blue
+    const blueColor = '#007AFF';
 
     return (
         <Card style={[styles.container, style]}>
             <View style={styles.content}>
-                {/* Left Side: Title + Usage */}
                 <View style={styles.leftSide}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
                         <MaterialIcons name="today" size={18} color={blueColor} style={{ marginRight: 8 }} />
@@ -66,7 +61,6 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
                     </View>
                 </View>
 
-                {/* Right Side: Digital Clock Duration */}
                 <View style={[styles.timeBox, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light }]}>
                     <View style={styles.timeRow}>
                         <Text style={[styles.digitalText, { color: blueColor }]}>{hh}</Text>
@@ -85,7 +79,7 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
 const styles = StyleSheet.create({
     container: {
         padding: 20,
-        borderRadius: 24, // Rounded corners as per image
+        borderRadius: 24,
     },
     content: {
         flexDirection: 'row',
@@ -104,7 +98,7 @@ const styles = StyleSheet.create({
         fontSize: 48,
         fontWeight: 'bold',
         letterSpacing: -1,
-        lineHeight: 56, // Adjust to preventing clipping
+        lineHeight: 56,
     },
     usageUnit: {
         fontSize: 18,
@@ -129,7 +123,7 @@ const styles = StyleSheet.create({
     digitalText: {
         fontSize: 28,
         fontWeight: '700',
-        fontFamily: 'Doto_700Bold', // Custom Digital Font
+        fontFamily: 'Doto_700Bold',
         fontVariant: ['tabular-nums'],
         letterSpacing: 2,
     },

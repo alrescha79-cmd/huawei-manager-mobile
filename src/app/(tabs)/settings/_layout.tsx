@@ -14,7 +14,6 @@ export default function SettingsLayout() {
                     headerShown: false,
                     animation: 'none',
                     contentStyle: { backgroundColor: colors.background },
-                    // Prevent previous screen from unmounting during transition
                     freezeOnBlur: true,
                 }}
             >

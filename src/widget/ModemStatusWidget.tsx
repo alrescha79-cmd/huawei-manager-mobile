@@ -8,7 +8,6 @@ import {
     getNetworkTypeName,
 } from './WidgetDataService';
 
-// Color palette
 const colors = {
     background: '#0f172a' as ColorProp,
     cardBg: '#1e293b' as ColorProp,
@@ -33,7 +32,6 @@ interface ModemStatusWidgetProps {
     height?: number;
 }
 
-// Signal bar component
 function SignalBars({ strength }: { strength: number }) {
     const activeBars = Math.min(Math.max(strength, 0), 5);
 
@@ -55,7 +53,6 @@ function SignalBars({ strength }: { strength: number }) {
     );
 }
 
-// Speed card component - unified look for both download and upload
 function SpeedCard({
     icon,
     speed,
@@ -110,7 +107,6 @@ function SpeedCard({
     );
 }
 
-// Usage stat row component
 function UsageRow({
     icon,
     label,
@@ -150,7 +146,6 @@ function UsageRow({
     );
 }
 
-// Main widget component
 export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
     const isConnected = data.connectionStatus === '901';
     const networkType = getNetworkTypeName(data.networkType);
@@ -171,7 +166,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                 flexDirection: 'column',
             }}
         >
-            {/* Header Row */}
             <FlexWidget
                 style={{
                     flexDirection: 'row',
@@ -181,7 +175,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                     width: 'match_parent',
                 }}
             >
-                {/* Left: Signal + Network */}
                 <FlexWidget style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <SignalBars strength={signalStrength} />
                     <TextWidget
@@ -194,7 +187,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                     />
                 </FlexWidget>
 
-                {/* Center: Status Badge */}
                 <FlexWidget
                     style={{
                         flexDirection: 'row',
@@ -223,7 +215,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                     />
                 </FlexWidget>
 
-                {/* Right: Refresh Icon */}
                 <FlexWidget
                     style={{ paddingLeft: 12 }}
                     clickAction="REFRESH"
@@ -236,7 +227,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                 </FlexWidget>
             </FlexWidget>
 
-            {/* Main Content: 2-Column Grid */}
             <FlexWidget
                 style={{
                     flexDirection: 'row',
@@ -244,7 +234,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                     width: 'match_parent',
                 }}
             >
-                {/* Left Column: Speed - Both with same style */}
                 <FlexWidget
                     style={{
                         flex: 1,
@@ -255,7 +244,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                         paddingRight: 16,
                     }}
                 >
-                    {/* Download Speed */}
                     <SpeedCard
                         icon="↓"
                         speed={formatSpeed(data.currentDownloadRate)}
@@ -264,7 +252,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                         iconBg={colors.blueBg}
                     />
 
-                    {/* Upload Speed - Same style as Download */}
                     <SpeedCard
                         icon="↑"
                         speed={formatSpeed(data.currentUploadRate)}
@@ -274,7 +261,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                     />
                 </FlexWidget>
 
-                {/* Right Column: Usage Stats */}
                 <FlexWidget
                     style={{
                         flex: 1,
@@ -302,7 +288,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                         valueColor={colors.yellow}
                     />
 
-                    {/* Progress Bar - show monthly usage percentage using weights */}
                     <FlexWidget
                         style={{
                             height: 6,
@@ -334,7 +319,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
     );
 }
 
-// Loading state widget
 export function LoadingWidget() {
     return (
         <FlexWidget
@@ -353,7 +337,6 @@ export function LoadingWidget() {
     );
 }
 
-// Error state widget
 export function ErrorWidget({ message }: { message: string }) {
     return (
         <FlexWidget

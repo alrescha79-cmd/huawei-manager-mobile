@@ -53,13 +53,11 @@ export const formatDuration = (seconds: number, units: DurationUnits = defaultUn
   }
 };
 
-// Parse signal value from various formats (e.g., "-76dBm", ">=-51dBm", "-76")
 const parseSignalValue = (value: string | number | undefined): number | null => {
   if (value === undefined || value === null || value === '') return null;
 
   if (typeof value === 'number') return value;
 
-  // Handle special formats like ">=-51dBm" or ">=..." from E3372
   const cleanValue = value.replace(/>=/g, '').replace(/dBm?/gi, '').replace(/dB/gi, '').trim();
   const parsed = parseInt(cleanValue);
 
@@ -67,20 +65,14 @@ const parseSignalValue = (value: string | number | undefined): number | null => 
 };
 
 export const getSignalStrength = (rssi: string | number | undefined, rsrp?: string | number): string => {
-  // Try RSSI first
   let rssiNum = parseSignalValue(rssi);
 
-  // If RSSI is null/invalid, try RSRP as fallback (RSRP is usually more accurate for LTE)
   if (rssiNum === null && rsrp) {
     rssiNum = parseSignalValue(rsrp);
   }
 
-  // If still no valid value, return unknown
   if (rssiNum === null) return 'unknown';
 
-  // For RSRP values (typically -44 to -140 dBm)
-  // For RSSI values (typically -30 to -110 dBm)
-  // Using a unified scale that works for both
   if (rssiNum >= -65) return 'excellent';
   if (rssiNum >= -75) return 'good';
   if (rssiNum >= -85) return 'fair';
@@ -89,15 +81,12 @@ export const getSignalStrength = (rssi: string | number | undefined, rsrp?: stri
 };
 
 export const getSignalIcon = (rssi: string | number | undefined, rsrp?: string | number): number => {
-  // Try RSSI first
   let rssiNum = parseSignalValue(rssi);
 
-  // If RSSI is null/invalid, try RSRP as fallback
   if (rssiNum === null && rsrp) {
     rssiNum = parseSignalValue(rsrp);
   }
 
-  // If still no valid value, return 0 (no signal bars)
   if (rssiNum === null) return 0;
 
   if (rssiNum >= -65) return 5;
@@ -108,16 +97,13 @@ export const getSignalIcon = (rssi: string | number | undefined, rsrp?: string |
   return 0;
 };
 
-// Get signal icon from modem status SignalIcon field (0-5 value from modem)
 export const getSignalIconFromModemStatus = (signalIcon: string | undefined): number => {
   if (!signalIcon) return 0;
   const parsed = parseInt(signalIcon);
   if (isNaN(parsed)) return 0;
-  // Clamp to 0-5 range
   return Math.max(0, Math.min(5, parsed));
 };
 
-// Map SignalIcon value (0-5) to signal strength text
 export const getSignalStrengthFromIcon = (signalIcon: number): string => {
   if (signalIcon >= 5) return 'excellent';
   if (signalIcon >= 4) return 'good';
@@ -126,7 +112,6 @@ export const getSignalStrengthFromIcon = (signalIcon: number): string => {
   return 'veryPoor';
 };
 
-// Decode HTML entities in strings
 const decodeHtmlEntities = (text: string): string => {
   const entities: Record<string, string> = {
     '&lt;': '<',
@@ -141,11 +126,9 @@ const decodeHtmlEntities = (text: string): string => {
 };
 
 export const parseXMLValue = (xml: string, tag: string): string => {
-  // Use [\s\S] instead of . to properly match content including newlines
   const regex = new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`);
   const match = xml.match(regex);
   const value = match ? match[1].trim() : '';
-  // Decode any HTML entities in the value
   return decodeHtmlEntities(value);
 };
 
@@ -164,7 +147,6 @@ export const isValidIP = (ip: string): boolean => {
   });
 };
 
-// Decode Huawei modem status codes
 export const getConnectionStatusText = (code: string | undefined): string => {
   if (!code) return 'unknown';
 
@@ -243,7 +225,6 @@ export const getRoamingStatusText = (code: string | undefined): string => {
   return roamingMap[code] || code;
 };
 
-// Comprehensive Band mapping for all technologies (2G, 3G, 4G, 5G)
 export const getLteBandInfo = (band: string | undefined): string => {
   if (!band) return '-';
 
@@ -474,15 +455,11 @@ export const getLteBandInfo = (band: string | undefined): string => {
     'NR261': '5G n261 mmWave - 28 GHz',
   };
 
-  // Try direct match first
   if (bandMap[band]) return bandMap[band];
 
-  // Try uppercase match
   const upperBand = band.toUpperCase();
   if (bandMap[upperBand]) return bandMap[upperBand];
 
-  // Try extracting band number from string like "LTE B1", "LTE B3", "5G n78"
-  // Match patterns: "B1", "LTE1", "n78", "NR78", etc.
   const lteMatch = band.match(/(?:LTE\s*)?B?(\d+)/i);
   if (lteMatch) {
     const bandNum = lteMatch[1];
@@ -491,7 +468,6 @@ export const getLteBandInfo = (band: string | undefined): string => {
     return `LTE B${bandNum}`;
   }
 
-  // Match 5G NR patterns
   const nrMatch = band.match(/(?:5G\s*|NR\s*)?n(\d+)/i);
   if (nrMatch) {
     const nrBandNum = 'n' + nrMatch[1];

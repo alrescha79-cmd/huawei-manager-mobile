@@ -38,9 +38,7 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
     const dot3Opacity = useRef(new Animated.Value(0.3)).current;
 
     useEffect(() => {
-        // Initial animation sequence
         Animated.sequence([
-            // Logo fade in & scale up with slight rotate
             Animated.parallel([
                 Animated.timing(logoOpacity, {
                     toValue: 1,
@@ -72,7 +70,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                     useNativeDriver: true,
                 }),
             ]),
-            // Text slide up & fade in
             Animated.parallel([
                 Animated.timing(textOpacity, {
                     toValue: 1,
@@ -86,7 +83,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                     useNativeDriver: true,
                 }),
             ]),
-            // Loading dots fade in
             Animated.timing(dotsOpacity, {
                 toValue: 1,
                 duration: 300,
@@ -94,7 +90,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
             }),
         ]).start();
 
-        // Continuous pulse animation for logo
         const pulseAnimation = Animated.loop(
             Animated.sequence([
                 Animated.timing(pulseScale, {
@@ -113,7 +108,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
         );
         pulseAnimation.start();
 
-        // Glow animation
         const glowAnimation = Animated.loop(
             Animated.sequence([
                 Animated.timing(glowOpacity, {
@@ -132,7 +126,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
         );
         glowAnimation.start();
 
-        // Loading dots animation
         const dotAnimation = Animated.loop(
             Animated.sequence([
                 Animated.timing(dot1Opacity, { toValue: 1, duration: 300, useNativeDriver: true }),
@@ -167,7 +160,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 1 }}
             >
-                {/* Background particles/stars effect */}
                 <View style={styles.starsContainer}>
                     {[...Array(20)].map((_, i) => (
                         <View
@@ -187,7 +179,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                     ))}
                 </View>
 
-                {/* Animated Glow Ring */}
                 <Animated.View
                     style={[
                         styles.glowRing,
@@ -198,7 +189,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                     ]}
                 />
 
-                {/* Outer Ring */}
                 <Animated.View
                     style={[
                         styles.outerRing,
@@ -209,7 +199,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                     ]}
                 />
 
-                {/* Logo Container with Icon */}
                 <Animated.View
                     style={[
                         styles.logoContainer,
@@ -232,7 +221,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                     </LinearGradient>
                 </Animated.View>
 
-                {/* App Name */}
                 <Animated.View
                     style={[
                         styles.textContainer,
@@ -246,7 +234,6 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                     <Text style={[styles.subtitle, { color: subtitleColor }]}>Smart Modem Control</Text>
                 </Animated.View>
 
-                {/* Loading Dots */}
                 {isLoading && (
                     <Animated.View style={[styles.loadingContainer, { opacity: dotsOpacity }]}>
                         <View style={styles.dotsContainer}>
@@ -258,9 +245,8 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                     </Animated.View>
                 )}
 
-                {/* Bottom branding */}
                 <Animated.View style={[styles.bottomBranding, { opacity: textOpacity }]}>
-                    <Text style={[styles.versionText, { color: subtitleColor }]}>v1.1.0</Text>
+                    <Text style={[styles.versionText, { color: subtitleColor }]}>v1.1.1</Text>
                 </Animated.View>
             </LinearGradient>
         </View>

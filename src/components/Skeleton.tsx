@@ -67,7 +67,6 @@ export function Skeleton({
     );
 }
 
-// Common skeleton patterns for modem data
 export function SkeletonText({
     lines = 1,
     lineHeight = 16,
@@ -118,7 +117,6 @@ export function SkeletonCard({
     );
 }
 
-// Skeleton for signal/status cards
 export function SkeletonSignalCard() {
     const { colors } = useTheme();
 

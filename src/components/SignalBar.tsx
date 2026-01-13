@@ -3,7 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme';
 
 interface SignalBarProps {
-  strength: number; // 0-5
+  strength: number;
   label?: string;
 }
 

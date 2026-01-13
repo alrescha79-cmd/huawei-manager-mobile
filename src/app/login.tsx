@@ -37,7 +37,6 @@ export default function LoginScreen() {
   const [showWebViewOption, setShowWebViewOption] = useState(false);
   const [isAutoLoginReady, setIsAutoLoginReady] = useState(false);
 
-  // Load saved credentials on mount
   useEffect(() => {
     const initCredentials = async () => {
       await loadCredentials();
@@ -46,13 +45,11 @@ export default function LoginScreen() {
     initCredentials();
   }, []);
 
-  // Auto-fill form - NO WebView auto-trigger
   useEffect(() => {
     if (isAutoLoginReady && credentials) {
       setModemIp(credentials.modemIp || '192.168.8.1');
       setUsername(credentials.username || 'admin');
       setPassword(credentials.password || '');
-      // WebView disabled - direct login via ModemAPIClient works
     }
   }, [isAutoLoginReady, credentials]);
 
@@ -79,7 +76,6 @@ export default function LoginScreen() {
     }
   };
 
-  // Try direct API login first, fallback to WebView
   const handleLoginPress = async () => {
     setError(null);
     setShowWebViewOption(false);
@@ -89,14 +85,12 @@ export default function LoginScreen() {
       return;
     }
 
-    // Try direct API login with retries
     setIsDirectLogging(true);
 
     const apiClient = new ModemAPIClient(modemIp);
     let success = false;
     let lastError = null;
 
-    // Retry up to 3 times
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         console.log(`[Login Page] Attempt ${attempt}/3...`);
@@ -116,7 +110,6 @@ export default function LoginScreen() {
       } catch (err: any) {
         lastError = err;
         console.log(`[Login Page] Attempt ${attempt} failed:`, err.message);
-        // Wait a bit before retry
         if (attempt < 3) {
           await new Promise(resolve => setTimeout(resolve, 500));
         }
@@ -125,7 +118,6 @@ export default function LoginScreen() {
 
     setIsDirectLogging(false);
 
-    // If all retries fail, show WebView option
     setShowWebViewOption(true);
     ThemedAlertHelper.alert(
       t('login.directLoginFailed'),
@@ -137,19 +129,16 @@ export default function LoginScreen() {
     );
   };
 
-  // Handle successful login from WebView
   const handleWebViewLoginSuccess = async () => {
     setShowWebViewLogin(false);
 
     try {
-      // Save credentials
       await login({
         modemIp,
         username,
         password,
       });
 
-      // Credentials saved, redirecting to home
       ThemedAlertHelper.alert(t('common.success'), t('login.loginSuccess'), [
         {
           text: t('common.ok'),
@@ -164,9 +153,7 @@ export default function LoginScreen() {
     }
   };
 
-  // Handle reporting login issues via email or GitHub
   const handleReportIssue = async () => {
-    // Build device info string
     const deviceString = `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
     const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
     const appVersion = Constants.expoConfig?.version || '1.0.0';
@@ -198,7 +185,6 @@ export default function LoginScreen() {
     const githubBody = encodeURIComponent(reportTemplate);
     const githubUrl = `https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?title=${githubTitle}&body=${githubBody}`;
 
-    // Show options dialog
     ThemedAlertHelper.alert(
       t('login.reportIssue'),
       t('login.reportIssueMessage'),
@@ -223,7 +209,6 @@ export default function LoginScreen() {
                 body: reportTemplate,
               });
             } else {
-              // Fallback to mailto: link
               const mailtoUrl = `mailto:alrescha79@gmail.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(reportTemplate)}`;
               Linking.openURL(mailtoUrl).catch(() => {
                 ThemedAlertHelper.alert(t('common.error'), 'Could not open email client');
@@ -321,12 +306,10 @@ export default function LoginScreen() {
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
             {t('login.directLoginNote')}{'\n'}{t('login.webFallbackNote')}
           </Text>
-          {/* app version */}
           <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center' }]}>
             {t('login.appVersion')}: {Constants.expoConfig?.version || '1.0.0'}
           </Text>
 
-          {/* Having trouble? Report issue link */}
           <TouchableOpacity
             onPress={handleReportIssue}
             style={styles.reportIssueLink}
@@ -339,7 +322,6 @@ export default function LoginScreen() {
         </View>
       </ScrollView>
 
-      {/* WebView Login Modal */}
       <WebViewLogin
         modemIp={modemIp}
         username={username}
@@ -348,7 +330,6 @@ export default function LoginScreen() {
         onClose={() => setShowWebViewLogin(false)}
         onLoginSuccess={handleWebViewLoginSuccess}
         onTimeout={() => {
-          // Reset auto-login state so user can login manually
           setShowWebViewLogin(false);
           setShowWebViewOption(true);
         }}
