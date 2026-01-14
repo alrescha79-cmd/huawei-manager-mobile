@@ -128,14 +128,18 @@ export function BandSelectionModal({
     const handleSave = async () => {
         Keyboard.dismiss();
         if (!modemService || isSaving) return;
+
+        // Validate at least one band is selected
+        if (selectedBandBits.length === 0) {
+            ThemedAlertHelper.alert(t('common.error'), t('settings.selectAtLeastOneBand'));
+            return;
+        }
+
         setIsSaving(true);
         try {
             let lteBandValue = BigInt(0);
             for (const bit of selectedBandBits) {
                 lteBandValue |= (BigInt(1) << BigInt(bit));
-            }
-            if (lteBandValue === BigInt(0)) {
-                lteBandValue = BigInt('0x7FFFFFFFFFFFFFFF');
             }
             const lteBandHex = lteBandValue.toString(16).toUpperCase();
 
