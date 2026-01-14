@@ -1,56 +1,92 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/theme';
+
+export type SMSFilterType = 'all' | 'unread' | 'sent';
 
 interface SMSStatsCardProps {
     t: (key: string) => string;
     total: number;
     unread: number;
     sent: number;
+    activeFilter?: SMSFilterType;
+    onFilterChange?: (filter: SMSFilterType) => void;
 }
 
 /**
- * Stats card row showing SMS counts
+ * Stats card row showing SMS counts - clickable to filter messages
  */
-export function SMSStatsCard({ t, total, unread, sent }: SMSStatsCardProps) {
+export function SMSStatsCard({
+    t,
+    total,
+    unread,
+    sent,
+    activeFilter = 'all',
+    onFilterChange
+}: SMSStatsCardProps) {
     const { colors, typography, glassmorphism, isDark } = useTheme();
+
+    const isActive = (filter: SMSFilterType) => activeFilter === filter;
+
+    const getCardStyle = (filter: SMSFilterType) => {
+        if (isActive(filter)) {
+            return { backgroundColor: colors.primary };
+        }
+        return {
+            backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+            borderWidth: 1,
+            borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+        };
+    };
+
+    const getTextColor = (filter: SMSFilterType) => {
+        return isActive(filter) ? '#FFF' : colors.textSecondary;
+    };
+
+    const getValueColor = (filter: SMSFilterType) => {
+        return isActive(filter) ? '#FFF' : colors.text;
+    };
 
     return (
         <View style={styles.statsRow}>
-            <View style={[styles.statsCard, {
-                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                borderWidth: 1,
-                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-            }]}>
-                <Text style={[typography.caption2, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+            <TouchableOpacity
+                style={[styles.statsCard, getCardStyle('all'), isActive('all') && styles.statsCardHighlight]}
+                onPress={() => onFilterChange?.('all')}
+                activeOpacity={0.7}
+            >
+                <Text style={[typography.caption2, { color: getTextColor('all'), textTransform: 'uppercase', letterSpacing: 0.5 }]}>
                     {t('sms.total')}
                 </Text>
-                <Text style={[typography.largeTitle, { color: colors.text, marginTop: 4 }]}>
+                <Text style={[typography.largeTitle, { color: getValueColor('all'), marginTop: 4 }]}>
                     {total}
                 </Text>
-            </View>
+            </TouchableOpacity>
 
-            <View style={[styles.statsCard, styles.statsCardHighlight, { backgroundColor: colors.primary }]}>
-                <Text style={[typography.caption2, { color: '#FFF', textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+            <TouchableOpacity
+                style={[styles.statsCard, getCardStyle('unread'), isActive('unread') && styles.statsCardHighlight]}
+                onPress={() => onFilterChange?.('unread')}
+                activeOpacity={0.7}
+            >
+                <Text style={[typography.caption2, { color: getTextColor('unread'), textTransform: 'uppercase', letterSpacing: 0.5 }]}>
                     {t('sms.unread')}
                 </Text>
-                <Text style={[typography.largeTitle, { color: '#FFF', marginTop: 4 }]}>
+                <Text style={[typography.largeTitle, { color: getValueColor('unread'), marginTop: 4 }]}>
                     {unread}
                 </Text>
-            </View>
+            </TouchableOpacity>
 
-            <View style={[styles.statsCard, {
-                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                borderWidth: 1,
-                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-            }]}>
-                <Text style={[typography.caption2, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+            <TouchableOpacity
+                style={[styles.statsCard, getCardStyle('sent'), isActive('sent') && styles.statsCardHighlight]}
+                onPress={() => onFilterChange?.('sent')}
+                activeOpacity={0.7}
+            >
+                <Text style={[typography.caption2, { color: getTextColor('sent'), textTransform: 'uppercase', letterSpacing: 0.5 }]}>
                     {t('sms.sent')}
                 </Text>
-                <Text style={[typography.largeTitle, { color: colors.text, marginTop: 4 }]}>
+                <Text style={[typography.largeTitle, { color: getValueColor('sent'), marginTop: 4 }]}>
                     {sent}
                 </Text>
-            </View>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -78,3 +114,4 @@ const styles = StyleSheet.create({
 });
 
 export default SMSStatsCard;
+

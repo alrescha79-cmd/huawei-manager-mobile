@@ -16,7 +16,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView } from '@/components';
-import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, wifiStyles as styles } from '@/components/wifi';
+import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, WiFiSettingsSkeleton, ConnectedDevicesSkeleton, GuestWiFiSkeleton, ParentalControlSkeleton, wifiStyles as styles } from '@/components/wifi';
 import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -568,11 +568,13 @@ export default function WiFiScreen() {
   const handleSaveProfile = async () => {
     if (!wifiService || isSavingProfile) return;
 
+    // Validate profile name
     if (!profileName.trim()) {
-      ThemedAlertHelper.alert(t('common.error'), t('parentalControl.profileName'));
+      ThemedAlertHelper.alert(t('common.error'), t('parentalControl.profileNameRequired'));
       return;
     }
 
+    // Validate active days
     if (profileDays.length === 0) {
       ThemedAlertHelper.alert(t('common.error'), t('parentalControl.selectAtLeastOneDay'));
       return;
@@ -655,6 +657,16 @@ export default function WiFiScreen() {
           keyboardDismissMode="interactive"
         >
           <View style={styles.header} />
+
+          {/* Show skeletons during initial load */}
+          {!wifiSettings && isRefreshing && (
+            <>
+              <WiFiSettingsSkeleton />
+              <ConnectedDevicesSkeleton />
+              <GuestWiFiSkeleton />
+              <ParentalControlSkeleton />
+            </>
+          )}
 
           {/* WiFi Settings Card */}
           {wifiSettings && (
@@ -763,7 +775,8 @@ export default function WiFiScreen() {
               <View style={[styles.modalHeader, {
                 borderBottomColor: colors.border,
               }]}>
-                <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
+                <View style={{ width: 28 }} />
+                <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold', flex: 1, textAlign: 'center' }]}>
                   {editingProfile ? t('parentalControl.editProfile') : t('parentalControl.addProfile')}
                 </Text>
                 <TouchableOpacity onPress={handleCloseProfileModal}>
@@ -849,8 +862,9 @@ export default function WiFiScreen() {
                   <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>
                     {t('parentalControl.activeDays')}
                   </Text>
+                  {/* Days order: Mon(1), Tue(2), Wed(3), Thu(4), Fri(5), Sat(6), Sun(0) */}
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: spacing.md }}>
-                    {[0, 1, 2, 3, 4, 5, 6].map(day => (
+                    {[1, 2, 3, 4, 5, 6, 0].map(day => (
                       <TouchableOpacity
                         key={day}
                         onPress={() => toggleProfileDay(day)}

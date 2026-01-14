@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  StyleSheet,
   ScrollView,
   RefreshControl,
   Modal,
@@ -10,7 +9,6 @@ import {
   StatusBar,
   Platform,
   TextInput,
-  ActivityIndicator,
   Linking,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -18,7 +16,7 @@ import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView } from '@/components';
-import { SMSListItem, SMSStatsCard } from '@/components/sms';
+import { SMSListItem, SMSStatsCard, SMSDetailModal, SMSStatsSkeleton, SMSListSkeleton, SMSSearchSkeleton, smsStyles as styles, SMSFilterType } from '@/components/sms';
 import { formatTimeAgo } from '@/utils/formatters';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
@@ -53,6 +51,7 @@ export default function SMSScreen() {
   const [showDetail, setShowDetail] = useState(false);
   const [replyMessage, setReplyMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
+  const [messageFilter, setMessageFilter] = useState<SMSFilterType>('all');
 
 
   useEffect(() => {
@@ -110,12 +109,30 @@ export default function SMSScreen() {
       }
 
       try {
-        const [messagesList, count] = await Promise.all([
-          service.getSMSList(),
+        // Load inbox (boxType=1) and count first
+        const [inboxMessages, count] = await Promise.all([
+          service.getSMSList(1, 20, 1),  // Inbox
           service.getSMSCount(),
         ]);
 
-        setMessages(messagesList);
+        // Try to load sent/outbox messages (boxType=2)
+        // Some modems may not support outbox, so we handle errors gracefully
+        let sentMessages: typeof inboxMessages = [];
+        try {
+          if (count.localOutbox > 0) {
+            sentMessages = await service.getSMSList(1, 20, 2);
+          }
+        } catch (outboxError) {
+          // Outbox not supported or empty, continue with inbox only
+          console.log('Outbox loading skipped:', outboxError);
+        }
+
+        // Merge and sort by date (newest first)
+        const allMessages = [...inboxMessages, ...sentMessages].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
+        setMessages(allMessages);
         setSMSCount(count);
         setSmsSupported(true);
 
@@ -147,12 +164,28 @@ export default function SMSScreen() {
       }
 
       try {
-        const [messagesList, count] = await Promise.all([
-          service.getSMSList(),
+        // Load inbox (boxType=1) and count first
+        const [inboxMessages, count] = await Promise.all([
+          service.getSMSList(1, 20, 1),  // Inbox
           service.getSMSCount(),
         ]);
 
-        setMessages(messagesList);
+        // Try to load sent/outbox messages (boxType=2)
+        let sentMessages: typeof inboxMessages = [];
+        try {
+          if (count.localOutbox > 0) {
+            sentMessages = await service.getSMSList(1, 20, 2);
+          }
+        } catch {
+          // Outbox not supported, continue with inbox only
+        }
+
+        // Merge and sort by date (newest first)
+        const allMessages = [...inboxMessages, ...sentMessages].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
+        setMessages(allMessages);
         setSMSCount(count);
       } catch (error: any) {
         if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
@@ -256,6 +289,12 @@ export default function SMSScreen() {
   };
 
   const filteredMessages = messages.filter(msg => {
+    // Apply filter by type using boxType
+    // boxType: 1 = inbox (received), 2 = outbox (sent)
+    if (messageFilter === 'unread' && msg.smstat !== '0') return false;
+    if (messageFilter === 'sent' && msg.boxType !== 2) return false;
+
+    // Apply search filter
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -358,6 +397,15 @@ export default function SMSScreen() {
             }
           >
 
+            {/* Show skeletons during initial load */}
+            {!smsCount && isRefreshing && (
+              <>
+                <SMSStatsSkeleton />
+                <SMSSearchSkeleton />
+                <SMSListSkeleton />
+              </>
+            )}
+
             {/* Stats Cards Row - Only show if SMS is supported */}
             {smsSupported && smsCount && (
               <SMSStatsCard
@@ -365,6 +413,8 @@ export default function SMSScreen() {
                 total={smsCount.localInbox + smsCount.localOutbox}
                 unread={smsCount.localUnread}
                 sent={smsCount.localOutbox}
+                activeFilter={messageFilter}
+                onFilterChange={setMessageFilter}
               />
             )}
 
@@ -427,7 +477,7 @@ export default function SMSScreen() {
               }]}>
                 {filteredMessages.map((message, index) => (
                   <SMSListItem
-                    key={message.index}
+                    key={`${message.boxType}-${message.index}`}
                     message={message}
                     isLast={index === filteredMessages.length - 1}
                     timeDisplay={formatTimeAgo(message.date)}
@@ -532,361 +582,21 @@ export default function SMSScreen() {
       </Modal>
 
       {/* Detail Modal */}
-      <Modal
+      <SMSDetailModal
         visible={showDetail}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => {
+        selectedMessage={selectedMessage}
+        replyMessage={replyMessage}
+        isSending={isSending}
+        t={t}
+        onClose={() => {
           setShowDetail(false);
           setSelectedMessage(null);
         }}
-      >
-        <StatusBar backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
-        <KeyboardAnimatedView
-          style={[styles.modalContainer, { backgroundColor: colors.background }]}
-        >
-          <View style={[
-            styles.modalHeader,
-            {
-              borderBottomColor: colors.border,
-              paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 12 : 16
-            }
-          ]}>
-            <TouchableOpacity onPress={() => {
-              setShowDetail(false);
-              setSelectedMessage(null);
-            }} style={{ width: 40 }}>
-              <MaterialIcons name="arrow-back" size={24} color={colors.primary} />
-            </TouchableOpacity>
-            <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>
-              {selectedMessage?.phone || ''}
-            </Text>
-            <TouchableOpacity onPress={() => {
-              if (selectedMessage) {
-                handleDelete(selectedMessage.index);
-                setShowDetail(false);
-                setSelectedMessage(null);
-              }
-            }} style={{ width: 40, alignItems: 'flex-end' }}>
-              <MaterialIcons name="delete" size={24} color={colors.error} />
-            </TouchableOpacity>
-          </View>
-
-          <View style={{ flex: 1 }}>
-            <ScrollView
-              style={[styles.modalContent, { backgroundColor: colors.background }]}
-              contentContainerStyle={{ paddingBottom: 100 }}
-            >
-              {selectedMessage && (
-                <>
-                  <View style={{ alignItems: 'center', marginBottom: spacing.md }}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                      {dayjs(selectedMessage.date).format('dddd, MMMM D, YYYY')}
-                    </Text>
-                    <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: 2 }]}>
-                      {dayjs(selectedMessage.date).format('h:mm A')}
-                    </Text>
-                  </View>
-
-                  <View style={{ alignItems: 'flex-start' }}>
-                    <View style={[
-                      styles.chatBubble,
-                      {
-                        backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                        borderWidth: 1,
-                        borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-                      }
-                    ]}>
-                      {renderMessageWithLinks(selectedMessage.content)}
-                    </View>
-                  </View>
-                </>
-              )}
-            </ScrollView>
-
-            <View style={[styles.modernReplyBar, {
-              backgroundColor: colors.background,
-              borderTopColor: colors.border,
-              paddingBottom: Math.max(insets.bottom, 16)
-            }]}>
-              <View style={[styles.modernInputContainer, {
-                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                borderWidth: 1,
-                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-              }]}>
-                <TextInput
-                  style={[styles.modernInput, { color: colors.text }]}
-                  placeholder={t('sms.typeMessage')}
-                  placeholderTextColor={colors.textSecondary}
-                  value={replyMessage}
-                  onChangeText={setReplyMessage}
-                  multiline
-                  maxLength={160}
-                />
-                <Text style={[typography.caption2, { color: colors.textSecondary }]}>
-                  {replyMessage.length} / 160
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={[styles.modernSendButton, {
-                  backgroundColor: replyMessage.trim() ? colors.primary : colors.textSecondary,
-                  opacity: isSending ? 0.6 : 1,
-                }]}
-                onPress={handleReply}
-                disabled={isSending || !replyMessage.trim()}
-              >
-                {isSending ? (
-                  <BouncingDots size="small" color="#FFF" />
-                ) : (
-                  <MaterialIcons name="send" size={20} color="#FFF" />
-                )}
-              </TouchableOpacity>
-            </View>
-          </View>
-        </KeyboardAnimatedView>
-      </Modal>
+        onDelete={handleDelete}
+        onReply={handleReply}
+        onReplyChange={setReplyMessage}
+        renderMessageContent={renderMessageWithLinks}
+      />
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  content: {
-    padding: 16,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 16,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  newButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    minHeight: 36,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 24,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
-  countRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 8,
-  },
-  countItem: {
-    alignItems: 'center',
-  },
-  // Stats cards styles
-  statsRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 16,
-  },
-  statsCard: {
-    flex: 1,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 80,
-  },
-  statsCardHighlight: {
-    transform: [{ scale: 1.05 }],
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-  },
-  // Search bar styles
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginBottom: 16,
-    gap: 12,
-  },
-  searchInput: {
-    flex: 1,
-    fontSize: 16,
-    padding: 0,
-  },
-  // Messages header styles
-  messagesHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    paddingHorizontal: 4,
-  },
-  // New Android-style message list
-  messagesList: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  messageItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-  },
-  avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 12,
-  },
-  avatarText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  messageContent: {
-    flex: 1,
-  },
-  messageTopRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  unreadBadge: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    marginLeft: 8,
-  },
-  emptyState: {
-    borderRadius: 16,
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  // Modal styles
-  modalContainer: {
-    flex: 1,
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E5E5',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 16,
-  },
-  // Chat bubble style for detail
-  chatBubble: {
-    maxWidth: '85%',
-    padding: 12,
-    borderRadius: 16,
-    borderTopLeftRadius: 4,
-  },
-  replyContainer: {
-    marginTop: 'auto',
-    paddingTop: 16,
-    borderTopWidth: 1,
-  },
-  // Compose modal styles
-  composeHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  composeField: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-  },
-  composeMessageContainer: {
-    flex: 1,
-  },
-  composeSendBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    padding: 12,
-    borderTopWidth: 1,
-  },
-  composeSendInput: {
-    flex: 1,
-    maxHeight: 100,
-    borderRadius: 20,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderWidth: 1,
-    marginRight: 8,
-  },
-  sendButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  // Modern reply bar styles
-  modernReplyBar: {
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    paddingHorizontal: 16,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    gap: 12,
-  },
-  modernInputContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'flex-end',
-    borderRadius: 24,
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 8,
-  },
-  modernInput: {
-    flex: 1,
-    fontSize: 16,
-    maxHeight: 80,
-    padding: 0,
-  },
-  modernSendButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-});
