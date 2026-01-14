@@ -49,6 +49,7 @@ HAR (HTTP Archive) adalah format file yang menyimpan semua request/response HTTP
 2. **Buka Developer Tools**
    - Tekan `F12` atau `Ctrl+Shift+I` (Windows/Linux)
    - Tekan `Cmd+Option+I` (Mac)
+   - Klik kanan dan pilih `inspect`
 
 3. **Pilih tab "Network"**
 

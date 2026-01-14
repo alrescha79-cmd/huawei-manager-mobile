@@ -16,7 +16,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView } from '@/components';
-import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, wifiStyles as styles } from '@/components/wifi';
+import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, WiFiSettingsSkeleton, ConnectedDevicesSkeleton, GuestWiFiSkeleton, ParentalControlSkeleton, wifiStyles as styles } from '@/components/wifi';
 import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -655,6 +655,16 @@ export default function WiFiScreen() {
           keyboardDismissMode="interactive"
         >
           <View style={styles.header} />
+
+          {/* Show skeletons during initial load */}
+          {!wifiSettings && isRefreshing && (
+            <>
+              <WiFiSettingsSkeleton />
+              <ConnectedDevicesSkeleton />
+              <GuestWiFiSkeleton />
+              <ParentalControlSkeleton />
+            </>
+          )}
 
           {/* WiFi Settings Card */}
           {wifiSettings && (

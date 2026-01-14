@@ -119,6 +119,7 @@ export interface SMSMessage {
   content: string;
   date: string;
   smstat: string;
+  boxType: number; // 1 = inbox (received), 2 = outbox (sent)
 }
 
 export interface SMSCount {

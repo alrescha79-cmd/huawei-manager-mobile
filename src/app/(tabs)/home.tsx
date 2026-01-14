@@ -13,7 +13,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, CustomRefreshScrollView } from '@/components';
-import { QuickActionsCard, ConnectionStatusCard, NoDataWarningCard, SignalInfoCard, TrafficStatsCard, homeStyles as styles } from '@/components/home';
+import { QuickActionsCard, ConnectionStatusCard, NoDataWarningCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -736,13 +736,24 @@ export default function HomeScreen() {
             </Card>
           )}
 
-          <ConnectionStatusCard
-            t={t}
-            signalInfo={signalInfo}
-            networkInfo={networkInfo}
-            modemStatus={modemStatus}
-            wanInfo={wanInfo}
-          />
+          {/* Show skeletons during initial load */}
+          {!signalInfo && isRefreshing && (
+            <>
+              <ConnectionStatusSkeleton />
+              <QuickActionsSkeleton />
+              <TrafficStatsSkeleton />
+            </>
+          )}
+
+          {signalInfo && (
+            <ConnectionStatusCard
+              t={t}
+              signalInfo={signalInfo}
+              networkInfo={networkInfo}
+              modemStatus={modemStatus}
+              wanInfo={wanInfo}
+            />
+          )}
 
           <QuickActionsCard
             t={t}
