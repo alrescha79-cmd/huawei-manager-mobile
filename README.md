@@ -36,28 +36,18 @@
 
 ---
 
-> [!WARNING]
-> **🇬🇧 EN**  
-> Login and WiFi password change features are now available in pre-release builds. These features are still being tested across various modem models. If you encounter issues, please report them on GitHub Issues.
->
-> **🇮🇩 ID**  
-> Fitur login dan ganti password WiFi sudah tersedia di pre-release. Fitur-fitur ini masih dalam tahap pengujian pada berbagai model modem. Jika menemukan masalah, silakan laporkan di GitHub Issues.
-
-
 
 > [!TIP]
 > ![Latest Version](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen) ![Downloads](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/latest/total?style=flat&logo=android&label=Download@Latest&color=)
 > 
-> **📥 Download di [Github Releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** Tersedia 3 versi untuk Android
+> **📥 Download di [Github Releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest)** Tersedia 3 versi untuk Android
 
-
-> **arm64-v8a**: Untuk Android 64-bit (Rekomendasi) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-arm64-v8a.apk)
+> **![Downloads arm64-v8a](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/latest/huawei-manager-arm64-v8a.apk?style=flat&logo=android&label=Downloads&color=)** Untuk Android 64-bit (Rekomendasi) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-arm64-v8a.apk)
 > 
-> **armeabi-v7a**: Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-armeabi-v7a.apk)
+> **![Downloads armeabi-v7a](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/latest/huawei-manager-armeabi-v7a.apk?style=flat&logo=android&label=Downloads&color=)** Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-armeabi-v7a.apk)
 >
->**universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
->
-> 🧪 **[Pre Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases)** — Versi testing dengan fitur terbaru seperti login API langsung dan pengaturan WiFi. Fitur-fitur ini masih dalam tahap pengujian pada berbagai model modem. Jika Anda ingin mencoba fitur terbaru, download di [Pre Release](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases). 
+>**![Downloads universal](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/latest/huawei-manager-universal.apk?style=flat&logo=android&label=Downloads&color=)** Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-universal.apk)
+
 
 > **⚡ Built with Expo SDK 54**
 
