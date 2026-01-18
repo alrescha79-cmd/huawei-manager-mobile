@@ -204,12 +204,12 @@ export default function LoginScreen() {
             const isAvailable = await MailComposer.isAvailableAsync();
             if (isAvailable) {
               await MailComposer.composeAsync({
-                recipients: ['alrescha79@gmail.com'],
+                recipients: ['anggun@cakson.my.id'],
                 subject: emailSubject,
                 body: reportTemplate,
               });
             } else {
-              const mailtoUrl = `mailto:alrescha79@gmail.com?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(reportTemplate)}`;
+              const mailtoUrl = `mailto:anggun@cakson.my.id?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(reportTemplate)}`;
               Linking.openURL(mailtoUrl).catch(() => {
                 ThemedAlertHelper.alert(t('common.error'), 'Could not open email client');
               });

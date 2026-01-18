@@ -48,6 +48,8 @@
     "starRequest": "If you find this app useful, please give us a star on GitHub to support development!",
     "giveStars": "Give Stars",
     "failedLoadModemData": "Failed to load modem data",
+    "modemNotReachable": "Modem Not Reachable",
+    "modemNotReachableMessage": "Cannot connect to modem. Please make sure you are connected to the modem's WiFi network.",
     "failedLoadSms": "Failed to load SMS messages",
     "failedToggleData": "Failed to toggle mobile data",
     "failedLoadWifi": "Failed to load WiFi data",

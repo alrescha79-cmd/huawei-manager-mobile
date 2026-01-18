@@ -182,9 +182,23 @@ export default function RootLayout() {
             await loadCredentials();
             const credentials = useAuthStore.getState().credentials;
             if (credentials) {
-                const restored = await useAuthStore.getState().tryQuietSessionRestore();
-                if (!restored) {
-                    await autoLogin();
+                const result = await useAuthStore.getState().tryQuietSessionRestore();
+
+                if (!result.success) {
+                    if (result.error === 'unreachable') {
+                        // Modem not reachable - show alert and proceed to app
+                        setAlertState({
+                            visible: true,
+                            title: t('alerts.modemNotReachable'),
+                            message: t('alerts.modemNotReachableMessage'),
+                            buttons: [
+                                { text: t('common.ok'), style: 'default' }
+                            ]
+                        });
+                    } else {
+                        // Auth failed but modem is reachable - try autoLogin
+                        await autoLogin();
+                    }
                 }
                 checkAndShowStarRequest();
             }
