@@ -48,6 +48,8 @@
     "starRequest": "Jika aplikasi ini bermanfaat, berikan bintang di GitHub untuk mendukung pengembangan!",
     "giveStars": "Beri Bintang",
     "failedLoadModemData": "Gagal memuat data modem",
+    "modemNotReachable": "Modem Tidak Terjangkau",
+    "modemNotReachableMessage": "Tidak dapat terhubung ke modem. Pastikan Anda terhubung ke jaringan WiFi modem.",
     "failedLoadSms": "Gagal memuat pesan SMS",
     "failedToggleData": "Gagal mengubah data seluler",
     "failedLoadWifi": "Gagal memuat data WiFi",

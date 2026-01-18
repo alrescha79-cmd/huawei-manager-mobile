@@ -10,6 +10,7 @@ import {
 } from '@/utils/storage';
 import { ModemAPIClient } from '@/services/api.service';
 import { DirectAuthService } from '@/services/direct-auth.service';
+import { networkService } from '@/services/network.service';
 
 const SESSION_KEEPALIVE_INTERVAL_MS = 2 * 60 * 1000;
 
@@ -20,6 +21,7 @@ interface AuthState {
   isAutoLogging: boolean;
   isRelogging: boolean;
   sessionExpired: boolean;
+  connectionError: string | null;
   error: string | null;
   keepAliveIntervalId: NodeJS.Timeout | null;
 
@@ -32,7 +34,7 @@ interface AuthState {
   setRelogging: (value: boolean) => void;
   clearSessionExpired: () => void;
 
-  tryQuietSessionRestore: () => Promise<boolean>;
+  tryQuietSessionRestore: () => Promise<{ success: boolean; error?: 'unreachable' | 'auth_failed' }>;
   tryDirectApiLogin: () => Promise<boolean>;
   startSessionKeepAlive: () => void;
   stopSessionKeepAlive: () => void;
@@ -45,6 +47,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isAutoLogging: false,
   isRelogging: false,
   sessionExpired: false,
+  connectionError: null,
   error: null,
   keepAliveIntervalId: null,
 
@@ -174,11 +177,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   tryQuietSessionRestore: async () => {
     const { credentials, setRelogging } = get();
     if (!credentials) {
-      return false;
+      return { success: false, error: 'auth_failed' as const };
     }
 
     setRelogging(true);
+    set({ connectionError: null });
 
+    // Check if modem is reachable first (with 3 second timeout)
+    console.log('[Auth] Checking modem reachability...');
+    const isReachable = await networkService.isModemReachable(credentials.modemIp, 3000);
+
+    if (!isReachable) {
+      console.log('[Auth] Modem not reachable at', credentials.modemIp);
+      set({ connectionError: 'Modem not reachable' });
+      setRelogging(false);
+      return { success: false, error: 'unreachable' as const };
+    }
+
+    console.log('[Auth] Modem is reachable, checking session...');
     const sessionLikelyValid = await isSessionLikelyValid();
 
     if (sessionLikelyValid) {
@@ -190,7 +206,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           await updateSessionActivity();
           get().startSessionKeepAlive();
           setRelogging(false);
-          return true;
+          return { success: true };
         }
       } catch (error) {
         // API call failed, session likely expired
@@ -229,7 +245,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         get().startSessionKeepAlive();
         console.log('[Auth] ModemAPIClient login successful!');
         setRelogging(false);
-        return true;
+        return { success: true };
       }
     } catch (error) {
       // Direct login failed
@@ -237,7 +253,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
     console.log('[Auth] All direct methods failed, WebView required');
     setRelogging(false);
-    return false;
+    return { success: false, error: 'auth_failed' as const };
   },
 
   tryDirectApiLogin: async () => {
