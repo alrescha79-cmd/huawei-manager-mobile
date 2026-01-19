@@ -70,20 +70,25 @@ export class NetworkService {
   /**
    * Check if modem is reachable at given IP with timeout
    */
-  async isModemReachable(modemIp: string, timeoutMs: number = 3000): Promise<boolean> {
+  async isModemReachable(modemIp: string, timeoutMs: number = 10000): Promise<boolean> {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-      const response = await fetch(`http://${modemIp}/html/home.html`, {
-        method: 'HEAD',
+      const response = await fetch(`http://${modemIp}/api/webserver/SesTokInfo`, {
+        method: 'GET',
         signal: controller.signal,
       });
 
       clearTimeout(timeoutId);
-      return response.ok || response.status === 401 || response.status === 403;
-    } catch (error) {
-      console.log('[Network] Modem not reachable:', modemIp);
+      console.log('[Network] Modem reachable, status:', response.status);
+      return true;
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('[Network] Modem check timeout:', modemIp);
+      } else {
+        console.log('[Network] Modem not reachable:', modemIp, error.message);
+      }
       return false;
     }
   }

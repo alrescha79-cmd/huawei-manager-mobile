@@ -40,7 +40,7 @@
 > [!TIP]
 > ![Latest Version](https://img.shields.io/github/v/release/alrescha79-cmd/huawei-manager-mobile?label=Latest%20Version&color=brightgreen) ![Downloads](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/latest/total?style=flat&logo=android&label=Download@Latest&color=)
 > 
-> **📥 Download di [Github Releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest)** Tersedia 3 versi untuk Android
+> **📥 Lihat Changelog dan Download di [Github Releases](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest)** Tersedia 3 versi untuk Android
 
 > **![Downloads arm64-v8a](https://img.shields.io/github/downloads/alrescha79-cmd/huawei-manager-mobile/latest/huawei-manager-arm64-v8a.apk?style=flat&logo=android&label=Downloads&color=)** Untuk Android 64-bit (Rekomendasi) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/latest/download/huawei-manager-arm64-v8a.apk)
 > 
