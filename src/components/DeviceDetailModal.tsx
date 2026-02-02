@@ -26,6 +26,7 @@ interface DeviceDetailModalProps {
     device: ConnectedDevice | null;
     onSaveName: (deviceId: string, newName: string) => Promise<void>;
     onBlock: (macAddress: string, hostName: string) => void;
+    onUnblock?: (macAddress: string) => void;
 }
 
 const formatMacAddress = (mac: string): string => {
@@ -72,6 +73,7 @@ export function DeviceDetailModal({
     device,
     onSaveName,
     onBlock,
+    onUnblock,
 }: DeviceDetailModalProps) {
     const { colors, isDark } = useTheme();
     const { t } = useTranslation();
@@ -116,9 +118,17 @@ export function DeviceDetailModal({
         }
     };
 
+    const handleUnblock = () => {
+        if (device && onUnblock) {
+            onUnblock(device.macAddress);
+            onClose();
+        }
+    };
+
     if (!device) return null;
 
     const { ipv4, ipv6 } = parseIpAddresses(device.ipAddress);
+    const isBlocked = device.isBlock === true;
 
     return (
         <Modal
@@ -202,15 +212,27 @@ export function DeviceDetailModal({
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>
                                 {t('settings.actions') || 'Actions'}
                             </Text>
-                            <TouchableOpacity
-                                style={[styles.dangerButton, { backgroundColor: isDark ? 'rgba(255,59,48,0.15)' : 'rgba(255,59,48,0.1)' }]}
-                                onPress={handleBlock}
-                            >
-                                <MaterialIcons name="block" size={20} color={colors.error} />
-                                <Text style={[styles.dangerButtonText, { color: colors.error }]}>
-                                    {t('wifi.blockDevice')}
-                                </Text>
-                            </TouchableOpacity>
+                            {isBlocked ? (
+                                <TouchableOpacity
+                                    style={[styles.successButton, { backgroundColor: isDark ? 'rgba(52,199,89,0.15)' : 'rgba(52,199,89,0.1)' }]}
+                                    onPress={handleUnblock}
+                                >
+                                    <MaterialIcons name="check-circle" size={20} color="#34C759" />
+                                    <Text style={[styles.successButtonText, { color: '#34C759' }]}>
+                                        {t('wifi.unblock')}
+                                    </Text>
+                                </TouchableOpacity>
+                            ) : (
+                                <TouchableOpacity
+                                    style={[styles.dangerButton, { backgroundColor: isDark ? 'rgba(255,59,48,0.15)' : 'rgba(255,59,48,0.1)' }]}
+                                    onPress={handleBlock}
+                                >
+                                    <MaterialIcons name="block" size={20} color={colors.error} />
+                                    <Text style={[styles.dangerButtonText, { color: colors.error }]}>
+                                        {t('wifi.blockDevice')}
+                                    </Text>
+                                </TouchableOpacity>
+                            )}
                         </View>
                     </ScrollView>
 
@@ -311,6 +333,18 @@ const styles = StyleSheet.create({
         gap: 8,
     },
     dangerButtonText: {
+        fontSize: 16,
+        fontWeight: '600',
+    },
+    successButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 14,
+        borderRadius: 12,
+        gap: 8,
+    },
+    successButtonText: {
         fontSize: 16,
         fontWeight: '600',
     },

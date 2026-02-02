@@ -79,7 +79,6 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
         primaryColor: string,
         secondaryColor: string,
         label: string,
-        icon: string,
         gradientId: string
     ) => {
         let progressRatio = 0;
@@ -136,7 +135,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                 </View>
 
                 <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginTop: 4 }]}>
-                    {icon} {label}
+                    {label}
                 </Text>
             </View>
         );
@@ -155,7 +154,6 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                     downloadColors.primary,
                     downloadColors.secondary,
                     'Download',
-                    '↓',
                     'dlGrad'
                 )}
                 {renderGauge(
@@ -165,7 +163,6 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                     uploadColors.primary,
                     uploadColors.secondary,
                     'Upload',
-                    '↑',
                     'ulGrad'
                 )}
             </View>

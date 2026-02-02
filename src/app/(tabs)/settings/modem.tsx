@@ -65,6 +65,19 @@ export default function ModemSettingsScreen() {
         }
     };
 
+    const formatUptime = (seconds: number): string => {
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+
+        const parts = [];
+        if (days > 0) parts.push(`${days}d`);
+        if (hours > 0) parts.push(`${hours}h`);
+        if (minutes > 0 || parts.length === 0) parts.push(`${minutes}m`);
+
+        return parts.join(' ');
+    };
+
     const handleAntennaChange = async (mode: 'auto' | 'internal' | 'external') => {
         if (!modemService || isChangingAntenna) return;
 
@@ -96,7 +109,9 @@ export default function ModemSettingsScreen() {
                         ) : (
                             <>
                                 <SettingsItem title={t('settings.deviceName')} value={modemInfo?.deviceName} showChevron={false} />
+                                <SettingsItem title={t('settings.uptime')} value={modemInfo?.uptime ? formatUptime(modemInfo.uptime) : '-'} showChevron={false} />
                                 <SettingsItem title={t('settings.serialNumber')} value={modemInfo?.serialNumber} showChevron={false} />
+                                <SettingsItem title={t('settings.phoneNumber')} value={modemInfo?.msisdn || '-'} showChevron={false} />
                                 <SettingsItem title={t('settings.imei')} value={modemInfo?.imei} showChevron={false} />
                                 <SettingsItem title={t('settings.imsi')} value={modemInfo?.imsi} showChevron={false} />
                                 <SettingsItem title={t('settings.hardwareVersion')} value={modemInfo?.hardwareVersion} showChevron={false} />

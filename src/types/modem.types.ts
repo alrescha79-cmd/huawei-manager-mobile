@@ -21,6 +21,7 @@ export interface ModemInfo {
   classify: string;
   supportMode: string;
   workMode: string;
+  uptime?: number;
 }
 
 export interface SignalInfo {
@@ -48,6 +49,7 @@ export interface NetworkInfo {
   currentServiceDomain: string;
   psState: string;
   networkName: string;
+  shortName: string;
   spnName: string;
   fullName: string;
 }

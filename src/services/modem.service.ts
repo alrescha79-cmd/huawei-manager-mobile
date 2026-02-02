@@ -29,6 +29,10 @@ export class ModemService {
     try {
       const response = await this.apiClient.get('/api/device/information');
 
+      // Debug: log raw response and uptime value
+      console.log('[ModemService] Device info response:', response);
+      console.log('[ModemService] Uptime raw value:', parseXMLValue(response, 'Uptime'));
+
       return {
         deviceName: parseXMLValue(response, 'DeviceName'),
         serialNumber: parseXMLValue(response, 'SerialNumber'),
@@ -45,6 +49,11 @@ export class ModemService {
         classify: parseXMLValue(response, 'Classify'),
         supportMode: parseXMLValue(response, 'supportmode'),
         workMode: parseXMLValue(response, 'workmode'),
+        uptime: (() => {
+          const uptimeStr = parseXMLValue(response, 'uptime');
+          const parsed = parseInt(uptimeStr);
+          return !isNaN(parsed) && uptimeStr !== '' ? parsed : undefined;
+        })(),
       };
     } catch (error) {
       console.error('Error getting modem info:', error);
@@ -91,6 +100,7 @@ export class ModemService {
         currentServiceDomain: parseXMLValue(response, 'CurrentServiceDomain'),
         psState: parseXMLValue(response, 'psState'),
         networkName: parseXMLValue(response, 'FullName'),
+        shortName: parseXMLValue(response, 'ShortName'),
         spnName: parseXMLValue(response, 'SpnName'),
         fullName: parseXMLValue(response, 'FullName'),
       };
@@ -180,9 +190,9 @@ export class ModemService {
         currentNetworkType: parseXMLValue(response, 'CurrentNetworkType'),
         currentServiceDomain: parseXMLValue(response, 'CurrentServiceDomain'),
         roamingStatus: parseXMLValue(response, 'RoamingStatus'),
-        batteryStatus: parseXMLValue(response, 'BatteryStatus'),
-        batteryLevel: parseXMLValue(response, 'BatteryLevel'),
-        batteryPercent: parseXMLValue(response, 'BatteryPercent'),
+        batteryStatus: parseXMLValue(response, 'BatteryStatus') || '',  // MOCK: 1=charging, 0=not charging
+        batteryLevel: parseXMLValue(response, 'BatteryLevel') || '',    // MOCK: 1-4 level
+        batteryPercent: parseXMLValue(response, 'BatteryPercent') || '', // MOCK: percentage
         simStatus: parseXMLValue(response, 'SimStatus'),
         wifiConnectionStatus: parseXMLValue(response, 'WifiConnectionStatus'),
         signalStrength: parseXMLValue(response, 'SignalStrength'),

@@ -749,6 +749,17 @@ export default function WiFiScreen() {
             devices={blockedDevices}
             unblockingMac={isUnblocking}
             onUnblock={handleUnblockDevice}
+            onDevicePress={(device) => {
+              setSelectedDevice({
+                id: device.macAddress,
+                macAddress: device.macAddress,
+                hostName: device.hostName,
+                ipAddress: '-',
+                associatedTime: '0',
+                isBlock: true,
+              });
+              setShowDeviceDetailModal(true);
+            }}
           />
 
           <ParentalControlCard
@@ -820,7 +831,7 @@ export default function WiFiScreen() {
                       <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
                     </TouchableOpacity>
 
-                    <Text style={[typography.title3, { color: colors.textSecondary, marginHorizontal: spacing.md }]}>→</Text>
+                    <MaterialIcons name="arrow-forward" size={20} color={colors.textSecondary} style={{ marginHorizontal: spacing.md }} />
 
                     <TouchableOpacity
                       style={[styles.timePicker, { flex: 1, backgroundColor: colors.card, borderColor: colors.border }]}
@@ -983,6 +994,7 @@ export default function WiFiScreen() {
             device={selectedDevice}
             onSaveName={handleSaveDeviceName}
             onBlock={handleBlockDevice}
+            onUnblock={handleUnblockDevice}
           />
         </ScrollView>
       </MeshGradientBackground>

@@ -502,12 +502,7 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                             ]}
                             onPress={isRunning ? stopSpeedtest : (phase === 'complete' ? handleClose : runSpeedtest)}
                         >
-                            <MaterialIcons
-                                name={isRunning ? 'stop' : (phase === 'complete' ? 'check' : 'speed')}
-                                size={24}
-                                color="#FFFFFF"
-                            />
-                            <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600', marginLeft: 8 }]}>
+                            <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
                                 {isRunning ? t('common.stop') : (phase === 'complete' ? t('common.ok') : t('home.startTest'))}
                             </Text>
                         </TouchableOpacity>

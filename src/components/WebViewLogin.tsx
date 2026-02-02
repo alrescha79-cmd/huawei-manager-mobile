@@ -267,7 +267,7 @@ export function WebViewLogin({
                         {isTimedOut ? (
                             <>
                                 <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm, textAlign: 'center' }]}>
-                                    ⏱ {t('webViewLogin.loginTimeout')}
+                                    {t('webViewLogin.loginTimeout')}
                                 </Text>
                                 <Text style={[typography.body, { color: colors.text, marginBottom: spacing.md, textAlign: 'center' }]}>
                                     {t('webViewLogin.timeoutMessage')}
@@ -411,7 +411,7 @@ export function WebViewLogin({
                     {loginDetected && (
                         <View style={[styles.successOverlay, { backgroundColor: 'rgba(0,0,0,0.8)' }]}>
                             <Text style={[typography.title2, { color: '#fff', marginBottom: spacing.md }]}>
-                                ✓ {t('webViewLogin.loginSuccess')}
+                                {t('webViewLogin.loginSuccess')}
                             </Text>
                             <Text style={[typography.body, { color: '#fff' }]}>
                                 {t('webViewLogin.redirecting')}
