@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, BouncingDots } from '@/components';
+import { Card, CardHeader, Button, BouncingDots } from '@/components';
 
 interface BlockedDevice {
     macAddress: string;
@@ -14,6 +14,16 @@ interface BlockedDevicesListProps {
     devices: BlockedDevice[];
     unblockingMac: string | null;
     onUnblock: (macAddress: string) => void;
+    onDevicePress?: (device: BlockedDevice) => void;
+}
+
+/**
+ * Format MAC address for display
+ */
+function formatMacAddress(mac: string): string {
+    if (!mac) return '';
+    if (mac.includes(':')) return mac.toUpperCase();
+    return mac.match(/.{1,2}/g)?.join(':').toUpperCase() || mac;
 }
 
 /**
@@ -24,6 +34,7 @@ export function BlockedDevicesList({
     devices,
     unblockingMac,
     onUnblock,
+    onDevicePress,
 }: BlockedDevicesListProps) {
     const { colors, typography, spacing } = useTheme();
 
@@ -33,92 +44,59 @@ export function BlockedDevicesList({
 
     return (
         <Card style={{ marginTop: spacing.md }}>
-            <View style={styles.header}>
-                <MaterialIcons name="block" size={20} color={colors.error} />
-                <Text style={[typography.headline, { color: colors.text, marginLeft: 8 }]}>
-                    {t('wifi.blockedDevices')}
-                </Text>
-            </View>
+            <CardHeader title={`${t('wifi.blockedDevices')} (${devices.length})`} />
 
             {devices.map((device, index) => (
-                <View
+                <TouchableOpacity
                     key={device.macAddress + index}
                     style={[
                         styles.deviceItem,
                         {
                             borderBottomWidth: index < devices.length - 1 ? 1 : 0,
                             borderBottomColor: colors.border,
+                            paddingBottom: spacing.md,
+                            marginBottom: index < devices.length - 1 ? spacing.md : 0,
                         }
                     ]}
+                    onPress={() => onDevicePress?.(device)}
+                    activeOpacity={0.7}
                 >
-                    <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                        <View style={[styles.iconContainer, { backgroundColor: colors.error + '20' }]}>
-                            <MaterialIcons name="block" size={20} color={colors.error} />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[typography.body, { color: colors.text, fontWeight: '500' }]}>
-                                {device.hostName || t('wifi.unknownDevice')}
-                            </Text>
-                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                                {device.macAddress}
-                            </Text>
-                        </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
+                            {device.hostName || t('wifi.unknownDevice')}
+                        </Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                            MAC: {formatMacAddress(device.macAddress)}
+                        </Text>
                     </View>
 
-                    <TouchableOpacity
-                        style={[
-                            styles.unblockButton,
-                            {
-                                backgroundColor: colors.success,
-                                opacity: unblockingMac === device.macAddress ? 0.6 : 1,
-                            }
-                        ]}
+                    <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+
+                    <Button
+                        title={t('wifi.unblock')}
+                        variant="success"
+                        size="small"
                         onPress={() => onUnblock(device.macAddress)}
                         disabled={unblockingMac === device.macAddress}
-                    >
-                        {unblockingMac === device.macAddress ? (
-                            <BouncingDots size="small" color="#fff" />
-                        ) : (
-                            <>
-                                <MaterialIcons name="check" size={16} color="#fff" />
-                                <Text style={[typography.caption1, { color: '#fff', marginLeft: 4, fontWeight: '600' }]}>
-                                    {t('wifi.unblock')}
-                                </Text>
-                            </>
-                        )}
-                    </TouchableOpacity>
-                </View>
+                        loading={unblockingMac === device.macAddress}
+                        style={styles.unblockButton}
+                    />
+                </TouchableOpacity>
             ))}
         </Card>
     );
 }
 
 const styles = StyleSheet.create({
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginBottom: 12,
-    },
     deviceItem: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 12,
     },
-    iconContainer: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
     unblockButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 8,
         paddingHorizontal: 12,
-        borderRadius: 6,
+        paddingVertical: 8,
+        minWidth: 80,
     },
 });
 

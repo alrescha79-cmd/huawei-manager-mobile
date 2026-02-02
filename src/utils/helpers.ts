@@ -120,9 +120,21 @@ const decodeHtmlEntities = (text: string): string => {
     '&quot;': '"',
     '&apos;': "'",
     '&#39;': "'",
+    '&#40;': '(',
+    '&#41;': ')',
     '&nbsp;': ' ',
   };
-  return text.replace(/&[a-zA-Z0-9#]+;/g, (match) => entities[match] || match);
+
+  // First replace known entities
+  let result = text.replace(/&[a-zA-Z0-9#]+;/g, (match) => entities[match] || match);
+
+  // Then handle any remaining numeric entities (&#NN;)
+  result = result.replace(/&#(\d+);/g, (match, num) => {
+    const code = parseInt(num, 10);
+    return String.fromCharCode(code);
+  });
+
+  return result;
 };
 
 export const parseXMLValue = (xml: string, tag: string): string => {

@@ -68,9 +68,12 @@ export function ConnectedDevicesList({
                             </Text>
                         </View>
 
+                        <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+
                         <Button
                             title={t('wifi.blockDevice')}
                             variant="danger"
+                            size="small"
                             onPress={() => onBlockDevice(device.macAddress, device.hostName)}
                             style={styles.kickButton}
                         />

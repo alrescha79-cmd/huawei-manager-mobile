@@ -3,6 +3,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { CollapsibleCard, SignalBar } from '@/components';
+import { BatteryIndicator } from './BatteryIndicator';
 import {
     getSignalIcon,
     getSignalStrength,
@@ -23,6 +24,7 @@ interface ConnectionStatusCardProps {
         dlbandwidth?: string;
     };
     networkInfo?: {
+        shortName?: string;
         fullName?: string;
         networkName?: string;
         spnName?: string;
@@ -32,6 +34,9 @@ interface ConnectionStatusCardProps {
         connectionStatus?: string;
         currentNetworkType?: string;
         signalIcon?: string | number;
+        batteryStatus?: string;
+        batteryLevel?: string;
+        batteryPercent?: string;
     };
     wanInfo?: {
         wanIPAddress?: string;
@@ -86,7 +91,7 @@ export function ConnectionStatusCard({
                             {getStrengthLabel()}
                         </Text>
                         <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
-                            {networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
+                            {networkInfo?.shortName || networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
                         </Text>
                     </View>
                 </View>
@@ -115,11 +120,14 @@ export function ConnectionStatusCard({
             <View style={styles.connectionInfoGrid}>
                 <View style={styles.connectionInfoGridItem}>
                     <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
-                        {t('home.networkType')}
+                        {t('home.power')}
                     </Text>
-                    <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
-                        {networkType}
-                    </Text>
+                    <BatteryIndicator
+                        batteryStatus={modemStatus?.batteryStatus}
+                        batteryLevel={modemStatus?.batteryLevel}
+                        batteryPercent={modemStatus?.batteryPercent}
+                        size="medium"
+                    />
                 </View>
 
                 <View style={styles.connectionInfoGridItem}>

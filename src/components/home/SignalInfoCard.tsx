@@ -52,7 +52,7 @@ export function SignalInfoCard({ t, signalInfo, modemStatus }: SignalInfoCardPro
         return (
             <CollapsibleCard title={t('home.signalInfo')}>
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>
-                    ⚠️ {t('home.noSignalAvailable')}{'\n'}
+                    {t('home.noSignalAvailable')}{'\n'}
                     {t('home.checkLogin')}
                 </Text>
             </CollapsibleCard>

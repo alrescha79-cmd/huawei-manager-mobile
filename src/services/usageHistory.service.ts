@@ -54,26 +54,40 @@ export async function checkAndSaveMonthlyUsage(
     const currentMonth = getCurrentMonthKey();
     const lastMonth = getLastMonthKey();
 
-    const hasLastMonth = history.months.some(m => m.month === lastMonth);
+    // Calculate last month usage from total - current month
+    const lastMonthDownload = Math.max(0, totalDownload - monthDownload);
+    const lastMonthUpload = Math.max(0, totalUpload - monthUpload);
 
-    if (!hasLastMonth) {
-        const lastMonthDownload = Math.max(0, totalDownload - monthDownload);
-        const lastMonthUpload = Math.max(0, totalUpload - monthUpload);
+    // Only proceed if we have meaningful data
+    if (lastMonthDownload <= 0 && lastMonthUpload <= 0) {
+        return;
+    }
 
-        if (lastMonthDownload > 0 || lastMonthUpload > 0) {
-            history.months.push({
-                month: lastMonth,
-                download: lastMonthDownload,
-                upload: lastMonthUpload,
-                total: lastMonthDownload + lastMonthUpload,
-            });
+    const existingIndex = history.months.findIndex(m => m.month === lastMonth);
+    const newData: MonthlyUsageData = {
+        month: lastMonth,
+        download: lastMonthDownload,
+        upload: lastMonthUpload,
+        total: lastMonthDownload + lastMonthUpload,
+    };
 
-            if (history.months.length > 12) {
-                history.months = history.months.slice(-12);
-            }
-
+    if (existingIndex >= 0) {
+        // Update existing entry if the new calculated value is different
+        // This handles cases where totalDownload/totalUpload grew
+        if (history.months[existingIndex].total !== newData.total) {
+            history.months[existingIndex] = newData;
             await saveUsageHistory(history);
         }
+    } else {
+        // Add new entry for last month
+        history.months.push(newData);
+
+        // Keep only last 12 months
+        if (history.months.length > 12) {
+            history.months = history.months.slice(-12);
+        }
+
+        await saveUsageHistory(history);
     }
 }
 

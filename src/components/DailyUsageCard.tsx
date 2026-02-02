@@ -64,11 +64,11 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
                 <View style={[styles.timeBox, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light }]}>
                     <View style={styles.timeRow}>
                         <Text style={[styles.digitalText, { color: blueColor }]}>{hh}</Text>
-                        <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.hoursShort')}</Text>
+                        <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.hoursFull')}</Text>
                     </View>
                     <View style={styles.timeRow}>
                         <Text style={[styles.digitalText, { color: blueColor }]}>{mm}</Text>
-                        <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.minutesShort')}</Text>
+                        <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.minutesFull')}</Text>
                     </View>
                 </View>
             </View>
@@ -106,11 +106,11 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     timeBox: {
-        width: 90,
+        minWidth: 110,
         height: 90,
         borderRadius: 18,
         justifyContent: 'center',
-        paddingHorizontal: 16,
+        paddingHorizontal: 14,
         paddingVertical: 10,
         borderWidth: 1,
     },
