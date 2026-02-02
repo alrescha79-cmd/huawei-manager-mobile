@@ -2,7 +2,7 @@ name: Update Download Stats
 
 on:  
   schedule:
-    - cron: "0 10 * * 5"
+    - cron: "0 10 * * 5"  # Setiap hari Jumat jam 10:00 UTC
   workflow_dispatch:
 
 jobs:  
@@ -48,6 +48,7 @@ jobs:
             fi
           else
             echo "❌ Error: Invalid API response"
+            echo "$RESPONSE"
             exit 1
           fi
 
@@ -56,8 +57,9 @@ jobs:
           TOTAL=$(jq '[.[].total] | add // 0' stats/downloads.json)
           DATE=$(date -u +"%Y-%m-%d %H:%M")
           
+          # Create history.csv with proper header (no spaces)
           if [ ! -f stats/history.csv ]; then
-            echo "Date,Total Downloads" > stats/history.csv
+            echo "Date,Downloads" > stats/history.csv
           fi
           
           echo "$DATE,$TOTAL" >> stats/history.csv
@@ -69,41 +71,55 @@ jobs:
           import pandas as pd
           import matplotlib.pyplot as plt
           from pathlib import Path
+          import sys
           
-          # Read CSV
-          df = pd.read_csv('stats/history.csv')
-          
-          if len(df) < 1:
-              print("⚠️ Not enough data points")
-              exit(0)
-          
-          # Parse dates
-          df['Date'] = pd.to_datetime(df['Date'])
-          
-          # Create figure with dark background
-          plt.style.use('dark_background')
-          fig, ax = plt.subplots(figsize=(10, 5))
-          
-          # Plot
-          ax.plot(df['Date'], df['Total Downloads'], 
-                  marker='o', linewidth=2.5, markersize=6, 
-                  color='#00d4aa', label='Downloads')
-          
-          # Styling
-          ax.set_title('📊 Total Downloads Over Time', fontsize=16, pad=20)
-          ax.set_xlabel('Date', fontsize=11)
-          ax.set_ylabel('Total Downloads', fontsize=11)
-          ax.grid(True, alpha=0.3)
-          ax.legend()
-          
-          # Format x-axis
-          plt.xticks(rotation=45)
-          plt.tight_layout()
-          
-          # Save
-          plt.savefig('stats/chart.svg', format='svg', 
-                      facecolor='#0d1117', edgecolor='none')
-          print("✅ Chart generated")
+          try:
+              # Read CSV and strip whitespace from column names
+              df = pd.read_csv('stats/history.csv')
+              df.columns = df.columns.str.strip()
+              
+              print(f"📋 Columns found: {list(df.columns)}")
+              print(f"📊 Data points: {len(df)}")
+              
+              if len(df) < 1:
+                  print("⚠️ Not enough data points")
+                  sys.exit(0)
+              
+              # Parse dates
+              df['Date'] = pd.to_datetime(df['Date'])
+              
+              # Create figure with dark background
+              plt.style.use('dark_background')
+              fig, ax = plt.subplots(figsize=(10, 5))
+              
+              # Plot - handle both "Downloads" and "Total Downloads" column names
+              downloads_col = 'Downloads' if 'Downloads' in df.columns else 'Total Downloads'
+              
+              ax.plot(df['Date'], df[downloads_col], 
+                      marker='o', linewidth=2.5, markersize=6, 
+                      color='#00d4aa', label='Downloads')
+              
+              # Styling
+              ax.set_title('📊 Total Downloads Over Time', fontsize=16, pad=20)
+              ax.set_xlabel('Date', fontsize=11)
+              ax.set_ylabel('Total Downloads', fontsize=11)
+              ax.grid(True, alpha=0.3)
+              ax.legend()
+              
+              # Format x-axis
+              plt.xticks(rotation=45)
+              plt.tight_layout()
+              
+              # Save
+              plt.savefig('stats/chart.svg', format='svg', 
+                          facecolor='#0d1117', edgecolor='none')
+              print("✅ Chart generated successfully")
+              
+          except Exception as e:
+              print(f"❌ Error: {e}")
+              import traceback
+              traceback.print_exc()
+              sys.exit(1)
           PYTHON_SCRIPT
 
       - name: Check for changes
@@ -132,10 +148,23 @@ jobs:
           
           PR_URL=$(gh pr create \
             --title "chore: update download stats" \
-            --body "🤖 Automated download statistics update" \
+            --body "🤖 Automated download statistics update
+          
+          This PR was created by the scheduled workflow.
+          
+          ---
+          _This PR will be auto-merged._" \
             --base main \
             --head "$BRANCH")
           
+          echo "Created PR: $PR_URL"
+          
           sleep 5
-          gh pr merge "$PR_URL" --squash --delete-branch || \
-          gh pr merge "$PR_URL" --auto --squash --delete-branch
+          
+          if gh pr merge "$PR_URL" --squash --delete-branch; then
+            echo "✅ PR merged successfully!"
+          else
+            echo "⏳ Enabling auto-merge..."
+            gh pr merge "$PR_URL" --auto --squash --delete-branch || \
+            echo "⚠️ Auto-merge setup may have failed"
+          fi
