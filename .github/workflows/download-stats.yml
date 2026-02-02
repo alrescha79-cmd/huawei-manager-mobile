@@ -2,7 +2,7 @@ name: Update Download Stats
 
 on:  
   schedule:
-    - cron: "0 10 * * 5"  # Setiap hari Jumat jam 10:00 UTC
+    - cron: "0 10 * * 5" 
   workflow_dispatch:
 
 jobs:  
@@ -52,12 +52,30 @@ jobs:
             exit 1
           fi
 
+      - name: Fix existing history file (if needed)
+        run: |
+          if [ -f stats/history.csv ]; then
+            # Check if first line looks like a header
+            FIRST_LINE=$(head -n 1 stats/history.csv)
+            
+            if [[ "$FIRST_LINE" != "Date,Downloads" ]] && [[ "$FIRST_LINE" != "Date,Total Downloads" ]]; then
+              echo "🔧 Adding header to existing history.csv..."
+              # Create temp file with header
+              echo "Date,Downloads" > stats/history.csv.tmp
+              cat stats/history.csv >> stats/history.csv.tmp
+              mv stats/history.csv.tmp stats/history.csv
+              echo "✅ Header added"
+            else
+              echo "✅ Header already exists"
+            fi
+          fi
+
       - name: Append history
         run: |
           TOTAL=$(jq '[.[].total] | add // 0' stats/downloads.json)
           DATE=$(date -u +"%Y-%m-%d %H:%M")
           
-          # Create history.csv with proper header (no spaces)
+          # Create history.csv with header if it doesn't exist
           if [ ! -f stats/history.csv ]; then
             echo "Date,Downloads" > stats/history.csv
           fi
@@ -70,32 +88,52 @@ jobs:
           python3 << 'PYTHON_SCRIPT'
           import pandas as pd
           import matplotlib.pyplot as plt
-          from pathlib import Path
           import sys
           
           try:
-              # Read CSV and strip whitespace from column names
+              # Read CSV - it should have header now
               df = pd.read_csv('stats/history.csv')
+              
+              # Strip any whitespace from column names
               df.columns = df.columns.str.strip()
               
               print(f"📋 Columns found: {list(df.columns)}")
               print(f"📊 Data points: {len(df)}")
+              print(f"📅 First row: {df.head(1).to_dict('records')}")
               
               if len(df) < 1:
                   print("⚠️ Not enough data points")
                   sys.exit(0)
               
+              # Get column names (handle different naming)
+              date_col = None
+              downloads_col = None
+              
+              for col in df.columns:
+                  if 'date' in col.lower():
+                      date_col = col
+                  elif 'download' in col.lower():
+                      downloads_col = col
+              
+              if not date_col or not downloads_col:
+                  print(f"❌ Could not find date or downloads column")
+                  print(f"Available columns: {list(df.columns)}")
+                  sys.exit(1)
+              
+              print(f"✅ Using columns: Date='{date_col}', Downloads='{downloads_col}'")
+              
               # Parse dates
-              df['Date'] = pd.to_datetime(df['Date'])
+              df[date_col] = pd.to_datetime(df[date_col])
+              
+              # Ensure downloads is numeric
+              df[downloads_col] = pd.to_numeric(df[downloads_col], errors='coerce')
               
               # Create figure with dark background
               plt.style.use('dark_background')
               fig, ax = plt.subplots(figsize=(10, 5))
               
-              # Plot - handle both "Downloads" and "Total Downloads" column names
-              downloads_col = 'Downloads' if 'Downloads' in df.columns else 'Total Downloads'
-              
-              ax.plot(df['Date'], df[downloads_col], 
+              # Plot
+              ax.plot(df[date_col], df[downloads_col], 
                       marker='o', linewidth=2.5, markersize=6, 
                       color='#00d4aa', label='Downloads')
               
