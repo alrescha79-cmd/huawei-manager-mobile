@@ -2,7 +2,7 @@ name: Update Download Stats
 
 on:  
   schedule:
-    - cron: "0 10 * * *"
+    - cron: "0 10 * * 5"
   workflow_dispatch:
 
 jobs:  
@@ -20,25 +20,57 @@ jobs:
 
       - name: Fetch release downloads
         run: |
-          curl -s https://api.github.com/repos/${{ github.repository }}/releases \
-          | jq '
-            [
-              .[] |
-              {
-                tag: .tag_name,
-                total: (.assets | map(.download_count) | add)
-              }
-            ]
-          ' > stats/downloads.json
+          RESPONSE=$(curl -s -H "Accept: application/vnd.github.v3+json" \
+            https://api.github.com/repos/${{ github.repository }}/releases)
+          
+          # Check if response is valid JSON array
+          if echo "$RESPONSE" | jq -e '. | type == "array"' > /dev/null 2>&1; then
+            # Check if array is empty
+            if [ "$(echo "$RESPONSE" | jq '. | length')" -eq 0 ]; then
+              echo "⚠️ No releases found. Creating empty stats file."
+              echo '[]' > stats/downloads.json
+            else
+              # Process releases
+              echo "$RESPONSE" | jq '
+                [
+                  .[] |
+                  {
+                    tag: .tag_name,
+                    total: ((.assets | map(.download_count) | add) // 0)
+                  }
+                ]
+              ' > stats/downloads.json
+            fi
+          else
+            echo "❌ Error: Invalid API response"
+            echo "$RESPONSE"
+            exit 1
+          fi
 
       - name: Append history
         run: |
-          TOTAL=$(jq '[.[].total] | add' stats/downloads.json)
+          # Calculate total downloads (handle empty array)
+          TOTAL=$(jq '[.[].total] | add // 0' stats/downloads.json)
           DATE=$(date -u +"%Y-%m-%d %H:%M")
+          
+          # Create history.csv if it doesn't exist
+          if [ ! -f stats/history.csv ]; then
+            echo "Date,Total Downloads" > stats/history.csv
+          fi
+          
           echo "$DATE,$TOTAL" >> stats/history.csv
+          echo "📊 Total downloads: $TOTAL"
 
       - name: Generate chart (SVG)
         run: |
+          # Check if we have enough data points
+          DATA_POINTS=$(tail -n +2 stats/history.csv | wc -l)
+          
+          if [ "$DATA_POINTS" -lt 1 ]; then
+            echo "⚠️ Not enough data points to generate chart"
+            exit 0
+          fi
+          
           sudo apt install -y gnuplot
           gnuplot <<EOF
           # Terminal settings
@@ -59,7 +91,7 @@ jobs:
           set ylabel "Total Downloads" textcolor rgb "#b0b0b0" font ",11"
           
           # Axis tick colors
-          set xtics textcolor rgb "#b0b0b0" font ",10"
+          set xtics textcolor rgb "#b0b0b0" font ",10" rotate by -45
           set ytics textcolor rgb "#b0b0b0" font ",10"
           
           # Legend/Key styling
@@ -74,7 +106,7 @@ jobs:
           # Plot with line and points for better visibility
           plot "stats/history.csv" using 1:2 with linespoints \
                linecolor rgb "#00d4aa" linewidth 2.5 pointtype 7 pointsize 1.2 \
-               title "Downloads"
+               title "Downloads" skip 1
           EOF
 
       - name: Check for changes
