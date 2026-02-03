@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialIcons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 import { useTheme } from '@/theme';
 
 const { width, height } = Dimensions.get('window');
@@ -246,7 +247,7 @@ export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSpl
                 )}
 
                 <Animated.View style={[styles.bottomBranding, { opacity: textOpacity }]}>
-                    <Text style={[styles.versionText, { color: subtitleColor }]}>v1.1.1</Text>
+                    <Text style={[styles.versionText, { color: subtitleColor }]}>v{Constants.expoConfig?.version}</Text>
                 </Animated.View>
             </LinearGradient>
         </View>

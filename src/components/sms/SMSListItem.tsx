@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { SMSMessage } from '@/types';
 
@@ -8,6 +9,10 @@ interface SMSListItemProps {
     isLast: boolean;
     timeDisplay: string;
     onPress: () => void;
+    onLongPress?: () => void;
+    isSelectionMode?: boolean;
+    isSelected?: boolean;
+    onToggleSelect?: () => void;
 }
 
 /**
@@ -18,27 +23,55 @@ export function SMSListItem({
     isLast,
     timeDisplay,
     onPress,
+    onLongPress,
+    isSelectionMode = false,
+    isSelected = false,
+    onToggleSelect,
 }: SMSListItemProps) {
     const { colors, typography } = useTheme();
 
     const initials = message.phone.charAt(0).toUpperCase();
     const isUnread = message.smstat === '0';
 
+    const handlePress = () => {
+        if (isSelectionMode && onToggleSelect) {
+            onToggleSelect();
+        } else {
+            onPress();
+        }
+    };
+
     return (
         <TouchableOpacity
-            onPress={onPress}
+            onPress={handlePress}
+            onLongPress={onLongPress}
             activeOpacity={0.6}
             style={[
                 styles.messageItem,
-                !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border }
+                !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
+                isSelected && { backgroundColor: colors.primary + '20' }
             ]}
         >
-            <View style={[
-                styles.avatar,
-                { backgroundColor: isUnread ? colors.primary : colors.textSecondary }
-            ]}>
-                <Text style={styles.avatarText}>{initials}</Text>
-            </View>
+            {isSelectionMode ? (
+                <View style={[
+                    styles.checkbox,
+                    {
+                        borderColor: isSelected ? colors.primary : colors.textSecondary,
+                        backgroundColor: isSelected ? colors.primary : 'transparent'
+                    }
+                ]}>
+                    {isSelected && (
+                        <MaterialIcons name="check" size={16} color="#FFF" />
+                    )}
+                </View>
+            ) : (
+                <View style={[
+                    styles.avatar,
+                    { backgroundColor: isUnread ? colors.primary : colors.textSecondary }
+                ]}>
+                    <Text style={styles.avatarText}>{initials}</Text>
+                </View>
+            )}
 
             <View style={styles.messageContent}>
                 <View style={styles.messageTopRow}>
@@ -78,7 +111,7 @@ export function SMSListItem({
                 </Text>
             </View>
 
-            {isUnread && (
+            {!isSelectionMode && isUnread && (
                 <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]} />
             )}
         </TouchableOpacity>
@@ -104,6 +137,15 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontWeight: '600',
         fontSize: 18,
+    },
+    checkbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 4,
+        borderWidth: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginRight: 12,
     },
     messageContent: {
         flex: 1,

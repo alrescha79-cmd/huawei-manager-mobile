@@ -42,7 +42,9 @@
     "custom": "Kustom",
     "clear": "Hapus",
     "enable": "Aktifkan",
-    "download": "Unduh"
+    "download": "Unduh",
+    "selectAll": "Pilih Semua",
+    "deselectAll": "Batalkan Pilihan"
   },
   "alerts": {
     "newVersionAvailable": "Versi baru tersedia. Apakah Anda ingin mengunduhnya sekarang?",
@@ -351,7 +353,11 @@
     "to": "Kepada",
     "searchPlaceholder": "Cari pesan...",
     "recentMessages": "Pesan Terbaru",
-    "markAllAsRead": "Tandai semua dibaca"
+    "markAllAsRead": "Tandai semua dibaca",
+    "selected": "{{count}} dipilih",
+    "deleteSelected": "Hapus Terpilih",
+    "deleteSelectedConfirm": "Yakin ingin menghapus {{count}} pesan?",
+    "messagesDeleted": "{{count}} pesan dihapus"
   },
   "settings": {
     "modemInfo": "Informasi Modem",
@@ -452,6 +458,11 @@
     "latestVersion": "Versi Terbaru",
     "tryAgain": "Coba Lagi",
     "viewReleaseNotes": "Lihat Catatan Rilis",
+    "preReleaseHint": "Versi akses awal - mungkin masih ada bug",
+    "stableUpToDate": "Versi stabil sudah terbaru",
+    "checkAgain": "Cek Lagi",
+    "stableBadge": "Stabil",
+    "preReleaseBadge": "Pre-release",
     "connection": "Koneksi",
     "modemInfoSubtitle": "Status, Antena",
     "mobileNetwork": "Jaringan Seluler",
