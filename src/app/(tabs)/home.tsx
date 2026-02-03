@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, CustomRefreshScrollView } from '@/components';
+import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, CustomRefreshScrollView, SignalPointingModal } from '@/components';
 import { QuickActionsCard, ConnectionStatusCard, NoDataWarningCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
@@ -92,6 +92,7 @@ export default function HomeScreen() {
   const [diagnosisSummary, setDiagnosisSummary] = useState('');
 
   const [showSpeedtestModal, setShowSpeedtestModal] = useState(false);
+  const [showSignalPointingModal, setShowSignalPointingModal] = useState(false);
 
   const [isClearingHistory, setIsClearingHistory] = useState(false);
   const [lastClearedDate, setLastClearedDate] = useState<string | null>(null);
@@ -762,12 +763,11 @@ export default function HomeScreen() {
             mobileDataEnabled={!!mobileDataStatus?.dataswitch}
             isTogglingData={isTogglingData}
             isChangingIp={isChangingIp}
-            isRunningDiagnosis={isRunningDiagnosis}
             isRunningCheck={isRunningCheck}
             onOpenBandModal={() => setShowBandModal(true)}
             onChangeIp={handleChangeIp}
             onToggleMobileData={handleToggleMobileData}
-            onDiagnosis={handleDiagnosis}
+            onSignalPointing={() => setShowSignalPointingModal(true)}
             onQuickCheck={handleOneClickCheck}
             onSpeedtest={() => setShowSpeedtestModal(true)}
           />
@@ -845,6 +845,12 @@ export default function HomeScreen() {
           <SpeedtestModal
             visible={showSpeedtestModal}
             onClose={() => setShowSpeedtestModal(false)}
+          />
+
+          {/* Signal Pointing Modal */}
+          <SignalPointingModal
+            visible={showSignalPointingModal}
+            onClose={() => setShowSignalPointingModal(false)}
           />
         </ScrollView>
       </MeshGradientBackground>

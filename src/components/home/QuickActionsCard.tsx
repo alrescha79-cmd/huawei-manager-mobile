@@ -11,19 +11,18 @@ interface QuickActionsCardProps {
     mobileDataEnabled: boolean;
     isTogglingData: boolean;
     isChangingIp: boolean;
-    isRunningDiagnosis: boolean;
     isRunningCheck: boolean;
     onOpenBandModal: () => void;
     onChangeIp: () => void;
     onToggleMobileData: () => void;
-    onDiagnosis: () => void;
+    onSignalPointing: () => void;
     onQuickCheck: () => void;
     onSpeedtest: () => void;
 }
 
 /**
  * Quick actions card for home screen
- * Contains: Band selection, Change IP, Toggle Data, Diagnosis, Quick Check, Speedtest
+ * Contains: Band selection, Change IP, Toggle Data, Signal Pointing, Quick Check, Speedtest
  */
 export function QuickActionsCard({
     t,
@@ -32,12 +31,11 @@ export function QuickActionsCard({
     mobileDataEnabled,
     isTogglingData,
     isChangingIp,
-    isRunningDiagnosis,
     isRunningCheck,
     onOpenBandModal,
     onChangeIp,
     onToggleMobileData,
-    onDiagnosis,
+    onSignalPointing,
     onQuickCheck,
     onSpeedtest,
 }: QuickActionsCardProps) {
@@ -137,22 +135,15 @@ export function QuickActionsCard({
 
                 <TouchableOpacity
                     style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
-                    onPress={onDiagnosis}
-                    disabled={isRunningDiagnosis}
+                    onPress={onSignalPointing}
                 >
-                    {isRunningDiagnosis ? (
-                        <BouncingDots size="small" color={colors.primary} />
-                    ) : (
-                        <>
-                            <MaterialIcons name="network-check" size={22} color={colors.primary} />
-                            <Text
-                                style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
-                                numberOfLines={1}
-                            >
-                                {t('home.diagnosis')}
-                            </Text>
-                        </>
-                    )}
+                    <MaterialIcons name="gps-fixed" size={22} color={colors.primary} />
+                    <Text
+                        style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
+                        numberOfLines={1}
+                    >
+                        {t('home.signalPointing')}
+                    </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity

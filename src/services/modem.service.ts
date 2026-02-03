@@ -86,6 +86,33 @@ export class ModemService {
     }
   }
 
+  /**
+   * Fast signal info for realtime polling - skips token refresh for speed
+   */
+  async getSignalInfoFast(): Promise<SignalInfo> {
+    try {
+      const response = await this.apiClient.getFast('/api/device/signal');
+      const lteBandwidth = parseXMLValue(response, 'lte_bandwidth');
+
+      return {
+        rssi: parseXMLValue(response, 'rssi'),
+        rsrp: parseXMLValue(response, 'rsrp'),
+        rsrq: parseXMLValue(response, 'rsrq'),
+        sinr: parseXMLValue(response, 'sinr'),
+        rscp: parseXMLValue(response, 'rscp'),
+        ecio: parseXMLValue(response, 'ecio'),
+        mode: parseXMLValue(response, 'mode'),
+        pci: parseXMLValue(response, 'pci'),
+        cellId: parseXMLValue(response, 'cell_id'),
+        band: parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo'),
+        dlbandwidth: parseXMLValue(response, 'dlbandwidth') || lteBandwidth,
+        ulbandwidth: parseXMLValue(response, 'ulbandwidth') || lteBandwidth,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getNetworkInfo(): Promise<NetworkInfo> {
     try {
       const response = await this.apiClient.get('/api/net/current-plmn');

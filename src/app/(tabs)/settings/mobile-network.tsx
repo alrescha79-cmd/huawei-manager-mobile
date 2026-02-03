@@ -7,11 +7,12 @@ import {
     TouchableOpacity,
     Text,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen } from '@/components';
+import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, SignalPointingModal } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const NETWORK_MODES = [
@@ -26,6 +27,7 @@ export default function MobileNetworkSettingsScreen() {
     const { colors, typography } = useTheme();
     const { t } = useTranslation();
     const { credentials } = useAuthStore();
+    const router = useRouter();
 
     const [modemService, setModemService] = useState<ModemService | null>(null);
 
@@ -45,6 +47,7 @@ export default function MobileNetworkSettingsScreen() {
     const [selectedBandsDisplay, setSelectedBandsDisplay] = useState<string[]>([]);
 
     const [showMonthlyModal, setShowMonthlyModal] = useState(false);
+    const [showSignalPointingModal, setShowSignalPointingModal] = useState(false);
     const [monthlySettings, setMonthlySettings] = useState({
         enabled: false,
         startDay: 1,
@@ -273,6 +276,16 @@ export default function MobileNetworkSettingsScreen() {
                         />
                     </SettingsSection>
 
+                    {/* Signal Tools */}
+                    <SettingsSection title={t('settings.signalTools')}>
+                        <SettingsItem
+                            title={t('home.signalPointing')}
+                            subtitle={t('settings.signalPointingDesc')}
+                            onPress={() => setShowSignalPointingModal(true)}
+                            isLast
+                        />
+                    </SettingsSection>
+
                     <SelectionModal
                         visible={showNetworkModeModal}
                         title={t('settings.preferredNetwork')}
@@ -300,6 +313,12 @@ export default function MobileNetworkSettingsScreen() {
                         onClose={() => setShowMonthlyModal(false)}
                         onSave={handleSaveMonthlySettings}
                         initialSettings={monthlySettings}
+                    />
+
+                    {/* Signal Pointing Modal */}
+                    <SignalPointingModal
+                        visible={showSignalPointingModal}
+                        onClose={() => setShowSignalPointingModal(false)}
                     />
                 </ScrollView>
             </MeshGradientBackground>
