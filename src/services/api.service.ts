@@ -556,6 +556,25 @@ export class ModemAPIClient {
     }
   }
 
+  /**
+   * Fast GET request without token refresh - for realtime polling
+   * Uses shorter timeout and skips token check for speed
+   */
+  async getFast(endpoint: string): Promise<string> {
+    try {
+      const response = await this.client.get(endpoint, {
+        headers: {
+          'Cookie': this.sessionCookie || '',
+        },
+        timeout: 2000, // Short timeout for fast polling
+      });
+
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async post(endpoint: string, data: string, retryCount = 0): Promise<string> {
     try {
       const { token } = await this.getToken(true);
