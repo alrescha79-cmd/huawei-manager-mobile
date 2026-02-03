@@ -53,6 +53,10 @@ export default function SMSScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [messageFilter, setMessageFilter] = useState<SMSFilterType>('all');
 
+  // Selection mode state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
 
   useEffect(() => {
     if (credentials?.modemIp) {
@@ -223,6 +227,73 @@ export default function SMSScreen() {
               await smsService.deleteSMS(index);
               removeMessage(index);
               ThemedAlertHelper.alert(t('common.success'), t('sms.messageDeleted'));
+            } catch (error) {
+              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedDeleteSms'));
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleLongPress = (message: SMSMessage) => {
+    if (!isSelectionMode) {
+      setIsSelectionMode(true);
+      setSelectedIds(new Set([`${message.boxType}-${message.index}`]));
+    }
+  };
+
+  const toggleSelect = (message: SMSMessage) => {
+    const id = `${message.boxType}-${message.index}`;
+    setSelectedIds(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredMessages.length) {
+      setSelectedIds(new Set());
+    } else {
+      const allIds = filteredMessages.map(m => `${m.boxType}-${m.index}`);
+      setSelectedIds(new Set(allIds));
+    }
+  };
+
+  const exitSelectionMode = () => {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!smsService || selectedIds.size === 0) return;
+
+    ThemedAlertHelper.alert(
+      t('sms.deleteSelected'),
+      t('sms.deleteSelectedConfirm', { count: selectedIds.size }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              const idsToDelete = Array.from(selectedIds);
+              for (const id of idsToDelete) {
+                const index = id.split('-').slice(1).join('-');
+                await smsService.deleteSMS(index);
+                removeMessage(index);
+              }
+              ThemedAlertHelper.alert(
+                t('common.success'),
+                t('sms.messagesDeleted', { count: idsToDelete.length })
+              );
+              exitSelectionMode();
             } catch (error) {
               ThemedAlertHelper.alert(t('common.error'), t('alerts.failedDeleteSms'));
             }
@@ -441,18 +512,45 @@ export default function SMSScreen() {
               </View>
             )}
 
-            {/* Recent Messages Header - Only show if SMS is supported */}
+            {/* Recent Messages Header / Selection Bar - Only show if SMS is supported */}
             {smsSupported && (
               <View style={styles.messagesHeader}>
-                <Text style={[typography.caption1, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
-                  {t('sms.recentMessages')}
-                </Text>
-                {smsCount && smsCount.localUnread > 0 && (
-                  <TouchableOpacity onPress={handleMarkAllAsRead}>
-                    <Text style={[typography.caption1, { color: colors.primary }]}>
-                      {t('sms.markAllAsRead')}
+                {isSelectionMode ? (
+                  <>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <TouchableOpacity onPress={exitSelectionMode} style={{ marginRight: 12 }}>
+                        <MaterialIcons name="close" size={24} color={colors.text} />
+                      </TouchableOpacity>
+                      <Text style={[typography.headline, { color: colors.text }]}>
+                        {t('sms.selected', { count: selectedIds.size })}
+                      </Text>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
+                      <TouchableOpacity onPress={handleSelectAll}>
+                        <Text style={[typography.caption1, { color: colors.primary }]}>
+                          {selectedIds.size === filteredMessages.length ? t('common.deselectAll') : t('common.selectAll')}
+                        </Text>
+                      </TouchableOpacity>
+                      {selectedIds.size > 0 && (
+                        <TouchableOpacity onPress={handleDeleteSelected}>
+                          <MaterialIcons name="delete" size={24} color={colors.error} />
+                        </TouchableOpacity>
+                      )}
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={[typography.caption1, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                      {t('sms.recentMessages')}
                     </Text>
-                  </TouchableOpacity>
+                    {smsCount && smsCount.localUnread > 0 && (
+                      <TouchableOpacity onPress={handleMarkAllAsRead}>
+                        <Text style={[typography.caption1, { color: colors.primary }]}>
+                          {t('sms.markAllAsRead')}
+                        </Text>
+                      </TouchableOpacity>
+                    )}
+                  </>
                 )}
               </View>
             )}
@@ -482,6 +580,10 @@ export default function SMSScreen() {
                     isLast={index === filteredMessages.length - 1}
                     timeDisplay={formatTimeAgo(message.date)}
                     onPress={() => handleOpenDetail(message)}
+                    onLongPress={() => handleLongPress(message)}
+                    isSelectionMode={isSelectionMode}
+                    isSelected={selectedIds.has(`${message.boxType}-${message.index}`)}
+                    onToggleSelect={() => toggleSelect(message)}
                   />
                 ))}
               </View>

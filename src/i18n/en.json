@@ -42,7 +42,9 @@
     "custom": "Custom",
     "clear": "Clear",
     "enable": "Enable",
-    "download": "Download"
+    "download": "Download",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All"
   },
   "alerts": {
     "newVersionAvailable": "A new version is available. Would you like to download it now?",
@@ -351,7 +353,11 @@
     "to": "To",
     "searchPlaceholder": "Search messages...",
     "recentMessages": "Recent Messages",
-    "markAllAsRead": "Mark all as read"
+    "markAllAsRead": "Mark all as read",
+    "selected": "{{count}} selected",
+    "deleteSelected": "Delete Selected",
+    "deleteSelectedConfirm": "Are you sure you want to delete {{count}} message(s)?",
+    "messagesDeleted": "{{count}} message(s) deleted"
   },
   "settings": {
     "modemInfo": "Modem Information",
@@ -450,6 +456,11 @@
     "latestVersion": "Latest Version",
     "tryAgain": "Try Again",
     "viewReleaseNotes": "View Release Notes",
+    "preReleaseHint": "Early access version - may contain bugs",
+    "stableUpToDate": "Stable version is up to date",
+    "checkAgain": "Check Again",
+    "stableBadge": "Stable",
+    "preReleaseBadge": "Pre-release",
     "connection": "Connection",
     "modemInfoSubtitle": "Status, Antenna",
     "mobileNetwork": "Mobile Network",

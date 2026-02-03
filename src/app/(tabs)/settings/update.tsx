@@ -24,6 +24,7 @@ interface ReleaseInfo {
     downloadUrl: string;
     releaseNotes: string;
     publishedAt: string;
+    isPreRelease: boolean;
 }
 
 /**
@@ -31,7 +32,7 @@ interface ReleaseInfo {
  * Returns: 1 if v1 > v2, -1 if v1 < v2, 0 if equal
  */
 function compareVersions(v1: string, v2: string): number {
-    const normalize = (v: string) => v.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
+    const normalize = (v: string) => v.replace(/^v/, '').replace(/-.*$/, '').split('.').map(n => parseInt(n, 10) || 0);
     const parts1 = normalize(v1);
     const parts2 = normalize(v2);
 
@@ -52,6 +53,8 @@ export default function UpdateScreen() {
     const [checking, setChecking] = useState(false);
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [releaseInfo, setReleaseInfo] = useState<ReleaseInfo | null>(null);
+    const [preReleaseInfo, setPreReleaseInfo] = useState<ReleaseInfo | null>(null);
+    const [preReleaseAvailable, setPreReleaseAvailable] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasChecked, setHasChecked] = useState(false);
 
@@ -83,11 +86,13 @@ export default function UpdateScreen() {
         setChecking(true);
         setError(null);
         setUpdateAvailable(false);
+        setPreReleaseAvailable(false);
         setReleaseInfo(null);
+        setPreReleaseInfo(null);
 
         try {
             const response = await fetch(
-                `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases/latest`,
+                `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
                 {
                     headers: {
                         'Accept': 'application/vnd.github.v3+json',
@@ -99,29 +104,60 @@ export default function UpdateScreen() {
                 throw new Error(`GitHub API error: ${response.status}`);
             }
 
-            const data = await response.json();
-
-            const latestVersion = data.tag_name?.replace(/^v/, '') || '';
+            const releases = await response.json();
             const currentVersion = Constants.expoConfig?.version || '0.0.0';
 
-            const apkAsset = data.assets?.find((asset: any) =>
-                asset.name?.endsWith('.apk') || asset.name?.includes('universal')
-            );
+            const stableRelease = releases.find((r: any) => !r.prerelease && !r.draft);
+            const preRelease = releases.find((r: any) => r.prerelease && !r.draft);
 
-            const info: ReleaseInfo = {
-                tagName: data.tag_name || '',
-                version: latestVersion,
-                downloadUrl: apkAsset?.browser_download_url || data.html_url || '',
-                releaseNotes: data.body || '',
-                publishedAt: data.published_at || '',
+            const parseRelease = (data: any, isPreRelease: boolean): ReleaseInfo => {
+                const apkAsset = data.assets?.find((asset: any) =>
+                    asset.name?.endsWith('.apk') || asset.name?.includes('universal')
+                );
+
+                let version = '';
+                const tagName = data.tag_name || '';
+
+                const semverMatch = tagName.match(/v?(\d+\.\d+\.\d+)/);
+                if (semverMatch) {
+                    version = semverMatch[1];
+                } else {
+                    const nameMatch = (data.name || '').match(/v?(\d+\.\d+\.\d+)/);
+                    if (nameMatch) {
+                        version = nameMatch[1];
+                    } else if (apkAsset?.name) {
+                        const assetMatch = apkAsset.name.match(/v?(\d+\.\d+\.\d+)/);
+                        if (assetMatch) {
+                            version = assetMatch[1];
+                        }
+                    }
+                }
+
+                return {
+                    tagName: tagName,
+                    version: version,
+                    downloadUrl: apkAsset?.browser_download_url || data.html_url || '',
+                    releaseNotes: data.body || '',
+                    publishedAt: data.published_at || '',
+                    isPreRelease,
+                };
             };
 
-            setReleaseInfo(info);
+            if (stableRelease) {
+                const info = parseRelease(stableRelease, false);
+                setReleaseInfo(info);
+                const comparison = compareVersions(info.version, currentVersion);
+                setUpdateAvailable(comparison > 0);
+            }
 
-            const comparison = compareVersions(latestVersion, currentVersion);
-            setUpdateAvailable(comparison > 0);
+            if (preRelease) {
+                const info = parseRelease(preRelease, true);
+                setPreReleaseInfo(info);
+                const comparison = info.version ? compareVersions(info.version, currentVersion) : 1;
+                setPreReleaseAvailable(comparison > 0);
+            }
+
             setHasChecked(true);
-
         } catch (err) {
             console.error('Update check failed:', err);
             setError(err instanceof Error ? err.message : 'Unknown error');
@@ -201,34 +237,97 @@ export default function UpdateScreen() {
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-                        ) : updateAvailable ? (
+                        ) : updateAvailable || preReleaseAvailable ? (
                             <View style={styles.statusContainer}>
-                                <Text style={[typography.headline, { color: colors.text, marginBottom: 8, textAlign: 'center' }]}>
-                                    {t('settings.updateAvailable')}
-                                </Text>
-                                <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 4, textAlign: 'center' }]}>
+                                <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 8 }]}>
                                     {t('settings.appVersion')}: v{Constants.expoConfig?.version}
                                 </Text>
-                                <Text style={[typography.body, { color: colors.primary, marginBottom: 24, textAlign: 'center' }]}>
-                                    {t('settings.latestVersion') || 'Latest'}: v{releaseInfo?.version}
-                                </Text>
 
-                                <TouchableOpacity
-                                    style={[styles.button, { backgroundColor: colors.primary }]}
-                                    onPress={handleDownload}
-                                >
-                                    <MaterialIcons name="download" size={20} color="#FFF" style={{ marginRight: 8 }} />
-                                    <Text style={[typography.body, { color: '#FFF', fontWeight: '600' }]}>
-                                        {t('settings.downloadUpdate')}
+                                {/* Stable Release Section */}
+                                {updateAvailable && releaseInfo && (
+                                    <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+                                        <View style={styles.releaseHeader}>
+                                            <Text style={[typography.headline, { color: colors.text }]}>
+                                                v{releaseInfo.version}
+                                            </Text>
+                                            <View style={[styles.badge, { backgroundColor: colors.success }]}>
+                                                <Text style={[typography.caption2, { color: '#FFF', fontWeight: '600' }]}>
+                                                    {t('settings.stableBadge')}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 12 }]}>
+                                            {t('settings.updateAvailable')}
+                                        </Text>
+                                        <View style={styles.releaseActions}>
+                                            <TouchableOpacity
+                                                style={[styles.smallButton, { backgroundColor: colors.primary }]}
+                                                onPress={() => releaseInfo.downloadUrl && Linking.openURL(releaseInfo.downloadUrl)}
+                                            >
+                                                <MaterialIcons name="download" size={16} color="#FFF" />
+                                                <Text style={[typography.caption1, { color: '#FFF', marginLeft: 4 }]}>
+                                                    {t('settings.downloadUpdate')}
+                                                </Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[styles.smallButtonOutline, { borderColor: colors.border }]}
+                                                onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${releaseInfo.tagName}`)}
+                                            >
+                                                <Text style={[typography.caption1, { color: colors.text }]}>{t('settings.viewReleaseNotes')}</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                )}
+
+                                {/* Pre-release Section */}
+                                {preReleaseAvailable && preReleaseInfo && (
+                                    <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.warning, marginTop: updateAvailable ? 12 : 0 }]}>
+                                        <View style={styles.releaseHeader}>
+                                            <Text style={[typography.headline, { color: colors.text }]}>
+                                                {preReleaseInfo.version ? `v${preReleaseInfo.version}` : preReleaseInfo.tagName}
+                                            </Text>
+                                            <View style={[styles.badge, { backgroundColor: colors.warning }]}>
+                                                <Text style={[typography.caption2, { color: '#FFF', fontWeight: '600' }]}>
+                                                    {t('settings.preReleaseBadge')}
+                                                </Text>
+                                            </View>
+                                        </View>
+                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 12 }]}>
+                                            {t('settings.preReleaseHint')}
+                                        </Text>
+                                        <View style={styles.releaseActions}>
+                                            <TouchableOpacity
+                                                style={[styles.smallButton, { backgroundColor: colors.warning }]}
+                                                onPress={() => preReleaseInfo.downloadUrl && Linking.openURL(preReleaseInfo.downloadUrl)}
+                                            >
+                                                <MaterialIcons name="download" size={16} color="#FFF" />
+                                                <Text style={[typography.caption1, { color: '#FFF', marginLeft: 4 }]}>
+                                                    {t('settings.downloadUpdate')}
+                                                </Text>
+                                            </TouchableOpacity>
+                                            <TouchableOpacity
+                                                style={[styles.smallButtonOutline, { borderColor: colors.border }]}
+                                                onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${preReleaseInfo.tagName}`)}
+                                            >
+                                                <Text style={[typography.caption1, { color: colors.text }]}>{t('settings.viewReleaseNotes')}</Text>
+                                            </TouchableOpacity>
+                                        </View>
+                                    </View>
+                                )}
+
+                                {/* If only stable is up to date but pre-release available */}
+                                {!updateAvailable && preReleaseAvailable && (
+                                    <Text style={[typography.caption1, { color: colors.success, marginBottom: 8, textAlign: 'center' }]}>
+                                        ✓ {t('settings.stableUpToDate')}
                                     </Text>
-                                </TouchableOpacity>
+                                )}
 
                                 <TouchableOpacity
-                                    style={[styles.buttonOutline, { borderColor: colors.border }]}
-                                    onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${releaseInfo?.tagName}`)}
+                                    style={[styles.buttonOutline, { borderColor: colors.border, marginTop: 16 }]}
+                                    onPress={checkUpdate}
                                 >
                                     <Text style={[typography.body, { color: colors.text }]}>
-                                        {t('settings.viewReleaseNotes') || 'View Release Notes'}
+                                        {t('settings.checkAgain')}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
@@ -292,6 +391,40 @@ const styles = StyleSheet.create({
         paddingHorizontal: 32,
         borderRadius: 24,
         marginTop: 12,
+        borderWidth: 1,
+    },
+    releaseCard: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        width: '100%',
+    },
+    releaseHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 4,
+    },
+    badge: {
+        paddingHorizontal: 8,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginLeft: 8,
+    },
+    releaseActions: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    smallButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
+    },
+    smallButtonOutline: {
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 8,
         borderWidth: 1,
     },
 });

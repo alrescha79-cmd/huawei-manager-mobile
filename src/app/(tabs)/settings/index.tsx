@@ -149,10 +149,10 @@ export default function SettingsIndex() {
 
                     <SettingsSection title={t('settings.about')}>
                         <SettingsItem
-                            icon="info-outline"
-                            title={t('settings.appVersion')}
-                            subtitle={`v${Constants.expoConfig?.version}`}
-                            showChevron={false}
+                            icon="system-update"
+                            title={`${t('settings.appVersion')} v${Constants.expoConfig?.version}`}
+                            subtitle={t('settings.checkNow')}
+                            onPress={() => router.push('/settings/update')}
                         />
                         <SettingsItem
                             icon="person-outline"
@@ -165,12 +165,6 @@ export default function SettingsIndex() {
                             title={t('settings.bugReport')}
                             subtitle={t('settings.bugReportHint')}
                             onPress={() => Linking.openURL('https://github.com/alrescha79-cmd/huawei-manager-mobile/issues')}
-                        />
-                        <SettingsItem
-                            icon="system-update"
-                            title={t('settings.checkUpdate')}
-                            subtitle={t('settings.checkNow')}
-                            onPress={() => router.push('/settings/update')}
                             isLast
                         />
                     </SettingsSection>
