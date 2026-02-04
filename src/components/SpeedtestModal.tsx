@@ -106,7 +106,7 @@ const SpeedometerGauge: React.FC<{
                 >
                     <View style={[gaugeStyles.needle, { backgroundColor: color }]} />
                     <View style={[gaugeStyles.needleTip, {
-                        borderBottomColor: color,
+                        backgroundColor: color,
                     }]} />
                 </Animated.View>
 
@@ -162,13 +162,9 @@ const gaugeStyles = StyleSheet.create({
         borderRadius: 2,
     },
     needleTip: {
-        width: 0,
-        height: 0,
-        borderLeftWidth: 6,
-        borderRightWidth: 6,
-        borderBottomWidth: 12,
-        borderLeftColor: 'transparent',
-        borderRightColor: 'transparent',
+        width: 8,
+        height: 8,
+        borderRadius: 4,
         marginTop: -2,
     },
     centerHub: {

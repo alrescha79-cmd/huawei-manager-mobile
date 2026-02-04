@@ -53,7 +53,6 @@ export default function SMSScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [messageFilter, setMessageFilter] = useState<SMSFilterType>('all');
 
-  // Selection mode state
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
@@ -113,25 +112,21 @@ export default function SMSScreen() {
       }
 
       try {
-        // Load inbox (boxType=1) and count first
         const [inboxMessages, count] = await Promise.all([
-          service.getSMSList(1, 20, 1),  // Inbox
+          service.getSMSList(1, 20, 1),
           service.getSMSCount(),
         ]);
 
-        // Try to load sent/outbox messages (boxType=2)
-        // Some modems may not support outbox, so we handle errors gracefully
         let sentMessages: typeof inboxMessages = [];
         try {
           if (count.localOutbox > 0) {
             sentMessages = await service.getSMSList(1, 20, 2);
           }
         } catch (outboxError) {
-          // Outbox not supported or empty, continue with inbox only
+          console.log('Outbox loading skipped:', outboxError);
           console.log('Outbox loading skipped:', outboxError);
         }
 
-        // Merge and sort by date (newest first)
         const allMessages = [...inboxMessages, ...sentMessages].sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
@@ -168,23 +163,19 @@ export default function SMSScreen() {
       }
 
       try {
-        // Load inbox (boxType=1) and count first
         const [inboxMessages, count] = await Promise.all([
-          service.getSMSList(1, 20, 1),  // Inbox
+          service.getSMSList(1, 20, 1),
           service.getSMSCount(),
         ]);
 
-        // Try to load sent/outbox messages (boxType=2)
         let sentMessages: typeof inboxMessages = [];
         try {
           if (count.localOutbox > 0) {
             sentMessages = await service.getSMSList(1, 20, 2);
           }
         } catch {
-          // Outbox not supported, continue with inbox only
         }
 
-        // Merge and sort by date (newest first)
         const allMessages = [...inboxMessages, ...sentMessages].sort(
           (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
         );
@@ -360,12 +351,9 @@ export default function SMSScreen() {
   };
 
   const filteredMessages = messages.filter(msg => {
-    // Apply filter by type using boxType
-    // boxType: 1 = inbox (received), 2 = outbox (sent)
     if (messageFilter === 'unread' && msg.smstat !== '0') return false;
     if (messageFilter === 'sent' && msg.boxType !== 2) return false;
 
-    // Apply search filter
     if (!searchQuery.trim()) return true;
     const query = searchQuery.toLowerCase();
     return (
@@ -450,11 +438,36 @@ export default function SMSScreen() {
         <MeshGradientBackground>
           <ModernRefreshIndicator refreshing={isRefreshing} />
 
+          {isSelectionMode && (
+            <View style={[
+              styles.selectionHeader,
+              { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 8 : 8 }
+            ]}>
+              <TouchableOpacity onPress={exitSelectionMode}>
+                <MaterialIcons name="close" size={24} color={colors.text} />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleSelectAll}>
+                <MaterialIcons name="checklist-rtl" size={24} color={colors.text} />
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {isSelectionMode && (
+            <View style={styles.selectionTitle}>
+              <Text style={[typography.title1, { color: colors.text, fontWeight: '700' }]}>
+                {t('sms.selected', { count: selectedIds.size })}
+              </Text>
+            </View>
+          )}
+
           <ScrollView
             style={[styles.container, { backgroundColor: 'transparent' }]}
             contentContainerStyle={[
               styles.content,
-              { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0), paddingBottom: 80 }
+              {
+                paddingTop: isSelectionMode ? 0 : (8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0)),
+                paddingBottom: isSelectionMode ? 100 : 80
+              }
             ]}
             refreshControl={
               <RefreshControl
@@ -468,7 +481,6 @@ export default function SMSScreen() {
             }
           >
 
-            {/* Show skeletons during initial load */}
             {!smsCount && isRefreshing && (
               <>
                 <SMSStatsSkeleton />
@@ -477,7 +489,6 @@ export default function SMSScreen() {
               </>
             )}
 
-            {/* Stats Cards Row - Only show if SMS is supported */}
             {smsSupported && smsCount && (
               <SMSStatsCard
                 t={t}
@@ -489,7 +500,6 @@ export default function SMSScreen() {
               />
             )}
 
-            {/* Search Bar - Only show if SMS is supported */}
             {smsSupported && (
               <View style={[styles.searchContainer, {
                 backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
@@ -512,50 +522,21 @@ export default function SMSScreen() {
               </View>
             )}
 
-            {/* Recent Messages Header / Selection Bar - Only show if SMS is supported */}
-            {smsSupported && (
+            {smsSupported && !isSelectionMode && (
               <View style={styles.messagesHeader}>
-                {isSelectionMode ? (
-                  <>
-                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                      <TouchableOpacity onPress={exitSelectionMode} style={{ marginRight: 12 }}>
-                        <MaterialIcons name="close" size={24} color={colors.text} />
-                      </TouchableOpacity>
-                      <Text style={[typography.headline, { color: colors.text }]}>
-                        {t('sms.selected', { count: selectedIds.size })}
-                      </Text>
-                    </View>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                      <TouchableOpacity onPress={handleSelectAll}>
-                        <Text style={[typography.caption1, { color: colors.primary }]}>
-                          {selectedIds.size === filteredMessages.length ? t('common.deselectAll') : t('common.selectAll')}
-                        </Text>
-                      </TouchableOpacity>
-                      {selectedIds.size > 0 && (
-                        <TouchableOpacity onPress={handleDeleteSelected}>
-                          <MaterialIcons name="delete" size={24} color={colors.error} />
-                        </TouchableOpacity>
-                      )}
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
-                      {t('sms.recentMessages')}
+                <Text style={[typography.caption1, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                  {t('sms.recentMessages')}
+                </Text>
+                {smsCount && smsCount.localUnread > 0 && (
+                  <TouchableOpacity onPress={handleMarkAllAsRead}>
+                    <Text style={[typography.caption1, { color: colors.primary }]}>
+                      {t('sms.markAllAsRead')}
                     </Text>
-                    {smsCount && smsCount.localUnread > 0 && (
-                      <TouchableOpacity onPress={handleMarkAllAsRead}>
-                        <Text style={[typography.caption1, { color: colors.primary }]}>
-                          {t('sms.markAllAsRead')}
-                        </Text>
-                      </TouchableOpacity>
-                    )}
-                  </>
+                  </TouchableOpacity>
                 )}
               </View>
             )}
 
-            {/* Messages List */}
             {!smsSupported || filteredMessages.length === 0 ? (
               <View style={[styles.emptyState, {
                 backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
@@ -590,8 +571,52 @@ export default function SMSScreen() {
             )}
           </ScrollView>
 
-          {/* Floating Action Button for New Message - only show if SMS supported */}
-          {smsSupported && (
+          {isSelectionMode && (
+            <View style={[
+              styles.selectionBottomBar,
+              {
+                backgroundColor: colors.card,
+                borderTopColor: colors.border,
+              }
+            ]}>
+              <TouchableOpacity
+                style={styles.selectionAction}
+                onPress={handleMarkAllAsRead}
+                disabled={selectedIds.size === 0}
+              >
+                <MaterialIcons
+                  name="mark-chat-read"
+                  size={24}
+                  color={selectedIds.size === 0 ? colors.textSecondary : colors.text}
+                />
+                <Text style={[
+                  typography.caption1,
+                  { color: selectedIds.size === 0 ? colors.textSecondary : colors.text }
+                ]}>
+                  {t('sms.markAllAsRead')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.selectionAction}
+                onPress={handleDeleteSelected}
+                disabled={selectedIds.size === 0}
+              >
+                <MaterialIcons
+                  name="delete-outline"
+                  size={24}
+                  color={selectedIds.size === 0 ? colors.textSecondary : colors.text}
+                />
+                <Text style={[
+                  typography.caption1,
+                  { color: selectedIds.size === 0 ? colors.textSecondary : colors.text }
+                ]}>
+                  {t('common.delete')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {smsSupported && !isSelectionMode && (
             <TouchableOpacity
               style={[
                 styles.fab,
@@ -606,7 +631,6 @@ export default function SMSScreen() {
         </MeshGradientBackground>
       </AnimatedScreen>
 
-      {/* Compose Modal */}
       <Modal
         visible={showCompose}
         animationType="slide"
@@ -683,7 +707,6 @@ export default function SMSScreen() {
         </KeyboardAnimatedView>
       </Modal>
 
-      {/* Detail Modal */}
       <SMSDetailModal
         visible={showDetail}
         selectedMessage={selectedMessage}

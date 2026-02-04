@@ -1,8 +1,8 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Button } from '@/components';
+import { Card, CardHeader } from '@/components';
 import { ConnectedDevice } from '@/types';
 
 interface ConnectedDevicesListProps {
@@ -12,19 +12,12 @@ interface ConnectedDevicesListProps {
     onBlockDevice: (macAddress: string, hostName: string) => void;
 }
 
-/**
- * Format MAC address for display
- */
 function formatMacAddress(mac: string): string {
     if (!mac) return '';
     if (mac.includes(':')) return mac.toUpperCase();
-    // Format as XX:XX:XX:XX:XX:XX
     return mac.match(/.{1,2}/g)?.join(':').toUpperCase() || mac;
 }
 
-/**
- * Connected devices list for WiFi screen
- */
 export function ConnectedDevicesList({
     t,
     devices,
@@ -43,7 +36,7 @@ export function ConnectedDevicesList({
                 </Text>
             ) : (
                 devices.map((device, index) => (
-                    <TouchableOpacity
+                    <View
                         key={device.macAddress}
                         style={[
                             styles.deviceItem,
@@ -54,7 +47,6 @@ export function ConnectedDevicesList({
                                 marginBottom: index < devices.length - 1 ? spacing.md : 0,
                             },
                         ]}
-                        onPress={() => onDevicePress(device)}
                     >
                         <View style={{ flex: 1 }}>
                             <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
@@ -68,16 +60,24 @@ export function ConnectedDevicesList({
                             </Text>
                         </View>
 
-                        <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                        {/* Detail Button */}
+                        <TouchableOpacity
+                            style={[styles.circleButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                            onPress={() => onDevicePress(device)}
+                            activeOpacity={0.7}
+                        >
+                            <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                        </TouchableOpacity>
 
-                        <Button
-                            title={t('wifi.blockDevice')}
-                            variant="danger"
-                            size="small"
+                        {/* Block Button */}
+                        <TouchableOpacity
+                            style={[styles.circleButton, { backgroundColor: colors.error + '15', borderColor: colors.error + '30', marginLeft: 8 }]}
                             onPress={() => onBlockDevice(device.macAddress, device.hostName)}
-                            style={styles.kickButton}
-                        />
-                    </TouchableOpacity>
+                            activeOpacity={0.7}
+                        >
+                            <FontAwesome5 name="user-slash" size={14} color={colors.error} />
+                        </TouchableOpacity>
+                    </View>
                 ))
             )}
         </Card>
@@ -90,10 +90,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 12,
     },
-    kickButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        minWidth: 70,
+    circleButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
     },
 });
 

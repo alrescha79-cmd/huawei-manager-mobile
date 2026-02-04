@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ViewStyle, StyleProp } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
+import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { formatDuration } from '@/utils/helpers';
@@ -106,12 +107,20 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
 
     return (
         <Card style={[styles.container, style]}>
+            {/* Header with wrap support */}
             <View style={styles.header}>
-                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <View style={styles.titleRow}>
                     <MaterialIcons name="insert-chart" size={18} color={blueColor} style={{ marginRight: 8 }} />
-                    <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}>
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }])}
+                        duration={4000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
+                    >
                         {t('home.dataStatistics')}
-                    </Text>
+                    </TextTicker>
                 </View>
 
                 <View style={[styles.tabsContainer, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
@@ -132,10 +141,15 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                                     activeTab === tab && { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.15)' }
                                 ]}
                             >
-                                <Text style={[
-                                    styles.tabText,
-                                    { color: activeTab === tab ? blueColor : colors.textSecondary }
-                                ]}>
+                                <Text
+                                    style={[
+                                        styles.tabText,
+                                        { color: activeTab === tab ? blueColor : colors.textSecondary }
+                                    ]}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                    minimumFontScale={0.7}
+                                >
                                     {tabLabel}
                                 </Text>
                             </TouchableOpacity>
@@ -149,15 +163,27 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                 entering={FadeIn.duration(200)}
                 exiting={FadeOut.duration(100)}
             >
+                {/* Main stats with flex wrap */}
                 <View style={styles.mainStatsRow}>
                     <View style={styles.leftStatsGroup}>
-                        <Text style={[styles.mainValue, { color: blueColor }]}>
+                        <Text
+                            style={[styles.mainValue, { color: blueColor }]}
+                            adjustsFontSizeToFit
+                            numberOfLines={1}
+                        >
                             {totalFormatted.value}
                         </Text>
 
-                        <Text style={[styles.mainUnitLabel, { color: colors.textSecondary }]}>
-                            {totalFormatted.unit} {currentStats.label}
-                        </Text>
+                        <View style={styles.unitLabelContainer}>
+                            <Text
+                                style={[styles.mainUnitLabel, { color: colors.textSecondary }]}
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.6}
+                            >
+                                {totalFormatted.unit} {currentStats.label}
+                            </Text>
+                        </View>
                     </View>
 
                     <View style={styles.rightStatsGroup}>
@@ -168,7 +194,11 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                                         {percent}%
                                     </Text>
                                 </View>
-                                <Text style={[typography.caption2, { color: colors.textSecondary, fontSize: 10, textAlign: 'right', marginTop: 2 }]}>
+                                <Text
+                                    style={[typography.caption2, { color: colors.textSecondary, fontSize: 10, textAlign: 'right', marginTop: 2 }]}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                >
                                     {t('home.of')} {limitFormatted.value} {limitFormatted.unit}
                                 </Text>
                             </>
@@ -199,14 +229,25 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
 
                 {!showProgress && <View style={{ height: 20 }} />}
 
+                {/* Footer with vertical layout on cramped screens */}
                 <View style={styles.footerGrid}>
                     <View style={[styles.detailCard, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                         <View style={[styles.iconCircle, { backgroundColor: 'rgba(34, 197, 94, 0.2)' }]}>
                             <MaterialIcons name="arrow-downward" size={16} color={greenColor} />
                         </View>
-                        <View>
-                            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('home.download').toUpperCase()}</Text>
-                            <Text style={[styles.detailValue, { color: colors.text }]}>
+                        <View style={{ flex: 1 }}>
+                            <Text
+                                style={[styles.detailLabel, { color: colors.textSecondary }]}
+                                numberOfLines={1}
+                            >
+                                {t('home.download').toUpperCase()}
+                            </Text>
+                            <Text
+                                style={[styles.detailValue, { color: colors.text }]}
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.7}
+                            >
                                 {dlFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{dlFormatted.unit}</Text>
                             </Text>
                         </View>
@@ -216,9 +257,19 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                         <View style={[styles.iconCircle, { backgroundColor: 'rgba(168, 85, 247, 0.2)' }]}>
                             <MaterialIcons name="arrow-upward" size={16} color={purpleColor} />
                         </View>
-                        <View>
-                            <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>{t('home.upload').toUpperCase()}</Text>
-                            <Text style={[styles.detailValue, { color: colors.text }]}>
+                        <View style={{ flex: 1 }}>
+                            <Text
+                                style={[styles.detailLabel, { color: colors.textSecondary }]}
+                                numberOfLines={1}
+                            >
+                                {t('home.upload').toUpperCase()}
+                            </Text>
+                            <Text
+                                style={[styles.detailValue, { color: colors.text }]}
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.7}
+                            >
                                 {ulFormatted.value} <Text style={{ fontSize: 12, color: colors.textSecondary }}>{ulFormatted.unit}</Text>
                             </Text>
                         </View>
@@ -334,6 +385,15 @@ const styles = StyleSheet.create({
         fontSize: 14,
         fontWeight: '600',
         marginLeft: 8,
-        marginTop: 12, 
+        marginTop: 12,
+    },
+    titleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        marginRight: 8,
+    },
+    unitLabelContainer: {
+        flexShrink: 1,
     },
 });

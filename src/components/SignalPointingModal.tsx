@@ -35,33 +35,6 @@ const ANTENNA_MODES = [
 
 const MAX_GRAPH_POINTS = 30;
 
-// Band to frequency mapping
-const LTE_BAND_FREQ: Record<string, string> = {
-    '1': '2100 MHz', '2': '1900 MHz', '3': '1800 MHz', '4': '1700 MHz',
-    '5': '850 MHz', '7': '2600 MHz', '8': '900 MHz', '12': '700 MHz',
-    '13': '700 MHz', '17': '700 MHz', '18': '850 MHz', '19': '850 MHz',
-    '20': '800 MHz', '21': '1500 MHz', '25': '1900 MHz', '26': '850 MHz',
-    '28': '700 MHz', '29': '700 MHz', '30': '2300 MHz', '32': '1500 MHz',
-    '34': '2010 MHz', '38': '2600 MHz', '39': '1900 MHz', '40': '2300 MHz',
-    '41': '2500 MHz', '42': '3500 MHz', '43': '3700 MHz', '46': '5200 MHz',
-    '48': '3600 MHz', '66': '1700 MHz', '71': '600 MHz',
-};
-
-function formatBandWithFreq(band: string | undefined): string {
-    if (!band || band === '-' || band === '') return '-';
-    // Handle format like "B40" or "LTE BAND 40" or just "40"
-    const bandMatch = band.match(/(\d+)/);
-    if (bandMatch) {
-        const bandNum = bandMatch[1];
-        const freq = LTE_BAND_FREQ[bandNum];
-        if (freq) {
-            return `B${bandNum} (${freq})`;
-        }
-        return `B${bandNum}`;
-    }
-    return band;
-}
-
 function getRsrpQuality(rsrp: number, colors: { success: string; warning: string; error: string; textSecondary: string }): SignalQuality {
     if (rsrp >= -80) {
         return { level: 'excellent', color: colors.success, percentage: 100 };
@@ -97,12 +70,11 @@ function formatSignalValue(value: string | undefined, unit: string): string {
     return `${num} ${unit}`;
 }
 
-// Mini Signal Graph Component - Area chart style
 function MiniSignalGraph({ history, colors, isDark, metric }: { history: number[]; colors: any; isDark: boolean; metric: 'rsrp' | 'sinr' }) {
     if (history.length < 2) return null;
 
     const graphHeight = 50;
-    const graphWidth = 100; // percentage
+    const graphWidth = 100;
     const minVal = metric === 'rsrp' ? -120 : -10;
     const maxVal = metric === 'rsrp' ? -60 : 30;
 
@@ -119,18 +91,14 @@ function MiniSignalGraph({ history, colors, isDark, metric }: { history: number[
     const latestValue = history[history.length - 1];
     const quality = metric === 'rsrp' ? getRsrpQuality(latestValue, colors) : getSinrQuality(latestValue, colors);
 
-    // Create gradient bars for smoother look
     const barWidth = graphWidth / (history.length - 1);
 
     return (
         <View style={[miniGraphStyles.container, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
             <View style={[miniGraphStyles.graphArea, { height: graphHeight }]}>
-                {/* Grid lines */}
                 <View style={[miniGraphStyles.gridLine, { top: 0 }]} />
                 <View style={[miniGraphStyles.gridLine, { top: graphHeight / 2 }]} />
                 <View style={[miniGraphStyles.gridLine, { top: graphHeight }]} />
-
-                {/* Area fill using vertical bars */}
                 {points.map((point, i) => (
                     <View
                         key={`bar-${i}`}
@@ -145,7 +113,6 @@ function MiniSignalGraph({ history, colors, isDark, metric }: { history: number[
                     />
                 ))}
 
-                {/* Line on top - smooth connection using dots */}
                 {points.map((point, i) => (
                     <View
                         key={`dot-${i}`}
@@ -162,7 +129,6 @@ function MiniSignalGraph({ history, colors, isDark, metric }: { history: number[
                     />
                 ))}
 
-                {/* Current point indicator (larger) */}
                 {points.length > 0 && (
                     <View
                         style={[
@@ -200,10 +166,8 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
     const [fetchTime, setFetchTime] = useState<number | null>(null);
     const [signalHistory, setSignalHistory] = useState<number[]>([]);
 
-    // Signal metric toggle (rsrp or sinr)
     const [signalMetric, setSignalMetric] = useState<'rsrp' | 'sinr'>('rsrp');
 
-    // Antenna settings
     const [antennaMode, setAntennaMode] = useState('auto');
     const [showAntennaModal, setShowAntennaModal] = useState(false);
     const [isChangingAntenna, setIsChangingAntenna] = useState(false);
@@ -214,7 +178,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
     const soundEnabledRef = useRef(false);
     const signalMetricRef = useRef<'rsrp' | 'sinr'>('rsrp');
 
-    // Keep refs in sync with state
     useEffect(() => {
         bestValueRef.current = bestRsrp;
     }, [bestRsrp]);
@@ -353,7 +316,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                 contentContainerStyle={{ paddingBottom: 40 }}
                 showsVerticalScrollIndicator={false}
             >
-                {/* Metric Toggle */}
                 <View style={[styles.metricToggle, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
                     <TouchableOpacity
                         style={[styles.metricButton, signalMetric === 'rsrp' && { backgroundColor: colors.primary }]}
@@ -373,7 +335,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                     </TouchableOpacity>
                 </View>
 
-                {/* Main Signal Display */}
                 <Card style={[styles.mainCard, { borderColor: quality.color, borderWidth: 2 }]}>
                     <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginBottom: 8 }]}>
                         {signalMetric === 'rsrp' ? t('home.metricRSRP') : t('home.metricSINR')}
@@ -384,7 +345,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                         <Text style={styles.rsrpUnit}> {valueUnit}</Text>
                     </Text>
 
-                    {/* Signal Bar */}
                     <View style={[styles.signalBarContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
                         <View style={[styles.signalBarFill, { width: `${quality.percentage}%`, backgroundColor: quality.color }]} />
                     </View>
@@ -393,7 +353,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                         {t(`home.signal${quality.level.charAt(0).toUpperCase() + quality.level.slice(1)}`)}
                     </Text>
 
-                    {/* Mini Realtime Graph */}
                     {signalHistory.length < 2 ? (
                         <View style={[styles.graphSkeleton, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
                             <View style={[styles.skeletonBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
@@ -404,7 +363,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                         <MiniSignalGraph history={signalHistory} colors={colors} isDark={isDark} metric={signalMetric} />
                     )}
 
-                    {/* Update Time */}
                     {fetchTime !== null && (
                         <Text style={[typography.caption2, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
                             Update: {fetchTime}ms
@@ -412,7 +370,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                     )}
                 </Card>
 
-                {/* Signal Details */}
                 <Card style={{ marginTop: spacing.md }}>
                     <View style={styles.detailsGrid}>
                         <View style={styles.detailItem}>
@@ -432,9 +389,9 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                             </Text>
                         </View>
                         <View style={styles.detailItem}>
-                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>Band</Text>
+                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>RSSI</Text>
                             <Text style={[typography.headline, { color: colors.text }]}>
-                                {formatBandWithFreq(signalInfo?.band)}
+                                {formatSignalValue(signalInfo?.rssi, 'dBm')}
                             </Text>
                         </View>
                         <View style={styles.detailItem}>
@@ -446,7 +403,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                     </View>
                 </Card>
 
-                {/* Best Signal Found */}
                 <Card style={{ marginTop: spacing.md }}>
                     <View style={styles.bestSignalRow}>
                         <View style={{ flex: 1 }}>
@@ -476,7 +432,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                     </View>
                 </Card>
 
-                {/* Antenna Settings */}
                 <Card style={{ marginTop: spacing.md }}>
                     <TouchableOpacity
                         style={styles.antennaRow}
@@ -554,7 +509,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                     </Card>
                 )}
 
-                {/* Sound Toggle */}
                 <TouchableOpacity
                     style={[styles.soundToggle, {
                         backgroundColor: soundEnabled ? colors.primary : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
@@ -577,7 +531,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                 </TouchableOpacity>
             </ScrollView>
 
-            {/* Antenna Selection Modal */}
             <SelectionModal
                 visible={showAntennaModal}
                 title={t('settings.antennaSettings')}

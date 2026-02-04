@@ -132,7 +132,7 @@ export function MonthlyComparisonCard({
                 <View style={styles.barRow}>
                     <View style={styles.barLabel}>
                         <Text style={[styles.monthText, { color: colors.textSecondary }]}>
-                            {formatMonthKey(getLastMonthKey(), locale)}
+                            {t('home.lastMonth')}
                         </Text>
                         <Text style={[styles.valueText, { color: grayColor }]}>
                             {lastMonthFormatted.value} {lastMonthFormatted.unit}

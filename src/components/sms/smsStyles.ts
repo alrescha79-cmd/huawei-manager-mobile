@@ -47,7 +47,6 @@ export const smsStyles = StyleSheet.create({
     countItem: {
         alignItems: 'center',
     },
-    // Stats cards styles
     statsRow: {
         flexDirection: 'row',
         gap: 12,
@@ -69,7 +68,6 @@ export const smsStyles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
     },
-    // Search bar styles
     searchContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -84,7 +82,6 @@ export const smsStyles = StyleSheet.create({
         fontSize: 16,
         padding: 0,
     },
-    // Messages header styles
     messagesHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -92,7 +89,6 @@ export const smsStyles = StyleSheet.create({
         marginBottom: 12,
         paddingHorizontal: 4,
     },
-    // New Android-style message list
     messagesList: {
         borderRadius: 16,
         overflow: 'hidden',
@@ -135,7 +131,6 @@ export const smsStyles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
     },
-    // Modal styles
     modalContainer: {
         flex: 1,
     },
@@ -151,7 +146,6 @@ export const smsStyles = StyleSheet.create({
         flex: 1,
         padding: 16,
     },
-    // Chat bubble style for detail
     chatBubble: {
         maxWidth: '85%',
         padding: 12,
@@ -163,7 +157,6 @@ export const smsStyles = StyleSheet.create({
         paddingTop: 16,
         borderTopWidth: 1,
     },
-    // Compose modal styles
     composeHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
@@ -209,7 +202,6 @@ export const smsStyles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    // Modern reply bar styles
     modernReplyBar: {
         flexDirection: 'row',
         alignItems: 'flex-end',
@@ -239,5 +231,29 @@ export const smsStyles = StyleSheet.create({
         borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
+    },
+    selectionHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+    },
+    selectionTitle: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+    },
+    selectionBottomBar: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingVertical: 16,
+        paddingHorizontal: 32,
+        gap: 48,
+        borderTopWidth: 1,
+    },
+    selectionAction: {
+        alignItems: 'center',
+        gap: 4,
     },
 });

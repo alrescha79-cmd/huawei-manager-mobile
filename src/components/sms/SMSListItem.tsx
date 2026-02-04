@@ -15,9 +15,6 @@ interface SMSListItemProps {
     onToggleSelect?: () => void;
 }
 
-/**
- * Individual SMS message list item
- */
 export function SMSListItem({
     message,
     isLast,
@@ -49,36 +46,21 @@ export function SMSListItem({
             style={[
                 styles.messageItem,
                 !isLast && { borderBottomWidth: 1, borderBottomColor: colors.border },
-                isSelected && { backgroundColor: colors.primary + '20' }
             ]}
         >
-            {isSelectionMode ? (
-                <View style={[
-                    styles.checkbox,
-                    {
-                        borderColor: isSelected ? colors.primary : colors.textSecondary,
-                        backgroundColor: isSelected ? colors.primary : 'transparent'
-                    }
-                ]}>
-                    {isSelected && (
-                        <MaterialIcons name="check" size={16} color="#FFF" />
-                    )}
-                </View>
-            ) : (
-                <View style={[
-                    styles.avatar,
-                    { backgroundColor: isUnread ? colors.primary : colors.textSecondary }
-                ]}>
-                    <Text style={styles.avatarText}>{initials}</Text>
-                </View>
-            )}
+            <View style={[
+                styles.avatar,
+                { backgroundColor: isUnread ? colors.primary : colors.textSecondary }
+            ]}>
+                <Text style={styles.avatarText}>{initials}</Text>
+            </View>
 
             <View style={styles.messageContent}>
                 <View style={styles.messageTopRow}>
                     <Text style={[
                         typography.headline,
                         {
-                            color: colors.text,
+                            color: isSelected ? colors.primary : colors.text,
                             fontWeight: isUnread ? '700' : '500',
                             flex: 1,
                         }
@@ -90,7 +72,6 @@ export function SMSListItem({
                         {
                             color: isUnread ? colors.primary : colors.textSecondary,
                             fontWeight: isUnread ? '600' : '400',
-                            marginLeft: 8,
                         }
                     ]}>
                         {timeDisplay}
@@ -100,20 +81,32 @@ export function SMSListItem({
                     style={[
                         typography.body,
                         {
-                            color: isUnread ? colors.text : colors.textSecondary,
+                            color: isSelected ? colors.primary : (isUnread ? colors.text : colors.textSecondary),
                             fontWeight: isUnread ? '500' : '400',
                             marginTop: 2,
                         }
                     ]}
-                    numberOfLines={1}
+                    numberOfLines={2}
                 >
                     {message.content}
                 </Text>
             </View>
 
-            {!isSelectionMode && isUnread && (
-                <View style={[styles.unreadBadge, { backgroundColor: colors.primary }]} />
-            )}
+            {isSelectionMode ? (
+                <View style={[
+                    styles.circularCheckbox,
+                    {
+                        borderColor: isSelected ? colors.primary : colors.textSecondary,
+                        backgroundColor: isSelected ? colors.primary : 'transparent'
+                    }
+                ]}>
+                    {isSelected && (
+                        <MaterialIcons name="check" size={16} color="#FFF" />
+                    )}
+                </View>
+            ) : isUnread ? (
+                <View style={[styles.unreadDot, { backgroundColor: '#FFA500' }]} />
+            ) : null}
         </TouchableOpacity>
     );
 }
@@ -138,27 +131,27 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         fontSize: 18,
     },
-    checkbox: {
-        width: 24,
-        height: 24,
-        borderRadius: 4,
-        borderWidth: 2,
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginRight: 12,
-    },
     messageContent: {
         flex: 1,
+        marginRight: 12,
     },
     messageTopRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'space-between',
     },
-    unreadBadge: {
+    circularCheckbox: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        borderWidth: 2,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    unreadDot: {
         width: 10,
         height: 10,
         borderRadius: 5,
-        marginLeft: 8,
     },
 });
 
