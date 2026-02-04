@@ -152,6 +152,7 @@
     "totalUsage": "Total Penggunaan",
     "monthlyComparison": "Riwayat Penggunaan",
     "noLastMonthData": "Data bulan lalu belum tersedia",
+    "lastMonth": "Bulan Lalu",
     "downloadSpeed": "Kecepatan Download",
     "uploadSpeed": "Kecepatan Upload",
     "wanInfo": "Lainnya",

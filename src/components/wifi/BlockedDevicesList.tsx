@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Button, BouncingDots } from '@/components';
+import { Card, CardHeader } from '@/components';
 
 interface BlockedDevice {
     macAddress: string;
@@ -17,18 +17,12 @@ interface BlockedDevicesListProps {
     onDevicePress?: (device: BlockedDevice) => void;
 }
 
-/**
- * Format MAC address for display
- */
 function formatMacAddress(mac: string): string {
     if (!mac) return '';
     if (mac.includes(':')) return mac.toUpperCase();
     return mac.match(/.{1,2}/g)?.join(':').toUpperCase() || mac;
 }
 
-/**
- * Blocked devices list for WiFi screen
- */
 export function BlockedDevicesList({
     t,
     devices,
@@ -47,7 +41,7 @@ export function BlockedDevicesList({
             <CardHeader title={`${t('wifi.blockedDevices')} (${devices.length})`} />
 
             {devices.map((device, index) => (
-                <TouchableOpacity
+                <View
                     key={device.macAddress + index}
                     style={[
                         styles.deviceItem,
@@ -58,8 +52,6 @@ export function BlockedDevicesList({
                             marginBottom: index < devices.length - 1 ? spacing.md : 0,
                         }
                     ]}
-                    onPress={() => onDevicePress?.(device)}
-                    activeOpacity={0.7}
                 >
                     <View style={{ flex: 1 }}>
                         <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 4 }]}>
@@ -70,18 +62,37 @@ export function BlockedDevicesList({
                         </Text>
                     </View>
 
-                    <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} style={{ marginRight: 8 }} />
+                    {/* Detail Button */}
+                    <TouchableOpacity
+                        style={[styles.circleButton, { backgroundColor: colors.card, borderColor: colors.border }]}
+                        onPress={() => onDevicePress?.(device)}
+                        activeOpacity={0.7}
+                    >
+                        <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                    </TouchableOpacity>
 
-                    <Button
-                        title={t('wifi.unblock')}
-                        variant="success"
-                        size="small"
+                    {/* Unblock Button */}
+                    <TouchableOpacity
+                        style={[
+                            styles.circleButton,
+                            {
+                                backgroundColor: colors.success + '15',
+                                borderColor: colors.success + '30',
+                                marginLeft: 8,
+                                opacity: unblockingMac === device.macAddress ? 0.6 : 1,
+                            }
+                        ]}
                         onPress={() => onUnblock(device.macAddress)}
                         disabled={unblockingMac === device.macAddress}
-                        loading={unblockingMac === device.macAddress}
-                        style={styles.unblockButton}
-                    />
-                </TouchableOpacity>
+                        activeOpacity={0.7}
+                    >
+                        {unblockingMac === device.macAddress ? (
+                            <ActivityIndicator size="small" color={colors.success} />
+                        ) : (
+                            <FontAwesome5 name="user-check" size={14} color={colors.success} />
+                        )}
+                    </TouchableOpacity>
+                </View>
             ))}
         </Card>
     );
@@ -93,10 +104,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 12,
     },
-    unblockButton: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
-        minWidth: 80,
+    circleButton: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 1,
     },
 });
 

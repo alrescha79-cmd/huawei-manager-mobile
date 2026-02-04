@@ -152,6 +152,7 @@
     "totalUsage": "All Time Usage",
     "monthlyComparison": "Usage History",
     "noLastMonthData": "No data from last month available yet",
+    "lastMonth": "Last Month",
     "downloadSpeed": "Download Speed",
     "uploadSpeed": "Upload Speed",
     "wanInfo": "Others",

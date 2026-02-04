@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { CollapsibleCard, SignalBar } from '@/components';
 import { BatteryIndicator } from './BatteryIndicator';
@@ -87,28 +88,53 @@ export function ConnectionStatusCard({
                 <View style={styles.connectionLeftSection}>
                     <SignalBar strength={getSignalBars()} label="" />
                     <View style={styles.connectionSignalLabels}>
-                        <Text style={[typography.subheadline, { color: colors.primary, fontWeight: '600' }]}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.subheadline, { color: colors.primary, fontWeight: '600' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
                             {getStrengthLabel()}
-                        </Text>
-                        <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                        </TextTicker>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.headline, { color: colors.text, fontWeight: '600' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
                             {networkInfo?.shortName || networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
-                        </Text>
+                        </TextTicker>
                     </View>
                 </View>
 
                 <View style={styles.connectionRightSection}>
-                    <Text style={[
-                        typography.subheadline,
-                        {
-                            color: isConnected ? colors.primary : colors.error,
-                            fontWeight: '600',
-                            marginBottom: 4,
-                        }
-                    ]}>
+                    <TextTicker
+                        style={StyleSheet.flatten([
+                            typography.subheadline,
+                            {
+                                color: isConnected ? colors.primary : colors.error,
+                                fontWeight: '600',
+                                marginBottom: 4,
+                            }
+                        ])}
+                        duration={4000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
+                    >
                         {getStatusText()}
-                    </Text>
+                    </TextTicker>
                     <View style={[styles.networkTypeBadge, { borderColor: colors.primary, borderWidth: 1 }]}>
-                        <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700' }]}>
+                        <Text
+                            style={[typography.caption1, { color: colors.primary, fontWeight: '700' }]}
+                            adjustsFontSizeToFit
+                            numberOfLines={1}
+                        >
                             {networkType}
                         </Text>
                     </View>
@@ -119,9 +145,16 @@ export function ConnectionStatusCard({
 
             <View style={styles.connectionInfoGrid}>
                 <View style={styles.connectionInfoGridItem}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.caption1, { color: colors.textSecondary, marginBottom: 2 }])}
+                        duration={4000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
+                    >
                         {t('home.power')}
-                    </Text>
+                    </TextTicker>
                     <BatteryIndicator
                         batteryStatus={modemStatus?.batteryStatus}
                         batteryLevel={modemStatus?.batteryLevel}
@@ -131,36 +164,79 @@ export function ConnectionStatusCard({
                 </View>
 
                 <View style={styles.connectionInfoGridItem}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.caption1, { color: colors.textSecondary, marginBottom: 2 }])}
+                        duration={4000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
+                    >
                         {t('home.ipAddress')}
-                    </Text>
-                    <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                    </TextTicker>
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '600' }])}
+                        duration={4000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
+                    >
                         {wanInfo?.wanIPAddress || '...'}
-                    </Text>
+                    </TextTicker>
                 </View>
 
                 <View style={styles.connectionInfoGridItem}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.caption1, { color: colors.textSecondary, marginBottom: 2 }])}
+                        duration={4000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
+                    >
                         {t('home.band')}
-                    </Text>
-                    <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
+                    </TextTicker>
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '600' }])}
+                        duration={4000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
+                    >
                         {getLteBandInfo(signalInfo?.band)}
-                    </Text>
+                    </TextTicker>
                 </View>
 
                 <View style={styles.connectionInfoGridItem}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 2 }]}>
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.caption1, { color: colors.textSecondary, marginBottom: 2 }])}
+                        duration={4000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
+                    >
                         {t('home.width')}
-                    </Text>
+                    </TextTicker>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
                             <>
                                 <MaterialIcons name="arrow-upward" size={14} color={colors.primary} />
-                                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600', marginRight: 4 }]}>
+                                <Text
+                                    style={[typography.subheadline, { color: colors.text, fontWeight: '600', marginRight: 4 }]}
+                                    adjustsFontSizeToFit
+                                    numberOfLines={1}
+                                >
                                     {signalInfo.ulbandwidth || '-'}
                                 </Text>
                                 <MaterialIcons name="arrow-downward" size={14} color={colors.success} />
-                                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
+                                <Text
+                                    style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}
+                                    adjustsFontSizeToFit
+                                    numberOfLines={1}
+                                >
                                     {signalInfo.dlbandwidth || '-'}
                                 </Text>
                             </>

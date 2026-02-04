@@ -218,7 +218,6 @@ export default function UpdateScreen() {
                                 <Text style={[typography.headline, { color: colors.text, marginBottom: 8, textAlign: 'center' }]}>
                                     {t('settings.checkingUpdate') || 'Checking for updates...'}
                                 </Text>
-                                <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 8 }} />
                             </View>
                         ) : error ? (
                             <View style={styles.statusContainer}>
@@ -279,6 +278,13 @@ export default function UpdateScreen() {
                                     </View>
                                 )}
 
+                                {/* If only stable is up to date but pre-release available */}
+                                {!updateAvailable && preReleaseAvailable && (
+                                    <Text style={[typography.caption1, { color: colors.success, marginBottom: 8, textAlign: 'center' }]}>
+                                        ✓ {t('settings.stableUpToDate')}
+                                    </Text>
+                                )}
+
                                 {/* Pre-release Section */}
                                 {preReleaseAvailable && preReleaseInfo && (
                                     <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.warning, marginTop: updateAvailable ? 12 : 0 }]}>
@@ -315,12 +321,6 @@ export default function UpdateScreen() {
                                     </View>
                                 )}
 
-                                {/* If only stable is up to date but pre-release available */}
-                                {!updateAvailable && preReleaseAvailable && (
-                                    <Text style={[typography.caption1, { color: colors.success, marginBottom: 8, textAlign: 'center' }]}>
-                                        ✓ {t('settings.stableUpToDate')}
-                                    </Text>
-                                )}
 
                                 <TouchableOpacity
                                     style={[styles.buttonOutline, { borderColor: colors.border, marginTop: 16 }]}

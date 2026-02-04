@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { CollapsibleCard, BouncingDots } from '@/components';
 
@@ -52,16 +53,26 @@ export function QuickActionsCard({
                         <MaterialIcons name="settings-input-antenna" size={20} color={colors.primary} />
                     </View>
                     <View style={styles.quickActionLargeContent}>
-                        <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '600' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
                             {t('home.setBand')}
-                        </Text>
-                        <Text
-                            style={[typography.caption2, { color: colors.textSecondary }]}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
+                        </TextTicker>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.textSecondary }])}
+                            duration={6000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
                         >
                             {selectedBands.length > 0 ? selectedBands.join(', ') : t('common.loading')}
-                        </Text>
+                        </TextTicker>
                     </View>
                     <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
                 </TouchableOpacity>
@@ -79,16 +90,26 @@ export function QuickActionsCard({
                         )}
                     </View>
                     <View style={styles.quickActionLargeContent}>
-                        <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]} numberOfLines={1}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '600' }])}
+                            duration={6000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
                             {t('home.changeIp')}
-                        </Text>
-                        <Text
-                            style={[typography.caption2, { color: colors.textSecondary }]}
-                            numberOfLines={1}
-                            ellipsizeMode="tail"
+                        </TextTicker>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.textSecondary }])}
+                            duration={6000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
                         >
                             {wanIpAddress || '...'}
-                        </Text>
+                        </TextTicker>
                     </View>
                 </TouchableOpacity>
             </View>
@@ -115,8 +136,8 @@ export function QuickActionsCard({
                                 size={22}
                                 color={mobileDataEnabled ? '#FFFFFF' : colors.primary}
                             />
-                            <Text
-                                style={[
+                            <TextTicker
+                                style={StyleSheet.flatten([
                                     typography.caption2,
                                     {
                                         color: mobileDataEnabled ? '#FFFFFF' : colors.text,
@@ -124,11 +145,15 @@ export function QuickActionsCard({
                                         marginTop: 4,
                                         textAlign: 'center',
                                     }
-                                ]}
-                                numberOfLines={1}
+                                ])}
+                                duration={6000}
+                                loop
+                                bounce
+                                repeatSpacer={50}
+                                marqueeDelay={1000}
                             >
                                 {t('home.mobileData')}
-                            </Text>
+                            </TextTicker>
                         </>
                     )}
                 </TouchableOpacity>
@@ -138,12 +163,16 @@ export function QuickActionsCard({
                     onPress={onSignalPointing}
                 >
                     <MaterialIcons name="gps-fixed" size={22} color={colors.primary} />
-                    <Text
-                        style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
-                        numberOfLines={1}
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }])}
+                        duration={6000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
                     >
                         {t('home.signalPointing')}
-                    </Text>
+                    </TextTicker>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -156,12 +185,16 @@ export function QuickActionsCard({
                     ) : (
                         <>
                             <MaterialIcons name="perm-scan-wifi" size={22} color={colors.primary} />
-                            <Text
-                                style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
-                                numberOfLines={1}
+                            <TextTicker
+                                style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }])}
+                                duration={6000}
+                                loop
+                                bounce
+                                repeatSpacer={50}
+                                marqueeDelay={1000}
                             >
                                 {t('home.quickCheck')}
-                            </Text>
+                            </TextTicker>
                         </>
                     )}
                 </TouchableOpacity>
@@ -171,12 +204,16 @@ export function QuickActionsCard({
                     onPress={onSpeedtest}
                 >
                     <MaterialIcons name="speed" size={22} color={colors.primary} />
-                    <Text
-                        style={[typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }]}
-                        numberOfLines={1}
+                    <TextTicker
+                        style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }])}
+                        duration={6000}
+                        loop
+                        bounce
+                        repeatSpacer={50}
+                        marqueeDelay={1000}
                     >
                         {t('home.speedtest')}
-                    </Text>
+                    </TextTicker>
                 </TouchableOpacity>
             </View>
         </CollapsibleCard>
