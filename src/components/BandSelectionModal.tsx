@@ -19,7 +19,7 @@ import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { ModemService } from '@/services/modem.service';
 import { ModalMeshGradient } from './ModalMeshGradient';
-import { showInterstitial } from '@/services/ad.service';
+import { showInterstitial, showRewarded } from '@/services/ad.service';
 import { AdBanner } from './AdBanner';
 
 const LTE_BANDS = [
@@ -139,26 +139,33 @@ export function BandSelectionModal({
 
         const changed = JSON.stringify([...selectedBandBits].sort()) !== JSON.stringify([...initialBandBits].sort());
 
-        setIsSaving(true);
-        try {
-            let lteBandValue = BigInt(0);
-            for (const bit of selectedBandBits) {
-                lteBandValue |= (BigInt(1) << BigInt(bit));
-            }
-            const lteBandHex = lteBandValue.toString(16).toUpperCase();
+        if (changed) {
+            showRewarded(
+                async () => {
+                    setIsSaving(true);
+                    try {
+                        let lteBandValue = BigInt(0);
+                        for (const bit of selectedBandBits) {
+                            lteBandValue |= (BigInt(1) << BigInt(bit));
+                        }
+                        const lteBandHex = lteBandValue.toString(16).toUpperCase();
 
-            await modemService.setBandSettings('3FFFFFFF', lteBandHex);
-            ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
+                        await modemService.setBandSettings('3FFFFFFF', lteBandHex);
+                        ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
+                        onClose();
+                        onSaved?.();
+                    } catch (error: any) {
+                        const errorMessage = error?.message || t('alerts.failedSaveBands');
+                        ThemedAlertHelper.alert(t('common.error'), errorMessage);
+                    } finally {
+                        setIsSaving(false);
+                    }
+                },
+                () => ThemedAlertHelper.alert(t('ads.rewardRequired'), t('ads.watchAdToAccess'))
+            );
+        } else {
+            // If no changes, just close the modal
             onClose();
-            onSaved?.();
-            if (changed) {
-                showInterstitial(() => {});
-            }
-        } catch (error: any) {
-            const errorMessage = error?.message || t('alerts.failedSaveBands');
-            ThemedAlertHelper.alert(t('common.error'), errorMessage);
-        } finally {
-            setIsSaving(false);
         }
     };
 

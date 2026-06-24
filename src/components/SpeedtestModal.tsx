@@ -9,7 +9,7 @@ import {
     Easing,
     Platform,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
@@ -204,6 +204,52 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
     const [progress, setProgress] = useState(0);
     const progressAnim = useRef(new Animated.Value(0)).current;
     const abortControllerRef = useRef<AbortController | null>(null);
+    const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+    const [clientIp, setClientIp] = useState<string>('');
+    const [ispInfo, setIspInfo] = useState<string>('');
+    const [providerHostname, setProviderHostname] = useState<string>('');
+
+    useEffect(() => {
+        if (visible) {
+            fetch('https://ipinfo.io/json')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.ip) {
+                        setClientIp(data.ip);
+                    }
+                    if (data.org) {
+                        const cleanIsp = data.org.replace(/^AS\d+\s+/, '');
+                        setIspInfo(cleanIsp);
+                    } else if (data.isp) {
+                        setIspInfo(data.isp);
+                    }
+                    if (data.hostname) {
+                        setProviderHostname(data.hostname);
+                    }
+                })
+                .catch(() => {
+                    // Fallback to speed.cloudflare.com
+                    fetch('https://speed.cloudflare.com/meta')
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.clientIp) {
+                                setClientIp(data.clientIp);
+                            }
+                            if (data.clientIsp) {
+                                setIspInfo(data.clientIsp);
+                            }
+                        })
+                        .catch(() => {
+                            setClientIp('Unknown');
+                        });
+                });
+        } else {
+            setClientIp('');
+            setIspInfo('');
+            setProviderHostname('');
+        }
+    }, [visible]);
 
     useEffect(() => {
         Animated.timing(progressAnim, {
@@ -222,15 +268,15 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
         const signal = abortControllerRef.current.signal;
 
         try {
+            // 1. LATENCY & JITTER PHASE
             setPhase('latency');
-
             const latencyResults: number[] = [];
 
             try {
                 await fetch(`${CF_DOWNLOAD_URL}?bytes=0`, { signal });
             } catch { }
 
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 10; i++) {
                 if (signal.aborted) throw new Error('Aborted');
                 const start = performance.now();
                 try {
@@ -242,9 +288,10 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                     latencyResults.push(latency);
                 } catch (e: any) {
                     if (e.name !== 'AbortError') {
+                        // ignore error and continue
                     }
                 }
-                setProgress((i + 1));
+                setProgress(Math.round(((i + 1) / 10) * 20));
             }
 
             const validLatency = latencyResults.filter(l => l > 0 && l < 10000);
@@ -253,134 +300,120 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
             const avg = validLatency.reduce((a, b) => a + b, 0) / validLatency.length;
             const jitter = Math.sqrt(validLatency.reduce((s, l) => s + Math.pow(l - avg, 2), 0) / validLatency.length);
 
-            setResult(prev => ({ ...prev, latency: median, jitter }));
+            setResult(prev => ({ ...prev, latency: median, jitter: isNaN(jitter) ? 0 : jitter }));
             setProgress(20);
 
+            if (signal.aborted) throw new Error('Aborted');
+
+            // 2. DOWNLOAD SPEED PHASE
             setPhase('download');
+            
+            // Set up smooth progress increment from 20 to 60
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+            progressIntervalRef.current = setInterval(() => {
+                setProgress(prev => Math.min(prev + 0.8, 59));
+            }, 100);
 
-            const downloadSizes = [
-                { bytes: 100000, count: 1 },
-                { bytes: 100000, count: 8 },
-                { bytes: 1000000, count: 6 },
-                { bytes: 10000000, count: 4 },
-                { bytes: 25000000, count: 2 },
-            ];
+            const dlDurationMs = 6000; // 6 seconds test duration
+            const dlStartTime = performance.now();
+            let totalBytesDownloaded = 0;
+            const DL_CHUNK_SIZE = 1000000; // 1MB chunks
 
-            const downloadSpeeds: number[] = [];
-            let downloadCount = 0;
-            const totalDownloads = downloadSizes.reduce((sum, s) => sum + s.count, 0);
-
-            for (const { bytes, count } of downloadSizes) {
-                if (signal.aborted) break;
-
-                for (let i = 0; i < count; i++) {
-                    if (signal.aborted) break;
-
-                    const start = performance.now();
+            const downloadWorker = async () => {
+                while (performance.now() - dlStartTime < dlDurationMs && !signal.aborted) {
                     try {
-                        const response = await fetch(`${CF_DOWNLOAD_URL}?bytes=${bytes}`, {
+                        const res = await fetch(`${CF_DOWNLOAD_URL}?bytes=${DL_CHUNK_SIZE}`, {
                             cache: 'no-store',
-                            signal,
+                            signal
                         });
-                        const buffer = await response.arrayBuffer();
-                        const duration = (performance.now() - start) / 1000;
+                        const buffer = await res.arrayBuffer();
+                        if (signal.aborted) break;
 
-                        const transferSize = buffer.byteLength;
-                        const speedBps = (transferSize * 8) / duration;
-                        const speedMbps = speedBps / 1000000;
-
-                        downloadSpeeds.push(speedMbps);
-
-                        setResult(prev => ({ ...prev, downloadSpeed: speedMbps }));
-
-                    } catch (e: any) {
-                        if (e.name !== 'AbortError') {
+                        totalBytesDownloaded += buffer.byteLength;
+                        const elapsed = (performance.now() - dlStartTime) / 1000;
+                        if (elapsed > 0) {
+                            const speedMbps = ((totalBytesDownloaded * 8) / elapsed) / 1000000;
+                            setResult(prev => ({ ...prev, downloadSpeed: speedMbps }));
                         }
+                    } catch (err) {
+                        if (signal.aborted) break;
                     }
-
-                    downloadCount++;
-                    setProgress(20 + (downloadCount / totalDownloads) * 40);
                 }
-            }
+            };
 
-            const sortedSpeeds = [...downloadSpeeds].sort((a, b) => a - b);
-            const p90Index = Math.floor(sortedSpeeds.length * 0.9);
-            const downloadP90 = sortedSpeeds[p90Index] || sortedSpeeds[sortedSpeeds.length - 1] || 0;
+            // Run 3 workers in parallel to saturate bandwidth
+            await Promise.all([downloadWorker(), downloadWorker(), downloadWorker()]);
 
-            setResult(prev => ({ ...prev, downloadSpeed: downloadP90 }));
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
             setProgress(60);
 
+            if (signal.aborted) throw new Error('Aborted');
+
+            // 3. UPLOAD SPEED PHASE
             setPhase('upload');
-            const uploadSizes = [
-                { bytes: 100000, count: 4 },
-                { bytes: 500000, count: 4 },
-                { bytes: 1000000, count: 2 },
-                { bytes: 5000000, count: 1 },
-            ];
 
-            const uploadSpeeds: number[] = [];
-            let uploadCount = 0;
-            const totalUploads = uploadSizes.reduce((sum, s) => sum + s.count, 0);
+            // Set up smooth progress increment from 60 to 95
+            progressIntervalRef.current = setInterval(() => {
+                setProgress(prev => Math.min(prev + 0.6, 94));
+            }, 100);
 
-            const uploadUrl = 'https://postman-echo.com/post';
+            const ulDurationMs = 6000; // 6 seconds test duration
+            const ulStartTime = performance.now();
+            let totalBytesUploaded = 0;
+            const UL_CHUNK_SIZE = 500000; // 500KB chunks
 
-            for (const { bytes, count } of uploadSizes) {
-                if (signal.aborted) break;
+            // Pre-generate random payload once to save device CPU
+            const uploadData = new Uint8Array(UL_CHUNK_SIZE);
+            for (let i = 0; i < UL_CHUNK_SIZE; i++) {
+                uploadData[i] = Math.floor(Math.random() * 256);
+            }
 
-                const uploadData = new Uint8Array(bytes);
-                for (let i = 0; i < bytes; i++) {
-                    uploadData[i] = Math.floor(Math.random() * 256);
-                }
-
-                for (let i = 0; i < count; i++) {
-                    if (signal.aborted) break;
-
-                    const start = performance.now();
+            const uploadWorker = async () => {
+                while (performance.now() - ulStartTime < ulDurationMs && !signal.aborted) {
                     try {
-                        await fetch(uploadUrl, {
+                        await fetch(CF_UPLOAD_URL, {
                             method: 'POST',
                             body: uploadData,
                             headers: { 'Content-Type': 'application/octet-stream' },
                             signal,
                         });
-                        const duration = (performance.now() - start) / 1000;
+                        if (signal.aborted) break;
 
-                        const speedBps = (bytes * 8) / duration;
-                        const speedMbps = speedBps / 1000000;
-
-                        uploadSpeeds.push(speedMbps);
-
-                        setResult(prev => ({ ...prev, uploadSpeed: speedMbps }));
-
-                    } catch (e: any) {
-                        if (e.name !== 'AbortError') {
+                        totalBytesUploaded += UL_CHUNK_SIZE;
+                        const elapsed = (performance.now() - ulStartTime) / 1000;
+                        if (elapsed > 0) {
+                            const speedMbps = ((totalBytesUploaded * 8) / elapsed) / 1000000;
+                            setResult(prev => ({ ...prev, uploadSpeed: speedMbps }));
                         }
+                    } catch (err) {
+                        if (signal.aborted) break;
                     }
-
-                    uploadCount++;
-                    setProgress(60 + (uploadCount / totalUploads) * 35);
                 }
-            }
+            };
 
-            const sortedUploadSpeeds = [...uploadSpeeds].sort((a, b) => a - b);
-            const uploadP90Index = Math.floor(sortedUploadSpeeds.length * 0.9);
-            const uploadP90 = sortedUploadSpeeds[uploadP90Index] || sortedUploadSpeeds[sortedUploadSpeeds.length - 1] || 0;
+            // Run 3 workers in parallel to saturate upload bandwidth
+            await Promise.all([uploadWorker(), uploadWorker(), uploadWorker()]);
 
-            setResult(prev => ({ ...prev, uploadSpeed: uploadP90 }));
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
             setProgress(100);
 
             setPhase('complete');
         } catch (error: any) {
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
             if (error.message !== 'Aborted') {
                 console.error('[SPEEDTEST] Error:', error.message);
             }
             setPhase('complete');
         } finally {
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
             setIsRunning(false);
         }
     };
 
     const stopSpeedtest = () => {
+        if (progressIntervalRef.current) {
+            clearInterval(progressIntervalRef.current);
+        }
         if (abortControllerRef.current) {
             abortControllerRef.current.abort();
         }
@@ -395,6 +428,9 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
         setPhase('idle');
         setProgress(0);
         setResult({ downloadSpeed: 0, uploadSpeed: 0, latency: 0, jitter: 0 });
+        setClientIp('');
+        setIspInfo('');
+        setProviderHostname('');
         onClose();
     };
 
@@ -437,6 +473,26 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                                 <MaterialIcons name="close" size={24} color={colors.textSecondary} />
                             </TouchableOpacity>
                         </View>
+
+                        {(clientIp !== '' || ispInfo !== '' || providerHostname !== '') && (
+                            <View style={{ marginBottom: 16, alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12, width: '100%' }}>
+                                {ispInfo !== '' && (
+                                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                                        <Ionicons name="earth" size={12} color={colors.textSecondary} /> <Text style={{ color: colors.text, fontWeight: '600' }}>{ispInfo}</Text>
+                                    </Text>
+                                )}
+                                {clientIp !== '' && (
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
+                                        <MaterialIcons name="network-wifi" size={12} color={colors.textSecondary} /> <Text style={{ color: colors.text, fontWeight: '600' }}>{clientIp}</Text>
+                                    </Text>
+                                )}
+                                {providerHostname !== '' && providerHostname !== clientIp && (
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2, textAlign: 'center' }]}>
+                                        <MaterialIcons name="computer" size={12} color={colors.textSecondary} /> <Text style={{ color: colors.text, fontWeight: '600' }}>{providerHostname}</Text>
+                                    </Text>
+                                )}
+                            </View>
+                        )}
 
                         {isRunning && (
                             <View style={[styles.progressContainer, { backgroundColor: colors.border }]}>

@@ -79,6 +79,8 @@ export function TrafficStatsCard({
 
             <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
+            <AdBanner />
+
             {trafficStats.dayUsed > 0 && (
                 <DailyUsageCard
                     usage={trafficStats.dayUsed}
@@ -119,6 +121,7 @@ export function TrafficStatsCard({
                         variant="monthly"
                         dataLimit={dataLimitBytes}
                     />
+                    <AdBanner />
                     <UsageCard
                         title={t('home.totalUsage') || 'Total Usage'}
                         badge={formatDuration(trafficStats.totalConnectTime, durationUnits)}
