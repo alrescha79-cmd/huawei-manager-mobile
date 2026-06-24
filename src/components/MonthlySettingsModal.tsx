@@ -20,6 +20,8 @@ import { useTranslation } from '@/i18n';
 import { MeshGradientBackground } from './MeshGradientBackground';
 import { ThemedSwitch } from './ThemedSwitch';
 import { ThemedAlertHelper } from './ThemedAlert';
+import { AdBanner } from './AdBanner';
+
 
 interface MonthlySettingsModalProps {
     visible: boolean;
@@ -169,6 +171,8 @@ export function MonthlySettingsModal({
                             />
                         </View>
 
+                        <AdBanner />
+
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.startDate')}</Text>
                             <View style={[styles.dateCard, { borderColor: colors.border, backgroundColor: colors.background }]}>
@@ -245,6 +249,8 @@ export function MonthlySettingsModal({
                                 </View>
                             )}
                         </View>
+
+                        <AdBanner />
 
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.threshold').replace(' (%)', '')}</Text>

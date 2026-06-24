@@ -111,6 +111,15 @@ export default function HomeScreen() {
       }
     };
     loadLastClearedDate();
+
+    // Show warning about adblockers on startup
+    setTimeout(() => {
+      ThemedAlertHelper.alert(
+        t('ads.adblockNoticeTitle'),
+        t('ads.adblockNoticeMessage'),
+        [{ text: t('common.ok') }]
+      );
+    }, 1500);
   }, []);
 
   useEffect(() => {
@@ -475,28 +484,32 @@ export default function HomeScreen() {
         { text: t('common.cancel'), style: 'cancel' },
         {
           text: t('common.continue'),
-          onPress: async () => {
-            setIsChangingIp(true);
+          onPress: () => {
+            showRewarded(
+              async () => {
+                setIsChangingIp(true);
 
-            ThemedAlertHelper.alert(
-              t('alerts.ipChangeStartedTitle'),
-              t('alerts.ipChangeStartedMessage'),
-              [{ text: t('common.ok') }]
+                ThemedAlertHelper.alert(
+                  t('alerts.ipChangeStartedTitle'),
+                  t('alerts.ipChangeStartedMessage'),
+                  [{ text: t('common.ok') }]
+                );
+
+                modemService.triggerPlmnScan().catch((error) => {
+                });
+
+                setTimeout(() => {
+                  setIsChangingIp(false);
+                }, 10000);
+
+                setTimeout(() => {
+                  if (modemService) {
+                    loadData(modemService);
+                  }
+                }, 45000);
+              },
+              () => ThemedAlertHelper.alert(t('ads.rewardRequired'), t('ads.watchAdToAccess'))
             );
-            showInterstitial(() => { });
-
-            modemService.triggerPlmnScan().catch((error) => {
-            });
-
-            setTimeout(() => {
-              setIsChangingIp(false);
-            }, 10000);
-
-            setTimeout(() => {
-              if (modemService) {
-                loadData(modemService);
-              }
-            }, 45000);
           },
         },
       ]
@@ -773,10 +786,17 @@ export default function HomeScreen() {
             onOpenBandModal={() => setShowBandModal(true)}
             onChangeIp={handleChangeIp}
             onToggleMobileData={handleToggleMobileData}
-            onSignalPointing={() => setShowSignalPointingModal(true)}
+            onSignalPointing={() => {
+              showRewarded(
+                () => setShowSignalPointingModal(true),
+                () => ThemedAlertHelper.alert(t('ads.rewardRequired'), t('ads.watchAdToAccess'))
+              );
+            }}
             onQuickCheck={handleOneClickCheck}
             onSpeedtest={() => setShowSpeedtestModal(true)}
           />
+
+          <AdBanner />
 
           <SignalInfoCard
             t={t}

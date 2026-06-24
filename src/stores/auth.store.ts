@@ -183,9 +183,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     setRelogging(true);
     set({ connectionError: null });
 
-    // Check if modem is reachable first (with 3 second timeout)
     console.log('[Auth] Checking modem reachability...');
-    const isReachable = await networkService.isModemReachable(credentials.modemIp, 3000);
+    const isReachable = await networkService.isModemReachable(credentials.modemIp, 7500);
 
     if (!isReachable) {
       console.log('[Auth] Modem not reachable at', credentials.modemIp);

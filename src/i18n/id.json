@@ -702,7 +702,9 @@
     "blockerDetected": "Pemblokir iklan terdeteksi",
     "supportDeveloper": "Nonaktifkan pemblokir iklan untuk mendukung pengembang aplikasi gratis ini.",
     "rewardRequired": "Iklan Diperlukan",
-    "watchAdToAccess": "Tonton iklan sampai selesai untuk mengakses fitur ini."
+    "watchAdToAccess": "Tonton iklan sampai selesai untuk mengakses fitur ini.",
+    "adblockNoticeTitle": "Pemberitahuan AdBlock",
+    "adblockNoticeMessage": "Pastikan Anda tidak menggunakan adblock untuk dapat menggunakan semua fitur dalam aplikasi ini secara maksimal."
   }
 }
 

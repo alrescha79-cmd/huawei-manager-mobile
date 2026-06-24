@@ -20,8 +20,8 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
         return { value, unit: sizes[i] };
     };
 
-    const dlSpeed = formatSpeed(downloadSpeed);
-    const ulSpeed = formatSpeed(uploadSpeed);
+    const dlSpeed = formatSpeed(downloadSpeed * 8);
+    const ulSpeed = formatSpeed(uploadSpeed * 8);
 
     const size = 140;
     const strokeWidth = 10;
@@ -35,7 +35,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
     const getPoint = (angle: number, r: number) => ({
         x: center + Math.cos(angle) * r,
         y: center + Math.sin(angle) * r,
-    });
+    })
 
     const createArc = (start: number, end: number, r: number) => {
         const p1 = getPoint(start, r);
@@ -148,7 +148,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
         <View style={styles.container}>
             <View style={styles.gaugesRow}>
                 {renderGauge(
-                    downloadSpeed,
+                    downloadSpeed * 8,
                     dlSpeed.value,
                     dlSpeed.unit,
                     downloadColors.primary,
@@ -157,7 +157,7 @@ export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
                     'dlGrad'
                 )}
                 {renderGauge(
-                    uploadSpeed,
+                    uploadSpeed * 8,
                     ulSpeed.value,
                     ulSpeed.unit,
                     uploadColors.primary,
