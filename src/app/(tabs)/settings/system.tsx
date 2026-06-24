@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen } from '@/components';
+import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdBanner } from '@/components';
 
 const TIMEZONES = [
     'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5',
@@ -263,6 +263,8 @@ export default function SystemSettingsScreen() {
                             isLast
                         />
                     </SettingsSection>
+
+                    <AdBanner />
 
                     {/* Connection Credentials */}
                     <SettingsSection title={t('settings.modemControl')}>

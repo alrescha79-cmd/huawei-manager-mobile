@@ -12,9 +12,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { Card, PageSheetModal, SelectionModal, ThemedAlertHelper, BouncingDots } from '@/components';
+import { Card, PageSheetModal, SelectionModal, ThemedAlertHelper, BouncingDots, AdBanner } from '@/components';
 import { SignalInfo } from '@/types';
 import { ModemService } from '@/services/modem.service';
+import { showInterstitial } from '@/services/ad.service';
 
 interface SignalPointingModalProps {
     visible: boolean;
@@ -282,14 +283,23 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
         }
     };
 
+    const handleClose = () => {
+        onClose();
+        showInterstitial(() => {});
+    };
+
     const handleAntennaChange = async (mode: string) => {
         if (!modemService) return;
+        const changed = mode !== antennaMode;
         setShowAntennaModal(false);
         setIsChangingAntenna(true);
         try {
             await modemService.setAntennaMode(mode as 'auto' | 'internal' | 'external');
             setAntennaMode(mode);
             ThemedAlertHelper.alert(t('common.success'), t('settings.antennaModeChanged'));
+            if (changed) {
+                showInterstitial(() => {});
+            }
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeAntenna'));
         } finally {
@@ -308,7 +318,7 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
     return (
         <PageSheetModal
             visible={visible}
-            onClose={onClose}
+            onClose={handleClose}
             title={t('home.signalPointing')}
         >
             <ScrollView
@@ -369,6 +379,8 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                         </Text>
                     )}
                 </Card>
+
+                <AdBanner />
 
                 <Card style={{ marginTop: spacing.md }}>
                     <View style={styles.detailsGrid}>

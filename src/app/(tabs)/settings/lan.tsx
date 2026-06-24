@@ -19,7 +19,8 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen } from '@/components';
+import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdBanner } from '@/components';
+import { showInterstitial } from '@/services/ad.service';
 
 const ETHERNET_MODES = [
     { value: 'auto', labelKey: 'networkSettings.modeAuto' },
@@ -122,6 +123,9 @@ export default function LanSettingsScreen() {
     // Ethernet Logic
     const handleEthernetModeChange = async (mode: typeof ethernetMode) => {
         if (!networkSettingsService || isChangingEthernet) return;
+
+        const changed = mode !== ethernetMode;
+
         setIsChangingEthernet(true);
         try {
             await networkSettingsService.setEthernetConnectionMode(mode);
@@ -129,6 +133,9 @@ export default function LanSettingsScreen() {
             const settings = await networkSettingsService.getEthernetSettings();
             setEthernetStatus(settings.status);
             ThemedAlertHelper.alert(t('common.success'), t('networkSettings.profileSaved'));
+            if (changed) {
+                showInterstitial(() => {});
+            }
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
         } finally {
@@ -446,6 +453,8 @@ export default function LanSettingsScreen() {
                         )}
                     </SettingsSection>
 
+                    <AdBanner />
+
                     <SettingsSection title={t('networkSettings.apnProfiles')}>
 
                         {apnProfiles.map((profile, index) => (
@@ -539,6 +548,8 @@ export default function LanSettingsScreen() {
                                             onChangeText={setApnApn}
                                         />
                                     </View>
+
+                                    <AdBanner />
 
                                     {/* Username */}
                                     <View style={{ marginBottom: 16 }}>

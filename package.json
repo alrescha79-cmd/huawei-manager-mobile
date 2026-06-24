@@ -1,6 +1,6 @@
 {
   "name": "hm-mobile",
-  "version": "1.1.25",
+  "version": "1.1.26",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
@@ -9,13 +9,12 @@
     "start:lan": "expo start --lan",
     "start:localhost": "expo start --localhost",
     "dev": "expo start --lan --clear",
-    "android": "expo run:android",
+    "android": "APP_ENV=development npx expo run:android",
+    "prebuild": "APP_ENV=development npx expo prebuild --platform android --clean",
     "android:tunnel": "expo start --android --tunnel",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "setup": "bash setup-dev.sh",
-    "fix": "bash fix-expo.sh",
-    "build:android": "expo prebuild --platform android && cd android && ./gradlew assembleRelease"
+    "build:android": "APP_ENV=production expo prebuild --platform android && cd android && ./gradlew assembleRelease"
   },
   "dependencies": {
     "@expo-google-fonts/doto": "^0.4.1",
@@ -50,6 +49,7 @@
     "react-native": "0.81.5",
     "react-native-android-widget": "^0.17.2",
     "react-native-gesture-handler": "~2.28.0",
+    "react-native-google-mobile-ads": "^16.0.3",
     "react-native-keyboard-controller": "^1.20.4",
     "react-native-reanimated": "~4.1.1",
     "react-native-safe-area-context": "~5.6.0",

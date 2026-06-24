@@ -13,9 +13,10 @@ import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen, ThemedSwitch, ThemedAlertHelper, BouncingDots } from '@/components';
+import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen, ThemedSwitch, ThemedAlertHelper, BouncingDots, AdBanner } from '@/components';
 import { useThemeStore } from '@/stores/theme.store';
 import { useDebugStore } from '@/stores/debug.store';
+import { showInterstitial } from '@/services/ad.service';
 
 export default function SettingsIndex() {
     const router = useRouter();
@@ -71,6 +72,7 @@ export default function SettingsIndex() {
                             subtitle={t('settings.mobileNetworkSubtitle') || 'Data, Roaming, Bands'}
                             onPress={() => router.push('/settings/mobile-network')}
                         />
+                        <AdBanner />
                         <SettingsItem
                             icon="settings-ethernet"
                             title={t('settings.lanSettings')}
@@ -104,6 +106,8 @@ export default function SettingsIndex() {
                                 </TouchableOpacity>
                             }
                         />
+
+                        <AdBanner />
 
                         <SettingsItem
                             icon="brightness-6"
@@ -160,6 +164,7 @@ export default function SettingsIndex() {
                             subtitle="github.com/alrescha79-cmd"
                             onPress={handleOpenGitHub}
                         />
+                        <AdBanner />
                         <SettingsItem
                             icon="bug-report"
                             title={t('settings.bugReport')}
@@ -316,8 +321,12 @@ export default function SettingsIndex() {
                         ]}
                         selectedValue={themeMode}
                         onSelect={(val) => {
+                            const changed = val !== themeMode;
                             setThemeMode(val);
                             setShowThemeModal(false);
+                            if (changed) {
+                                showInterstitial(() => {});
+                            }
                         }}
                         onClose={() => setShowThemeModal(false)}
                     />
@@ -331,8 +340,12 @@ export default function SettingsIndex() {
                         ]}
                         selectedValue={language}
                         onSelect={(val) => {
+                            const changed = val !== language;
                             setLanguage(val);
                             setShowLanguageModal(false);
+                            if (changed) {
+                                showInterstitial(() => {});
+                            }
                         }}
                         onClose={() => setShowLanguageModal(false)}
                     />
@@ -346,8 +359,12 @@ export default function SettingsIndex() {
                         ]}
                         selectedValue={usageCardStyle}
                         onSelect={(val) => {
+                            const changed = val !== usageCardStyle;
                             setUsageCardStyle(val as 'split' | 'compact');
                             setShowUsageModal(false);
+                            if (changed) {
+                                showInterstitial(() => {});
+                            }
                         }}
                         onClose={() => setShowUsageModal(false)}
                     />

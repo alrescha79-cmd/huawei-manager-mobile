@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, CustomRefreshScrollView, SignalPointingModal } from '@/components';
+import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, CustomRefreshScrollView, SignalPointingModal, AdBanner } from '@/components';
 import { QuickActionsCard, ConnectionStatusCard, NoDataWarningCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
@@ -26,6 +26,7 @@ import { useSMSStore } from '@/stores/sms.store';
 import { useWiFiStore } from '@/stores/wifi.store';
 import { SMSService } from '@/services/sms.service';
 import { WiFiService } from '@/services/wifi.service';
+import { showInterstitial, showRewarded } from '@/services/ad.service';
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -441,6 +442,7 @@ export default function HomeScreen() {
         const dataStatus = await modemService.getMobileDataStatus();
         setMobileDataStatus(dataStatus);
         ThemedAlertHelper.alert(t('common.success'), newState ? t('home.dataEnabled') : t('home.dataDisabled'));
+        showInterstitial(() => { });
       } catch (error) {
         console.error('Error toggling mobile data:', error);
         ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
@@ -481,6 +483,7 @@ export default function HomeScreen() {
               t('alerts.ipChangeStartedMessage'),
               [{ text: t('common.ok') }]
             );
+            showInterstitial(() => { });
 
             modemService.triggerPlmnScan().catch((error) => {
             });
@@ -561,6 +564,7 @@ export default function HomeScreen() {
       ]);
       setDiagnosisSummary(t(`home.${result.summaryKey}`));
       setShowDiagnosisModal(true);
+      showInterstitial(() => { });
     } catch (error: any) {
       console.error('Error running one click check:', error);
       if (error?.message?.includes('Network Error') || error?.code === 'ERR_NETWORK') {
@@ -756,6 +760,8 @@ export default function HomeScreen() {
             />
           )}
 
+          <AdBanner />
+
           <QuickActionsCard
             t={t}
             selectedBands={selectedBands}
@@ -777,6 +783,8 @@ export default function HomeScreen() {
             signalInfo={signalInfo}
             modemStatus={modemStatus}
           />
+
+          <AdBanner />
 
           {trafficStats && (
             <TrafficStatsCard
@@ -821,6 +829,7 @@ export default function HomeScreen() {
             modemService={modemService}
             onSaved={() => {
               if (modemService) loadBands(modemService);
+              showInterstitial(() => { });
             }}
           />
 

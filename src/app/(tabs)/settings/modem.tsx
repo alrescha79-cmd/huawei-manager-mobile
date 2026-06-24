@@ -10,8 +10,9 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, BouncingDots, AnimatedScreen } from '@/components';
+import { ThemedAlertHelper, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, BouncingDots, AnimatedScreen, AdBanner } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
+import { showInterstitial } from '@/services/ad.service';
 
 const ANTENNA_MODES = [
     { value: 'auto', labelKey: 'settings.antennaAuto', icon: 'settings-input-antenna' as const },
@@ -81,11 +82,16 @@ export default function ModemSettingsScreen() {
     const handleAntennaChange = async (mode: 'auto' | 'internal' | 'external') => {
         if (!modemService || isChangingAntenna) return;
 
+        const changed = mode !== antennaMode;
+
         setIsChangingAntenna(true);
         try {
             await modemService.setAntennaMode(mode);
             setAntennaMode(mode);
             ThemedAlertHelper.alert(t('common.success'), t('settings.antennaModeChanged'));
+            if (changed) {
+                showInterstitial(() => {});
+            }
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeAntenna'));
         } finally {
@@ -120,6 +126,8 @@ export default function ModemSettingsScreen() {
                             </>
                         )}
                     </SettingsSection>
+
+                    <AdBanner />
 
                     <SettingsSection title={t('settings.antennaSettings')}>
                         <SettingsItem

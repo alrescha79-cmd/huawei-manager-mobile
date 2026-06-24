@@ -12,8 +12,9 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, SignalPointingModal } from '@/components';
+import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, SignalPointingModal, AdBanner } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
+import { showInterstitial } from '@/services/ad.service';
 
 const NETWORK_MODES = [
     { value: '00', labelKey: 'settings.networkAuto' },
@@ -173,12 +174,18 @@ export default function MobileNetworkSettingsScreen() {
 
     const handleNetworkModeChange = async (mode: string) => {
         if (!modemService) return;
+
+        const changed = mode !== networkMode;
+
         setShowNetworkModeModal(false); // Close first
         setIsChangingNetwork(true);
         try {
             await modemService.setNetworkMode(mode);
             setNetworkMode(mode);
             ThemedAlertHelper.alert(t('common.success'), t('settings.networkModeChanged'));
+            if (changed) {
+                showInterstitial(() => {});
+            }
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeNetwork'));
         } finally {
@@ -245,6 +252,8 @@ export default function MobileNetworkSettingsScreen() {
                         />
                     </SettingsSection>
 
+                    <AdBanner />
+
                     <SettingsSection title={t('settings.preferredNetwork')}>
                         <SettingsItem
                             title={t('settings.preferredNetwork')}
@@ -263,6 +272,8 @@ export default function MobileNetworkSettingsScreen() {
                             isLast
                         />
                     </SettingsSection>
+
+                    <AdBanner />
 
                     {/* Monthly Usage Settings */}
                     <SettingsSection title={t('home.monthlySettings')}>
