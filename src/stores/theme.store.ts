@@ -7,12 +7,14 @@ type ThemeMode = 'light' | 'dark' | 'system';
 
 interface ThemeState {
   themeMode: ThemeMode;
+  accentColor: string;
   refreshInterval: number;
   language: string;
   isLanguageInitialized: boolean;
   badgesEnabled: boolean;
 
   setThemeMode: (mode: ThemeMode) => void;
+  setAccentColor: (color: string) => void;
   usageCardStyle: 'split' | 'compact';
   setUsageCardStyle: (style: 'split' | 'compact') => void;
   setRefreshInterval: (interval: number) => void;
@@ -25,6 +27,7 @@ export const useThemeStore = create<ThemeState>()(
   persist(
     (set, get) => ({
       themeMode: 'system',
+      accentColor: 'default',
       refreshInterval: 5000,
       language: 'en',
       isLanguageInitialized: false,
@@ -33,6 +36,7 @@ export const useThemeStore = create<ThemeState>()(
       setThemeMode: (mode) => {
         set({ themeMode: mode });
       },
+      setAccentColor: (color) => set({ accentColor: color }),
       usageCardStyle: 'split',
       setUsageCardStyle: (style) => set({ usageCardStyle: style }),
       setRefreshInterval: (interval) => set({ refreshInterval: interval }),

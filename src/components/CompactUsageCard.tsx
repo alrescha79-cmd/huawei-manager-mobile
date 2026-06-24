@@ -49,7 +49,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<TabType>('monthly');
 
-    const blueColor = '#3b82f6';
+    const blueColor = colors.primary;
     const greenColor = '#22c55e';
     const purpleColor = '#a855f7';
 
@@ -138,7 +138,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                                 onPress={() => setActiveTab(tab)}
                                 style={[
                                     styles.tabItem,
-                                    activeTab === tab && { backgroundColor: isDark ? 'rgba(59, 130, 246, 0.3)' : 'rgba(59, 130, 246, 0.15)' }
+                                    activeTab === tab && { backgroundColor: isDark ? `${colors.primary}4D` : `${colors.primary}26` }
                                 ]}
                             >
                                 <Text

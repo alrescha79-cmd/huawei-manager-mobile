@@ -60,7 +60,7 @@ export function UsageCard({
 
     const badgeText = badge || (duration ? formatDuration(duration, durationUnits) : '');
 
-    const highlightColor = '#3b82f6';
+    const highlightColor = colors.primary;
 
     const getProgressColor = (pct: number): string => {
         if (pct >= 90) return '#ef4444';

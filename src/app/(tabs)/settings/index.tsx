@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useTheme } from '@/theme';
+import { useTheme, ACCENT_PRESETS } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen, ThemedSwitch, ThemedAlertHelper, BouncingDots, AdBanner } from '@/components';
 import { useThemeStore } from '@/stores/theme.store';
@@ -22,11 +22,12 @@ export default function SettingsIndex() {
     const router = useRouter();
     const { colors, typography } = useTheme();
     const { t } = useTranslation();
-    const { themeMode, setThemeMode, language, setLanguage, usageCardStyle, setUsageCardStyle } = useThemeStore();
+    const { themeMode, setThemeMode, language, setLanguage, usageCardStyle, setUsageCardStyle, accentColor, setAccentColor } = useThemeStore();
 
     const [showThemeModal, setShowThemeModal] = React.useState(false);
     const [showLanguageModal, setShowLanguageModal] = React.useState(false);
     const [showUsageModal, setShowUsageModal] = React.useState(false);
+    const [showAccentModal, setShowAccentModal] = React.useState(false);
     const [isSendingDebugLog, setIsSendingDebugLog] = React.useState(false);
 
     // Debug store
@@ -120,6 +121,24 @@ export default function SettingsIndex() {
                                 >
                                     <Text style={[styles.dropdownText, { color: colors.text }]}>
                                         {getThemeLabel(themeMode)}
+                                    </Text>
+                                    <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
+                                </TouchableOpacity>
+                            }
+                        />
+
+                        <SettingsItem
+                            icon="palette"
+                            title={t('settings.accentColor')}
+                            onPress={() => setShowAccentModal(true)}
+                            rightElement={
+                                <TouchableOpacity
+                                    style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
+                                    onPress={() => setShowAccentModal(true)}
+                                >
+                                    <View style={[styles.accentPreview, { backgroundColor: colors.primary }]} />
+                                    <Text style={[styles.dropdownText, { color: colors.text }]}>
+                                        {(ACCENT_PRESETS[accentColor] || ACCENT_PRESETS.default).label}
                                     </Text>
                                     <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
                                 </TouchableOpacity>
@@ -368,6 +387,21 @@ export default function SettingsIndex() {
                         }}
                         onClose={() => setShowUsageModal(false)}
                     />
+
+                    <SelectionModal
+                        visible={showAccentModal}
+                        title={t('settings.accentColor')}
+                        options={Object.entries(ACCENT_PRESETS).map(([key, preset]) => ({
+                            label: preset.label,
+                            value: key,
+                        }))}
+                        selectedValue={accentColor}
+                        onSelect={(val) => {
+                            setAccentColor(val);
+                            setShowAccentModal(false);
+                        }}
+                        onClose={() => setShowAccentModal(false)}
+                    />
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>
@@ -390,6 +424,11 @@ const styles = StyleSheet.create({
     dropdownText: {
         fontSize: 12,
         fontWeight: '600',
+    },
+    accentPreview: {
+        width: 14,
+        height: 14,
+        borderRadius: 7,
     },
     clearButton: {
         paddingVertical: 4,
