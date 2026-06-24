@@ -15,7 +15,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView } from '@/components';
+import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView, AdBanner } from '@/components';
 import { SMSListItem, SMSStatsCard, SMSDetailModal, SMSStatsSkeleton, SMSListSkeleton, SMSSearchSkeleton, smsStyles as styles, SMSFilterType } from '@/components/sms';
 import { formatTimeAgo } from '@/utils/formatters';
 import { useAuthStore } from '@/stores/auth.store';
@@ -538,16 +538,20 @@ export default function SMSScreen() {
             )}
 
             {!smsSupported || filteredMessages.length === 0 ? (
-              <View style={[styles.emptyState, {
-                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                borderWidth: 1,
-                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-              }]}>
-                <MaterialIcons name="sms" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
-                <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
-                  {isRefreshing ? t('sms.loadingMessages') : searchQuery ? t('sms.noSearchResults') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
-                </Text>
-              </View>
+              <>
+                <AdBanner />
+                <View style={[styles.emptyState, {
+                  backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+                  borderWidth: 1,
+                  borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                }]}>
+                  <MaterialIcons name="sms" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
+                  <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
+                    {isRefreshing ? t('sms.loadingMessages') : searchQuery ? t('sms.noSearchResults') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
+                  </Text>
+                </View>
+                <AdBanner />
+              </>
             ) : (
               <View style={[styles.messagesList, {
                 backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
@@ -555,17 +559,21 @@ export default function SMSScreen() {
                 borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
               }]}>
                 {filteredMessages.map((message, index) => (
-                  <SMSListItem
-                    key={`${message.boxType}-${message.index}`}
-                    message={message}
-                    isLast={index === filteredMessages.length - 1}
-                    timeDisplay={formatTimeAgo(message.date)}
-                    onPress={() => handleOpenDetail(message)}
-                    onLongPress={() => handleLongPress(message)}
-                    isSelectionMode={isSelectionMode}
-                    isSelected={selectedIds.has(`${message.boxType}-${message.index}`)}
-                    onToggleSelect={() => toggleSelect(message)}
-                  />
+                  <React.Fragment key={`${message.boxType}-${message.index}`}>
+                    <SMSListItem
+                      message={message}
+                      isLast={index === filteredMessages.length - 1}
+                      timeDisplay={formatTimeAgo(message.date)}
+                      onPress={() => handleOpenDetail(message)}
+                      onLongPress={() => handleLongPress(message)}
+                      isSelectionMode={isSelectionMode}
+                      isSelected={selectedIds.has(`${message.boxType}-${message.index}`)}
+                      onToggleSelect={() => toggleSelect(message)}
+                    />
+                    {index > 0 && (index + 1) % 5 === 0 && index < filteredMessages.length - 1 && (
+                      <AdBanner />
+                    )}
+                  </React.Fragment>
                 ))}
               </View>
             )}

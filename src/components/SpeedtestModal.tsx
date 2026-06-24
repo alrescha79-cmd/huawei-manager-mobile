@@ -14,6 +14,8 @@ import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ModalMeshGradient } from './ModalMeshGradient';
+import { showRewarded } from '@/services/ad.service';
+import { ThemedAlertHelper } from '@/components';
 
 interface SpeedtestModalProps {
     visible: boolean;
@@ -496,7 +498,12 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                                     backgroundColor: isRunning ? colors.error : colors.primary,
                                 },
                             ]}
-                            onPress={isRunning ? stopSpeedtest : (phase === 'complete' ? handleClose : runSpeedtest)}
+                            onPress={isRunning ? stopSpeedtest : (phase === 'complete' ? handleClose : () => {
+                                showRewarded(
+                                    () => runSpeedtest(),
+                                    () => ThemedAlertHelper.alert(t('ads.rewardRequired'), t('ads.watchAdToAccess'))
+                                );
+                            })}
                         >
                             <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
                                 {isRunning ? t('common.stop') : (phase === 'complete' ? t('common.ok') : t('home.startTest'))}

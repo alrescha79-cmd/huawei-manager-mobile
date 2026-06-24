@@ -19,6 +19,8 @@ import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { ModemService } from '@/services/modem.service';
 import { ModalMeshGradient } from './ModalMeshGradient';
+import { showInterstitial } from '@/services/ad.service';
+import { AdBanner } from './AdBanner';
 
 const LTE_BANDS = [
     { bit: 0, name: 'B1', freq: '2100 MHz', region: 'Global', type: 'FDD' },
@@ -135,6 +137,8 @@ export function BandSelectionModal({
             return;
         }
 
+        const changed = JSON.stringify([...selectedBandBits].sort()) !== JSON.stringify([...initialBandBits].sort());
+
         setIsSaving(true);
         try {
             let lteBandValue = BigInt(0);
@@ -147,6 +151,9 @@ export function BandSelectionModal({
             ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
             onClose();
             onSaved?.();
+            if (changed) {
+                showInterstitial(() => {});
+            }
         } catch (error: any) {
             const errorMessage = error?.message || t('alerts.failedSaveBands');
             ThemedAlertHelper.alert(t('common.error'), errorMessage);
@@ -263,44 +270,48 @@ export function BandSelectionModal({
                         showsVerticalScrollIndicator={true}
                         contentContainerStyle={styles.listContent}
                     >
-                        {filteredBands.map((band) => {
+                        {filteredBands.map((band, index) => {
                             const isSelected = selectedBandBits.includes(band.bit);
                             return (
-                                <TouchableOpacity
-                                    key={band.bit}
-                                    style={[
-                                        styles.bandItem,
-                                        { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light },
-                                        isSelected && { borderColor: colors.primary, borderWidth: 1 }
-                                    ]}
-                                    onPress={() => toggleBand(band.bit)}
-                                    activeOpacity={0.7}
-                                >
-                                    <View style={styles.bandLeft}>
-                                        <View style={[
-                                            styles.bandTag,
-                                            { backgroundColor: isDark ? colors.border : '#9CA3AF' },
-                                            isSelected && { backgroundColor: colors.primary }
-                                        ]}>
-                                            <Text style={styles.bandTagName}>{band.name}</Text>
-                                        </View>
-                                        <View>
-                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                                                <Text style={[styles.freqText, { color: colors.text }]}>{band.freq}</Text>
-                                                <View style={[styles.typeTag, { borderColor: colors.textSecondary }]}>
-                                                    <Text style={[styles.typeText, { color: colors.textSecondary }]}>{band.type}</Text>
-                                                </View>
+                                <React.Fragment key={band.bit}>
+                                    <TouchableOpacity
+                                        style={[
+                                            styles.bandItem,
+                                            { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light },
+                                            isSelected && { borderColor: colors.primary, borderWidth: 1 }
+                                        ]}
+                                        onPress={() => toggleBand(band.bit)}
+                                        activeOpacity={0.7}
+                                    >
+                                        <View style={styles.bandLeft}>
+                                            <View style={[
+                                                styles.bandTag,
+                                                { backgroundColor: isDark ? colors.border : '#9CA3AF' },
+                                                isSelected && { backgroundColor: colors.primary }
+                                            ]}>
+                                                <Text style={styles.bandTagName}>{band.name}</Text>
                                             </View>
-                                            <Text style={[styles.regionText, { color: colors.textSecondary }]}>{band.region}</Text>
+                                            <View>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                                                    <Text style={[styles.freqText, { color: colors.text }]}>{band.freq}</Text>
+                                                    <View style={[styles.typeTag, { borderColor: colors.textSecondary }]}>
+                                                        <Text style={[styles.typeText, { color: colors.textSecondary }]}>{band.type}</Text>
+                                                    </View>
+                                                </View>
+                                                <Text style={[styles.regionText, { color: colors.textSecondary }]}>{band.region}</Text>
+                                            </View>
                                         </View>
-                                    </View>
 
-                                    <Ionicons
-                                        name={isSelected ? "checkmark-circle" : "ellipse-outline"}
-                                        size={28}
-                                        color={isSelected ? colors.primary : colors.textSecondary}
-                                    />
-                                </TouchableOpacity>
+                                        <Ionicons
+                                            name={isSelected ? "checkmark-circle" : "ellipse-outline"}
+                                            size={28}
+                                            color={isSelected ? colors.primary : colors.textSecondary}
+                                        />
+                                    </TouchableOpacity>
+                                    {(index + 1) % 4 === 0 && (
+                                        <AdBanner />
+                                    )}
+                                </React.Fragment>
                             );
                         })}
                     </ScrollView>

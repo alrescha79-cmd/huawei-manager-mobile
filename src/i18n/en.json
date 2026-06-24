@@ -697,6 +697,12 @@
     "newSmsBody": "You have {{count}} new message(s)",
     "badges": "Tab Badges",
     "badgesHint": "Show unread count on SMS and WiFi tabs"
+  },
+  "ads": {
+    "blockerDetected": "Ad blocker detected",
+    "supportDeveloper": "Please disable your ad blocker to support the developer of this free app.",
+    "rewardRequired": "Ad Required",
+    "watchAdToAccess": "Please watch the full ad to access this feature."
   }
 }
 

@@ -697,6 +697,12 @@
     "newSmsBody": "Anda memiliki {{count}} pesan baru",
     "badges": "Badge Tab",
     "badgesHint": "Tampilkan jumlah unread di tab SMS dan WiFi"
+  },
+  "ads": {
+    "blockerDetected": "Pemblokir iklan terdeteksi",
+    "supportDeveloper": "Nonaktifkan pemblokir iklan untuk mendukung pengembang aplikasi gratis ini.",
+    "rewardRequired": "Iklan Diperlukan",
+    "watchAdToAccess": "Tonton iklan sampai selesai untuk mengakses fitur ini."
   }
 }
 

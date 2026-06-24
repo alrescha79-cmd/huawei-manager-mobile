@@ -14,7 +14,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
-import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ThemedSwitch } from '@/components';
+import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ThemedSwitch, AdBanner } from '@/components';
 import {
     getNotificationSettings,
     saveNotificationSettings,
@@ -125,6 +125,8 @@ export default function NotificationSettingsScreen() {
                             />
                         </View>
 
+                        <AdBanner />
+
                         {/* Monthly Usage */}
                         <View style={styles.settingRow}>
                             <View style={styles.settingInfo}>
@@ -193,6 +195,8 @@ export default function NotificationSettingsScreen() {
                                 onValueChange={(v) => updateSetting('smsEnabled', v)}
                             />
                         </View>
+
+                        <AdBanner />
 
                         {/* Tab Badges */}
                         <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>

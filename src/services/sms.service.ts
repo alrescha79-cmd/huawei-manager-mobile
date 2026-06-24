@@ -134,7 +134,7 @@ const MOCK_SMS_COUNT: SMSCount = {
 };
 
 // Global flag to enable mock mode for testing
-let useMockSMSData = false;
+let useMockSMSData = true;
 
 export function setMockSMSMode(enabled: boolean): void {
   useMockSMSData = enabled;

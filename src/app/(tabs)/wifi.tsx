@@ -15,7 +15,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView } from '@/components';
+import { Card, CardHeader, InfoRow, Button, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView, AdBanner } from '@/components';
 import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, WiFiSettingsSkeleton, ConnectedDevicesSkeleton, GuestWiFiSkeleton, ParentalControlSkeleton, wifiStyles as styles } from '@/components/wifi';
 import { ConnectedDevice } from '@/types';
 import { useAuthStore } from '@/stores/auth.store';
@@ -734,6 +734,8 @@ export default function WiFiScreen() {
             </Card>
           )}
 
+          <AdBanner />
+
           <ConnectedDevicesList
             t={t}
             devices={connectedDevices}
@@ -743,6 +745,8 @@ export default function WiFiScreen() {
             }}
             onBlockDevice={handleBlockDevice}
           />
+
+          <AdBanner />
 
           <BlockedDevicesList
             t={t}
@@ -761,6 +765,8 @@ export default function WiFiScreen() {
               setShowDeviceDetailModal(true);
             }}
           />
+
+          <AdBanner />
 
           <ParentalControlCard
             t={t}
