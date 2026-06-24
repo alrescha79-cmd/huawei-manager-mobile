@@ -1,6 +1,25 @@
 import { useColorScheme } from 'react-native';
 import { useThemeStore } from '@/stores/theme.store';
 
+export const ACCENT_PRESETS: Record<string, { light: string; dark: string; label: string }> = {
+  default: { light: '#2563EB', dark: '#3B82F6', label: 'Blue' },
+  indigo: { light: '#4F46E5', dark: '#818CF8', label: 'Indigo' },
+  slate: { light: '#475569', dark: '#94A3B8', label: 'Slate' },
+  violet: { light: '#7C3AED', dark: '#A78BFA', label: 'Violet' },
+  purple: { light: '#9333EA', dark: '#C084FC', label: 'Purple' },
+  fuchsia: { light: '#C026D3', dark: '#E879F9', label: 'Fuchsia' },
+  pink: { light: '#DB2777', dark: '#F472B6', label: 'Pink' },
+  rose: { light: '#E11D48', dark: '#FB7185', label: 'Rose' },
+  red: { light: '#DC2626', dark: '#F87171', label: 'Red' },
+  orange: { light: '#EA580C', dark: '#FB923C', label: 'Orange' },
+  amber: { light: '#D97706', dark: '#FBBF24', label: 'Amber' },
+  lime: { light: '#65A30D', dark: '#A3E635', label: 'Lime' }, 
+  emerald: { light: '#059669', dark: '#34D399', label: 'Emerald' },
+  teal: { light: '#0D9488', dark: '#2DD4BF', label: 'Teal' },
+  cyan: { light: '#0891B2', dark: '#22D3EE', label: 'Cyan' },
+  sky: { light: '#0284C7', dark: '#38BDF8', label: 'Sky' },
+};
+
 export const Colors = {
   light: {
     primary: '#2563EB',
@@ -146,7 +165,7 @@ export const Typography = {
 
 export const useTheme = () => {
   const systemColorScheme = useColorScheme();
-  const { themeMode } = useThemeStore();
+  const { themeMode, accentColor } = useThemeStore();
 
   let isDark: boolean;
   if (themeMode === 'system') {
@@ -155,8 +174,14 @@ export const useTheme = () => {
     isDark = themeMode === 'dark';
   }
 
+  const baseColors = isDark ? { ...Colors.dark } : { ...Colors.light };
+
+  const accent = ACCENT_PRESETS[accentColor] || ACCENT_PRESETS.default;
+  baseColors.primary = isDark ? accent.dark : accent.light;
+  baseColors.shadow = `${baseColors.primary}1A`;
+
   return {
-    colors: isDark ? Colors.dark : Colors.light,
+    colors: baseColors,
     spacing: Spacing,
     borderRadius: BorderRadius,
     typography: Typography,
@@ -167,3 +192,4 @@ export const useTheme = () => {
 };
 
 export type Theme = ReturnType<typeof useTheme>;
+

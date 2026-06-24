@@ -74,7 +74,7 @@ export function MonthlyComparisonCard({
         }
     }, [totalDownload, totalUpload, monthDownload, monthUpload]);
 
-    const blueColor = '#3b82f6';
+    const blueColor = colors.primary;
     const grayColor = '#6b7280';
     const greenColor = '#22c55e';
     const redColor = '#ef4444';

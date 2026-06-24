@@ -39,7 +39,7 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
     const hh = hours.toString().padStart(2, '0');
     const mm = minutes.toString().padStart(2, '0');
 
-    const blueColor = '#007AFF';
+    const blueColor = colors.primary;
 
     return (
         <Card style={[styles.container, style]}>

@@ -497,7 +497,8 @@
     "fddOnly": "FDD Only",
     "bandsFound": "{{count}} BANDS FOUND",
     "deselectAll": "Deselect All",
-    "selectAll": "Select All"
+    "selectAll": "Select All",
+    "accentColor": "Accent Color"
   },
   "webViewLogin": {
     "title": "Modem Login",

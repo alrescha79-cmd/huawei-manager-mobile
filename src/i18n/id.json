@@ -497,7 +497,8 @@
     "allBands": "Semua Frekuensi",
     "tddOnly": "Hanya TDD",
     "fddOnly": "Hanya FDD",
-    "bandsFound": "{{count}} DITEMUKAN"
+    "bandsFound": "{{count}} DITEMUKAN",
+    "accentColor": "Warna Aksen"
   },
   "webViewLogin": {
     "title": "Login Modem",
