@@ -64,6 +64,15 @@ export class ModemService {
   async getSignalInfo(): Promise<SignalInfo> {
     try {
       const response = await this.apiClient.get('/api/device/signal');
+
+      // Some modem models return an error XML instead of signal data (e.g. Huawei L02)
+      const errorCode = parseXMLValue(response, 'code');
+      if (errorCode) {
+        const err = new Error(`Signal endpoint not supported (error code ${errorCode})`) as any;
+        err.huaweiErrorCode = errorCode;
+        throw err;
+      }
+
       const lteBandwidth = parseXMLValue(response, 'lte_bandwidth');
 
       return {
@@ -92,6 +101,15 @@ export class ModemService {
   async getSignalInfoFast(): Promise<SignalInfo> {
     try {
       const response = await this.apiClient.getFast('/api/device/signal');
+
+      // Some modem models return an error XML instead of signal data (e.g. Huawei L02)
+      const errorCode = parseXMLValue(response, 'code');
+      if (errorCode) {
+        const err = new Error(`Signal endpoint not supported (error code ${errorCode})`) as any;
+        err.huaweiErrorCode = errorCode;
+        throw err;
+      }
+
       const lteBandwidth = parseXMLValue(response, 'lte_bandwidth');
 
       return {
@@ -269,11 +287,31 @@ export class ModemService {
         return isNaN(parsed) ? 0 : parsed;
       };
 
+      let wanIPAddress = parseXMLValue(response, 'WanIPAddress') || parseXMLValue(response, 'WanIpAddress') || '';
+      let primaryDns = parseXMLValue(response, 'PrimaryDNS') || parseXMLValue(response, 'PrimaryDns') || '';
+      let secondaryDns = parseXMLValue(response, 'SecondaryDNS') || parseXMLValue(response, 'SecondaryDns') || '';
+
+      // Fallback for modems (e.g. E3276) where WAN IP is not returned by /api/device/information
+      if (!wanIPAddress) {
+        try {
+          const statusResponse = await this.apiClient.get('/api/monitoring/status');
+          wanIPAddress = parseXMLValue(statusResponse, 'WanIPAddress') || parseXMLValue(statusResponse, 'WanIpAddress') || '';
+          if (!primaryDns) {
+            primaryDns = parseXMLValue(statusResponse, 'PrimaryDns') || parseXMLValue(statusResponse, 'PrimaryDNS') || '';
+          }
+          if (!secondaryDns) {
+            secondaryDns = parseXMLValue(statusResponse, 'SecondaryDns') || parseXMLValue(statusResponse, 'SecondaryDNS') || '';
+          }
+        } catch (fallbackError) {
+          console.error('Error getting fallback WAN IP from status:', fallbackError);
+        }
+      }
+
       return {
-        wanIPAddress: parseXMLValue(response, 'WanIPAddress') || parseXMLValue(response, 'WanIpAddress') || '',
+        wanIPAddress,
         uptime: safeParseInt(parseXMLValue(response, 'Uptime')),
-        primaryDns: parseXMLValue(response, 'PrimaryDNS') || '',
-        secondaryDns: parseXMLValue(response, 'SecondaryDNS') || '',
+        primaryDns,
+        secondaryDns,
       };
     } catch (error) {
       console.error('Error getting WAN info:', error);
@@ -402,7 +440,15 @@ export class ModemService {
           <LTEBand>7FFFFFFFFFFFFFFF</LTEBand>
         </request>`;
 
-      await this.apiClient.post('/api/net/net-mode', data);
+      const response = await this.apiClient.post('/api/net/net-mode', data);
+
+      const errorCode = parseXMLValue(response, 'code');
+      if (errorCode && errorCode !== '0') {
+        const err = new Error(`Failed to set network mode: error ${errorCode}`) as any;
+        err.huaweiErrorCode = errorCode;
+        throw err;
+      }
+
       return true;
     } catch (error) {
       console.error('Error setting network mode:', error);
@@ -430,6 +476,14 @@ export class ModemService {
   async setBandSettings(networkBand: string, lteBand: string): Promise<boolean> {
     try {
       const currentModeResponse = await this.apiClient.get('/api/net/net-mode');
+
+      const errorCodeGet = parseXMLValue(currentModeResponse, 'code');
+      if (errorCodeGet && errorCodeGet !== '0') {
+        const err = new Error(`Failed to get net mode: error ${errorCodeGet}`) as any;
+        err.huaweiErrorCode = errorCodeGet;
+        throw err;
+      }
+
       const currentMode = parseXMLValue(currentModeResponse, 'NetworkMode') || '00';
 
       const data = `<?xml version="1.0" encoding="UTF-8"?>
@@ -439,7 +493,15 @@ export class ModemService {
           <LTEBand>${lteBand}</LTEBand>
         </request>`;
 
-      await this.apiClient.post('/api/net/net-mode', data);
+      const response = await this.apiClient.post('/api/net/net-mode', data);
+
+      const errorCodePost = parseXMLValue(response, 'code');
+      if (errorCodePost && errorCodePost !== '0') {
+        const err = new Error(`Failed to set band settings: error ${errorCodePost}`) as any;
+        err.huaweiErrorCode = errorCodePost;
+        throw err;
+      }
+
       return true;
     } catch (error) {
       console.error('Error setting band settings:', error);

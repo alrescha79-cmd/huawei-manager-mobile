@@ -84,7 +84,10 @@
     "silentLoginFailed": "Login otomatis gagal setelah 3 percobaan. Silakan login manual.",
     "modemNotResponding": "Modem tidak merespons",
     "failedSaveModemSettings": "Gagal menyimpan pengaturan modem",
-    "failedSaveGuestWifi": "Gagal menyimpan pengaturan WiFi Tamu"
+    "failedSaveGuestWifi": "Gagal menyimpan pengaturan WiFi Tamu",
+    "bandNotSupported": "Pemilihan LTE Band tidak didukung oleh model modem ini (error 100003).",
+    "renameNotSupported": "Mengubah nama perangkat tidak didukung oleh model modem ini (error 100002).",
+    "networkModeNotSupported": "Pemilihan tipe jaringan yang disukai tidak didukung oleh model modem ini (error 100003)."
   },
   "tabs": {
     "home": "Beranda",
@@ -173,6 +176,8 @@
     "confirmEnableData": "Yakin ingin mengaktifkan data seluler?",
     "confirmDisableData": "Yakin ingin menonaktifkan data seluler?",
     "noSignalAvailable": "Tidak ada data sinyal",
+    "noSignalData": "Detail Sinyal Tidak Didukung",
+    "noSignalMessage": "Model modem ini tidak mendukung API sinyal detail (/api/device/signal). Metrik sinyal seperti RSRP, RSRQ, SINR tidak tersedia untuk perangkat ini.",
     "checkLogin": "Periksa apakah Anda sudah login ke modem",
     "width": "Lebar",
     "plmnScanHint": "Memicu pemindaian PLMN untuk mendapatkan alamat IP baru",
@@ -680,6 +685,7 @@
     "ipChangeTitle": "IP Address Berubah",
     "ipChangeBody": "IP berubah setelah {{duration}} sesi",
     "ipChangeBodyJustNow": "IP baru saja berubah",
+    "ipChangeBodyAlert": "Alamat IP berhasil diubah.",
     "minutesAgo": "{{minutes}} menit yang lalu",
     "hoursAgo": "{{hours}} jam yang lalu",
     "justNow": "Baru saja",
@@ -706,7 +712,8 @@
     "watchAdToAccess": "Tonton iklan sampai selesai untuk mengakses fitur ini.",
     "adblockNoticeTitle": "Pemberitahuan AdBlock",
     "adblockNoticeMessage": "Pastikan Anda tidak menggunakan adblock untuk dapat menggunakan semua fitur dalam aplikasi ini secara maksimal.",
-    "failedToLoad": "Gagal memuat iklan. Silakan periksa koneksi internet Anda atau nonaktifkan pemblokir iklan."
+    "failedToLoad": "Gagal memuat iklan. Silakan periksa koneksi internet Anda atau nonaktifkan pemblokir iklan.",
+    "adServerConnectionFailed": "Gagal terhubung ke server iklan. Jika Anda menggunakan pemblokir iklan (ad blocker) atau DNS kustom (seperti AdGuard), harap nonaktifkan untuk memuat iklan dan mendukung aplikasi."
   }
 }
 

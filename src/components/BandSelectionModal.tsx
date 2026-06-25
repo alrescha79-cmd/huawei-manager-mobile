@@ -152,11 +152,14 @@ export function BandSelectionModal({
                         const lteBandHex = lteBandValue.toString(16).toUpperCase();
 
                         await modemService.setBandSettings('3FFFFFFF', lteBandHex);
-                        ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
+                         ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
                         onClose();
                         onSaved?.();
                     } catch (error: any) {
-                        const errorMessage = error?.message || t('alerts.failedSaveBands');
+                        let errorMessage = error?.message || t('alerts.failedSaveBands');
+                        if (error?.huaweiErrorCode === '100003') {
+                            errorMessage = t('alerts.bandNotSupported') || 'LTE Band selection is not supported on this modem model.';
+                        }
                         ThemedAlertHelper.alert(t('common.error'), errorMessage);
                     } finally {
                         setIsSaving(false);

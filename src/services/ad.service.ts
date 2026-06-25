@@ -58,6 +58,22 @@ let isInterstitialLoading = false;
 let isRewardedLoading = false;
 let isAppOpenLoading = false;
 
+let hasShownAdblockAlert = false;
+
+function handleAdError(error: any) {
+    if (!error) return;
+    const errMsg = error?.message || String(error);
+    if (errMsg.includes('doubleclick') || errMsg.includes('ad server') || errMsg.includes('Failed to connect')) {
+        if (!hasShownAdblockAlert) {
+            hasShownAdblockAlert = true;
+            ThemedAlertHelper.alert(
+                getTranslation('ads.blockerDetected') || 'Ad blocker detected',
+                getTranslation('ads.adServerConnectionFailed') || 'Failed to connect to ad server. If you are using an ad blocker or custom DNS (like AdGuard), please disable it to load ads and support the app.'
+            );
+        }
+    }
+}
+
 /**
  * Initializes AdMob SDK globally and preloads the first ads.
  * This should be called early at app startup (e.g. in RootLayout).
@@ -140,6 +156,7 @@ export function preloadRewarded(): void {
         preloadedRewarded = null;
         cleanup();
         console.warn('❌ Failed to preload Rewarded ad:', error);
+        handleAdError(error);
     });
 
     function cleanup() {
@@ -237,8 +254,8 @@ export function showInterstitial(onDone: () => void): void {
 export function showRewarded(onRewarded: () => void, onSkipped: () => void): void {
     if (!isInitialized) {
         initAdMob();
-        // Warn the user that the ad failed to load rather than claiming they skipped it
-        showLoadErrorAlert();
+        // Fallback: Proceed silently if AdMob is not initialized
+        onRewarded();
         return;
     }
 
@@ -266,7 +283,8 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
             console.error('Failed to show preloaded rewarded ad:', err);
             unsubEarned();
             unsubClosed();
-            showLoadErrorAlert();
+            handleAdError(err);
+            onRewarded(); // Fallback: Proceed silently on show error
             preloadRewarded();
         });
     } else {
@@ -280,7 +298,7 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
             if (!completed) {
                 completed = true;
                 cleanup();
-                showLoadErrorAlert();
+                onRewarded(); // Fallback: Proceed silently on timeout
                 preloadRewarded();
             }
         }, 8000); // 8-second timeout for rewarded video
@@ -289,9 +307,10 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
             if (!completed) {
                 completed = true;
                 clearTimeout(timer);
-                ad.show().catch(() => {
+                ad.show().catch((err) => {
                     cleanup();
-                    showLoadErrorAlert();
+                    handleAdError(err);
+                    onRewarded(); // Fallback: Proceed silently on show error
                     preloadRewarded();
                 });
             }
@@ -311,12 +330,13 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
             preloadRewarded();
         });
 
-        const unsubError = ad.addAdEventListener(AdEventType.ERROR, () => {
+        const unsubError = ad.addAdEventListener(AdEventType.ERROR, (error) => {
             if (!completed) {
                 completed = true;
                 clearTimeout(timer);
                 cleanup();
-                showLoadErrorAlert();
+                handleAdError(error);
+                onRewarded(); // Fallback: Proceed silently on load error
                 preloadRewarded();
             }
         });

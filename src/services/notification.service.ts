@@ -290,9 +290,9 @@ export async function getLastIpChangeTime(): Promise<number | null> {
 export async function checkIPChangeNotification(
     currentSessionDuration: number,
     translations: { title: string; body: (timeAgo: string) => string }
-): Promise<void> {
+): Promise<boolean> {
     const settings = await getNotificationSettings();
-    if (!settings.ipChangeEnabled) return;
+    if (!settings.ipChangeEnabled) return false;
 
     const now = Date.now();
     if (now - lastIpChangeNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) {
@@ -300,11 +300,12 @@ export async function checkIPChangeNotification(
             LAST_SESSION_DURATION_KEY,
             currentSessionDuration.toString()
         );
-        return;
+        return false;
     }
 
     const lastDuration = await AsyncStorage.getItem(LAST_SESSION_DURATION_KEY);
     const previousDuration = lastDuration ? parseInt(lastDuration, 10) : 0;
+    let ipChanged = false;
 
     if (currentSessionDuration < previousDuration && previousDuration > 60) {
         lastIpChangeNotifyTimestamp = now;
@@ -328,12 +329,15 @@ export async function checkIPChangeNotification(
             translations.body(durationText),
             'ip-change'
         );
+        ipChanged = true;
     }
 
     await AsyncStorage.setItem(
         LAST_SESSION_DURATION_KEY,
         currentSessionDuration.toString()
     );
+
+    return ipChanged;
 }
 
 // ============================================================================

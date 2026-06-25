@@ -84,7 +84,10 @@
     "silentLoginFailed": "Auto-login failed after 3 attempts. Please log in manually.",
     "modemNotResponding": "Modem not responding",
     "failedSaveModemSettings": "Failed to save modem settings",
-    "failedSaveGuestWifi": "Failed to save guest WiFi settings"
+    "failedSaveGuestWifi": "Failed to save guest WiFi settings",
+    "bandNotSupported": "LTE Band selection is not supported on this modem model (error 100003).",
+    "renameNotSupported": "Changing device name is not supported on this modem model (error 100002).",
+    "networkModeNotSupported": "Preferred network mode selection is not supported on this modem model (error 100003)."
   },
   "tabs": {
     "home": "Home",
@@ -173,6 +176,8 @@
     "confirmEnableData": "Are you sure you want to enable mobile data?",
     "confirmDisableData": "Are you sure you want to disable mobile data?",
     "noSignalAvailable": "No signal data available",
+    "noSignalData": "Signal Detail Not Supported",
+    "noSignalMessage": "This modem model does not support the detailed signal API (\u002Fapi\u002Fdevice\u002Fsignal). Signal metrics like RSRP, RSRQ, SINR are not available for this device.",
     "checkLogin": "Please check if you're logged in to the modem",
     "width": "Width",
     "plmnScanHint": "Triggers PLMN scan to get a new IP address",
@@ -680,6 +685,7 @@
     "ipChangeTitle": "IP Address Changed",
     "ipChangeBody": "IP changed after {{duration}} session",
     "ipChangeBodyJustNow": "IP just changed",
+    "ipChangeBodyAlert": "IP Address has changed successfully.",
     "minutesAgo": "{{minutes}} minutes ago",
     "hoursAgo": "{{hours}} hours ago",
     "justNow": "Just now",
@@ -706,7 +712,8 @@
     "watchAdToAccess": "Please watch the full ad to access this feature.",
     "adblockNoticeTitle": "AdBlock Notice",
     "adblockNoticeMessage": "Please make sure you are not using an ad blocker to enjoy all the features of this app.",
-    "failedToLoad": "Failed to load advertisement. Please check your internet connection or disable your ad blocker."
+    "failedToLoad": "Failed to load advertisement. Please check your internet connection or disable your ad blocker.",
+    "adServerConnectionFailed": "Failed to connect to ad server. If you are using an ad blocker or custom DNS (like AdGuard), please disable it to load ads and support the app."
   }
 }
 
