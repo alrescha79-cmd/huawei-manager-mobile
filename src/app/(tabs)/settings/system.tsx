@@ -16,7 +16,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdBanner } from '@/components';
+import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative } from '@/components';
+import { showInterstitial } from '@/services/ad.service';
 
 const TIMEZONES = [
     'UTC-12', 'UTC-11', 'UTC-10', 'UTC-9', 'UTC-8', 'UTC-7', 'UTC-6', 'UTC-5',
@@ -126,6 +127,7 @@ export default function SystemSettingsScreen() {
         try {
             await modemService.setTimeSettings({ sntpEnabled: enabled });
             setSntpEnabled(enabled);
+            showInterstitial(() => {});
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
         } finally {
@@ -139,6 +141,7 @@ export default function SystemSettingsScreen() {
         try {
             await modemService.setTimeSettings({ timezone: tz });
             setTimezone(tz);
+            showInterstitial(() => {});
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
         }
@@ -153,8 +156,10 @@ export default function SystemSettingsScreen() {
                 username: modemUsername,
                 password: modemPassword,
             });
-            ThemedAlertHelper.alert(t('common.success'), t('settings.credentialsSaved'));
-            router.replace('/settings'); // Force reload of settings context
+            showInterstitial(() => {
+                ThemedAlertHelper.alert(t('common.success'), t('settings.credentialsSaved'));
+                router.replace('/settings'); // Force reload of settings context
+            });
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('settings.failedSaveCredentials'));
         } finally {
@@ -175,7 +180,9 @@ export default function SystemSettingsScreen() {
                         if (modemService) {
                             try {
                                 await modemService.reboot();
-                                ThemedAlertHelper.alert(t('common.success'), t('settings.rebootSuccess'));
+                                showInterstitial(() => {
+                                    ThemedAlertHelper.alert(t('common.success'), t('settings.rebootSuccess'));
+                                });
                             } catch (e) {
                                 ThemedAlertHelper.alert(t('common.error'), t('alerts.failedReboot'));
                             }
@@ -220,7 +227,9 @@ export default function SystemSettingsScreen() {
                         if (modemService) {
                             try {
                                 await modemService.resetFactorySettings();
-                                ThemedAlertHelper.alert(t('common.success'), t('settings.resetSuccess'));
+                                showInterstitial(() => {
+                                    ThemedAlertHelper.alert(t('common.success'), t('settings.resetSuccess'));
+                                });
                             } catch (e) {
                                 ThemedAlertHelper.alert(t('common.error'), t('alerts.failedReset'));
                             }
@@ -264,7 +273,7 @@ export default function SystemSettingsScreen() {
                         />
                     </SettingsSection>
 
-                    <AdBanner />
+
 
                     {/* Connection Credentials */}
                     <SettingsSection title={t('settings.modemControl')}>
@@ -368,6 +377,9 @@ export default function SystemSettingsScreen() {
                         </View>
                     </Modal>
 
+                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
+                        <AdNative />
+                    </View>
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>

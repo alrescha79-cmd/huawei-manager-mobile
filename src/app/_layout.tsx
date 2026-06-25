@@ -19,6 +19,8 @@ import * as Notifications from 'expo-notifications';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
+import { initAdMob, showAppOpenAd } from '@/services/ad.service';
+
 
 SplashScreen.preventAutoHideAsync();
 
@@ -176,7 +178,9 @@ export default function RootLayout() {
 
     useEffect(() => {
         const initializeApp = async () => {
+            initAdMob();
             initializeLanguage();
+
             checkForUpdates();
             requestNotificationPermissions();
             await loadCredentials();
@@ -261,6 +265,7 @@ export default function RootLayout() {
             appStateRef.current = nextAppState;
 
             if (previousState.match(/inactive|background/) && nextAppState === 'active') {
+                showAppOpenAd();
                 const { credentials, isAuthenticated } = useAuthStore.getState();
 
                 if (credentials && isAuthenticated) {

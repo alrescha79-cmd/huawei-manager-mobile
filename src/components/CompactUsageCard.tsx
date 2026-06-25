@@ -49,7 +49,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<TabType>('monthly');
 
-    const blueColor = colors.primary;
+    const primaryColor = colors.primary;
     const greenColor = '#22c55e';
     const purpleColor = '#a855f7';
 
@@ -103,14 +103,14 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
         return '#22c55e';
     };
 
-    const progressColor = showProgress ? getProgressColor(percent) : blueColor;
+    const progressColor = showProgress ? getProgressColor(percent) : primaryColor;
 
     return (
         <Card style={[styles.container, style]}>
             {/* Header with wrap support */}
             <View style={styles.header}>
                 <View style={styles.titleRow}>
-                    <MaterialIcons name="insert-chart" size={18} color={blueColor} style={{ marginRight: 8 }} />
+                    <MaterialIcons name="insert-chart" size={18} color={primaryColor} style={{ marginRight: 8 }} />
                     <TextTicker
                         style={StyleSheet.flatten([typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }])}
                         duration={4000}
@@ -144,7 +144,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                                 <Text
                                     style={[
                                         styles.tabText,
-                                        { color: activeTab === tab ? blueColor : colors.textSecondary }
+                                        { color: activeTab === tab ? primaryColor : colors.textSecondary }
                                     ]}
                                     numberOfLines={1}
                                     adjustsFontSizeToFit
@@ -167,7 +167,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                 <View style={styles.mainStatsRow}>
                     <View style={styles.leftStatsGroup}>
                         <Text
-                            style={[styles.mainValue, { color: blueColor }]}
+                            style={[styles.mainValue, { color: primaryColor }]}
                             adjustsFontSizeToFit
                             numberOfLines={1}
                         >

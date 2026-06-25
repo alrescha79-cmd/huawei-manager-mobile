@@ -12,7 +12,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, SignalPointingModal, AdBanner } from '@/components';
+import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, SignalPointingModal, AdNative } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 import { showInterstitial } from '@/services/ad.service';
 
@@ -103,7 +103,9 @@ export default function MobileNetworkSettingsScreen() {
         try {
             await modemService.setMonthlyDataSettings(settings);
             setMonthlySettings(settings);
-            ThemedAlertHelper.alert(t('common.success'), t('home.monthlySettingsSaved'));
+            showInterstitial(() => {
+                ThemedAlertHelper.alert(t('common.success'), t('home.monthlySettingsSaved'));
+            });
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('home.failedSaveMonthlySettings'));
         }
@@ -136,6 +138,7 @@ export default function MobileNetworkSettingsScreen() {
         try {
             await modemService.toggleMobileData(value);
             setMobileDataEnabled(value);
+            showInterstitial(() => {});
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
             setMobileDataEnabled(!value);
@@ -150,6 +153,7 @@ export default function MobileNetworkSettingsScreen() {
         try {
             await modemService.setDataRoaming(value);
             setDataRoamingEnabled(value);
+            showInterstitial(() => {});
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
             setDataRoamingEnabled(!value);
@@ -164,6 +168,7 @@ export default function MobileNetworkSettingsScreen() {
         try {
             await modemService.setAutoNetwork(value);
             setAutoNetworkEnabled(value);
+            showInterstitial(() => {});
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
             setAutoNetworkEnabled(!value);
@@ -252,7 +257,7 @@ export default function MobileNetworkSettingsScreen() {
                         />
                     </SettingsSection>
 
-                    <AdBanner />
+
 
                     <SettingsSection title={t('settings.preferredNetwork')}>
                         <SettingsItem
@@ -273,7 +278,7 @@ export default function MobileNetworkSettingsScreen() {
                         />
                     </SettingsSection>
 
-                    <AdBanner />
+
 
                     {/* Monthly Usage Settings */}
                     <SettingsSection title={t('home.monthlySettings')}>
@@ -331,6 +336,9 @@ export default function MobileNetworkSettingsScreen() {
                         visible={showSignalPointingModal}
                         onClose={() => setShowSignalPointingModal(false)}
                     />
+                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
+                        <AdNative />
+                    </View>
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>

@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, CustomRefreshScrollView, SignalPointingModal, AdBanner } from '@/components';
+import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, getSelectedBandsDisplay, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, CustomRefreshScrollView, SignalPointingModal, AdBanner, AdNative } from '@/components';
 import { QuickActionsCard, ConnectionStatusCard, NoDataWarningCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
@@ -773,7 +773,7 @@ export default function HomeScreen() {
             />
           )}
 
-          <AdBanner />
+
 
           <QuickActionsCard
             t={t}
@@ -796,6 +796,8 @@ export default function HomeScreen() {
             onSpeedtest={() => setShowSpeedtestModal(true)}
           />
 
+
+
           <AdBanner />
 
           <SignalInfoCard
@@ -804,7 +806,7 @@ export default function HomeScreen() {
             modemStatus={modemStatus}
           />
 
-          <AdBanner />
+
 
           {trafficStats && (
             <TrafficStatsCard
@@ -819,6 +821,9 @@ export default function HomeScreen() {
               onOpenMonthlySettings={() => setShowMonthlySettingsModal(true)}
             />
           )}
+
+          <AdNative />
+
 
           {/* Hidden WebView for auto re-login when session expires */}
           <WebViewLogin

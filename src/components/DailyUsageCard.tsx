@@ -39,20 +39,20 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
     const hh = hours.toString().padStart(2, '0');
     const mm = minutes.toString().padStart(2, '0');
 
-    const blueColor = colors.primary;
+    const primaryColor = colors.primary;
 
     return (
         <Card style={[styles.container, style]}>
             <View style={styles.content}>
                 <View style={styles.leftSide}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
-                        <MaterialIcons name="today" size={18} color={blueColor} style={{ marginRight: 8 }} />
+                        <MaterialIcons name="today" size={18} color={primaryColor} style={{ marginRight: 8 }} />
                         <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}>
                             {t('home.dailyUsage')}
                         </Text>
                     </View>
                     <View style={styles.usageRow}>
-                        <Text style={[styles.usageValue, { color: blueColor }]}>
+                        <Text style={[styles.usageValue, { color: primaryColor }]}>
                             {formattedUsage.value}
                         </Text>
                         <Text style={[styles.usageUnit, { color: colors.textSecondary }]}>
@@ -63,11 +63,11 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
 
                 <View style={[styles.timeBox, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light }]}>
                     <View style={styles.timeRow}>
-                        <Text style={[styles.digitalText, { color: blueColor }]}>{hh}</Text>
+                        <Text style={[styles.digitalText, { color: primaryColor }]}>{hh}</Text>
                         <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.hoursFull')}</Text>
                     </View>
                     <View style={styles.timeRow}>
-                        <Text style={[styles.digitalText, { color: blueColor }]}>{mm}</Text>
+                        <Text style={[styles.digitalText, { color: primaryColor }]}>{mm}</Text>
                         <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.minutesFull')}</Text>
                     </View>
                 </View>

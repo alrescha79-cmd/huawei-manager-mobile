@@ -19,7 +19,8 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ConnectedDevice } from '@/types';
 import { MeshGradientBackground } from './MeshGradientBackground';
-import { AdBanner } from './AdBanner';
+import { AdNative } from './AdBanner';
+
 
 interface DeviceDetailModalProps {
     visible: boolean;
@@ -161,7 +162,7 @@ export function DeviceDetailModal({
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>
                                 {t('wifi.deviceName')}
                             </Text>
-                            <AdBanner />
+
                             <View style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }]}>
                                 <TextInput
                                     style={[styles.input, { color: colors.text }]}
@@ -209,7 +210,7 @@ export function DeviceDetailModal({
                                 </View>
                             </View>
                         </View>
-                        <AdBanner />
+
 
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>
@@ -236,6 +237,9 @@ export function DeviceDetailModal({
                                     </Text>
                                 </TouchableOpacity>
                             )}
+                        </View>
+                        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
+                            <AdNative />
                         </View>
                     </ScrollView>
 

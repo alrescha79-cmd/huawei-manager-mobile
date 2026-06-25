@@ -1,0 +1,275 @@
+========================================
+HUAWEI MANAGER DEBUG LOG
+Generated: 2026-06-21T00:59:42.457Z
+Bug: Informasi kekuatan sinyal tidak terbaca, termasuk di signal finder.
+========================================
+
+📱 DEVICE INFO:
+   Device: Xiaomi 2107113SR
+   OS: Android 16
+   Brand: Xiaomi
+
+📡 MODEM INFO:
+   Model: Huawei WiFi next L02 japan
+   Firmware: N/A
+   IMEI: N/A
+   Network: SoftBank
+   Connection: N/A
+   Signal: N/A dBm
+   IP: 192.168.1.10
+
+========================================
+API LOGS (28 entries)
+========================================
+
+[1] 2026-06-21T00:59:32.985Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 19ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>140</CurrentConnectTime>\n<CurrentUpload>793055</CurrentUpload>\n<CurrentDownload>1386236</CurrentDownload>\n<CurrentDownloadRate>12729</CurrentDownloadRate>\n<CurrentUploadRate>713</CurrentUploadRate>\n<TotalUpload>793055</TotalUpload>\n<TotalDownload>1386236</TotalDownload>\n<TotalConnectTime>140</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[2] 2026-06-21T00:59:33.016Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 8ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[3] 2026-06-21T00:59:34.045Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 75ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>142</CurrentConnectTime>\n<CurrentUpload>794364</CurrentUpload>\n<CurrentDownload>1387301</CurrentDownload>\n<CurrentDownloadRate>567</CurrentDownloadRate>\n<CurrentUploadRate>699</CurrentUploadRate>\n<TotalUpload>794364</TotalUpload>\n<TotalDownload>1387301</TotalDownload>\n<TotalConnectTime>142</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[4] 2026-06-21T00:59:34.074Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 7ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[5] 2026-06-21T00:59:34.984Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 8ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>142</CurrentConnectTime>\n<CurrentUpload>794364</CurrentUpload>\n<CurrentDownload>1387301</CurrentDownload>\n<CurrentDownloadRate>567</CurrentDownloadRate>\n<CurrentUploadRate>699</CurrentUploadRate>\n<TotalUpload>794364</TotalUpload>\n<TotalDownload>1387301</TotalDownload>\n<TotalConnectTime>142</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[6] 2026-06-21T00:59:35.016Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 8ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[7] 2026-06-21T00:59:36.015Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 29ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>144</CurrentConnectTime>\n<CurrentUpload>795152</CurrentUpload>\n<CurrentDownload>1387509</CurrentDownload>\n<CurrentDownloadRate>156</CurrentDownloadRate>\n<CurrentUploadRate>528</CurrentUploadRate>\n<TotalUpload>795152</TotalUpload>\n<TotalDownload>1387509</TotalDownload>\n<TotalConnectTime>144</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[8] 2026-06-21T00:59:36.050Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 10ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[9] 2026-06-21T00:59:36.218Z
+Endpoint: /api/device/signal
+Method: GET
+Duration: 76ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<error>\n<code>100003</code>\n<message/>\n</error>\n"
+
+----------------------------------------
+
+[10] 2026-06-21T00:59:36.242Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 100ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>144</CurrentConnectTime>\n<CurrentUpload>795152</CurrentUpload>\n<CurrentDownload>1387509</CurrentDownload>\n<CurrentDownloadRate>156</CurrentDownloadRate>\n<CurrentUploadRate>528</CurrentUploadRate>\n<TotalUpload>795152</TotalUpload>\n<TotalDownload>1387509</TotalDownload>\n<TotalConnectTime>144</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[11] 2026-06-21T00:59:36.262Z
+Endpoint: /api/monitoring/status
+Method: GET
+Duration: 120ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<response>\r\n<ConnectionStatus>901</ConnectionStatus>\r\n<WifiConnectionStatus>902</WifiConnectionStatus>\r\n<SignalStrength></SignalStrength>\r\n<SignalIcon>4</SignalIcon>\r\n<CurrentNetworkType>19</CurrentNetworkType>\r\n<CurrentServiceDomain>2</CurrentServiceDomain>\r\n<RoamingStatus>0</RoamingStatus>\r\n<BatteryStatus></BatteryStatus>\r\n<BatteryLevel></BatteryLevel>\r\n<BatteryPercent></BatteryPercent>\r\n<simlockStatus>0</simlockStatus>\r\n<PrimaryDns>126.211.198.144</PrimaryDns>\r\n<SecondaryDns>126.211.198.16</SecondaryDns>\r\n<PrimaryIPv6Dns></PrimaryIPv6Dns>\r\n<SecondaryIPv6Dns></SecondaryIPv6Dns>\r\n<CurrentWifiUser>1</CurrentWifiUser>\r\n<TotalWifiUser>14</TotalWifiUser>\r\n<currenttotalwifiuser>14</currenttotalwifiuser>\r\n<ServiceStatus>2</ServiceStatus>\r\n<SimStatus>1</SimStatus>\r\n<WifiStatus>1</WifiStatus>\r\n<CurrentNetworkTypeEx>101</CurrentNetworkTypeEx>\r\n<WanPolicy>0</WanPolicy>\r\n<maxsignal>4</maxsignal>\r\n<wifiindooronly>0</wifiindooronly>\r\n<wififrequence>1</wififrequence>\r\n<msisdn>08083767009</msisdn>\r\n<classify>cpe</classify>\r\n<flymode>0</flymode>\r\n<cellroam>2</cellroam>\r\n<dfsstatus>0</dfsstatus>\r\n<channelselection>0</channelselection>\r\n<batterydisplay>1</batterydisplay>\r\n<currentnetworkstring>1</currentnetworkstring>\r\n<usbup>0</usbup>\r\n<wifiswitchstatus>1</wifiswitchstatus>\r\n<hvdcp_online>0</hvdcp_online>\r\n</response>\r\n"
+
+----------------------------------------
+
+[12] 2026-06-21T00:59:36.279Z
+Endpoint: /api/dialup/mobile-dataswitch
+Method: GET
+Duration: 137ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><response><dataswitch>1</dataswitch></response>"
+
+----------------------------------------
+
+[13] 2026-06-21T00:59:36.296Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 35ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[14] 2026-06-21T00:59:36.315Z
+Endpoint: /api/device/information
+Method: GET
+Duration: 173ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<response>\r\n<DeviceName>Speed Wi-Fi HOME L02</DeviceName>\r\n<SerialNumber>5GQ7N19111000923</SerialNumber>\r\n<Imei>861780040719275</Imei>\r\n<Imsi>440209472008343</Imsi>\r\n<Iccid>8981200723261633430</Iccid>\r\n<Msisdn>08083767009</Msisdn>\r\n<HardwareVersion>WL1AIR4M07</HardwareVersion>\r\n<SoftwareVersion>8.0.1.31&#40;H180SP7C824&#41;</SoftwareVersion>\r\n<WebUIVersion>WEBUI 8.0.1.1&#40;W2SP1C03&#41;</WebUIVersion>\r\n<MacAddress1>30:A1:FA:AB:41:91</MacAddress1>\r\n<MacAddress2></MacAddress2>\r\n<WanIPAddress>10.49.12.184</WanIPAddress>\r\n<wan_dns_address>126.211.198.144,126.211.198.16</wan_dns_address>\r\n<WanIPv6Address></WanIPv6Address>\r\n<wan_ipv6_dns_address></wan_ipv6_dns_address>\r\n<ProductFamily>LTE</ProductFamily>\r\n<Classify>cpe</Classify>\r\n<supportmode>200.100.02.11</supportmode>\r\n<workmode>LTE</workmode>\r\n<submask>255.255.255.255</submask>\r\n<Mccmnc>44020</Mccmnc>\r\n<uptime>162</uptime>\r\n<ImeiSvn>03</ImeiSvn>\r\n<WifiMacAddrWl0>30:A1:FA:AB:41:91</WifiMacAddrWl0>\r\n<WifiMacAddrWl1>30:A1:FA:AB:41:94</WifiMacAddrWl1>\r\n<spreadname_en></spreadname_en>\r\n<spreadname_zh></spreadname_zh>\r\n</response>\r\n"
+
+----------------------------------------
+
+[15] 2026-06-21T00:59:36.411Z
+Endpoint: /api/net/current-plmn
+Method: GET
+Duration: 269ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<response>\r\n<State>0</State>\r\n<FullName>SoftBank</FullName>\r\n<ShortName>SoftBank</ShortName>\r\n<Numeric>44020</Numeric>\r\n<Rat>7</Rat>\r\n<Spn></Spn>\r\n</response>\r\n"
+
+----------------------------------------
+
+[16] 2026-06-21T00:59:39.328Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 35ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>148</CurrentConnectTime>\n<CurrentUpload>801762</CurrentUpload>\n<CurrentDownload>1400910</CurrentDownload>\n<CurrentDownloadRate>13160</CurrentDownloadRate>\n<CurrentUploadRate>6313</CurrentUploadRate>\n<TotalUpload>801762</TotalUpload>\n<TotalDownload>1400910</TotalDownload>\n<TotalConnectTime>148</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[17] 2026-06-21T00:59:39.358Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 8ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[18] 2026-06-21T00:59:40.335Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 43ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>148</CurrentConnectTime>\n<CurrentUpload>801762</CurrentUpload>\n<CurrentDownload>1400910</CurrentDownload>\n<CurrentDownloadRate>13160</CurrentDownloadRate>\n<CurrentUploadRate>6313</CurrentUploadRate>\n<TotalUpload>801762</TotalUpload>\n<TotalDownload>1400910</TotalDownload>\n<TotalConnectTime>148</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[19] 2026-06-21T00:59:40.367Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 7ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[20] 2026-06-21T00:59:41.610Z
+Endpoint: /api/device/signal
+Method: GET
+Duration: 36ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<error>\n<code>100003</code>\n<message/>\n</error>\n"
+
+----------------------------------------
+
+[21] 2026-06-21T00:59:41.634Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 60ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>150</CurrentConnectTime>\n<CurrentUpload>802014</CurrentUpload>\n<CurrentDownload>1401250</CurrentDownload>\n<CurrentDownloadRate>0</CurrentDownloadRate>\n<CurrentUploadRate>60</CurrentUploadRate>\n<TotalUpload>802014</TotalUpload>\n<TotalDownload>1401250</TotalDownload>\n<TotalConnectTime>150</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[22] 2026-06-21T00:59:41.651Z
+Endpoint: /api/monitoring/status
+Method: GET
+Duration: 77ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<response>\r\n<ConnectionStatus>901</ConnectionStatus>\r\n<WifiConnectionStatus>902</WifiConnectionStatus>\r\n<SignalStrength></SignalStrength>\r\n<SignalIcon>4</SignalIcon>\r\n<CurrentNetworkType>19</CurrentNetworkType>\r\n<CurrentServiceDomain>2</CurrentServiceDomain>\r\n<RoamingStatus>0</RoamingStatus>\r\n<BatteryStatus></BatteryStatus>\r\n<BatteryLevel></BatteryLevel>\r\n<BatteryPercent></BatteryPercent>\r\n<simlockStatus>0</simlockStatus>\r\n<PrimaryDns>126.211.198.144</PrimaryDns>\r\n<SecondaryDns>126.211.198.16</SecondaryDns>\r\n<PrimaryIPv6Dns></PrimaryIPv6Dns>\r\n<SecondaryIPv6Dns></SecondaryIPv6Dns>\r\n<CurrentWifiUser>1</CurrentWifiUser>\r\n<TotalWifiUser>14</TotalWifiUser>\r\n<currenttotalwifiuser>14</currenttotalwifiuser>\r\n<ServiceStatus>2</ServiceStatus>\r\n<SimStatus>1</SimStatus>\r\n<WifiStatus>1</WifiStatus>\r\n<CurrentNetworkTypeEx>101</CurrentNetworkTypeEx>\r\n<WanPolicy>0</WanPolicy>\r\n<maxsignal>4</maxsignal>\r\n<wifiindooronly>0</wifiindooronly>\r\n<wififrequence>1</wififrequence>\r\n<msisdn>08083767009</msisdn>\r\n<classify>cpe</classify>\r\n<flymode>0</flymode>\r\n<cellroam>2</cellroam>\r\n<dfsstatus>0</dfsstatus>\r\n<channelselection>0</channelselection>\r\n<batterydisplay>1</batterydisplay>\r\n<currentnetworkstring>1</currentnetworkstring>\r\n<usbup>0</usbup>\r\n<wifiswitchstatus>1</wifiswitchstatus>\r\n<hvdcp_online>0</hvdcp_online>\r\n</response>\r\n"
+
+----------------------------------------
+
+[23] 2026-06-21T00:59:41.668Z
+Endpoint: /api/monitoring/traffic-statistics
+Method: GET
+Duration: 92ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentConnectTime>150</CurrentConnectTime>\n<CurrentUpload>802014</CurrentUpload>\n<CurrentDownload>1401250</CurrentDownload>\n<CurrentDownloadRate>0</CurrentDownloadRate>\n<CurrentUploadRate>60</CurrentUploadRate>\n<TotalUpload>802014</TotalUpload>\n<TotalDownload>1401250</TotalDownload>\n<TotalConnectTime>150</TotalConnectTime>\n<showtraffic>1</showtraffic>\n</response>\n"
+
+----------------------------------------
+
+[24] 2026-06-21T00:59:41.688Z
+Endpoint: /api/dialup/mobile-dataswitch
+Method: GET
+Duration: 114ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?><response><dataswitch>1</dataswitch></response>"
+
+----------------------------------------
+
+[25] 2026-06-21T00:59:41.705Z
+Endpoint: /api/device/information
+Method: GET
+Duration: 131ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<response>\r\n<DeviceName>Speed Wi-Fi HOME L02</DeviceName>\r\n<SerialNumber>5GQ7N19111000923</SerialNumber>\r\n<Imei>861780040719275</Imei>\r\n<Imsi>440209472008343</Imsi>\r\n<Iccid>8981200723261633430</Iccid>\r\n<Msisdn>08083767009</Msisdn>\r\n<HardwareVersion>WL1AIR4M07</HardwareVersion>\r\n<SoftwareVersion>8.0.1.31&#40;H180SP7C824&#41;</SoftwareVersion>\r\n<WebUIVersion>WEBUI 8.0.1.1&#40;W2SP1C03&#41;</WebUIVersion>\r\n<MacAddress1>30:A1:FA:AB:41:91</MacAddress1>\r\n<MacAddress2></MacAddress2>\r\n<WanIPAddress>10.49.12.184</WanIPAddress>\r\n<wan_dns_address>126.211.198.144,126.211.198.16</wan_dns_address>\r\n<WanIPv6Address></WanIPv6Address>\r\n<wan_ipv6_dns_address></wan_ipv6_dns_address>\r\n<ProductFamily>LTE</ProductFamily>\r\n<Classify>cpe</Classify>\r\n<supportmode>200.100.02.11</supportmode>\r\n<workmode>LTE</workmode>\r\n<submask>255.255.255.255</submask>\r\n<Mccmnc>44020</Mccmnc>\r\n<uptime>167</uptime>\r\n<ImeiSvn>03</ImeiSvn>\r\n<WifiMacAddrWl0>30:A1:FA:AB:41:91</WifiMacAddrWl0>\r\n<WifiMacAddrWl1>30:A1:FA:AB:41:94</WifiMacAddrWl1>\r\n<spreadname_en></spreadname_en>\r\n<spreadname_zh></spreadname_zh>\r\n</response>\r\n"
+
+----------------------------------------
+
+[26] 2026-06-21T00:59:41.725Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 75ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[27] 2026-06-21T00:59:41.742Z
+Endpoint: /api/monitoring/month_statistics
+Method: GET
+Duration: 55ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<response>\n<CurrentMonthDownload>24839935549</CurrentMonthDownload>\n<CurrentMonthUpload>2139420523</CurrentMonthUpload>\n<MonthDuration>175396</MonthDuration>\n<MonthLastClearTime>2026-6-1</MonthLastClearTime>\n<CurrentDayUsed>0</CurrentDayUsed>\n<CurrentDayDuration>0</CurrentDayDuration>\n<current_month_hsa>26979356072</current_month_hsa>\n</response>\n"
+
+----------------------------------------
+
+[28] 2026-06-21T00:59:41.760Z
+Endpoint: /api/net/current-plmn
+Method: GET
+Duration: 186ms
+
+Response: "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<response>\r\n<State>0</State>\r\n<FullName>SoftBank</FullName>\r\n<ShortName>SoftBank</ShortName>\r\n<Numeric>44020</Numeric>\r\n<Rat>7</Rat>\r\n<Spn></Spn>\r\n</response>\r\n"
+
+----------------------------------------

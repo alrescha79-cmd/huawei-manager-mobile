@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons, FontAwesome5 } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, AdBanner } from '@/components';
+import { Card, CardHeader } from '@/components';
 import { ConnectedDevice } from '@/types';
 
 interface ConnectedDevicesListProps {
@@ -78,9 +78,7 @@ export function ConnectedDevicesList({
                                 <FontAwesome5 name="user-slash" size={14} color={colors.error} />
                             </TouchableOpacity>
                         </View>
-                        {index > 0 && (index + 1) % 3 === 0 && index < devices.length - 1 && (
-                            <AdBanner />
-                        )}
+
                     </React.Fragment>
                 ))
             )}

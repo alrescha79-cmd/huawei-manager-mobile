@@ -13,7 +13,7 @@ import Animated, {
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import Constants from 'expo-constants';
-import { MeshGradientBackground, PageHeader, AnimatedScreen } from '@/components';
+import { MeshGradientBackground, PageHeader, AnimatedScreen, AdNative } from '@/components';
 
 const GITHUB_OWNER = 'alrescha79-cmd';
 const GITHUB_REPO = 'huawei-manager-mobile';
@@ -350,6 +350,10 @@ export default function UpdateScreen() {
                                 </TouchableOpacity>
                             </View>
                         ) : null}
+                    </View>
+
+                    <View style={{ paddingHorizontal: 24, paddingBottom: 24, width: '100%' }}>
+                        <AdNative />
                     </View>
                 </View>
             </MeshGradientBackground>

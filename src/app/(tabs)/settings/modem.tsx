@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, BouncingDots, AnimatedScreen, AdBanner } from '@/components';
+import { ThemedAlertHelper, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, BouncingDots, AnimatedScreen, AdNative } from '@/components';
 import { MaterialIcons } from '@expo/vector-icons';
 import { showInterstitial } from '@/services/ad.service';
 
@@ -127,7 +127,7 @@ export default function ModemSettingsScreen() {
                         )}
                     </SettingsSection>
 
-                    <AdBanner />
+
 
                     <SettingsSection title={t('settings.antennaSettings')}>
                         <SettingsItem
@@ -153,6 +153,10 @@ export default function ModemSettingsScreen() {
                         }}
                         onClose={() => setShowAntennaModal(false)}
                     />
+
+                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
+                        <AdNative />
+                    </View>
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>

@@ -74,7 +74,7 @@ export function MonthlyComparisonCard({
         }
     }, [totalDownload, totalUpload, monthDownload, monthUpload]);
 
-    const blueColor = colors.primary;
+    const primaryColor = colors.primary;
     const grayColor = '#6b7280';
     const greenColor = '#22c55e';
     const redColor = '#ef4444';
@@ -83,7 +83,7 @@ export function MonthlyComparisonCard({
         <Card style={[styles.container, style]}>
             <View style={styles.header}>
                 <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <MaterialIcons name="history" size={18} color={blueColor} style={{ marginRight: 8 }} />
+                    <MaterialIcons name="history" size={18} color={primaryColor} style={{ marginRight: 8 }} />
                     <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}>
                         {t('home.monthlyComparison')}
                     </Text>
@@ -112,7 +112,7 @@ export function MonthlyComparisonCard({
                         <Text style={[styles.monthText, { color: colors.text }]}>
                             {formatMonthKey(getCurrentMonthKey(), locale)}
                         </Text>
-                        <Text style={[styles.valueText, { color: blueColor }]}>
+                        <Text style={[styles.valueText, { color: primaryColor }]}>
                             {thisMonthFormatted.value} {thisMonthFormatted.unit}
                         </Text>
                     </View>
@@ -122,7 +122,7 @@ export function MonthlyComparisonCard({
                                 styles.barFill,
                                 {
                                     width: maxValue > 0 ? `${(thisMonthTotal / maxValue) * 100}%` : '0%',
-                                    backgroundColor: blueColor
+                                    backgroundColor: primaryColor
                                 }
                             ]}
                         />

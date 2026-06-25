@@ -14,7 +14,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
-import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ThemedSwitch, AdBanner } from '@/components';
+import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ThemedSwitch, AdNative } from '@/components';
 import {
     getNotificationSettings,
     saveNotificationSettings,
@@ -22,6 +22,7 @@ import {
     getLastIpChangeTime,
     formatTimeAgo,
 } from '@/services/notification.service';
+import { showInterstitial } from '@/services/ad.service';
 
 export default function NotificationSettingsScreen() {
     const router = useRouter();
@@ -67,6 +68,7 @@ export default function NotificationSettingsScreen() {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         await saveNotificationSettings(newSettings);
+        showInterstitial(() => {});
 
         if (key === 'badgesEnabled') {
             setBadgesEnabled(value);
@@ -125,7 +127,7 @@ export default function NotificationSettingsScreen() {
                             />
                         </View>
 
-                        <AdBanner />
+
 
                         {/* Monthly Usage */}
                         <View style={styles.settingRow}>
@@ -196,7 +198,7 @@ export default function NotificationSettingsScreen() {
                             />
                         </View>
 
-                        <AdBanner />
+
 
                         {/* Tab Badges */}
                         <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
@@ -215,6 +217,9 @@ export default function NotificationSettingsScreen() {
                         </View>
                     </View>
 
+                    <View style={{ marginBottom: 16 }}>
+                        <AdNative />
+                    </View>
                     <View style={{ height: 40 }} />
                 </ScrollView>
             </AnimatedScreen>

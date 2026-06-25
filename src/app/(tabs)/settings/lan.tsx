@@ -19,7 +19,7 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdBanner } from '@/components';
+import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative } from '@/components';
 import { showInterstitial } from '@/services/ad.service';
 
 const ETHERNET_MODES = [
@@ -162,7 +162,9 @@ export default function LanSettingsScreen() {
         setIsSavingDhcp(true);
         try {
             await networkSettingsService.setDHCPSettings(dhcpSettings);
-            ThemedAlertHelper.alert(t('common.success'), t('networkSettings.dhcpSaved'));
+            showInterstitial(() => {
+                ThemedAlertHelper.alert(t('common.success'), t('networkSettings.dhcpSaved'));
+            });
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('networkSettings.failedSaveDhcp'));
         } finally {
@@ -276,7 +278,9 @@ export default function LanSettingsScreen() {
                 await networkSettingsService.createAPNProfile(profileData);
             }
             setShowApnModal(false);
-            ThemedAlertHelper.alert(t('common.success'), t('networkSettings.apnSaved'));
+            showInterstitial(() => {
+                ThemedAlertHelper.alert(t('common.success'), t('networkSettings.apnSaved'));
+            });
             setTimeout(() => loadApn(networkSettingsService), 2000);
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
@@ -453,7 +457,7 @@ export default function LanSettingsScreen() {
                         )}
                     </SettingsSection>
 
-                    <AdBanner />
+
 
                     <SettingsSection title={t('networkSettings.apnProfiles')}>
 
@@ -549,7 +553,7 @@ export default function LanSettingsScreen() {
                                         />
                                     </View>
 
-                                    <AdBanner />
+
 
                                     {/* Username */}
                                     <View style={{ marginBottom: 16 }}>
@@ -630,6 +634,9 @@ export default function LanSettingsScreen() {
                         </View>
                     </Modal>
 
+                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
+                        <AdNative />
+                    </View>
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>
