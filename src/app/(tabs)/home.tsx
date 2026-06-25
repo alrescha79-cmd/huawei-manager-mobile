@@ -112,14 +112,24 @@ export default function HomeScreen() {
     };
     loadLastClearedDate();
 
-    // Show warning about adblockers on startup
-    setTimeout(() => {
+    // Show warning about adblockers on startup with auto close
+    let timerDismiss: NodeJS.Timeout;
+    const timerShow = setTimeout(() => {
       ThemedAlertHelper.alert(
         t('ads.adblockNoticeTitle'),
         t('ads.adblockNoticeMessage'),
         [{ text: t('common.ok') }]
       );
-    }, 1500);
+
+      timerDismiss = setTimeout(() => {
+        ThemedAlertHelper.dismiss();
+      }, 4000); // Auto close after 4 seconds
+    }, 3000); // Delay of 3 seconds to show
+
+    return () => {
+      clearTimeout(timerShow);
+      if (timerDismiss) clearTimeout(timerDismiss);
+    };
   }, []);
 
   useEffect(() => {
@@ -194,7 +204,7 @@ export default function HomeScreen() {
       setIsRefreshing(true);
 
       const [signal, network, traffic, status, wan, dataStatus] = await Promise.all([
-        service.getSignalInfo(),
+        service.getSignalInfo().catch(() => null),
         service.getNetworkInfo(),
         service.getTrafficStats(),
         service.getModemStatus(),
@@ -246,12 +256,19 @@ export default function HomeScreen() {
           }
         );
 
-        checkIPChangeNotification(traffic.currentConnectTime || 0, {
+        const ipChanged = await checkIPChangeNotification(traffic.currentConnectTime || 0, {
           title: t('notifications.ipChangeTitle'),
           body: (duration) => duration === '0'
             ? t('notifications.ipChangeBodyJustNow')
             : t('notifications.ipChangeBody', { duration }),
         });
+
+        if (ipChanged) {
+          ThemedAlertHelper.alert(
+            t('notifications.ipChangeTitle'),
+            t('notifications.ipChangeBodyAlert') || 'IP Address has changed successfully.'
+          );
+        }
       }
 
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
@@ -271,7 +288,7 @@ export default function HomeScreen() {
       const isSessionError = errorMessage.includes('125003') ||
         errorMessage.includes('session') ||
         errorMessage.includes('login') ||
-        !signalInfo;
+        !modemStatus;
 
 
       if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
@@ -288,7 +305,7 @@ export default function HomeScreen() {
   const loadDataSilent = async (service: ModemService) => {
     try {
       const [signal, network, traffic, status, wan, dataStatus] = await Promise.all([
-        service.getSignalInfo(),
+        service.getSignalInfo().catch(() => null),
         service.getNetworkInfo(),
         service.getTrafficStats(),
         service.getModemStatus(),
@@ -318,7 +335,7 @@ export default function HomeScreen() {
       const errorMessage = error?.message || '';
       const isSessionError = errorMessage.includes('125003') ||
         errorMessage.includes('session') ||
-        !signalInfo;
+        !modemStatus;
 
 
       if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {

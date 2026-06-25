@@ -148,6 +148,16 @@ export const ThemedAlertHelper = {
             });
         }
     },
+    dismiss: () => {
+        if (alertListener) {
+            alertListener({
+                visible: false,
+                title: '',
+                message: '',
+                buttons: [],
+            });
+        }
+    },
 };
 
 const { width } = Dimensions.get('window');

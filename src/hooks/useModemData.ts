@@ -73,6 +73,7 @@ export function useModemData({ t, durationUnits }: UseModemDataOptions): UseMode
     const {
         signalInfo,
         monthlySettings,
+        modemStatus,
         setSignalInfo,
         setNetworkInfo,
         setTrafficStats,
@@ -173,7 +174,7 @@ export function useModemData({ t, durationUnits }: UseModemDataOptions): UseMode
             setIsRefreshing(true);
 
             const [signal, network, traffic, status, wan, dataStatus] = await Promise.all([
-                service.getSignalInfo(),
+                service.getSignalInfo().catch(() => null),
                 service.getNetworkInfo(),
                 service.getTrafficStats(),
                 service.getModemStatus(),
@@ -225,12 +226,19 @@ export function useModemData({ t, durationUnits }: UseModemDataOptions): UseMode
                     }
                 );
 
-                checkIPChangeNotification(traffic.currentConnectTime || 0, {
+                const ipChanged = await checkIPChangeNotification(traffic.currentConnectTime || 0, {
                     title: t('notifications.ipChangeTitle'),
                     body: (duration) => duration === '0'
                         ? t('notifications.ipChangeBodyJustNow')
                         : t('notifications.ipChangeBody', { duration }),
                 });
+
+                if (ipChanged) {
+                    ThemedAlertHelper.alert(
+                        t('notifications.ipChangeTitle'),
+                        t('notifications.ipChangeBodyAlert') || 'IP Address has changed successfully.'
+                    );
+                }
             }
 
             const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
@@ -250,7 +258,7 @@ export function useModemData({ t, durationUnits }: UseModemDataOptions): UseMode
             const isSessionError = errorMessage.includes('125003') ||
                 errorMessage.includes('session') ||
                 errorMessage.includes('login') ||
-                !signalInfo;
+                !modemStatus;
 
             if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
                 requestRelogin();
@@ -266,7 +274,7 @@ export function useModemData({ t, durationUnits }: UseModemDataOptions): UseMode
     const loadDataSilent = async (service: ModemService) => {
         try {
             const [signal, network, traffic, status, wan, dataStatus] = await Promise.all([
-                service.getSignalInfo(),
+                service.getSignalInfo().catch(() => null),
                 service.getNetworkInfo(),
                 service.getTrafficStats(),
                 service.getModemStatus(),
@@ -295,7 +303,7 @@ export function useModemData({ t, durationUnits }: UseModemDataOptions): UseMode
             const errorMessage = error?.message || '';
             const isSessionError = errorMessage.includes('125003') ||
                 errorMessage.includes('session') ||
-                !signalInfo;
+                !modemStatus;
 
             if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
                 requestRelogin();

@@ -191,8 +191,12 @@ export default function MobileNetworkSettingsScreen() {
             if (changed) {
                 showInterstitial(() => {});
             }
-        } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeNetwork'));
+        } catch (error: any) {
+            let errorMessage = t('alerts.failedChangeNetwork');
+            if (error?.huaweiErrorCode === '100003') {
+                errorMessage = t('alerts.networkModeNotSupported') || 'Preferred network mode selection is not supported on this modem.';
+            }
+            ThemedAlertHelper.alert(t('common.error'), errorMessage);
         } finally {
             setIsChangingNetwork(false);
         }

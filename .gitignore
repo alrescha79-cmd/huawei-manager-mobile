@@ -6,6 +6,7 @@ node_modules/
 # others
 notes.txt
 .agent/
+/reports
 
 # Expo
 .expo/

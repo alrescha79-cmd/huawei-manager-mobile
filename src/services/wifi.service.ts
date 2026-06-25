@@ -40,8 +40,12 @@ export class WiFiService {
         const hostInfoResponse = await this.apiClient.get('/api/system/HostInfo');
         let hostInfoList: any[] = [];
 
-        if (typeof hostInfoResponse === 'string') {
-          hostInfoList = JSON.parse(hostInfoResponse);
+        if (typeof hostInfoResponse === 'string' && !hostInfoResponse.includes('<error>')) {
+          try {
+            hostInfoList = JSON.parse(hostInfoResponse);
+          } catch (e) {
+            // Ignore parse errors
+          }
         } else if (Array.isArray(hostInfoResponse)) {
           hostInfoList = hostInfoResponse;
         }
@@ -903,7 +907,9 @@ ${guestPassword ? `<WifiWpapsk>${guestPassword}</WifiWpapsk>` : ''}
 
       if (response.includes('<error>')) {
         const errorCode = response.match(/<code>(\d+)<\/code>/)?.[1];
-        throw new Error(`Failed to change device name: error ${errorCode}`);
+        const error = new Error(`Failed to change device name: error ${errorCode}`) as any;
+        error.huaweiErrorCode = errorCode;
+        throw error;
       }
 
       return true;

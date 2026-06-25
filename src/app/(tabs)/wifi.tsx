@@ -453,8 +453,12 @@ export default function WiFiScreen() {
       await wifiService.changeDeviceName(deviceId, newName);
       ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceNameSaved'));
       handleRefresh();
-    } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('wifi.failedSaveDeviceName'));
+    } catch (error: any) {
+      let errorMessage = t('wifi.failedSaveDeviceName');
+      if (error?.huaweiErrorCode === '100002') {
+        errorMessage = t('alerts.renameNotSupported') || 'Changing device name is not supported on this modem model.';
+      }
+      ThemedAlertHelper.alert(t('common.error'), errorMessage);
       throw error;
     }
   };

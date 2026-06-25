@@ -164,6 +164,7 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
     const [bestPci, setBestPci] = useState<string | null>(null);
     const [soundEnabled, setSoundEnabled] = useState(false);
     const [isLoading, setIsLoading] = useState(true);
+    const [signalUnsupported, setSignalUnsupported] = useState(false);
     const [fetchTime, setFetchTime] = useState<number | null>(null);
     const [signalHistory, setSignalHistory] = useState<number[]>([]);
 
@@ -208,6 +209,7 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
             setSignalInfo(null);
             setBestRsrp(null);
             setIsLoading(true);
+            setSignalUnsupported(false);
             setFetchTime(null);
             setSignalHistory([]);
             previousValueRef.current = null;
@@ -248,8 +250,18 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                 }
                 previousValueRef.current = currentValue;
             }
-        } catch (error) {
+        } catch (error: any) {
+            setIsLoading(false);
             setFetchTime(Date.now() - startTime);
+            // If modem returned a Huawei error code (e.g. 100003 = endpoint not supported),
+            // stop polling and show a clear unsupported message instead of retrying endlessly.
+            if (error?.huaweiErrorCode) {
+                setSignalUnsupported(true);
+                if (intervalRef.current) {
+                    clearInterval(intervalRef.current);
+                    intervalRef.current = null;
+                }
+            }
         }
     }, [modemService]);
 
@@ -326,6 +338,20 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                 contentContainerStyle={{ paddingBottom: 40 }}
                 showsVerticalScrollIndicator={false}
             >
+                {signalUnsupported ? (
+                    <Card style={{ marginTop: spacing.md, borderColor: colors.warning, borderWidth: 1.5 }}>
+                        <View style={{ alignItems: 'center', paddingVertical: spacing.md }}>
+                            <MaterialIcons name="signal-wifi-off" size={48} color={colors.warning} />
+                            <Text style={[typography.headline, { color: colors.text, textAlign: 'center', marginTop: 12 }]}>
+                                {t('home.noSignalData')}
+                            </Text>
+                            <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: 8, lineHeight: 22 }]}>
+                                {t('home.noSignalMessage')}
+                            </Text>
+                        </View>
+                    </Card>
+                ) : (
+                    <>
                 <View style={[styles.metricToggle, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
                     <TouchableOpacity
                         style={[styles.metricButton, signalMetric === 'rsrp' && { backgroundColor: colors.primary }]}
@@ -544,6 +570,8 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                 <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
                     <AdNative />
                 </View>
+                    </>
+                )}
             </ScrollView>
 
             <SelectionModal
