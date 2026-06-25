@@ -705,7 +705,8 @@
     "rewardRequired": "Ad Required",
     "watchAdToAccess": "Please watch the full ad to access this feature.",
     "adblockNoticeTitle": "AdBlock Notice",
-    "adblockNoticeMessage": "Please make sure you are not using an ad blocker to enjoy all the features of this app."
+    "adblockNoticeMessage": "Please make sure you are not using an ad blocker to enjoy all the features of this app.",
+    "failedToLoad": "Failed to load advertisement. Please check your internet connection or disable your ad blocker."
   }
 }
 

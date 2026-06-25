@@ -12,7 +12,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { KeyboardAnimatedView, BouncingDots } from '@/components';
+import { KeyboardAnimatedView, BouncingDots, AdNative } from '@/components';
 
 interface SMSComposeModalProps {
     visible: boolean;
@@ -88,6 +88,9 @@ export function SMSComposeModal({
                             placeholderTextColor={colors.textSecondary}
                             keyboardType="phone-pad"
                         />
+                    </View>
+                    <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
+                        <AdNative />
                     </View>
                 </View>
 

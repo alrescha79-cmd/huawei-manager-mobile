@@ -60,7 +60,7 @@ export function UsageCard({
 
     const badgeText = badge || (duration ? formatDuration(duration, durationUnits) : '');
 
-    const highlightColor = colors.primary;
+    const primaryColor = colors.primary;
 
     const getProgressColor = (pct: number): string => {
         if (pct >= 90) return '#ef4444';
@@ -69,7 +69,7 @@ export function UsageCard({
         return '#22c55e';
     };
 
-    const progressColor = variant === 'monthly' && dataLimit ? getProgressColor(percent) : highlightColor;
+    const progressColor = variant === 'monthly' && dataLimit ? getProgressColor(percent) : primaryColor;
 
     return (
         <Card style={[styles.container, style]}>
@@ -78,7 +78,7 @@ export function UsageCard({
                     <MaterialIcons
                         name={icon || (variant === 'session' ? 'access-time' : variant === 'monthly' ? 'calendar-month' : 'data-usage')}
                         size={18}
-                        color={highlightColor}
+                        color={primaryColor}
                         style={{ marginRight: 8 }}
                     />
                     <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}>
@@ -95,7 +95,7 @@ export function UsageCard({
             </View>
 
             <View style={styles.mainStatContainer}>
-                <Text style={[styles.mainValue, { color: highlightColor }]}>
+                <Text style={[styles.mainValue, { color: primaryColor }]}>
                     {totalFormatted.value}
                 </Text>
                 <Text style={[styles.mainUnit, { color: colors.textSecondary }]}>

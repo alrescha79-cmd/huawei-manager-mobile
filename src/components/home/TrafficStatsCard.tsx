@@ -9,7 +9,6 @@ import {
     UsageCard,
     CompactUsageCard,
     MonthlyComparisonCard,
-    AdBanner,
 } from '@/components';
 import { formatDuration, DurationUnits } from '@/utils/helpers';
 
@@ -79,7 +78,7 @@ export function TrafficStatsCard({
 
             <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-            <AdBanner />
+
 
             {trafficStats.dayUsed > 0 && (
                 <DailyUsageCard
@@ -92,7 +91,7 @@ export function TrafficStatsCard({
             {usageCardStyle === 'compact' ? (
                 <>
                     <CompactUsageCard stats={trafficStats} dataLimit={dataLimitBytes} />
-                    <AdBanner />
+
                     <MonthlyComparisonCard
                         totalDownload={trafficStats.totalDownload}
                         totalUpload={trafficStats.totalUpload}
@@ -111,7 +110,7 @@ export function TrafficStatsCard({
                         variant="session"
                         style={{ marginBottom: spacing.md }}
                     />
-                    <AdBanner />
+
                     <UsageCard
                         title={t('home.monthlyUsage') || 'Monthly Usage'}
                         download={trafficStats.monthDownload || trafficStats.totalDownload}
@@ -121,7 +120,7 @@ export function TrafficStatsCard({
                         variant="monthly"
                         dataLimit={dataLimitBytes}
                     />
-                    <AdBanner />
+
                     <UsageCard
                         title={t('home.totalUsage') || 'Total Usage'}
                         badge={formatDuration(trafficStats.totalConnectTime, durationUnits)}

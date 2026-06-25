@@ -20,7 +20,8 @@ import { ThemedAlertHelper } from './ThemedAlert';
 import { ModemService } from '@/services/modem.service';
 import { ModalMeshGradient } from './ModalMeshGradient';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
-import { AdBanner } from './AdBanner';
+import { AdBanner, AdNative } from './AdBanner';
+
 
 const LTE_BANDS = [
     { bit: 0, name: 'B1', freq: '2100 MHz', region: 'Global', type: 'FDD' },
@@ -273,6 +274,7 @@ export function BandSelectionModal({
 
                 {/* Scrollable content area with margin to stop above footer */}
                 <View style={{ flex: 1, marginBottom: 60, backgroundColor: 'transparent' }}>
+                    <AdBanner />
                     <ScrollView
                         showsVerticalScrollIndicator={true}
                         contentContainerStyle={styles.listContent}
@@ -315,12 +317,13 @@ export function BandSelectionModal({
                                             color={isSelected ? colors.primary : colors.textSecondary}
                                         />
                                     </TouchableOpacity>
-                                    {(index + 1) % 4 === 0 && (
-                                        <AdBanner />
-                                    )}
+
                                 </React.Fragment>
                             );
                         })}
+                        <View style={{ paddingHorizontal: 16, marginTop: 8, marginBottom: 60 }}>
+                        </View>
+                        <AdNative />
                     </ScrollView>
                 </View>
 

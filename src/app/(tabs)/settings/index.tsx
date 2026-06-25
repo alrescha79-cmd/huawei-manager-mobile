@@ -13,7 +13,7 @@ import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme, ACCENT_PRESETS } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen, ThemedSwitch, ThemedAlertHelper, BouncingDots, AdBanner } from '@/components';
+import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, AnimatedScreen, ThemedSwitch, ThemedAlertHelper, BouncingDots, AdBanner, AdNative } from '@/components';
 import { useThemeStore } from '@/stores/theme.store';
 import { useDebugStore } from '@/stores/debug.store';
 import { showInterstitial } from '@/services/ad.service';
@@ -73,7 +73,7 @@ export default function SettingsIndex() {
                             subtitle={t('settings.mobileNetworkSubtitle') || 'Data, Roaming, Bands'}
                             onPress={() => router.push('/settings/mobile-network')}
                         />
-                        <AdBanner />
+
                         <SettingsItem
                             icon="settings-ethernet"
                             title={t('settings.lanSettings')}
@@ -82,6 +82,8 @@ export default function SettingsIndex() {
                             isLast
                         />
                     </SettingsSection>
+
+                    <AdBanner />
 
                     <SettingsSection title={t('settings.general')}>
                         <SettingsItem
@@ -108,7 +110,7 @@ export default function SettingsIndex() {
                             }
                         />
 
-                        <AdBanner />
+
 
                         <SettingsItem
                             icon="brightness-6"
@@ -183,7 +185,7 @@ export default function SettingsIndex() {
                             subtitle="github.com/alrescha79-cmd"
                             onPress={handleOpenGitHub}
                         />
-                        <AdBanner />
+
                         <SettingsItem
                             icon="bug-report"
                             title={t('settings.bugReport')}
@@ -330,6 +332,9 @@ export default function SettingsIndex() {
                         )}
                     </SettingsSection>
 
+                    <AdNative />
+
+
                     <SelectionModal
                         visible={showThemeModal}
                         title={t('settings.theme')}
@@ -397,8 +402,12 @@ export default function SettingsIndex() {
                         }))}
                         selectedValue={accentColor}
                         onSelect={(val) => {
+                            const changed = val !== accentColor;
                             setAccentColor(val);
                             setShowAccentModal(false);
+                            if (changed) {
+                                showInterstitial(() => {});
+                            }
                         }}
                         onClose={() => setShowAccentModal(false)}
                     />

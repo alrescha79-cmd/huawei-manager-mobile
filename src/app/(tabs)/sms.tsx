@@ -15,7 +15,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView, AdBanner } from '@/components';
+import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView, AdBanner, AdNative } from '@/components';
 import { SMSListItem, SMSStatsCard, SMSDetailModal, SMSStatsSkeleton, SMSListSkeleton, SMSSearchSkeleton, smsStyles as styles, SMSFilterType } from '@/components/sms';
 import { formatTimeAgo } from '@/utils/formatters';
 import { useAuthStore } from '@/stores/auth.store';
@@ -522,6 +522,8 @@ export default function SMSScreen() {
               </View>
             )}
 
+            <AdBanner />
+
             {smsSupported && !isSelectionMode && (
               <View style={styles.messagesHeader}>
                 <Text style={[typography.caption1, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
@@ -539,7 +541,7 @@ export default function SMSScreen() {
 
             {!smsSupported || filteredMessages.length === 0 ? (
               <>
-                <AdBanner />
+
                 <View style={[styles.emptyState, {
                   backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
                   borderWidth: 1,
@@ -550,7 +552,7 @@ export default function SMSScreen() {
                     {isRefreshing ? t('sms.loadingMessages') : searchQuery ? t('sms.noSearchResults') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
                   </Text>
                 </View>
-                <AdBanner />
+
               </>
             ) : (
               <View style={[styles.messagesList, {
@@ -570,13 +572,12 @@ export default function SMSScreen() {
                       isSelected={selectedIds.has(`${message.boxType}-${message.index}`)}
                       onToggleSelect={() => toggleSelect(message)}
                     />
-                    {index > 0 && (index + 1) % 5 === 0 && index < filteredMessages.length - 1 && (
-                      <AdBanner />
-                    )}
+
                   </React.Fragment>
                 ))}
               </View>
             )}
+            <AdNative />
           </ScrollView>
 
           {isSelectionMode && (
@@ -681,6 +682,9 @@ export default function SMSScreen() {
                 placeholderTextColor={colors.textSecondary}
                 keyboardType="phone-pad"
               />
+            </View>
+            <View style={{ paddingHorizontal: 16, marginTop: 24 }}>
+              <AdNative />
             </View>
           </View>
 

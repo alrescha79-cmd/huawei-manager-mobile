@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { SelectionModal, BouncingDots, AdBanner } from '@/components';
+import { SelectionModal, BouncingDots } from '@/components';
 import { wifiStyles as styles } from './wifiStyles';
 
 interface WiFiEditSettingsProps {
@@ -88,7 +88,7 @@ export function WiFiEditSettings({
                         />
                     </View>
 
-                    <AdBanner />
+
 
                     <View style={styles.formGroup}>
                         <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 6 }]}>

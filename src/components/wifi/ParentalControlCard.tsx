@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Button, ThemedSwitch, BouncingDots, AdBanner } from '@/components';
+import { Card, CardHeader, Button, ThemedSwitch, BouncingDots } from '@/components';
 import { wifiStyles as styles } from './wifiStyles';
 
 interface ParentalProfile {
@@ -91,7 +91,7 @@ export function ParentalControlCard({
 
             {isParentalExpanded && (
                 <View style={{ marginTop: spacing.md }}>
-                    <AdBanner />
+
                     {parentalProfiles.length === 0 ? (
                         <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', paddingVertical: spacing.md }]}>
                             {t('parentalControl.noProfiles')}
@@ -127,7 +127,7 @@ export function ParentalControlCard({
                                     <Text style={[typography.caption1, { color: colors.textSecondary }]}>
                                         {profile.deviceMacs.length} {t('parentalControl.selectDevices').toLowerCase()}
                                     </Text>
-                                    <AdBanner />
+
                                 </View>
                                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                                     <TouchableOpacity

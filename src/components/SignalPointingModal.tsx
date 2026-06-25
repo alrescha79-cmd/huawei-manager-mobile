@@ -12,7 +12,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { Card, PageSheetModal, SelectionModal, ThemedAlertHelper, BouncingDots, AdBanner } from '@/components';
+import { Card, PageSheetModal, SelectionModal, ThemedAlertHelper, BouncingDots, AdNative } from '@/components';
 import { SignalInfo } from '@/types';
 import { ModemService } from '@/services/modem.service';
 import { showInterstitial } from '@/services/ad.service';
@@ -380,7 +380,7 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                     )}
                 </Card>
 
-                <AdBanner />
+
 
                 <Card style={{ marginTop: spacing.md }}>
                     <View style={styles.detailsGrid}>
@@ -541,6 +541,9 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                         {t('home.vibrationFeedback')}: {soundEnabled ? 'ON' : 'OFF'}
                     </Text>
                 </TouchableOpacity>
+                <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
+                    <AdNative />
+                </View>
             </ScrollView>
 
             <SelectionModal

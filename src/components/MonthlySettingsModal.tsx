@@ -20,7 +20,9 @@ import { useTranslation } from '@/i18n';
 import { MeshGradientBackground } from './MeshGradientBackground';
 import { ThemedSwitch } from './ThemedSwitch';
 import { ThemedAlertHelper } from './ThemedAlert';
-import { AdBanner } from './AdBanner';
+import { showInterstitial } from '@/services/ad.service';
+import { AdNative } from './AdBanner';
+
 
 
 interface MonthlySettingsModalProps {
@@ -111,7 +113,9 @@ export function MonthlySettingsModal({
                 dataLimitUnit,
                 monthThreshold,
             });
-            onClose();
+            showInterstitial(() => {
+                onClose();
+            });
         } catch (error) {
             // Error handled by parent
         } finally {
@@ -171,7 +175,7 @@ export function MonthlySettingsModal({
                             />
                         </View>
 
-                        <AdBanner />
+
 
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.startDate')}</Text>
@@ -250,7 +254,7 @@ export function MonthlySettingsModal({
                             )}
                         </View>
 
-                        <AdBanner />
+
 
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.threshold').replace(' (%)', '')}</Text>
@@ -305,6 +309,9 @@ export function MonthlySettingsModal({
                             </Text>
                         </View>
 
+                        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
+                            <AdNative />
+                        </View>
                     </ScrollView>
 
                     <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>

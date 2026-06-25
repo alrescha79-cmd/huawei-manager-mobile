@@ -40,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ...config,
         name: isDev ? 'HM Mobile [DEV]' : 'Huawei Manager',
         slug: 'hm-mobile',
-        version: '1.1.27',
+        version: '1.1.28',
         orientation: 'portrait',
         icon: './assets/logo.png',
         userInterfaceStyle: 'automatic',
@@ -91,8 +91,10 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 projectId: '930db156-f012-4b37-809c-d023a044d3b3',
             },
             admobBannerUnitId: process.env.ADMOB_BANNER_UNIT_ID || '',
+            admobNativeAdvancedUnitId: process.env.ADMOB_NATIVE_ADVANCED_UNIT_ID || '',
             admobInterstitialUnitId: process.env.ADMOB_INTERSTITIAL_UNIT_ID || '',
             admobRewardedUnitId: process.env.ADMOB_REWARDED_UNIT_ID || '',
+            admobAppOpenUnitId: process.env.ADMOB_APP_OPEN_UNIT_ID || '',
         },
     };
 
