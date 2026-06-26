@@ -16,7 +16,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative } from '@/components';
+import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative, PageSheetModal } from '@/components';
 import { showInterstitial } from '@/services/ad.service';
 
 const TIMEZONES = [
@@ -346,36 +346,28 @@ export default function SystemSettingsScreen() {
                     </SettingsSection>
 
                     {/* Timezone Modal */}
-                    <Modal
+                    <PageSheetModal
                         visible={showTimezoneModal}
-                        animationType="slide"
-                        presentationStyle="pageSheet"
-                        onRequestClose={() => setShowTimezoneModal(false)}
+                        onClose={() => setShowTimezoneModal(false)}
+                        title={t('timeSettings.timeZone')}
+                        cancelText={t('common.cancel') || 'Cancel'}
                     >
-                        <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
-                            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                                <Text style={[typography.headline, { color: colors.text }]}>{t('timeSettings.timeZone')}</Text>
-                                <TouchableOpacity onPress={() => setShowTimezoneModal(false)}>
-                                    <Text style={{ color: colors.primary, fontSize: 17 }}>{t('common.done')}</Text>
+                        <ScrollView style={{ flex: 1, paddingHorizontal: 16, marginTop: 8 }}>
+                            {TIMEZONES.map((tz) => (
+                                <TouchableOpacity
+                                    key={tz}
+                                    style={[
+                                        styles.modalItem,
+                                        { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }
+                                    ]}
+                                    onPress={() => handleTimezoneChange(tz)}
+                                >
+                                    <Text style={{ color: timezone === tz ? colors.primary : colors.text, fontSize: 16 }}>{tz}</Text>
+                                    {timezone === tz && <MaterialIcons name="check" size={20} color={colors.primary} />}
                                 </TouchableOpacity>
-                            </View>
-                            <ScrollView>
-                                {TIMEZONES.map((tz, index) => (
-                                    <TouchableOpacity
-                                        key={tz}
-                                        style={[
-                                            styles.modalItem,
-                                            { borderBottomColor: colors.border, borderBottomWidth: StyleSheet.hairlineWidth }
-                                        ]}
-                                        onPress={() => handleTimezoneChange(tz)}
-                                    >
-                                        <Text style={{ color: timezone === tz ? colors.primary : colors.text, fontSize: 16 }}>{tz}</Text>
-                                        {timezone === tz && <MaterialIcons name="check" size={20} color={colors.primary} />}
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        </View>
-                    </Modal>
+                            ))}
+                        </ScrollView>
+                    </PageSheetModal>
 
                     <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
                         <AdNative />

@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen } from '@/components';
+import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdblockAlertModal } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -386,6 +386,8 @@ export default function RootLayout() {
                     buttons={alertState.buttons}
                     onDismiss={dismissAlert}
                 />
+
+                <AdblockAlertModal />
             </KeyboardProvider>
         </GestureHandlerRootView>
     );
