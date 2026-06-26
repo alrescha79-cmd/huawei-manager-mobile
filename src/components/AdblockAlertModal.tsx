@@ -13,6 +13,7 @@ import {
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 interface AdblockAlertModalProps {
     visible?: boolean;
@@ -50,6 +51,7 @@ export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
     const { colors, typography, isDark, borderRadius } = useTheme();
     const { t } = useTranslation();
     const [slideAnim] = useState(new Animated.Value(0));
+    const insets = useSafeAreaInsets();
 
     useEffect(() => {
         setAdblockListener((vis) => {
@@ -117,6 +119,7 @@ export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
                         transform: [{ translateY }],
                         backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
                         borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+                        paddingBottom: Math.max(insets.bottom, 20) + 28,
                     }
                 ]}>
                     {/* Top drag handle indicator */}
@@ -218,7 +221,6 @@ const styles = StyleSheet.create({
         borderBottomWidth: 0,
         paddingHorizontal: 24,
         paddingTop: 8,
-        paddingBottom: Platform.OS === 'ios' ? 36 : 24,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.15,
