@@ -1,15 +1,27 @@
 [
   {
+    "tag": "test-15",
+    "total": 5
+  },
+  {
+    "tag": "test-14",
+    "total": 26
+  },
+  {
+    "tag": "test-13",
+    "total": 38
+  },
+  {
     "tag": "v1.1.25",
-    "total": 3209
+    "total": 3366
   },
   {
     "tag": "v1.1.10",
-    "total": 848
+    "total": 855
   },
   {
     "tag": "v1.1.1",
-    "total": 168
+    "total": 171
   },
   {
     "tag": "test-8",
@@ -37,7 +49,7 @@
   },
   {
     "tag": "v1.0.30",
-    "total": 562
+    "total": 565
   },
   {
     "tag": "v1.0.25",
@@ -45,10 +57,10 @@
   },
   {
     "tag": "v1.0.1",
-    "total": 10
+    "total": 0
   },
   {
     "tag": "v1.0.0",
-    "total": 15
+    "total": 0
   }
 ]
