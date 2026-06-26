@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdblockAlertModal } from '@/components';
+import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdblockAlertModal, ChangelogModal, ChangelogHelper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -139,40 +139,21 @@ export default function RootLayout() {
         }
     };
 
-    const STAR_ALERT_VERSION_KEY = 'star_alert_shown_version';
-    const GITHUB_REPO_URL = 'https://github.com/alrescha79-cmd/huawei-manager-mobile';
+    const CHANGELOG_SHOWN_VERSION_KEY = 'changelog_shown_version';
 
-    const checkAndShowStarRequest = async () => {
+    const checkAndShowChangelog = async () => {
         try {
-            const currentVersion = Constants.expoConfig?.version || '1.0.0';
-            const shownVersion = await AsyncStorage.getItem(STAR_ALERT_VERSION_KEY);
+            const currentVersion = Constants.expoConfig?.version || '1.1.28';
+            const shownVersion = await AsyncStorage.getItem(CHANGELOG_SHOWN_VERSION_KEY);
 
             if (shownVersion !== currentVersion) {
                 setTimeout(() => {
-                    ThemedAlertHelper.alert(
-                        t('alerts.enjoyingApp'),
-                        t('alerts.starRequest'),
-                        [
-                            {
-                                text: t('common.later'),
-                                style: 'cancel',
-                                onPress: async () => {
-                                }
-                            },
-                            {
-                                text: '⭐ ' + t('alerts.giveStars'),
-                                onPress: async () => {
-                                    await AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
-                                    Linking.openURL(GITHUB_REPO_URL);
-                                }
-                            },
-                        ]
-                    );
-                    AsyncStorage.setItem(STAR_ALERT_VERSION_KEY, currentVersion);
-                }, 5000);
+                    ChangelogHelper.show();
+                    AsyncStorage.setItem(CHANGELOG_SHOWN_VERSION_KEY, currentVersion);
+                }, 3000);
             }
         } catch (error) {
-            console.error('Error checking for updates:', error);
+            console.error('Error checking for changelog:', error);
         }
     };
 
@@ -180,6 +161,8 @@ export default function RootLayout() {
         const initializeApp = async () => {
             initAdMob();
             initializeLanguage();
+            // simulasi changelog
+            // await AsyncStorage.removeItem('changelog_shown_version');
 
             checkForUpdates();
             requestNotificationPermissions();
@@ -204,7 +187,9 @@ export default function RootLayout() {
                         await autoLogin();
                     }
                 }
-                checkAndShowStarRequest();
+                checkAndShowChangelog();
+            } else {
+                checkAndShowChangelog();
             }
             setAuthReady(true);
         };
@@ -286,6 +271,18 @@ export default function RootLayout() {
 
             if (nextAppState.match(/inactive|background/)) {
                 stopSessionKeepAlive();
+
+                // Call modem API logout to reduce modem load when app goes to background
+                const { credentials, isAuthenticated } = useAuthStore.getState();
+                if (credentials && isAuthenticated) {
+                    try {
+                        const { ModemAPIClient } = await import('@/services/api.service');
+                        const client = new ModemAPIClient(credentials.modemIp);
+                        await client.logout();
+                    } catch {
+                        // Ignore — modem may be unreachable
+                    }
+                }
             }
         };
 
@@ -388,6 +385,7 @@ export default function RootLayout() {
                 />
 
                 <AdblockAlertModal />
+                <ChangelogModal />
             </KeyboardProvider>
         </GestureHandlerRootView>
     );

@@ -5,6 +5,15 @@ export interface ModemCredentials {
   lastLogin?: number;
 }
 
+export interface ModemProfile {
+  id: string;
+  name: string;
+  modemIp: string;
+  username: string;
+  lastLogin?: number;
+  isActive: boolean;
+}
+
 export interface ModemInfo {
   deviceName: string;
   serialNumber: string;

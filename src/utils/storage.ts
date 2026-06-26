@@ -1,8 +1,10 @@
 import * as SecureStore from 'expo-secure-store';
-import { ModemCredentials } from '@/types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { ModemCredentials, ModemProfile } from '@/types';
 
 const CREDENTIALS_KEY = 'modem_credentials';
 const SESSION_STATE_KEY = 'session_state';
+const MODEM_PROFILES_KEY = 'modem_profiles';
 
 export interface SessionState {
   lastSuccessfulLogin: number;
@@ -100,7 +102,6 @@ export const isSessionLikelyValid = async (): Promise<boolean> => {
   }
 };
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { SignalInfo, NetworkInfo, TrafficStats, ModemStatus, WanInfo, MobileDataStatus } from '@/types';
 
 const MODEM_DATA_CACHE_KEY = 'modem_data_cache';
@@ -155,4 +156,58 @@ export const clearModemDataCache = async (): Promise<void> => {
   } catch (error) {
     console.error('Error clearing modem data cache:', error);
   }
+};
+
+// ── Modem Profile Storage ─────────────────────────────────────────────────────
+
+const profilePasswordKey = (id: string) => `modem_profile_password_${id}`;
+
+export const getModemProfiles = async (): Promise<ModemProfile[]> => {
+  try {
+    const raw = await AsyncStorage.getItem(MODEM_PROFILES_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (error) {
+    console.error('Error getting modem profiles:', error);
+    return [];
+  }
+};
+
+export const saveModemProfiles = async (profiles: ModemProfile[]): Promise<void> => {
+  try {
+    await AsyncStorage.setItem(MODEM_PROFILES_KEY, JSON.stringify(profiles));
+  } catch (error) {
+    console.error('Error saving modem profiles:', error);
+    throw error;
+  }
+};
+
+export const getModemProfilePassword = async (id: string): Promise<string> => {
+  try {
+    return (await SecureStore.getItemAsync(profilePasswordKey(id))) || '';
+  } catch (error) {
+    console.error('Error getting profile password:', error);
+    return '';
+  }
+};
+
+export const saveModemProfilePassword = async (id: string, password: string): Promise<void> => {
+  try {
+    await SecureStore.setItemAsync(profilePasswordKey(id), password);
+  } catch (error) {
+    console.error('Error saving profile password:', error);
+    throw error;
+  }
+};
+
+export const deleteModemProfilePassword = async (id: string): Promise<void> => {
+  try {
+    await SecureStore.deleteItemAsync(profilePasswordKey(id));
+  } catch (error) {
+    console.error('Error deleting profile password:', error);
+  }
+};
+
+export const getActiveModemProfile = async (): Promise<ModemProfile | null> => {
+  const profiles = await getModemProfiles();
+  return profiles.find((p) => p.isActive) || null;
 };
