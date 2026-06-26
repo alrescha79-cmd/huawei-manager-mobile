@@ -713,7 +713,16 @@
     "adblockNoticeTitle": "AdBlock Notice",
     "adblockNoticeMessage": "Please make sure you are not using an ad blocker to enjoy all the features of this app.",
     "failedToLoad": "Failed to load advertisement. Please check your internet connection or disable your ad blocker.",
-    "adServerConnectionFailed": "Failed to connect to ad server. If you are using an ad blocker or custom DNS (like AdGuard), please disable it to load ads and support the app."
+    "adServerConnectionFailed": "Failed to connect to ad server. If you are using an ad blocker or custom DNS (like AdGuard), please disable it to load ads and support the app.",
+    "modalTitle": "Adblocker Detected! 🛑",
+    "modalDescription": "We detected an active Adblocker. Please support the developer by disabling your Adblocker.",
+    "stepsTitle": "Easy Steps to Disable:",
+    "step1": "Turn off VPN, Adblocker, or private DNS (like AdGuard) in your device settings.",
+    "step2": "Allow connections to the ad server.",
+    "step3": "Reopen the app or reload the page.",
+    "btnIHaveDisabled": "I Have Disabled Adblock",
+    "btnLater": "Later",
+    "guaranteeNotice": "We guarantee your reading comfort by limiting the number of ads displayed. Thank you for your understanding!"
   }
 }
 

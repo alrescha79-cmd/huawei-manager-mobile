@@ -10,6 +10,7 @@ import mobileAds, {
 } from 'react-native-google-mobile-ads';
 import Constants from 'expo-constants';
 import { ThemedAlertHelper } from '@/components/ThemedAlert';
+import { AdblockAlertHelper } from '@/components/AdblockAlertModal';
 import { useThemeStore } from '@/stores/theme.store';
 import en from '@/i18n/en.json';
 import id from '@/i18n/id.json';
@@ -58,19 +59,11 @@ let isInterstitialLoading = false;
 let isRewardedLoading = false;
 let isAppOpenLoading = false;
 
-let hasShownAdblockAlert = false;
-
 function handleAdError(error: any) {
     if (!error) return;
     const errMsg = error?.message || String(error);
     if (errMsg.includes('doubleclick') || errMsg.includes('ad server') || errMsg.includes('Failed to connect')) {
-        if (!hasShownAdblockAlert) {
-            hasShownAdblockAlert = true;
-            ThemedAlertHelper.alert(
-                getTranslation('ads.blockerDetected') || 'Ad blocker detected',
-                getTranslation('ads.adServerConnectionFailed') || 'Failed to connect to ad server. If you are using an ad blocker or custom DNS (like AdGuard), please disable it to load ads and support the app.'
-            );
-        }
+        AdblockAlertHelper.show();
     }
 }
 

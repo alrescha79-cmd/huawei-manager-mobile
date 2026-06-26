@@ -111,25 +111,6 @@ export default function HomeScreen() {
       }
     };
     loadLastClearedDate();
-
-    // Show warning about adblockers on startup with auto close
-    let timerDismiss: NodeJS.Timeout;
-    const timerShow = setTimeout(() => {
-      ThemedAlertHelper.alert(
-        t('ads.adblockNoticeTitle'),
-        t('ads.adblockNoticeMessage'),
-        [{ text: t('common.ok') }]
-      );
-
-      timerDismiss = setTimeout(() => {
-        ThemedAlertHelper.dismiss();
-      }, 4000); // Auto close after 4 seconds
-    }, 3000); // Delay of 3 seconds to show
-
-    return () => {
-      clearTimeout(timerShow);
-      if (timerDismiss) clearTimeout(timerDismiss);
-    };
   }, []);
 
   useEffect(() => {
