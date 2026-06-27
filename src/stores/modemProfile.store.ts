@@ -183,13 +183,30 @@ export const useModemProfileStore = create<ModemProfileState>((set, get) => ({
     },
 
     ensureProfile: async ({ modemIp, username, password }) => {
-        const { profiles, addProfile } = get();
+        // Load profiles first if not loaded yet
+        await get().loadProfiles();
+        const { profiles } = get();
 
-        // Skip if limit reached or this modemIp already has a saved profile
+        // 1. Check if a profile with this IP already exists
+        const existingProfile = profiles.find((p) => p.modemIp === modemIp);
+
+        if (existingProfile) {
+            // If it exists but is not marked active, make it active
+            if (!existingProfile.isActive) {
+                const updatedProfiles = profiles.map((p) => ({
+                    ...p,
+                    isActive: p.id === existingProfile.id,
+                }));
+                await saveModemProfiles(updatedProfiles);
+                set({ profiles: updatedProfiles });
+            }
+            return;
+        }
+
+        // 2. Skip if limit reached
         if (profiles.length >= MAX_PROFILES) return;
-        if (profiles.some((p) => p.modemIp === modemIp)) return;
 
-        // Generate next available default name: Modem 1, Modem 2, ...
+        // 3. Generate next available default name: Modem 1, Modem 2, ...
         const existingNumbers = profiles
             .map((p) => {
                 const match = p.name.match(/^Modem (\d+)$/);
@@ -202,6 +219,23 @@ export const useModemProfileStore = create<ModemProfileState>((set, get) => ({
             nextNumber++;
         }
 
-        await addProfile({ name: `Modem ${nextNumber}`, modemIp, username, password });
+        // 4. Add the profile. Mark it active since it matches the current active session/credentials
+        const id = `profile_${Date.now()}`;
+        const name = `Modem ${nextNumber}`;
+        const newProfile: ModemProfile = {
+            id,
+            name,
+            modemIp,
+            username,
+            lastLogin: Date.now(),
+            isActive: true, // Make it active since it's the active one
+        };
+
+        // Mark all other profiles as inactive
+        const updatedProfiles = [...profiles.map((p) => ({ ...p, isActive: false })), newProfile];
+
+        await saveModemProfilePassword(id, password);
+        await saveModemProfiles(updatedProfiles);
+        set({ profiles: updatedProfiles });
     },
 }));
