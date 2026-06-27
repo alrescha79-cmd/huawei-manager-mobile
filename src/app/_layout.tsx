@@ -169,6 +169,18 @@ export default function RootLayout() {
             await loadCredentials();
             const credentials = useAuthStore.getState().credentials;
             if (credentials) {
+                // Auto-migrate legacy credentials to multi-profile store on app update
+                try {
+                    const { useModemProfileStore } = await import('@/stores/modemProfile.store');
+                    await useModemProfileStore.getState().ensureProfile({
+                        modemIp: credentials.modemIp,
+                        username: credentials.username,
+                        password: credentials.password,
+                    });
+                } catch (err) {
+                    console.error('Failed to auto-migrate legacy profile:', err);
+                }
+
                 const result = await useAuthStore.getState().tryQuietSessionRestore();
 
                 if (!result.success) {
@@ -271,18 +283,6 @@ export default function RootLayout() {
 
             if (nextAppState.match(/inactive|background/)) {
                 stopSessionKeepAlive();
-
-                // Call modem API logout to reduce modem load when app goes to background
-                const { credentials, isAuthenticated } = useAuthStore.getState();
-                if (credentials && isAuthenticated) {
-                    try {
-                        const { ModemAPIClient } = await import('@/services/api.service');
-                        const client = new ModemAPIClient(credentials.modemIp);
-                        await client.logout();
-                    } catch {
-                        // Ignore — modem may be unreachable
-                    }
-                }
             }
         };
 
