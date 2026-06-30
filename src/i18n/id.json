@@ -477,6 +477,8 @@
     "appUpToDate": "Aplikasi sudah terbaru",
     "updateCheckFailed": "Gagal memeriksa pembaruan",
     "checkingUpdate": "Memeriksa pembaruan...",
+    "downloadingUpdate": "Mengunduh pembaruan...",
+    "downloadFailed": "Gagal mengunduh atau memasang pembaruan. Silakan coba lagi atau unduh secara manual.",
     "latestVersion": "Versi Terbaru",
     "tryAgain": "Coba Lagi",
     "viewReleaseNotes": "Lihat Catatan Rilis",

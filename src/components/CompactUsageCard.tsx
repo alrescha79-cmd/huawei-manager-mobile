@@ -111,16 +111,18 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
             <View style={styles.header}>
                 <View style={styles.titleRow}>
                     <MaterialIcons name="insert-chart" size={18} color={primaryColor} style={{ marginRight: 8 }} />
-                    <TextTicker
-                        style={StyleSheet.flatten([typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }])}
-                        duration={4000}
-                        loop
-                        bounce
-                        repeatSpacer={50}
-                        marqueeDelay={1000}
-                    >
-                        {t('home.dataStatistics')}
-                    </TextTicker>
+                    <View style={{ flex: 1, overflow: 'hidden' }}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
+                            {t('home.dataStatistics')}
+                        </TextTicker>
+                    </View>
                 </View>
 
                 <View style={[styles.tabsContainer, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
@@ -291,6 +293,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
+        width: '100%',
     },
     tabsContainer: {
         flexDirection: 'row',
@@ -391,7 +394,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         flex: 1,
+        flexShrink: 1,
         marginRight: 8,
+        overflow: 'hidden',
     },
     unitLabelContainer: {
         flexShrink: 1,

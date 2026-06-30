@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     Modal,
     View,
@@ -20,6 +21,9 @@ interface AdblockAlertModalProps {
     onClose?: () => void;
 }
 
+const ADBLOCK_ALERT_KEY = 'last_adblock_alert_time';
+const COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1 hours
+
 let adblockListener: ((visible: boolean) => void) | null = null;
 let hasShownAdblockAlert = false;
 
@@ -28,11 +32,27 @@ export const setAdblockListener = (listener: (visible: boolean) => void) => {
 };
 
 export const AdblockAlertHelper = {
-    show: () => {
-        if (!hasShownAdblockAlert) {
+    show: async () => {
+        try {
+            const lastShownStr = await AsyncStorage.getItem(ADBLOCK_ALERT_KEY);
+            const now = Date.now();
+            if (lastShownStr) {
+                const lastShown = parseInt(lastShownStr, 10);
+                if (now - lastShown < COOLDOWN_MS) {
+                    return;
+                }
+            }
+            await AsyncStorage.setItem(ADBLOCK_ALERT_KEY, now.toString());
             hasShownAdblockAlert = true;
             if (adblockListener) {
                 adblockListener(true);
+            }
+        } catch (e) {
+            if (!hasShownAdblockAlert) {
+                hasShownAdblockAlert = true;
+                if (adblockListener) {
+                    adblockListener(true);
+                }
             }
         }
     },
@@ -79,7 +99,6 @@ export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
 
     const handleClose = () => {
         AdblockAlertHelper.hide();
-        AdblockAlertHelper.reset();
     };
 
     if (!visible) return null;
