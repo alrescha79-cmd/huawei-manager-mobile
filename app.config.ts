@@ -82,6 +82,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             predictiveBackGestureEnabled: false,
             package: isDev ? 'com.alrescha79.hmmobile.dev' : 'com.alrescha79.hmmobile',
             googleServicesFile: './google-services.json',
+            permissions: [
+                'android.permission.REQUEST_INSTALL_PACKAGES',
+            ],
         },
         web: {
             favicon: './assets/logo.png',

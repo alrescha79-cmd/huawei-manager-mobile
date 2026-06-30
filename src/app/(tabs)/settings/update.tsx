@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Alert, Platform } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import Animated, {
@@ -13,6 +13,8 @@ import Animated, {
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import Constants from 'expo-constants';
+import * as FileSystem from 'expo-file-system/legacy';
+import * as IntentLauncher from 'expo-intent-launcher';
 import { MeshGradientBackground, PageHeader, AnimatedScreen, AdNative } from '@/components';
 
 const GITHUB_OWNER = 'alrescha79-cmd';
@@ -57,6 +59,10 @@ export default function UpdateScreen() {
     const [preReleaseAvailable, setPreReleaseAvailable] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [hasChecked, setHasChecked] = useState(false);
+
+    const [downloading, setDownloading] = useState(false);
+    const [downloadProgress, setDownloadProgress] = useState(0);
+    const [downloadResumable, setDownloadResumable] = useState<FileSystem.DownloadResumable | null>(null);
 
     const rotation = useSharedValue(0);
 
@@ -167,9 +173,72 @@ export default function UpdateScreen() {
         }
     }, []);
 
-    const handleDownload = () => {
-        if (releaseInfo?.downloadUrl) {
-            Linking.openURL(releaseInfo.downloadUrl);
+    const handleDownloadAndInstall = async (url: string, versionName: string) => {
+        if (Platform.OS !== 'android') {
+            Linking.openURL(url);
+            return;
+        }
+
+        try {
+            setDownloading(true);
+            setDownloadProgress(0);
+
+            const filename = `huawei-manager-v${versionName}.apk`;
+            const localUri = `${FileSystem.cacheDirectory}${filename}`;
+
+            const fileInfo = await FileSystem.getInfoAsync(localUri);
+            if (fileInfo.exists) {
+                await FileSystem.deleteAsync(localUri, { idempotent: true });
+            }
+
+            const resumable = FileSystem.createDownloadResumable(
+                url,
+                localUri,
+                {},
+                (downloadProgressData) => {
+                    const progress = downloadProgressData.totalBytesWritten / downloadProgressData.totalBytesExpectedToWrite;
+                    setDownloadProgress(Math.round(progress * 100));
+                }
+            );
+
+            setDownloadResumable(resumable);
+
+            const result = await resumable.downloadAsync();
+            setDownloading(false);
+
+            if (result && result.uri) {
+                const contentUri = await FileSystem.getContentUriAsync(result.uri);
+                await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+                    data: contentUri,
+                    type: 'application/vnd.android.package-archive',
+                    flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+                });
+            } else {
+                throw new Error('Download failed: result is empty');
+            }
+        } catch (err: any) {
+            console.error('Download/Install failed:', err);
+            setDownloading(false);
+            Alert.alert(
+                t('common.error') || 'Error',
+                t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.',
+                [
+                    { text: t('common.ok') || 'OK' },
+                    { text: t('settings.downloadUpdate') || 'Open Browser', onPress: () => Linking.openURL(url) }
+                ]
+            );
+        }
+    };
+
+    const handleCancelDownload = async () => {
+        if (downloadResumable) {
+            try {
+                await downloadResumable.pauseAsync();
+                setDownloading(false);
+                setDownloadProgress(0);
+            } catch (e) {
+                console.error('Error pausing download:', e);
+            }
         }
     };
 
@@ -242,89 +311,116 @@ export default function UpdateScreen() {
                                     {t('settings.appVersion')}: v{Constants.expoConfig?.version}
                                 </Text>
 
-                                {/* Stable Release Section */}
-                                {updateAvailable && releaseInfo && (
-                                    <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
-                                        <View style={styles.releaseHeader}>
-                                            <Text style={[typography.headline, { color: colors.text }]}>
-                                                v{releaseInfo.version}
-                                            </Text>
-                                            <View style={[styles.badge, { backgroundColor: colors.success }]}>
-                                                <Text style={[typography.caption2, { color: '#FFF', fontWeight: '600' }]}>
-                                                    {t('settings.stableBadge')}
-                                                </Text>
-                                            </View>
-                                        </View>
-                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 12 }]}>
-                                            {t('settings.updateAvailable')}
+                                {downloading ? (
+                                    <View style={[styles.downloadCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+                                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginBottom: 8 }]}>
+                                            {t('settings.downloadingUpdate')}
                                         </Text>
-                                        <View style={styles.releaseActions}>
+                                        <View style={[styles.progressBarContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }]}>
+                                            <View style={[styles.progressBar, { width: `${downloadProgress}%`, backgroundColor: colors.primary }]} />
+                                        </View>
+                                        <View style={styles.progressInfoRow}>
+                                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                                                {downloadProgress}%
+                                            </Text>
                                             <TouchableOpacity
-                                                style={[styles.smallButton, { backgroundColor: colors.primary }]}
-                                                onPress={() => releaseInfo.downloadUrl && Linking.openURL(releaseInfo.downloadUrl)}
+                                                onPress={handleCancelDownload}
+                                                style={{ paddingVertical: 4, paddingHorizontal: 8 }}
                                             >
-                                                <MaterialIcons name="download" size={16} color="#FFF" />
-                                                <Text style={[typography.caption1, { color: '#FFF', marginLeft: 4 }]}>
-                                                    {t('settings.downloadUpdate')}
+                                                <Text style={[typography.caption1, { color: colors.error, fontWeight: '600' }]}>
+                                                    {t('common.cancel')}
                                                 </Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.smallButtonOutline, { borderColor: colors.border }]}
-                                                onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${releaseInfo.tagName}`)}
-                                            >
-                                                <Text style={[typography.caption1, { color: colors.text }]}>{t('settings.viewReleaseNotes')}</Text>
                                             </TouchableOpacity>
                                         </View>
                                     </View>
-                                )}
-
-                                {/* If only stable is up to date but pre-release available */}
-                                {!updateAvailable && preReleaseAvailable && (
-                                    <Text style={[typography.caption1, { color: colors.success, marginBottom: 8, textAlign: 'center' }]}>
-                                        ✓ {t('settings.stableUpToDate')}
-                                    </Text>
-                                )}
-
-                                {/* Pre-release Section */}
-                                {preReleaseAvailable && preReleaseInfo && (
-                                    <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.warning, marginTop: updateAvailable ? 12 : 0 }]}>
-                                        <View style={styles.releaseHeader}>
-                                            <Text style={[typography.headline, { color: colors.text }]}>
-                                                {preReleaseInfo.version ? `v${preReleaseInfo.version}` : preReleaseInfo.tagName}
-                                            </Text>
-                                            <View style={[styles.badge, { backgroundColor: colors.warning }]}>
-                                                <Text style={[typography.caption2, { color: '#FFF', fontWeight: '600' }]}>
-                                                    {t('settings.preReleaseBadge')}
+                                ) : (
+                                    <>
+                                        {/* Stable Release Section */}
+                                        {updateAvailable && releaseInfo && (
+                                            <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+                                                <View style={styles.releaseHeader}>
+                                                    <Text style={[typography.headline, { color: colors.text }]}>
+                                                        v{releaseInfo.version}
+                                                    </Text>
+                                                    <View style={[styles.badge, { backgroundColor: colors.success }]}>
+                                                        <Text style={[typography.caption2, { color: '#FFF', fontWeight: '600' }]}>
+                                                            {t('settings.stableBadge')}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 12 }]}>
+                                                    {t('settings.updateAvailable')}
                                                 </Text>
+                                                <View style={styles.releaseActions}>
+                                                    <TouchableOpacity
+                                                        style={[styles.smallButton, { backgroundColor: colors.primary }]}
+                                                        onPress={() => releaseInfo.downloadUrl && handleDownloadAndInstall(releaseInfo.downloadUrl, releaseInfo.version)}
+                                                    >
+                                                        <MaterialIcons name="download" size={16} color="#FFF" />
+                                                        <Text style={[typography.caption1, { color: '#FFF', marginLeft: 4 }]}>
+                                                            {t('settings.downloadUpdate')}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={[styles.smallButtonOutline, { borderColor: colors.border }]}
+                                                        onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${releaseInfo.tagName}`)}
+                                                    >
+                                                        <Text style={[typography.caption1, { color: colors.text }]}>{t('settings.viewReleaseNotes')}</Text>
+                                                    </TouchableOpacity>
+                                                </View>
                                             </View>
-                                        </View>
-                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 12 }]}>
-                                            {t('settings.preReleaseHint')}
-                                        </Text>
-                                        <View style={styles.releaseActions}>
-                                            <TouchableOpacity
-                                                style={[styles.smallButton, { backgroundColor: colors.warning }]}
-                                                onPress={() => preReleaseInfo.downloadUrl && Linking.openURL(preReleaseInfo.downloadUrl)}
-                                            >
-                                                <MaterialIcons name="download" size={16} color="#FFF" />
-                                                <Text style={[typography.caption1, { color: '#FFF', marginLeft: 4 }]}>
-                                                    {t('settings.downloadUpdate')}
+                                        )}
+
+                                        {/* If only stable is up to date but pre-release available */}
+                                        {!updateAvailable && preReleaseAvailable && (
+                                            <Text style={[typography.caption1, { color: colors.success, marginBottom: 8, textAlign: 'center' }]}>
+                                                ✓ {t('settings.stableUpToDate')}
+                                            </Text>
+                                        )}
+
+                                        {/* Pre-release Section */}
+                                        {preReleaseAvailable && preReleaseInfo && (
+                                            <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.warning, marginTop: updateAvailable ? 12 : 0 }]}>
+                                                <View style={styles.releaseHeader}>
+                                                    <Text style={[typography.headline, { color: colors.text }]}>
+                                                        {preReleaseInfo.version ? `v${preReleaseInfo.version}` : preReleaseInfo.tagName}
+                                                    </Text>
+                                                    <View style={[styles.badge, { backgroundColor: colors.warning }]}>
+                                                        <Text style={[typography.caption2, { color: '#FFF', fontWeight: '600' }]}>
+                                                            {t('settings.preReleaseBadge')}
+                                                        </Text>
+                                                    </View>
+                                                </View>
+                                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 12 }]}>
+                                                    {t('settings.preReleaseHint')}
                                                 </Text>
-                                            </TouchableOpacity>
-                                            <TouchableOpacity
-                                                style={[styles.smallButtonOutline, { borderColor: colors.border }]}
-                                                onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${preReleaseInfo.tagName}`)}
-                                            >
-                                                <Text style={[typography.caption1, { color: colors.text }]}>{t('settings.viewReleaseNotes')}</Text>
-                                            </TouchableOpacity>
-                                        </View>
-                                    </View>
+                                                <View style={styles.releaseActions}>
+                                                    <TouchableOpacity
+                                                        style={[styles.smallButton, { backgroundColor: colors.warning }]}
+                                                        onPress={() => preReleaseInfo.downloadUrl && handleDownloadAndInstall(preReleaseInfo.downloadUrl, preReleaseInfo.version || preReleaseInfo.tagName)}
+                                                    >
+                                                        <MaterialIcons name="download" size={16} color="#FFF" />
+                                                        <Text style={[typography.caption1, { color: '#FFF', marginLeft: 4 }]}>
+                                                            {t('settings.downloadUpdate')}
+                                                        </Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity
+                                                        style={[styles.smallButtonOutline, { borderColor: colors.border }]}
+                                                        onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${preReleaseInfo.tagName}`)}
+                                                    >
+                                                        <Text style={[typography.caption1, { color: colors.text }]}>{t('settings.viewReleaseNotes')}</Text>
+                                                    </TouchableOpacity>
+                                                </View>
+                                            </View>
+                                        )}
+                                    </>
                                 )}
 
 
                                 <TouchableOpacity
                                     style={[styles.buttonOutline, { borderColor: colors.border, marginTop: 16 }]}
                                     onPress={checkUpdate}
+                                    disabled={downloading}
                                 >
                                     <Text style={[typography.body, { color: colors.text }]}>
                                         {t('settings.checkAgain')}
@@ -430,5 +526,26 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         borderRadius: 8,
         borderWidth: 1,
+    },
+    downloadCard: {
+        padding: 16,
+        borderRadius: 12,
+        borderWidth: 2,
+        width: '100%',
+        marginBottom: 16,
+    },
+    progressBarContainer: {
+        height: 8,
+        borderRadius: 4,
+        overflow: 'hidden',
+        marginBottom: 8,
+    },
+    progressBar: {
+        height: '100%',
+    },
+    progressInfoRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
     },
 });

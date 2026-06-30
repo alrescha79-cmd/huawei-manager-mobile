@@ -12,7 +12,7 @@ interface QuickActionsCardProps {
     mobileDataEnabled: boolean;
     isTogglingData: boolean;
     isChangingIp: boolean;
-    isRunningCheck: boolean;
+    isRunningCheck: boolean;    
     onOpenBandModal: () => void;
     onChangeIp: () => void;
     onToggleMobileData: () => void;

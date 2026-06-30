@@ -42,6 +42,10 @@ interface ConnectionStatusCardProps {
     wanInfo?: {
         wanIPAddress?: string;
     };
+    trafficStats?: {
+        currentDownloadRate?: number;
+        currentUploadRate?: number;
+    };
 }
 
 /**
@@ -53,6 +57,7 @@ export function ConnectionStatusCard({
     networkInfo,
     modemStatus,
     wanInfo,
+    trafficStats,
 }: ConnectionStatusCardProps) {
     const { colors, typography } = useTheme();
 
@@ -82,32 +87,60 @@ export function ConnectionStatusCard({
     const networkType = getNetworkTypeText(networkInfo?.currentNetworkType || modemStatus?.currentNetworkType);
     const isConnected = modemStatus?.connectionStatus === '901';
 
+    const formatSpeed = (bps: number): string => {
+        if (bps === 0) return '0 bps';
+        const k = 1000;
+        const sizes = ['bps', 'Kbps', 'Mbps', 'Gbps'];
+        const i = Math.floor(Math.log(bps) / Math.log(k));
+        const value = (bps / Math.pow(k, i)).toFixed(1);
+        return `${value} ${sizes[i]}`;
+    };
+
     return (
         <CollapsibleCard title={t('home.connectionStatus')}>
             <View style={styles.connectionMainRow}>
                 <View style={styles.connectionLeftSection}>
                     <SignalBar strength={getSignalBars()} label="" />
                     <View style={styles.connectionSignalLabels}>
-                        <TextTicker
-                            style={StyleSheet.flatten([typography.subheadline, { color: colors.primary, fontWeight: '600' }])}
-                            duration={4000}
-                            loop
-                            bounce
-                            repeatSpacer={50}
-                            marqueeDelay={1000}
-                        >
-                            {getStrengthLabel()}
-                        </TextTicker>
-                        <TextTicker
-                            style={StyleSheet.flatten([typography.headline, { color: colors.text, fontWeight: '600' }])}
-                            duration={4000}
-                            loop
-                            bounce
-                            repeatSpacer={50}
-                            marqueeDelay={1000}
-                        >
-                            {networkInfo?.shortName || networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
-                        </TextTicker>
+                        <View style={{ flex: 1, overflow: 'hidden', justifyContent: 'center', width: '100%' }}>
+                            <TextTicker
+                                style={StyleSheet.flatten([typography.subheadline, { color: colors.primary, fontWeight: '600' }])}
+                                duration={4000}
+                                loop
+                                bounce
+                                repeatSpacer={50}
+                                marqueeDelay={1000}
+                            >
+                                {getStrengthLabel()}
+                            </TextTicker>
+                        </View>
+                        <View style={{ flex: 1, overflow: 'hidden', justifyContent: 'center', width: '100%', marginTop: 2 }}>
+                            <TextTicker
+                                style={StyleSheet.flatten([typography.headline, { color: colors.text, fontWeight: '600' }])}
+                                duration={4000}
+                                loop
+                                bounce
+                                repeatSpacer={50}
+                                marqueeDelay={1000}
+                            >
+                                {networkInfo?.shortName || networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
+                            </TextTicker>
+                        </View>
+                    </View>
+                </View>
+
+                <View style={styles.connectionCenterSection}>
+                    <View style={styles.speedRow}>
+                        <MaterialIcons name="arrow-downward" size={14} color="#22d3ee" />
+                        <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginLeft: 2 }]} numberOfLines={1}>
+                            {formatSpeed((trafficStats?.currentDownloadRate || 0) * 8)}
+                        </Text>
+                    </View>
+                    <View style={[styles.speedRow, { marginTop: 4 }]}>
+                        <MaterialIcons name="arrow-upward" size={14} color="#e879f9" />
+                        <Text style={[typography.caption1, { color: colors.text, fontWeight: '600', marginLeft: 2 }]} numberOfLines={1}>
+                            {formatSpeed((trafficStats?.currentUploadRate || 0) * 8)}
+                        </Text>
                     </View>
                 </View>
 
@@ -259,14 +292,29 @@ const styles = StyleSheet.create({
     connectionLeftSection: {
         flexDirection: 'row',
         alignItems: 'center',
-        flex: 1,
+        flex: 1.4,
+        flexShrink: 1,
+        overflow: 'hidden',
     },
     connectionSignalLabels: {
         marginLeft: 12,
         flex: 1,
+        flexShrink: 1,
+        overflow: 'hidden',
+    },
+    connectionCenterSection: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingHorizontal: 4,
+        flex: 0.8,
     },
     connectionRightSection: {
         alignItems: 'flex-end',
+        flex: 0.8,
+    },
+    speedRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     networkTypeBadge: {
         paddingHorizontal: 8,

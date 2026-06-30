@@ -327,7 +327,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     scrollArea: {
-        maxHeight: 400,
+        flex: 1,
         marginBottom: 20,
         borderRadius: 12,
         borderWidth: 1,

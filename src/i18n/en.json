@@ -475,6 +475,8 @@
     "appUpToDate": "App is up to date",
     "updateCheckFailed": "Failed to check for updates",
     "checkingUpdate": "Checking for updates...",
+    "downloadingUpdate": "Downloading update...",
+    "downloadFailed": "Failed to download or install update. Please try again or download manually.",
     "latestVersion": "Latest Version",
     "tryAgain": "Try Again",
     "viewReleaseNotes": "View Release Notes",

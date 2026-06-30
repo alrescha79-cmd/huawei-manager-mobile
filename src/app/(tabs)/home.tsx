@@ -768,6 +768,7 @@ export default function HomeScreen() {
               networkInfo={networkInfo}
               modemStatus={modemStatus}
               wanInfo={wanInfo}
+              trafficStats={trafficStats}
             />
           )}
 
