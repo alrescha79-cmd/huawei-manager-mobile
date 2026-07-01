@@ -22,6 +22,17 @@ import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initAdMob, showAppOpenAd } from '@/services/ad.service';
 
 
+// const getFcmToken = async () => {
+//   try {
+//     const deviceToken = await Notifications.getDevicePushTokenAsync();
+//     console.log("🔥 FCM REGISTRATION TOKEN ANDROID:");
+//     console.log(deviceToken.data);
+//   } catch (error) {
+//     console.error("Gagal mengambil token:", error);
+//   }
+// };
+// getFcmToken();
+
 SplashScreen.preventAutoHideAsync();
 
 interface AlertButton {
