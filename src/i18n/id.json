@@ -127,6 +127,13 @@
     "reportIssueMessage": "Pilih cara Anda ingin melaporkan masalah"
   },
   "home": {
+    "provider": "Provider",
+    "networkSpeed": "Kecepatan Jaringan",
+    "powerSource": "Aliran Daya",
+    "frequencyBand": "Frekuensi / Band",
+    "bandwidth": "Bandwidth",
+    "acPower": "Daya AC",
+    "battery": "Baterai",
     "connectionStatus": "Status Koneksi",
     "connected": "Terhubung",
     "disconnected": "Terputus",
@@ -190,6 +197,8 @@
     "signalFair": "Cukup",
     "signalPoor": "Lemah",
     "signalVeryPoor": "Sangat Lemah",
+    "signalWeak": "Lemah",
+    "signalPerfect": "Sempurna",
     "statusConnected": "Terhubung",
     "statusDisconnected": "Terputus",
     "statusConnecting": "Menyambung",

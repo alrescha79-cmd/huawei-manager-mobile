@@ -10,6 +10,7 @@ import {
   Platform,
   TextInput,
   Linking,
+  AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
@@ -67,7 +68,9 @@ export default function SMSScreen() {
       loadData(service);
 
       const intervalId = setInterval(() => {
-        loadDataSilent(service);
+        if (AppState.currentState === 'active') {
+          loadDataSilent(service);
+        }
       }, 10000);
 
       return () => clearInterval(intervalId);

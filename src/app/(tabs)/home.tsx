@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Platform,
   StatusBar,
+  AppState,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -159,11 +160,15 @@ export default function HomeScreen() {
       checkDebugReminder();
 
       const fastIntervalId = setInterval(() => {
-        loadTrafficOnly(service);
+        if (AppState.currentState === 'active') {
+          loadTrafficOnly(service);
+        }
       }, 1000);
 
       const slowIntervalId = setInterval(() => {
-        loadDataSilent(service);
+        if (AppState.currentState === 'active') {
+          loadDataSilent(service);
+        }
       }, 5000);
 
       return () => {
@@ -575,7 +580,6 @@ export default function HomeScreen() {
       ]);
       setDiagnosisSummary(t(`home.${result.summaryKey}`));
       setShowDiagnosisModal(true);
-      showInterstitial(() => { });
     } catch (error: any) {
       console.error('Error running one click check:', error);
       if (error?.message?.includes('Network Error') || error?.code === 'ERR_NETWORK') {
@@ -868,7 +872,12 @@ export default function HomeScreen() {
           {/* Diagnosis Result Modal */}
           <DiagnosisResultModal
             visible={showDiagnosisModal}
-            onClose={() => setShowDiagnosisModal(false)}
+            onClose={() => {
+              setShowDiagnosisModal(false);
+              if (diagnosisTitle === t('home.oneClickCheckResult')) {
+                showInterstitial(() => { });
+              }
+            }}
             title={diagnosisTitle}
             results={diagnosisResults}
             summary={diagnosisSummary}

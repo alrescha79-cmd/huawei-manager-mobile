@@ -127,6 +127,13 @@
     "reportIssueMessage": "Choose how you would like to report the issue"
   },
   "home": {
+    "provider": "Provider",
+    "networkSpeed": "Network Speed",
+    "powerSource": "Power Source",
+    "frequencyBand": "Frequency / Band",
+    "bandwidth": "Bandwidth",
+    "acPower": "AC Power",
+    "battery": "Battery",
     "connectionStatus": "Connection Status",
     "connected": "Connected",
     "disconnected": "Disconnected",
@@ -190,6 +197,8 @@
     "signalFair": "Fair",
     "signalPoor": "Poor",
     "signalVeryPoor": "Very Poor",
+    "signalWeak": "Weak",
+    "signalPerfect": "Perfect",
     "statusConnected": "Connected",
     "statusDisconnected": "Disconnected",
     "statusConnecting": "Connecting",
