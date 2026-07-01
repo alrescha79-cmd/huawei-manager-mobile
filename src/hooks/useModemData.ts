@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
@@ -155,11 +156,15 @@ export function useModemData({ t, durationUnits }: UseModemDataOptions): UseMode
             checkDebugReminder();
 
             const fastIntervalId = setInterval(() => {
-                loadTrafficOnly(service);
+                if (AppState.currentState === 'active') {
+                    loadTrafficOnly(service);
+                }
             }, 1000);
 
             const slowIntervalId = setInterval(() => {
-                loadDataSilent(service);
+                if (AppState.currentState === 'active') {
+                    loadDataSilent(service);
+                }
             }, 5000);
 
             return () => {

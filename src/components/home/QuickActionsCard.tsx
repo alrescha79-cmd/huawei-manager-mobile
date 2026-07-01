@@ -42,19 +42,28 @@ export function QuickActionsCard({
 }: QuickActionsCardProps) {
     const { colors, typography, isDark } = useTheme();
 
+    const itemBg = isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)';
+    const itemBorder = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+
     return (
-        <CollapsibleCard title={t('home.actions')}>
-            <View style={styles.quickActionsRow}>
+        <CollapsibleCard 
+            title={t('home.actions').toUpperCase()}
+            titleStyle={styles.cardTitle}
+        >
+            {/* Top row - Large actions */}
+            <View style={styles.topRow}>
+                {/* Pilih Band */}
                 <TouchableOpacity
-                    style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                    style={[styles.largeAction, { backgroundColor: itemBg, borderColor: itemBorder }]}
                     onPress={onOpenBandModal}
+                    activeOpacity={0.7}
                 >
-                    <View style={[styles.quickActionIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.background }]}>
-                        <MaterialIcons name="settings-input-antenna" size={20} color={colors.primary} />
+                    <View style={[styles.largeIconContainer, { backgroundColor: 'rgba(167, 139, 250, 0.15)' }]}>
+                        <MaterialIcons name="tune" size={20} color="#a78bfa" />
                     </View>
-                    <View style={styles.quickActionLargeContent}>
+                    <View style={styles.largeActionContent}>
                         <TextTicker
-                            style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '600' }])}
+                            style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '700' }])}
                             duration={4000}
                             loop
                             bounce
@@ -64,7 +73,7 @@ export function QuickActionsCard({
                             {t('home.setBand')}
                         </TextTicker>
                         <TextTicker
-                            style={StyleSheet.flatten([typography.caption2, { color: colors.textSecondary }])}
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.textSecondary, marginTop: 2 }])}
                             duration={6000}
                             loop
                             bounce
@@ -74,25 +83,27 @@ export function QuickActionsCard({
                             {selectedBands.length > 0 ? selectedBands.join(', ') : t('common.loading')}
                         </TextTicker>
                     </View>
-                    <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
+                    <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
 
+                {/* Ganti IP */}
                 <TouchableOpacity
-                    style={[styles.quickActionLarge, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                    style={[styles.largeAction, { backgroundColor: itemBg, borderColor: itemBorder }]}
                     onPress={onChangeIp}
                     disabled={isChangingIp}
+                    activeOpacity={0.7}
                 >
-                    <View style={[styles.quickActionIcon, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : colors.background }]}>
+                    <View style={[styles.largeIconContainer, { backgroundColor: 'rgba(34, 211, 238, 0.15)' }]}>
                         {isChangingIp ? (
-                            <BouncingDots size="small" color={colors.primary} />
+                            <BouncingDots size="small" color="#22d3ee" />
                         ) : (
-                            <MaterialIcons name="sync" size={20} color={colors.primary} />
+                            <MaterialIcons name="sync" size={20} color="#22d3ee" />
                         )}
                     </View>
-                    <View style={styles.quickActionLargeContent}>
+                    <View style={styles.largeActionContent}>
                         <TextTicker
-                            style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '600' }])}
-                            duration={6000}
+                            style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '700' }])}
+                            duration={4000}
                             loop
                             bounce
                             repeatSpacer={50}
@@ -101,7 +112,7 @@ export function QuickActionsCard({
                             {t('home.changeIp')}
                         </TextTicker>
                         <TextTicker
-                            style={StyleSheet.flatten([typography.caption2, { color: colors.textSecondary }])}
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.textSecondary, marginTop: 2 }])}
                             duration={6000}
                             loop
                             bounce
@@ -111,109 +122,138 @@ export function QuickActionsCard({
                             {wanIpAddress || '...'}
                         </TextTicker>
                     </View>
+                    <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
             </View>
 
-            <View style={styles.quickActionsRow}>
+            {/* Bottom row - Small actions */}
+            <View style={styles.bottomRow}>
+                {/* Data Seluler */}
                 <TouchableOpacity
                     style={[
-                        styles.quickActionSmall,
+                        styles.smallAction,
                         {
-                            backgroundColor: mobileDataEnabled ? colors.primary : colors.card,
-                            borderColor: colors.border,
+                            backgroundColor: mobileDataEnabled ? colors.primary : itemBg,
+                            borderColor: mobileDataEnabled ? colors.primary : itemBorder,
                             borderWidth: 1,
                         }
                     ]}
                     onPress={onToggleMobileData}
                     disabled={isTogglingData}
+                    activeOpacity={0.7}
                 >
                     {isTogglingData ? (
                         <BouncingDots size="small" color={mobileDataEnabled ? '#FFFFFF' : colors.primary} />
                     ) : (
                         <>
-                            <MaterialIcons
-                                name="swap-vert"
-                                size={22}
-                                color={mobileDataEnabled ? '#FFFFFF' : colors.primary}
-                            />
-                            <TextTicker
-                                style={StyleSheet.flatten([
-                                    typography.caption2,
-                                    {
-                                        color: mobileDataEnabled ? '#FFFFFF' : colors.text,
-                                        fontWeight: '500',
-                                        marginTop: 4,
-                                        textAlign: 'center',
-                                    }
-                                ])}
-                                duration={6000}
-                                loop
-                                bounce
-                                repeatSpacer={50}
-                                marqueeDelay={1000}
-                            >
-                                {t('home.mobileData')}
-                            </TextTicker>
+                            <View style={[
+                                styles.smallIconCircle, 
+                                { backgroundColor: mobileDataEnabled ? 'rgba(255, 255, 255, 0.2)' : 'rgba(236, 72, 153, 0.15)' }
+                            ]}>
+                                <MaterialIcons 
+                                    name="swap-vert" 
+                                    size={20} 
+                                    color={mobileDataEnabled ? '#FFFFFF' : '#ec4899'} 
+                                />
+                            </View>
+                            <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
+                                <TextTicker
+                                    style={StyleSheet.flatten([
+                                        typography.caption2, 
+                                        { 
+                                            color: mobileDataEnabled ? '#FFFFFF' : colors.text, 
+                                            fontWeight: '600', 
+                                            textAlign: 'center',
+                                            alignSelf: 'center'
+                                        }
+                                    ])}
+                                    duration={4000}
+                                    loop
+                                    bounce
+                                    repeatSpacer={50}
+                                    marqueeDelay={1000}
+                                >
+                                    {t('home.mobileData')}
+                                </TextTicker>
+                            </View>
                         </>
                     )}
                 </TouchableOpacity>
 
+                {/* Cari Sinyal */}
                 <TouchableOpacity
-                    style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                    style={[styles.smallAction, { backgroundColor: itemBg, borderColor: itemBorder }]}
                     onPress={onSignalPointing}
+                    activeOpacity={0.7}
                 >
-                    <MaterialIcons name="gps-fixed" size={22} color={colors.primary} />
-                    <TextTicker
-                        style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }])}
-                        duration={6000}
-                        loop
-                        bounce
-                        repeatSpacer={50}
-                        marqueeDelay={1000}
-                    >
-                        {t('home.signalPointing')}
-                    </TextTicker>
+                    <View style={[styles.smallIconCircle, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
+                        <MaterialIcons name="location-on" size={20} color="#6366f1" />
+                    </View>
+                    <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
+                            {t('home.signalPointing')}
+                        </TextTicker>
+                    </View>
                 </TouchableOpacity>
 
+                {/* Cek Cepat */}
                 <TouchableOpacity
-                    style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                    style={[styles.smallAction, { backgroundColor: itemBg, borderColor: itemBorder }]}
                     onPress={onQuickCheck}
                     disabled={isRunningCheck}
+                    activeOpacity={0.7}
                 >
                     {isRunningCheck ? (
                         <BouncingDots size="small" color={colors.primary} />
                     ) : (
                         <>
-                            <MaterialIcons name="perm-scan-wifi" size={22} color={colors.primary} />
-                            <TextTicker
-                                style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }])}
-                                duration={6000}
-                                loop
-                                bounce
-                                repeatSpacer={50}
-                                marqueeDelay={1000}
-                            >
-                                {t('home.quickCheck')}
-                            </TextTicker>
+                            <View style={[styles.smallIconCircle, { backgroundColor: 'rgba(234, 179, 8, 0.15)' }]}>
+                                <MaterialIcons name="flash-on" size={20} color="#eab308" />
+                            </View>
+                            <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
+                                <TextTicker
+                                    style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
+                                    duration={4000}
+                                    loop
+                                    bounce
+                                    repeatSpacer={50}
+                                    marqueeDelay={1000}
+                                >
+                                    {t('home.quickCheck')}
+                                </TextTicker>
+                            </View>
                         </>
                     )}
                 </TouchableOpacity>
 
+                {/* Speed Test */}
                 <TouchableOpacity
-                    style={[styles.quickActionSmall, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
+                    style={[styles.smallAction, { backgroundColor: itemBg, borderColor: itemBorder }]}
                     onPress={onSpeedtest}
+                    activeOpacity={0.7}
                 >
-                    <MaterialIcons name="speed" size={22} color={colors.primary} />
-                    <TextTicker
-                        style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '500', marginTop: 4, textAlign: 'center' }])}
-                        duration={6000}
-                        loop
-                        bounce
-                        repeatSpacer={50}
-                        marqueeDelay={1000}
-                    >
-                        {t('home.speedtest')}
-                    </TextTicker>
+                    <View style={[styles.smallIconCircle, { backgroundColor: 'rgba(244, 63, 94, 0.15)' }]}>
+                        <MaterialIcons name="speed" size={20} color="#f43f5e" />
+                    </View>
+                    <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
+                            {t('home.speedtest')}
+                        </TextTicker>
+                    </View>
                 </TouchableOpacity>
             </View>
         </CollapsibleCard>
@@ -221,37 +261,57 @@ export function QuickActionsCard({
 }
 
 const styles = StyleSheet.create({
-    quickActionsRow: {
-        flexDirection: 'row',
-        marginBottom: 8,
-        gap: 8,
+    cardTitle: {
+        fontSize: 12,
+        fontWeight: '600',
+        letterSpacing: 0.5,
+        color: '#8e8e93',
     },
-    quickActionLarge: {
-        flex: 1,
+    topRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    largeAction: {
+        width: '48.5%',
         flexDirection: 'row',
         alignItems: 'center',
         padding: 12,
-        borderRadius: 12,
+        borderRadius: 16,
+        borderWidth: 1,
     },
-    quickActionIcon: {
-        width: 40,
-        height: 40,
+    largeIconContainer: {
+        width: 36,
+        height: 36,
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 10,
     },
-    quickActionLargeContent: {
+    largeActionContent: {
         flex: 1,
+        overflow: 'hidden',
+        marginRight: 4,
     },
-    quickActionSmall: {
-        flex: 1,
+    bottomRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+    },
+    smallAction: {
+        width: '23.2%',
+        borderRadius: 16,
+        borderWidth: 1,
         paddingVertical: 12,
-        paddingHorizontal: 6,
-        borderRadius: 12,
+        paddingHorizontal: 4,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    smallIconCircle: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
-        minHeight: 70,
     },
 });
 

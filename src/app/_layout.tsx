@@ -71,6 +71,8 @@ export default function RootLayout() {
     const router = useRouter();
 
     const appStateRef = useRef<AppStateStatus>(AppState.currentState);
+    const backgroundTimeRef = useRef<number>(0);
+    const lastAppOpenShowTimeRef = useRef<number>(0);
     const [isRestoringSession, setIsRestoringSession] = useState(false);
     const [authReady, setAuthReady] = useState(false);
 
@@ -262,7 +264,15 @@ export default function RootLayout() {
             appStateRef.current = nextAppState;
 
             if (previousState.match(/inactive|background/) && nextAppState === 'active') {
-                showAppOpenAd();
+                const now = Date.now();
+                const timeInBackground = now - backgroundTimeRef.current;
+                const timeSinceLastAd = now - lastAppOpenShowTimeRef.current;
+
+                if (backgroundTimeRef.current > 0 && timeInBackground > 15000 && timeSinceLastAd > 60000) {
+                    lastAppOpenShowTimeRef.current = now;
+                    showAppOpenAd();
+                }
+
                 const { credentials, isAuthenticated } = useAuthStore.getState();
 
                 if (credentials && isAuthenticated) {
@@ -282,6 +292,7 @@ export default function RootLayout() {
             }
 
             if (nextAppState.match(/inactive|background/)) {
+                backgroundTimeRef.current = Date.now();
                 stopSessionKeepAlive();
             }
         };

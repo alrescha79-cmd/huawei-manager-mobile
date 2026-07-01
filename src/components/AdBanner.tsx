@@ -73,10 +73,10 @@ function AdBlockerFallback({ isNative = false }: { isNative?: boolean }) {
             }
         ]}>
             <View style={styles.fallbackContent}>
-                <MaterialIcons name="info-outline" size={isNative ? 24 : 20} color={colors.warning} />
+                <MaterialIcons name="info-outline" size={isNative ? 20 : 18} color={colors.warning} />
                 <View style={styles.fallbackTextContainer}>
                     <Text style={[isNative ? typography.body : typography.footnote, { color: colors.text, fontWeight: '600' }]}>
-                         {t('ads.blockerDetected')}
+                        {t('ads.blockerDetected')}
                     </Text>
                     <Text style={[isNative ? typography.footnote : typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
                         {t('ads.supportDeveloper')}
@@ -394,19 +394,20 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     nativeFallback: {
-        padding: 16,
+        padding: 18,
         marginBottom: 16,
         minHeight: 90,
         justifyContent: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.05,
-        shadowRadius: 8,
+        shadowRadius: 4,
         elevation: 2,
     },
     fallbackContent: {
         flexDirection: 'row',
         alignItems: 'center',
+        padding: 6,
     },
     fallbackTextContainer: {
         flex: 1,

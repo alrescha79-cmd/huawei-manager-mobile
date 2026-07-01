@@ -12,6 +12,7 @@ import {
   KeyboardAvoidingView,
   Keyboard,
   Pressable,
+  AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -145,7 +146,9 @@ export default function WiFiScreen() {
       loadData(service);
 
       const intervalId = setInterval(() => {
-        loadDataSilent(service);
+        if (AppState.currentState === 'active') {
+          loadDataSilent(service);
+        }
       }, 5000);
 
       return () => clearInterval(intervalId);

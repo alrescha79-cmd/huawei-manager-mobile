@@ -5,6 +5,8 @@ import {
     StyleSheet,
     TouchableOpacity,
     LayoutAnimation,
+    StyleProp,
+    TextStyle,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -16,6 +18,8 @@ interface CollapsibleCardProps {
     children: React.ReactNode;
     defaultExpanded?: boolean;
     onToggle?: (expanded: boolean) => void;
+    headerRight?: React.ReactNode;
+    titleStyle?: StyleProp<TextStyle>;
 }
 
 /**
@@ -27,6 +31,8 @@ export function CollapsibleCard({
     children,
     defaultExpanded = true,
     onToggle,
+    headerRight,
+    titleStyle,
 }: CollapsibleCardProps) {
     const { colors, typography, spacing } = useTheme();
     const [isExpanded, setIsExpanded] = useState(defaultExpanded);
@@ -50,10 +56,19 @@ export function CollapsibleCard({
                     size={24}
                     color={colors.textSecondary}
                 />
-                <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>
+                <Text style={[
+                    typography.headline,
+                    {
+                        color: colors.text,
+                        flex: 1,
+                        textAlign: headerRight ? 'left' : 'center',
+                        marginLeft: headerRight ? 8 : 0,
+                    },
+                    titleStyle
+                ]}>
                     {title}
                 </Text>
-                <View style={{ width: 24 }} />
+                {headerRight ? headerRight : <View style={{ width: 24 }} />}
             </TouchableOpacity>
 
             {isExpanded && (

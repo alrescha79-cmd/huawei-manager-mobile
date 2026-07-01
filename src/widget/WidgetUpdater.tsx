@@ -1,5 +1,5 @@
 import React from 'react';
-import { requestWidgetUpdate, requestWidgetUpdateById } from 'react-native-android-widget';
+import { requestWidgetUpdate, requestWidgetUpdateById, getWidgetInfo } from 'react-native-android-widget';
 import { AppState } from 'react-native';
 import type { AppStateStatus } from 'react-native';
 import { ModemStatusWidget } from './ModemStatusWidget';
@@ -92,18 +92,25 @@ export function startRealtimeWidgetUpdates(): () => void {
     updateCount = 0;
     isUpdating = false;
 
-    updateWidgetWithFullData();
-
-    speedIntervalId = setInterval(() => {
-        if (AppState.currentState === 'active') {
-            updateWidgetWithSpeed();
+    getWidgetInfo(WIDGET_NAME).then((widgets) => {
+        if (widgets.length === 0) {
+            return;
         }
-    }, SPEED_UPDATE_INTERVAL);
 
-    fullDataIntervalId = setInterval(() => {
         updateWidgetWithFullData();
-    }, FULL_UPDATE_INTERVAL);
 
+        speedIntervalId = setInterval(() => {
+            if (AppState.currentState === 'active') {
+                updateWidgetWithSpeed();
+            }
+        }, SPEED_UPDATE_INTERVAL);
+
+        fullDataIntervalId = setInterval(() => {
+            if (AppState.currentState === 'active') {
+                updateWidgetWithFullData();
+            }
+        }, FULL_UPDATE_INTERVAL);
+    }).catch(() => {});
 
     return stopRealtimeWidgetUpdates;
 }
