@@ -83,8 +83,11 @@ export default function SettingsIndex() {
                         />
                     </SettingsSection>
 
+                    <View style={{ marginHorizontal: 16 }}>
+                        <AdNative />
+                    </View>
+
                     <SettingsSection title={t('settings.general')}>
-                        <AdBanner />
                         <SettingsItem
                             icon="settings"
                             title={t('settings.system')}
@@ -331,8 +334,9 @@ export default function SettingsIndex() {
                         )}
                     </SettingsSection>
 
-                    <AdNative />
-
+                    <View style={{ marginHorizontal: 16 }}>
+                        <AdBanner />
+                    </View>
 
                     <SelectionModal
                         visible={showThemeModal}
@@ -456,4 +460,7 @@ const styles = StyleSheet.create({
         padding: 8,
         borderRadius: 8,
     },
+    adSection: {
+        padding: 0,
+    }
 });

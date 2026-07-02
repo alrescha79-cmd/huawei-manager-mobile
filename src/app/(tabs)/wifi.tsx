@@ -24,7 +24,6 @@ import { WiFiService } from '@/services/wifi.service';
 import { formatMacAddress } from '@/utils/helpers';
 import { useTranslation } from '@/i18n';
 
-// Custom Hooks
 import { useWiFiSettings } from '@/hooks/wifi/useWiFiSettings';
 import { useGuestWiFi } from '@/hooks/wifi/useGuestWiFi';
 import { useParentalControls } from '@/hooks/wifi/useParentalControls';
@@ -272,7 +271,7 @@ export default function WiFiScreen() {
             </Card>
           )}
 
-          <AdBanner />
+          <AdNative />
 
           <ConnectedDevicesList
             t={t}
@@ -511,7 +510,7 @@ export default function WiFiScreen() {
             </View>
           </Modal>
 
-          <AdNative />
+          <AdBanner />
 
           <DeviceDetailModal
             visible={wifiDevicesHook.showDeviceDetailModal}

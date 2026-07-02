@@ -48,8 +48,7 @@ export function QuickActionsCard({
 
     return (
         <CollapsibleCard
-            title={t('home.actions').toUpperCase()}
-            titleStyle={styles.cardTitle}
+            title={t('home.actions')}
         >
             {/* Top row - Large actions */}
             <View style={styles.topRow}>

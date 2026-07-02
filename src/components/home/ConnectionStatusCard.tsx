@@ -96,26 +96,6 @@ export function ConnectionStatusCard({
         return `${value} ${sizes[i]}`;
     };
 
-    const getPowerSourceInfo = () => {
-        const isCharging = modemStatus?.batteryStatus === '1';
-        const hasBattery = modemStatus?.batteryPercent !== undefined && modemStatus?.batteryPercent !== '' && modemStatus?.batteryPercent !== null;
-        const percent = parseInt(modemStatus?.batteryPercent || '0', 10);
-
-        if (!hasBattery || isCharging) {
-            return {
-                icon: 'power' as const,
-                iconColor: colors.success,
-                text: t('home.acPower'),
-            };
-        }
-        
-        return {
-            icon: 'battery-std' as const,
-            iconColor: percent <= 20 ? colors.error : percent <= 50 ? colors.warning : colors.success,
-            text: `${t('home.battery')} (${percent}%)`,
-        };
-    };
-
     const statusText = getStatusText();
     const isStatusConnected = isConnected;
 
@@ -141,47 +121,49 @@ export function ConnectionStatusCard({
 
     const gridItemBg = isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)';
     const gridItemBorder = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
-    const powerInfo = getPowerSourceInfo();
 
     return (
-        <CollapsibleCard 
-            title={t('home.connectionStatus').toUpperCase()}
+        <CollapsibleCard
+            title={t('home.connectionStatus')}
             headerRight={headerRightBadge}
-            titleStyle={styles.cardTitle}
         >
             <View style={styles.topRow}>
                 <View style={styles.providerSection}>
                     <SignalBar strength={getSignalBars()} label="" />
                     <View style={styles.providerInfoColumn}>
-                        <Text style={styles.sectionLabel}>{t('home.provider').toUpperCase()}</Text>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                            <Text style={styles.sectionLabel}>{t('home.provider').toUpperCase()}</Text>
+                            {networkType ? (
+                                <View style={[
+                                    styles.networkBadge,
+                                    {
+                                        borderColor: colors.primary,
+                                        backgroundColor: isDark ? 'rgba(129, 140, 248, 0.15)' : 'rgba(79, 70, 229, 0.1)',
+                                        paddingVertical: 1,
+                                        paddingHorizontal: 4,
+                                    }
+                                ]}>
+                                    <Text
+                                        style={[typography.caption2, { color: colors.primary, fontWeight: '700', fontSize: 8, lineHeight: 10 }]}
+                                        adjustsFontSizeToFit
+                                        numberOfLines={1}
+                                    >
+                                        {networkType}
+                                    </Text>
+                                </View>
+                            ) : null}
+                        </View>
                         <View style={styles.providerNameRow}>
-                            <View style={{ overflow: 'hidden', flexShrink: 1, marginRight: 8 }}>
-                                <TextTicker
-                                    style={StyleSheet.flatten([typography.title3, { color: colors.text, fontWeight: '700' }])}
-                                    duration={4000}
-                                    loop
-                                    bounce
-                                    repeatSpacer={50}
-                                    marqueeDelay={1000}
-                                >
-                                    {networkInfo?.shortName || networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
-                                </TextTicker>
-                            </View>
-                            <View style={[
-                                styles.networkBadge,
-                                {
-                                    borderColor: colors.primary,
-                                    backgroundColor: isDark ? 'rgba(129, 140, 248, 0.15)' : 'rgba(79, 70, 229, 0.1)',
-                                }
-                            ]}>
-                                <Text
-                                    style={[typography.caption2, { color: colors.primary, fontWeight: '700' }]}
-                                    adjustsFontSizeToFit
-                                    numberOfLines={1}
-                                >
-                                    {networkType}
-                                </Text>
-                            </View>
+                            <TextTicker
+                                style={StyleSheet.flatten([typography.title3, { color: colors.text, fontWeight: '700' }])}
+                                duration={4000}
+                                loop
+                                bounce
+                                repeatSpacer={50}
+                                marqueeDelay={1000}
+                            >
+                                {networkInfo?.shortName || networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
+                            </TextTicker>
                         </View>
                     </View>
                 </View>
@@ -189,14 +171,14 @@ export function ConnectionStatusCard({
                 <View style={styles.speedSection}>
                     <Text style={[styles.sectionLabel, { textAlign: 'right' }]}>{t('home.networkSpeed').toUpperCase()}</Text>
                     <View style={[styles.speedSubRow, { marginTop: 4 }]}>
-                        <MaterialIcons name="arrow-downward" size={16} color="#22c55e" />
-                        <Text style={[typography.body, { color: '#22c55e', fontWeight: '700', marginLeft: 4 }]}>
+                        <MaterialIcons name="arrow-downward" size={16} color={colors.primary} />
+                        <Text style={[typography.body, { color: colors.primary, fontWeight: '700', marginLeft: 4 }]}>
                             {formatSpeed((trafficStats?.currentDownloadRate || 0) * 8)}
                         </Text>
                     </View>
                     <View style={[styles.speedSubRow, { marginTop: 2 }]}>
-                        <MaterialIcons name="arrow-upward" size={16} color="#e879f9" />
-                        <Text style={[typography.body, { color: '#e879f9', fontWeight: '700', marginLeft: 4 }]}>
+                        <MaterialIcons name="arrow-upward" size={16} color={colors.text} />
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '700', marginLeft: 4 }]}>
                             {formatSpeed((trafficStats?.currentUploadRate || 0) * 8)}
                         </Text>
                     </View>
@@ -210,10 +192,12 @@ export function ConnectionStatusCard({
                 <View style={[styles.gridItem, { backgroundColor: gridItemBg, borderColor: gridItemBorder, width: '48.5%', marginBottom: 12 }]}>
                     <Text style={styles.gridItemLabel}>{t('home.powerSource').toUpperCase()}</Text>
                     <View style={styles.gridItemContent}>
-                        <MaterialIcons name={powerInfo.icon} size={18} color={powerInfo.iconColor} />
-                        <Text style={[typography.subheadline, { color: colors.text, fontWeight: '700', marginLeft: 8 }]}>
-                            {powerInfo.text}
-                        </Text>
+                        <BatteryIndicator
+                            batteryStatus={modemStatus?.batteryStatus}
+                            batteryLevel={modemStatus?.batteryLevel}
+                            batteryPercent={modemStatus?.batteryPercent}
+                            size="small"
+                        />
                     </View>
                 </View>
 
@@ -221,7 +205,7 @@ export function ConnectionStatusCard({
                 <View style={[styles.gridItem, { backgroundColor: gridItemBg, borderColor: gridItemBorder, width: '48.5%', marginBottom: 12 }]}>
                     <Text style={styles.gridItemLabel}>{t('home.ipAddress').toUpperCase()}</Text>
                     <View style={styles.gridItemContent}>
-                        <MaterialIcons name="public" size={18} color="#c084fc" />
+                        <MaterialIcons name="public" size={18} color={colors.primary} />
                         <View style={{ flex: 1, marginLeft: 8, overflow: 'hidden' }}>
                             <TextTicker
                                 style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '700' }])}
@@ -241,7 +225,7 @@ export function ConnectionStatusCard({
                 <View style={[styles.gridItem, { backgroundColor: gridItemBg, borderColor: gridItemBorder, width: '48.5%', marginBottom: 12 }]}>
                     <Text style={styles.gridItemLabel}>{t('home.frequencyBand').toUpperCase()}</Text>
                     <View style={styles.gridItemContent}>
-                        <MaterialIcons name="rss-feed" size={18} color="#a78bfa" />
+                        <MaterialIcons name="rss-feed" size={18} color={colors.primary} />
                         <View style={{ flex: 1, marginLeft: 8, overflow: 'hidden' }}>
                             <TextTicker
                                 style={StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '700' }])}
@@ -261,19 +245,19 @@ export function ConnectionStatusCard({
                 <View style={[styles.gridItem, { backgroundColor: gridItemBg, borderColor: gridItemBorder, width: '48.5%', marginBottom: 12 }]}>
                     <Text style={styles.gridItemLabel}>{t('home.bandwidth').toUpperCase()}</Text>
                     <View style={styles.gridItemContent}>
-                        <MaterialIcons name="show-chart" size={18} color="#22d3ee" />
+                        <MaterialIcons name="show-chart" size={18} color={colors.primary} />
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8, flexWrap: 'wrap', flex: 1 }}>
                             {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
                                 <>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
-                                        <MaterialIcons name="arrow-upward" size={12} color="#e879f9" />
-                                        <Text style={[typography.caption1, { color: '#e879f9', fontWeight: '700' }]}>
+                                        <MaterialIcons name="arrow-upward" size={12} color={colors.text} />
+                                        <Text style={[typography.caption1, { color: colors.text, fontWeight: '700' }]}>
                                             {signalInfo.ulbandwidth || '-'}
                                         </Text>
                                     </View>
                                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                                        <MaterialIcons name="arrow-downward" size={12} color="#22d3ee" />
-                                        <Text style={[typography.caption1, { color: '#22d3ee', fontWeight: '700' }]}>
+                                        <MaterialIcons name="arrow-downward" size={12} color={colors.text} />
+                                        <Text style={[typography.caption1, { color: colors.text, fontWeight: '700' }]}>
                                             {signalInfo.dlbandwidth || '-'}
                                         </Text>
                                     </View>
@@ -322,9 +306,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     providerNameRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
         marginTop: 2,
+        overflow: 'hidden',
     },
     sectionLabel: {
         fontSize: 10,

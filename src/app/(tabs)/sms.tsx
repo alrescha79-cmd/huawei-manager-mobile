@@ -526,8 +526,6 @@ export default function SMSScreen() {
               </View>
             )}
 
-            <AdBanner />
-
             {smsSupported && !isSelectionMode && (
               <View style={styles.messagesHeader}>
                 <Text style={[typography.caption1, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
@@ -574,7 +572,7 @@ export default function SMSScreen() {
                       isSelected={selectedIds.has(`${message.boxType}-${message.index}`)}
                       onToggleSelect={() => toggleSelect(message)}
                     />
-
+                    {index === 3 && <SMSListItem isAd={true} />}
                   </React.Fragment>
                 ))}
               </View>
@@ -633,25 +631,14 @@ export default function SMSScreen() {
             <TouchableOpacity
               style={[
                 styles.fab,
-                { backgroundColor: 'transparent', elevation: 8 }
+                { backgroundColor: colors.primary }
               ]}
               onPress={() => setShowCompose(true)}
               activeOpacity={0.8}
             >
-              <LinearGradient
-                colors={['#06b6d4', '#6366f1']}
-                start={{ x: 0, y: 1 }}
-                end={{ x: 1, y: 0 }}
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 28,
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                }}
-              >
-                <MaterialIcons name="add" size={28} color="#FFF" />
-              </LinearGradient>
+
+              <MaterialIcons name="add" size={28} color={colors.text} />
+
             </TouchableOpacity>
           )}
         </MeshGradientBackground>

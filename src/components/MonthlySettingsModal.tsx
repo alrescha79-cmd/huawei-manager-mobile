@@ -217,6 +217,8 @@ export function MonthlySettingsModal({
                             </View>
                         </View>
 
+                        <AdNative />
+
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.monthlyDataPlan')}</Text>
                             <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -310,7 +312,6 @@ export function MonthlySettingsModal({
                         </View>
 
                         <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
-                            <AdNative />
                         </View>
                     </ScrollView>
 

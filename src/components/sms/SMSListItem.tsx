@@ -3,28 +3,37 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { SMSMessage } from '@/types';
+import { InlineAdNative } from '../AdBanner';
 
 interface SMSListItemProps {
-    message: SMSMessage;
-    isLast: boolean;
-    timeDisplay: string;
-    onPress: () => void;
+    message?: SMSMessage;
+    isLast?: boolean;
+    timeDisplay?: string;
+    onPress?: () => void;
     onLongPress?: () => void;
     isSelectionMode?: boolean;
     isSelected?: boolean;
     onToggleSelect?: () => void;
+    isAd?: boolean;
 }
 
 export function SMSListItem({
     message,
-    isLast,
-    timeDisplay,
+    isLast = false,
+    timeDisplay = '',
     onPress,
     onLongPress,
     isSelectionMode = false,
     isSelected = false,
     onToggleSelect,
+    isAd = false,
 }: SMSListItemProps) {
+    if (isAd) {
+        return <InlineAdNative />;
+    }
+
+    if (!message) return null;
+
     const { colors, typography, isDark } = useTheme();
 
     const initials = message.phone.charAt(0).toUpperCase();
@@ -38,24 +47,12 @@ export function SMSListItem({
         }
     };
 
-    // Determine dynamic avatar color/style based on contact/phone
     const getAvatarBg = () => {
-        const phoneLower = message.phone.toLowerCase();
-        if (phoneLower.includes('telkomsel')) {
-            return '#d946ef'; // Magenta/pink
-        } else if (phoneLower.includes('indosat')) {
-            return '#a855f7'; // Purple
-        } else if (phoneLower.includes('xl')) {
-            return '#2563eb'; // Blue
-        } else {
-            return isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)'; // Slate / neutral
-        }
+        return isUnread ? colors.primary : colors.itemBg;
     };
 
     const avatarBgColor = getAvatarBg();
-    const avatarTextColor = (message.phone.toLowerCase().includes('telkomsel') || message.phone.toLowerCase().includes('indosat') || message.phone.toLowerCase().includes('xl')) 
-        ? '#FFF' 
-        : (isDark ? '#e5e7eb' : '#4b5563');
+    const avatarTextColor = isUnread ? colors.text : colors.textSecondary;
 
     return (
         <TouchableOpacity
@@ -70,30 +67,27 @@ export function SMSListItem({
                 }
             ]}
         >
-            {/* Left Column: Avatar Container with relative positioning for the unread dot */}
             <View style={{ position: 'relative', marginRight: 12 }}>
                 <View style={[
                     styles.avatar,
-                    { 
+                    {
                         backgroundColor: avatarBgColor,
                     }
                 ]}>
                     <Text style={[styles.avatarText, { color: avatarTextColor }]}>{initials}</Text>
                 </View>
 
-                {/* Unread Dot in the top right corner of the avatar */}
                 {!isSelectionMode && isUnread && (
                     <View style={[
                         styles.unreadDotBadge,
-                        { 
-                            backgroundColor: '#00bcd4', // Cyan
+                        {
+                            backgroundColor: colors.primary,
                             borderColor: colors.card,
                         }
                     ]} />
                 )}
             </View>
 
-            {/* Middle Column: Sender & Content Preview */}
             <View style={styles.messageContent}>
                 <View style={styles.messageTopRow}>
                     <Text style={[
@@ -134,7 +128,6 @@ export function SMSListItem({
                 </Text>
             </View>
 
-            {/* Right Column: Selection checkbox or chevron link */}
             {isSelectionMode ? (
                 <View style={[
                     styles.circularCheckbox,
@@ -144,7 +137,7 @@ export function SMSListItem({
                     }
                 ]}>
                     {isSelected && (
-                        <MaterialIcons name="check" size={16} color="#FFF" />
+                        <MaterialIcons name="check" size={16} color={colors.text} />
                     )}
                 </View>
             ) : (

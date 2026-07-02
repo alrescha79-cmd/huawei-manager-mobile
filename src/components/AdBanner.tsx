@@ -285,6 +285,146 @@ export const AdNative: React.FC = React.memo(() => {
     );
 });
 
+// 3) Inline Native Ad Component (loaded in background, hidden if loading or failed)
+export const InlineAdNative: React.FC = React.memo(() => {
+    const [isReady, setIsReady] = useState(isAdMobInitialized());
+    const [nativeAd, setNativeAd] = useState<NativeAd | null>(null);
+    const [isLoaded, setIsLoaded] = useState(false);
+    const [triggerKey, setTriggerKey] = useState(0);
+
+    const { colors, typography, isDark } = useTheme();
+
+    useEffect(() => {
+        if (!isAdMobInitialized()) {
+            initAdMob().then(() => {
+                setIsReady(isAdMobInitialized());
+            });
+        } else {
+            setIsReady(true);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!isReady) return;
+
+        let active = true;
+        let adInstance: NativeAd | null = null;
+        let timer: NodeJS.Timeout | null = null;
+
+        const loadNativeAd = async () => {
+            const delay = getAdRequestDelay(NATIVE_AD_UNIT_ID);
+            if (delay > 0) {
+                timer = setTimeout(() => {
+                    setTriggerKey(prev => prev + 1);
+                }, delay);
+                return;
+            }
+
+            try {
+                recordAdRequest(NATIVE_AD_UNIT_ID);
+                const adRequestPromise = NativeAd.createForAdRequest(NATIVE_AD_UNIT_ID);
+                const timeoutPromise = new Promise<never>((_, reject) =>
+                    setTimeout(() => reject(new Error('Timeout loading native ad')), 5000)
+                );
+
+                const ad = await Promise.race([adRequestPromise, timeoutPromise]);
+                if (active) {
+                    adInstance = ad;
+                    setNativeAd(ad);
+                    setIsLoaded(true);
+                } else {
+                    ad.destroy();
+                }
+            } catch (err) {
+                if (active) {
+                    setIsLoaded(false);
+                    triggerAdblockAlert(err);
+                    activateAdRequestCooldown();
+                }
+            }
+        };
+
+        loadNativeAd();
+
+        return () => {
+            active = false;
+            if (adInstance) {
+                adInstance.destroy();
+            }
+            if (timer) {
+                clearTimeout(timer);
+            }
+        };
+    }, [isReady, triggerKey]);
+
+    if (!isLoaded || !nativeAd) {
+        return null; // Keep it completely hidden to prevent empty slots / jumping UI
+    }
+
+    return (
+        <View style={[styles.container, {
+            justifyContent: 'center',
+            backgroundColor: colors.card,
+            borderColor: colors.border,
+            borderWidth: 1,
+            borderRadius: 16,
+            overflow: 'hidden',
+        }]}>
+            <NativeAdView
+                nativeAd={nativeAd}
+                style={styles.nativeAdContainer}
+            >
+                {/* Left Column: Icon */}
+                {nativeAd.icon && (
+                    <NativeAsset assetType={NativeAssetType.ICON}>
+                        <Image
+                            source={{ uri: nativeAd.icon.url }}
+                            style={[styles.adIcon, { borderRadius: 10 }]}
+                        />
+                    </NativeAsset>
+                )}
+
+                {/* Middle Column: Text Assets */}
+                <View style={styles.textColumn}>
+                    <View style={styles.headerRow}>
+                        <View style={[styles.badgeContainer, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
+                            <Text style={[styles.badgeText, { color: colors.primary }]}>AD</Text>
+                        </View>
+                        <NativeAsset assetType={NativeAssetType.HEADLINE}>
+                            <Text
+                                numberOfLines={1}
+                                style={[typography.body, { color: colors.text, fontWeight: '700', flex: 1 }]}
+                            >
+                                {nativeAd.headline}
+                            </Text>
+                        </NativeAsset>
+                    </View>
+
+                    <NativeAsset assetType={NativeAssetType.BODY}>
+                        <Text
+                            numberOfLines={2}
+                            style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, lineHeight: 16 }]}
+                        >
+                            {nativeAd.body}
+                        </Text>
+                    </NativeAsset>
+                </View>
+
+                {/* Right Column: CTA Button */}
+                <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+                    <Text style={[styles.ctaButton, {
+                        backgroundColor: colors.primary,
+                        color: '#FFFFFF',
+                    }]}>
+                        {nativeAd.callToAction || 'Open'}
+                    </Text>
+                </NativeAsset>
+            </NativeAdView>
+        </View>
+    );
+});
+
+
 const styles = StyleSheet.create({
     bannerContainer: {
         alignItems: 'center',
