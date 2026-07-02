@@ -232,7 +232,7 @@ export default function HomeScreen() {
             trafficStats={trafficStats}
           />
 
-          <AdBanner />
+          <AdNative />
 
           <SignalInfoCard
             t={t}
@@ -254,7 +254,7 @@ export default function HomeScreen() {
             />
           )}
 
-          <AdNative />
+          <AdBanner />
 
           <WebViewLogin
             modemIp={credentials?.modemIp || '192.168.8.1'}

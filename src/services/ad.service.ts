@@ -63,7 +63,7 @@ let isRewardedLoading = false;
 let isAppOpenLoading = false;
 
 let globalAdRequestCooldownUntil = 0;
-const COOLDOWN_DURATION_MS = 30 * 1000;
+const COOLDOWN_DURATION_MS = 10 * 1000;
 const GLOBAL_REQUEST_DEBOUNCE_MS = 15 * 1000;
 const BANNER_NATIVE_DEBOUNCE_MS = 2 * 1000;
 
@@ -314,14 +314,13 @@ export function showInterstitial(onDone: () => void): void {
 export function showRewarded(onRewarded: () => void, onSkipped: () => void): void {
     if (!isInitialized) {
         initAdMob();
-        // Fallback: Proceed silently if AdMob is not initialized
         onRewarded();
         return;
     }
 
     if (preloadedRewarded && preloadedRewarded.loaded) {
         const ad = preloadedRewarded;
-        preloadedRewarded = null; // Consume the preloaded instance
+        preloadedRewarded = null;
         let earned = false;
 
         const unsubEarned = ad.addAdEventListener(RewardedAdEventType.EARNED_REWARD, () => {
@@ -336,7 +335,7 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
             } else {
                 onSkipped();
             }
-            preloadRewarded(); // Cache next ad
+            preloadRewarded();
         });
 
         ad.show().catch((err) => {
@@ -344,11 +343,10 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
             unsubEarned();
             unsubClosed();
             handleAdError(err);
-            onRewarded(); // Fallback: Proceed silently on show error
+            onRewarded();
             preloadRewarded();
         });
     } else {
-        // Fallback: load on-the-fly with a timeout
         if (!isAdRequestAllowed(REWARDED_ID)) {
             onRewarded();
             return;
@@ -362,11 +360,11 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
             if (!completed) {
                 completed = true;
                 cleanup();
-                onRewarded(); // Fallback: Proceed silently on timeout
+                onRewarded();
                 preloadRewarded();
                 activateAdRequestCooldown();
             }
-        }, 8000); // 8-second timeout for rewarded video
+        }, 8000);
 
         const unsubLoaded = ad.addAdEventListener(RewardedAdEventType.LOADED, () => {
             if (!completed) {
@@ -375,7 +373,7 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
                 ad.show().catch((err) => {
                     cleanup();
                     handleAdError(err);
-                    onRewarded(); // Fallback: Proceed silently on show error
+                    onRewarded();
                     preloadRewarded();
                 });
             }
@@ -401,7 +399,7 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
                 clearTimeout(timer);
                 cleanup();
                 handleAdError(error);
-                onRewarded(); // Fallback: Proceed silently on load error
+                onRewarded();
                 preloadRewarded();
                 activateAdRequestCooldown();
             }
@@ -463,12 +461,12 @@ export function showAppOpenAd(onDone?: () => void): void {
 
     if (preloadedAppOpen && preloadedAppOpen.loaded) {
         const ad = preloadedAppOpen;
-        preloadedAppOpen = null; // Consume the preloaded instance
+        preloadedAppOpen = null;
 
         const unsubClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
             unsubClosed();
             onDone?.();
-            preloadAppOpenAd(); // Cache next ad
+            preloadAppOpenAd();
         });
 
         ad.show().catch((err) => {
@@ -478,7 +476,6 @@ export function showAppOpenAd(onDone?: () => void): void {
             preloadAppOpenAd();
         });
     } else {
-        // Fallback: load on-the-fly or just callback
         onDone?.();
         preloadAppOpenAd();
     }

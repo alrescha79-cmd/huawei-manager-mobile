@@ -49,7 +49,7 @@ export function SignalInfoCard({ t, signalInfo, modemStatus }: SignalInfoCardPro
 
     if (!hasSignalData) {
         return (
-            <CollapsibleCard title={t('home.signalInfo').toUpperCase()} titleStyle={styles.cardTitle}>
+            <CollapsibleCard title={t('home.signalInfo')}>
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>
                     {t('home.noSignalAvailable')}{'\n'}
                     {t('home.checkLogin')}
@@ -181,9 +181,8 @@ export function SignalInfoCard({ t, signalInfo, modemStatus }: SignalInfoCardPro
 
     return (
         <CollapsibleCard
-            title={t('home.signalInfo').toUpperCase()}
+            title={t('home.signalInfo')}
             headerRight={headerRightBadge}
-            titleStyle={styles.cardTitle}
         >
             <View style={styles.gridContainer}>
                 {metrics.map((metric, index) => {

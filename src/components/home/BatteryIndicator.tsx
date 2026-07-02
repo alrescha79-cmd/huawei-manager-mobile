@@ -28,7 +28,7 @@ export function BatteryIndicator({
     batteryPercent,
     size = 'medium',
 }: BatteryIndicatorProps) {
-    const { colors } = useTheme();
+    const { colors, typography } = useTheme();
 
     const sizes = {
         small: { width: 32, height: 16, fontSize: 9, iconSize: 12 },
@@ -41,23 +41,21 @@ export function BatteryIndicator({
     const isCharging = batteryStatus === '1';
     const hasBattery = batteryPercent !== undefined && batteryPercent !== '' && batteryPercent !== null;
 
-    // Determine battery color based on percentage
     const getBatteryColor = () => {
         if (percent <= 20) return colors.error;
         if (percent <= 50) return colors.warning;
         return colors.success;
     };
 
-    // If no battery info, show adaptor icon (for CPE/routers)
     if (!hasBattery) {
         return (
             <View style={styles.container}>
                 <MaterialIcons
                     name="power"
-                    size={sizeConfig.iconSize + 6}
-                    color={colors.success}
+                    size={18}
+                    color={colors.primary}
                 />
-                <Text style={[styles.statusText, { color: colors.textSecondary, fontSize: sizeConfig.fontSize }]}>
+                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '700', marginLeft: 8 }]}>
                     AC Power
                 </Text>
             </View>
@@ -69,7 +67,6 @@ export function BatteryIndicator({
 
     return (
         <View style={styles.container}>
-            {/* Charging icon before battery */}
             {isCharging && (
                 <MaterialIcons
                     name="bolt"
@@ -79,7 +76,6 @@ export function BatteryIndicator({
                 />
             )}
 
-            {/* Battery body */}
             <View style={[
                 styles.batteryBody,
                 {
@@ -89,7 +85,6 @@ export function BatteryIndicator({
                     backgroundColor: colors.background,
                 }
             ]}>
-                {/* Battery fill */}
                 <View style={[
                     styles.batteryFill,
                     {
@@ -99,7 +94,6 @@ export function BatteryIndicator({
                     }
                 ]} />
 
-                {/* Percentage text - theme-aware color */}
                 <Text style={[
                     styles.percentText,
                     {
@@ -114,7 +108,6 @@ export function BatteryIndicator({
                 </Text>
             </View>
 
-            {/* Battery tip */}
             <View style={[
                 styles.batteryTip,
                 {
@@ -124,12 +117,12 @@ export function BatteryIndicator({
                 }
             ]} />
 
-            {/* Status text */}
             <Text style={[
-                styles.statusText,
+                typography.subheadline,
                 {
-                    color: isCharging ? colors.warning : colors.textSecondary,
-                    fontSize: sizeConfig.fontSize - 1,
+                    color: isCharging ? colors.warning : colors.text,
+                    fontWeight: '700',
+                    marginLeft: 8,
                 }
             ]}>
                 {isCharging ? 'Charging' : 'Battery'}
@@ -165,10 +158,6 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 2,
         borderBottomRightRadius: 2,
         marginLeft: 1,
-    },
-    statusText: {
-        marginLeft: 6,
-        fontWeight: '600',
     },
 });
 
