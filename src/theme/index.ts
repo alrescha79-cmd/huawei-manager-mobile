@@ -13,7 +13,7 @@ export const ACCENT_PRESETS: Record<string, { light: string; dark: string; label
   red: { light: '#DC2626', dark: '#F87171', label: 'Red' },
   orange: { light: '#EA580C', dark: '#FB923C', label: 'Orange' },
   amber: { light: '#D97706', dark: '#FBBF24', label: 'Amber' },
-  lime: { light: '#65A30D', dark: '#A3E635', label: 'Lime' }, 
+  lime: { light: '#65A30D', dark: '#A3E635', label: 'Lime' },
   emerald: { light: '#059669', dark: '#34D399', label: 'Emerald' },
   teal: { light: '#0D9488', dark: '#2DD4BF', label: 'Teal' },
   cyan: { light: '#0891B2', dark: '#22D3EE', label: 'Cyan' },
@@ -36,6 +36,7 @@ export const Colors = {
     tabBar: 'rgba(255, 255, 255, 0.9)',
     tabBarInactive: '#94A3B8',
     shadow: 'rgba(37, 99, 235, 0.10)',
+    itemBg: 'rgba(0, 0, 0, 0.03)',
   },
   dark: {
     primary: '#3B82F6',
@@ -52,6 +53,7 @@ export const Colors = {
     tabBar: '#1C1C1E',
     tabBarInactive: '#8E8E93',
     shadow: 'rgba(0, 0, 0, 0.0)',
+    itemBg: 'rgba(255, 255, 255, 0.05)',
   },
 };
 

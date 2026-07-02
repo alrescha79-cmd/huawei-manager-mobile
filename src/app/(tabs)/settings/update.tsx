@@ -14,8 +14,14 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
-import * as IntentLauncher from 'expo-intent-launcher';
 import { MeshGradientBackground, PageHeader, AnimatedScreen, AdNative } from '@/components';
+
+let IntentLauncher: any = null;
+try {
+    IntentLauncher = require('expo-intent-launcher');
+} catch (e) {
+    console.warn('expo-intent-launcher is not available in this environment:', e);
+}
 
 const GITHUB_OWNER = 'alrescha79-cmd';
 const GITHUB_REPO = 'huawei-manager-mobile';
@@ -207,12 +213,33 @@ export default function UpdateScreen() {
             setDownloading(false);
 
             if (result && result.uri) {
-                const contentUri = await FileSystem.getContentUriAsync(result.uri);
-                await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-                    data: contentUri,
-                    type: 'application/vnd.android.package-archive',
-                    flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
-                });
+                let launched = false;
+                if (Platform.OS === 'android') {
+                    try {
+                        const contentUri = await FileSystem.getContentUriAsync(result.uri);
+                        if (IntentLauncher && IntentLauncher.startActivityAsync) {
+                            await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+                                data: contentUri,
+                                type: 'application/vnd.android.package-archive',
+                                flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
+                            });
+                            launched = true;
+                        }
+                    } catch (e) {
+                        console.warn('Failed to launch APK installation intent:', e);
+                    }
+                }
+
+                if (!launched) {
+                    Alert.alert(
+                        t('common.success') || 'Success',
+                        t('settings.downloadComplete') || 'Update downloaded successfully. Please open and install the APK file manually, or open the link in your browser.',
+                        [
+                            { text: t('common.ok') || 'OK' },
+                            { text: t('settings.downloadUpdate') || 'Open Browser', onPress: () => Linking.openURL(url) }
+                        ]
+                    );
+                }
             } else {
                 throw new Error('Download failed: result is empty');
             }

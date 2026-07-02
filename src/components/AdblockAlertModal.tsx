@@ -26,6 +26,7 @@ const COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1 hours
 
 let adblockListener: ((visible: boolean) => void) | null = null;
 let hasShownAdblockAlert = false;
+let isAlertRequestPendingOrShown = false;
 
 export const setAdblockListener = (listener: (visible: boolean) => void) => {
     adblockListener = listener;
@@ -33,12 +34,15 @@ export const setAdblockListener = (listener: (visible: boolean) => void) => {
 
 export const AdblockAlertHelper = {
     show: async () => {
+        if (isAlertRequestPendingOrShown) return;
+        isAlertRequestPendingOrShown = true;
         try {
             const lastShownStr = await AsyncStorage.getItem(ADBLOCK_ALERT_KEY);
             const now = Date.now();
             if (lastShownStr) {
                 const lastShown = parseInt(lastShownStr, 10);
                 if (now - lastShown < COOLDOWN_MS) {
+                    isAlertRequestPendingOrShown = false; // Reset lock if within cooldown
                     return;
                 }
             }
@@ -57,12 +61,14 @@ export const AdblockAlertHelper = {
         }
     },
     hide: () => {
+        isAlertRequestPendingOrShown = false;
         if (adblockListener) {
             adblockListener(false);
         }
     },
     reset: () => {
         hasShownAdblockAlert = false;
+        isAlertRequestPendingOrShown = false;
     }
 };
 

@@ -4,6 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { CollapsibleCard, BouncingDots } from '@/components';
+import { colors } from 'react-native-keyboard-controller/lib/typescript/components/KeyboardToolbar/colors';
 
 interface QuickActionsCardProps {
     t: (key: string) => string;
@@ -12,7 +13,7 @@ interface QuickActionsCardProps {
     mobileDataEnabled: boolean;
     isTogglingData: boolean;
     isChangingIp: boolean;
-    isRunningCheck: boolean;    
+    isRunningCheck: boolean;
     onOpenBandModal: () => void;
     onChangeIp: () => void;
     onToggleMobileData: () => void;
@@ -46,7 +47,7 @@ export function QuickActionsCard({
     const itemBorder = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
 
     return (
-        <CollapsibleCard 
+        <CollapsibleCard
             title={t('home.actions').toUpperCase()}
             titleStyle={styles.cardTitle}
         >
@@ -58,8 +59,8 @@ export function QuickActionsCard({
                     onPress={onOpenBandModal}
                     activeOpacity={0.7}
                 >
-                    <View style={[styles.largeIconContainer, { backgroundColor: 'rgba(167, 139, 250, 0.15)' }]}>
-                        <MaterialIcons name="tune" size={20} color="#a78bfa" />
+                    <View style={[styles.largeIconContainer, { backgroundColor: colors.itemBg }]}>
+                        <MaterialIcons name="tune" size={20} color={colors.primary} />
                     </View>
                     <View style={styles.largeActionContent}>
                         <TextTicker
@@ -93,11 +94,11 @@ export function QuickActionsCard({
                     disabled={isChangingIp}
                     activeOpacity={0.7}
                 >
-                    <View style={[styles.largeIconContainer, { backgroundColor: 'rgba(34, 211, 238, 0.15)' }]}>
+                    <View style={[styles.largeIconContainer, { backgroundColor: colors.itemBg }]}>
                         {isChangingIp ? (
-                            <BouncingDots size="small" color="#22d3ee" />
+                            <BouncingDots size="small" color={colors.primary} />
                         ) : (
-                            <MaterialIcons name="sync" size={20} color="#22d3ee" />
+                            <MaterialIcons name="sync" size={20} color={colors.primary} />
                         )}
                     </View>
                     <View style={styles.largeActionContent}>
@@ -130,39 +131,36 @@ export function QuickActionsCard({
             <View style={styles.bottomRow}>
                 {/* Data Seluler */}
                 <TouchableOpacity
-                    style={[
-                        styles.smallAction,
-                        {
-                            backgroundColor: mobileDataEnabled ? colors.primary : itemBg,
-                            borderColor: mobileDataEnabled ? colors.primary : itemBorder,
-                            borderWidth: 1,
-                        }
-                    ]}
+                    style={styles.smallAction}
                     onPress={onToggleMobileData}
                     disabled={isTogglingData}
                     activeOpacity={0.7}
                 >
                     {isTogglingData ? (
-                        <BouncingDots size="small" color={mobileDataEnabled ? '#FFFFFF' : colors.primary} />
+                        <BouncingDots size="small" color={mobileDataEnabled ? colors.background : colors.primary} />
                     ) : (
                         <>
                             <View style={[
-                                styles.smallIconCircle, 
-                                { backgroundColor: mobileDataEnabled ? 'rgba(255, 255, 255, 0.2)' : 'rgba(236, 72, 153, 0.15)' }
+                                styles.smallIconCircle,
+                                {
+                                    backgroundColor: mobileDataEnabled ? colors.primary : itemBg,
+                                    borderColor: mobileDataEnabled ? colors.border : itemBorder,
+                                    borderWidth: 1,
+                                }
                             ]}>
-                                <MaterialIcons 
-                                    name="swap-vert" 
-                                    size={20} 
-                                    color={mobileDataEnabled ? '#FFFFFF' : '#ec4899'} 
+                                <MaterialIcons
+                                    name="swap-vert"
+                                    size={16}
+                                    color={mobileDataEnabled ? colors.background : colors.primary}
                                 />
                             </View>
                             <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
                                 <TextTicker
                                     style={StyleSheet.flatten([
-                                        typography.caption2, 
-                                        { 
-                                            color: mobileDataEnabled ? '#FFFFFF' : colors.text, 
-                                            fontWeight: '600', 
+                                        typography.caption2,
+                                        {
+                                            color: colors.text,
+                                            fontWeight: '600',
                                             textAlign: 'center',
                                             alignSelf: 'center'
                                         }
@@ -182,12 +180,16 @@ export function QuickActionsCard({
 
                 {/* Cari Sinyal */}
                 <TouchableOpacity
-                    style={[styles.smallAction, { backgroundColor: itemBg, borderColor: itemBorder }]}
+                    style={styles.smallAction}
                     onPress={onSignalPointing}
                     activeOpacity={0.7}
                 >
-                    <View style={[styles.smallIconCircle, { backgroundColor: 'rgba(99, 102, 241, 0.15)' }]}>
-                        <MaterialIcons name="location-on" size={20} color="#6366f1" />
+                    <View style={[styles.smallIconCircle, {
+                        backgroundColor: colors.itemBg,
+                        borderColor: colors.border,
+                        borderWidth: 1,
+                    }]}>
+                        <MaterialIcons name="location-on" size={16} color={colors.primary} />
                     </View>
                     <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
                         <TextTicker
@@ -205,7 +207,7 @@ export function QuickActionsCard({
 
                 {/* Cek Cepat */}
                 <TouchableOpacity
-                    style={[styles.smallAction, { backgroundColor: itemBg, borderColor: itemBorder }]}
+                    style={styles.smallAction}
                     onPress={onQuickCheck}
                     disabled={isRunningCheck}
                     activeOpacity={0.7}
@@ -214,8 +216,12 @@ export function QuickActionsCard({
                         <BouncingDots size="small" color={colors.primary} />
                     ) : (
                         <>
-                            <View style={[styles.smallIconCircle, { backgroundColor: 'rgba(234, 179, 8, 0.15)' }]}>
-                                <MaterialIcons name="flash-on" size={20} color="#eab308" />
+                            <View style={[styles.smallIconCircle, {
+                                backgroundColor: colors.itemBg,
+                                borderColor: colors.border,
+                                borderWidth: 1,
+                            }]}>
+                                <MaterialIcons name="flash-on" size={16} color={colors.primary} />
                             </View>
                             <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
                                 <TextTicker
@@ -235,12 +241,16 @@ export function QuickActionsCard({
 
                 {/* Speed Test */}
                 <TouchableOpacity
-                    style={[styles.smallAction, { backgroundColor: itemBg, borderColor: itemBorder }]}
+                    style={styles.smallAction}
                     onPress={onSpeedtest}
                     activeOpacity={0.7}
                 >
-                    <View style={[styles.smallIconCircle, { backgroundColor: 'rgba(244, 63, 94, 0.15)' }]}>
-                        <MaterialIcons name="speed" size={20} color="#f43f5e" />
+                    <View style={[styles.smallIconCircle, {
+                        backgroundColor: colors.itemBg,
+                        borderColor: colors.border,
+                        borderWidth: 1,
+                    }]}>
+                        <MaterialIcons name="speed" size={16} color={colors.primary} />
                     </View>
                     <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
                         <TextTicker
@@ -277,13 +287,13 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         padding: 12,
-        borderRadius: 16,
+        borderRadius: 36,
         borderWidth: 1,
     },
     largeIconContainer: {
         width: 36,
         height: 36,
-        borderRadius: 10,
+        borderRadius: 18,
         justifyContent: 'center',
         alignItems: 'center',
         marginRight: 10,
@@ -298,18 +308,14 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
     },
     smallAction: {
-        width: '23.2%',
-        borderRadius: 16,
-        borderWidth: 1,
-        paddingVertical: 12,
-        paddingHorizontal: 4,
+        width: '24%',
         alignItems: 'center',
         justifyContent: 'center',
     },
     smallIconCircle: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
+        width: 42,
+        height: 42,
+        borderRadius: 24,
         justifyContent: 'center',
         alignItems: 'center',
     },

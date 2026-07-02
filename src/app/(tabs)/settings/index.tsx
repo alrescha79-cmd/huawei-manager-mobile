@@ -83,9 +83,8 @@ export default function SettingsIndex() {
                         />
                     </SettingsSection>
 
-                    <AdBanner />
-
                     <SettingsSection title={t('settings.general')}>
+                        <AdBanner />
                         <SettingsItem
                             icon="settings"
                             title={t('settings.system')}
@@ -349,7 +348,7 @@ export default function SettingsIndex() {
                             setThemeMode(val);
                             setShowThemeModal(false);
                             if (changed) {
-                                showInterstitial(() => {});
+                                showInterstitial(() => { });
                             }
                         }}
                         onClose={() => setShowThemeModal(false)}
@@ -368,7 +367,7 @@ export default function SettingsIndex() {
                             setLanguage(val);
                             setShowLanguageModal(false);
                             if (changed) {
-                                showInterstitial(() => {});
+                                showInterstitial(() => { });
                             }
                         }}
                         onClose={() => setShowLanguageModal(false)}
@@ -387,7 +386,7 @@ export default function SettingsIndex() {
                             setUsageCardStyle(val as 'split' | 'compact');
                             setShowUsageModal(false);
                             if (changed) {
-                                showInterstitial(() => {});
+                                showInterstitial(() => { });
                             }
                         }}
                         onClose={() => setShowUsageModal(false)}
@@ -406,7 +405,7 @@ export default function SettingsIndex() {
                             setAccentColor(val);
                             setShowAccentModal(false);
                             if (changed) {
-                                showInterstitial(() => {});
+                                showInterstitial(() => { });
                             }
                         }}
                         onClose={() => setShowAccentModal(false)}

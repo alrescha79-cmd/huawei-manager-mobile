@@ -61,11 +61,24 @@ export function GuestWiFiSettings({
     return (
         <>
             <View style={styles.toggleRow}>
-                <View style={{ flex: 1 }}>
-                    <Text style={[typography.body, { color: colors.text }]}>{t('wifi.guestWifi')}</Text>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                        {guestWifiEnabled ? t('wifi.enabled') : t('wifi.disabled')}
-                    </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <View style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        backgroundColor: colors.primary + '15',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginRight: 12,
+                    }}>
+                        <MaterialIcons name="wifi-tethering" size={18} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{t('wifi.guestWifi')}</Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                            {guestWifiEnabled ? t('wifi.enabled') : t('wifi.disabled')}
+                        </Text>
+                    </View>
                 </View>
                 {isTogglingGuest ? (
                     <BouncingDots size="medium" color={colors.primary} />

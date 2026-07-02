@@ -45,15 +45,28 @@ export function ParentalControlCard({
     const { colors, typography, spacing } = useTheme();
 
     return (
-        <Card style={{ marginTop: spacing.md }}>
+        <Card style={{ marginTop: spacing.md, marginBottom: spacing.md }}>
             <CardHeader title={t('parentalControl.title')} />
 
             <View style={styles.toggleRow}>
-                <View style={{ flex: 1 }}>
-                    <Text style={[typography.body, { color: colors.text }]}>{t('parentalControl.title')}</Text>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                        {t('parentalControl.enableHint')}
-                    </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <View style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        backgroundColor: colors.primary + '15',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginRight: 12,
+                    }}>
+                        <MaterialIcons name="family-restroom" size={18} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{t('parentalControl.title')}</Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                            {t('parentalControl.enableHint')}
+                        </Text>
+                    </View>
                 </View>
                 {isTogglingParental ? (
                     <BouncingDots size="medium" color={colors.primary} />
@@ -71,15 +84,28 @@ export function ParentalControlCard({
                 style={[styles.collapseHeader, { borderColor: colors.border }]}
                 onPress={onToggleExpanded}
             >
-                <View style={{ flex: 1 }}>
-                    <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
-                        {t('parentalControl.profiles')}
-                    </Text>
-                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                        {parentalProfiles.length > 0
-                            ? `${parentalProfiles.length} ${t('parentalControl.profiles').toLowerCase()}`
-                            : t('parentalControl.noProfiles')}
-                    </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <View style={{
+                        width: 32,
+                        height: 32,
+                        borderRadius: 8,
+                        backgroundColor: colors.primary + '15',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginRight: 12,
+                    }}>
+                        <MaterialIcons name="people" size={18} color={colors.primary} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                            {t('parentalControl.profiles')}
+                        </Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                            {parentalProfiles.length > 0
+                                ? `${parentalProfiles.length} ${t('parentalControl.profiles').toLowerCase()}`
+                                : t('parentalControl.noProfiles')}
+                        </Text>
+                    </View>
                 </View>
                 <MaterialIcons
                     name={isParentalExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
