@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
-import mobileAds, {
+import {
     BannerAd,
     BannerAdSize,
     TestIds,
-    MaxAdContentRating,
-    AdsConsent,
     NativeAd,
     NativeAdView,
     NativeAsset,
@@ -17,36 +15,15 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { BouncingDots } from './ModernLoading';
 import { AdblockAlertHelper } from './AdblockAlertModal';
-
-const BANNER_AD_UNIT_ID = Constants.expoConfig?.extra?.admobBannerUnitId || TestIds.BANNER;
-const NATIVE_AD_UNIT_ID = Constants.expoConfig?.extra?.admobNativeAdvancedUnitId || TestIds.NATIVE;
-
-let adsInitialized = false;
-let adsInitFailed = false;
-let adsInitPromise: Promise<void> | null = null;
-
-function initializeAds(): Promise<void> {
-    if (!adsInitPromise) {
-        adsInitPromise = (async () => {
-            try {
-                await AdsConsent.requestInfoUpdate();
-                await AdsConsent.loadAndShowConsentFormIfRequired();
-            } catch (_) { }
-
-            await mobileAds().setRequestConfiguration({
-                maxAdContentRating: MaxAdContentRating.G,
-                tagForChildDirectedTreatment: false,
-                tagForUnderAgeOfConsent: false,
-            });
-
-            await mobileAds().initialize();
-            adsInitialized = true;
-        })().catch(() => {
-            adsInitFailed = true;
-        });
-    }
-    return adsInitPromise;
-}
+import {
+    initAdMob,
+    isAdMobInitialized,
+    getAdRequestDelay,
+    recordAdRequest,
+    activateAdRequestCooldown,
+    BANNER_AD_UNIT_ID,
+    NATIVE_AD_UNIT_ID,
+} from '@/services/ad.service';
 
 function triggerAdblockAlert(error: any) {
     if (!error) return;
@@ -56,145 +33,148 @@ function triggerAdblockAlert(error: any) {
     }
 }
 
-const MAX_RETRIES = 3;
-
-function AdBlockerFallback({ isNative = false }: { isNative?: boolean }) {
-    const { colors, borderRadius, typography } = useTheme();
+function AdBlockerFallbackContent({ isNative = false }: { isNative?: boolean }) {
+    const { colors, typography } = useTheme();
     const { t } = useTranslation();
 
     return (
-        <View style={[
-            isNative ? styles.nativeFallback : styles.fallback,
-            {
-                backgroundColor: colors.card,
-                borderRadius: isNative ? 16 : borderRadius.lg,
-                borderWidth: 1,
-                borderColor: colors.border,
-            }
-        ]}>
-            <View style={styles.fallbackContent}>
-                <MaterialIcons name="info-outline" size={isNative ? 20 : 18} color={colors.warning} />
-                <View style={styles.fallbackTextContainer}>
-                    <Text style={[isNative ? typography.body : typography.footnote, { color: colors.text, fontWeight: '600' }]}>
-                        {t('ads.blockerDetected')}
-                    </Text>
-                    <Text style={[isNative ? typography.footnote : typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
-                        {t('ads.supportDeveloper')}
-                    </Text>
-                </View>
+        <View style={[styles.fallbackContent, { backgroundColor: 'transparent' }]}>
+            <MaterialIcons name="info-outline" size={isNative ? 20 : 18} color={colors.warning} />
+            <View style={[styles.fallbackTextContainer, { backgroundColor: 'transparent' }]}>
+                <Text style={[isNative ? typography.body : typography.footnote, { color: colors.text, fontWeight: '600', backgroundColor: 'transparent' }]} numberOfLines={1}>
+                    {t('ads.blockerDetected')}
+                </Text>
+                <Text style={[isNative ? typography.footnote : typography.caption1, { color: colors.textSecondary, marginTop: 2, backgroundColor: 'transparent' }]} numberOfLines={1}>
+                    {t('ads.supportDeveloper')}
+                </Text>
             </View>
         </View>
     );
 }
 
 // 1) Standard Banner Ad Component
-export const AdBanner: React.FC = () => {
-    const [isReady, setIsReady] = useState(adsInitialized);
-    const [initFailed, setInitFailed] = useState(adsInitFailed);
+export const AdBanner: React.FC = React.memo(() => {
+    const [isReady, setIsReady] = useState(isAdMobInitialized());
     const [adFailed, setAdFailed] = useState(false);
-    const [retryCount, setRetryCount] = useState(0);
-    const [adKey, setAdKey] = useState(0);
     const [isLoaded, setIsLoaded] = useState(false);
+    const [shouldLoad, setShouldLoad] = useState(false);
+    const [triggerKey, setTriggerKey] = useState(0);
 
     const { colors, isDark } = useTheme();
 
     useEffect(() => {
-        if (!adsInitialized && !adsInitFailed) {
-            initializeAds().then(() => {
-                setIsReady(adsInitialized);
-                setInitFailed(adsInitFailed);
+        if (!isAdMobInitialized()) {
+            initAdMob().then(() => {
+                setIsReady(isAdMobInitialized());
             });
         } else {
-            setIsReady(adsInitialized);
-            setInitFailed(adsInitFailed);
+            setIsReady(true);
         }
     }, []);
 
+    const delay = isReady ? getAdRequestDelay(BANNER_AD_UNIT_ID) : 0;
+
     useEffect(() => {
-        if (adFailed && retryCount < MAX_RETRIES) {
-            const delay = 3000 * (retryCount + 1);
-            const timeout = setTimeout(() => {
-                setAdFailed(false);
-                setAdKey((prev) => prev + 1);
-                setRetryCount((prev) => prev + 1);
-                setIsLoaded(false);
+        if (!isReady) return;
+
+        if (delay === 0) {
+            setShouldLoad(true);
+        } else {
+            setShouldLoad(false);
+            const timer = setTimeout(() => {
+                setShouldLoad(true);
             }, delay);
-            return () => clearTimeout(timeout);
+            return () => clearTimeout(timer);
         }
-    }, [adFailed, retryCount]);
+    }, [isReady, triggerKey, delay]);
 
-    if (adsInitFailed || initFailed || adFailed) {
-        return <AdBlockerFallback />;
-    }
-
-    const showPlaceholder = !isReady || adFailed || !isLoaded;
+    const renderAd = isReady && shouldLoad && !adFailed;
+    const showFallback = !renderAd || !isLoaded;
 
     return (
-        <View style={[styles.bannerContainer, {
-            height: 60,
-            justifyContent: 'center',
-            backgroundColor: showPlaceholder ? (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.015)') : 'transparent',
-            borderColor: showPlaceholder ? colors.border : 'transparent',
-            borderWidth: showPlaceholder ? 1 : 0,
-            borderStyle: 'dashed',
-        }]}>
-            {showPlaceholder && (
-                <View style={styles.placeholderContent}>
-                    <BouncingDots size="small" color={colors.textSecondary} style={{ opacity: 0.5 }} />
+        <View style={[
+            styles.bannerContainer,
+            {
+                backgroundColor: colors.card,
+                borderColor: colors.border,
+                borderWidth: 1,
+                borderRadius: 16,
+            }
+        ]}>
+            {showFallback ? (
+                <AdBlockerFallbackContent isNative={false} />
+            ) : (
+                <View style={{ height: 58, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
+                    <BannerAd
+                        key={triggerKey}
+                        unitId={BANNER_AD_UNIT_ID}
+                        size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
+                        onAdLoaded={() => {
+                            setIsLoaded(true);
+                            recordAdRequest(BANNER_AD_UNIT_ID);
+                        }}
+                        onAdFailedToLoad={(error) => {
+                            setIsLoaded(false);
+                            setAdFailed(true);
+                            setShouldLoad(false);
+                            triggerAdblockAlert(error);
+                            activateAdRequestCooldown();
+
+                            // Retry loading after cooldown expires
+                            const cooldownMs = getAdRequestDelay(BANNER_AD_UNIT_ID) || 30000;
+                            setTimeout(() => {
+                                setAdFailed(false);
+                                setTriggerKey(prev => prev + 1);
+                            }, cooldownMs + 5000);
+                        }}
+                    />
                 </View>
-            )}
-            {isReady && !adFailed && (
-                <BannerAd
-                    key={adKey}
-                    unitId={BANNER_AD_UNIT_ID}
-                    size={BannerAdSize.ANCHORED_ADAPTIVE_BANNER}
-                    onAdLoaded={() => {
-                        setIsLoaded(true);
-                        setRetryCount(0);
-                    }}
-                    onAdFailedToLoad={(error) => {
-                        setIsLoaded(false);
-                        setAdFailed(true);
-                        triggerAdblockAlert(error);
-                    }}
-                />
             )}
         </View>
     );
-};
+});
 
 // 2) Premium Native Advanced Ad Component
-export const AdNative: React.FC = () => {
-    const [isReady, setIsReady] = useState(adsInitialized);
-    const [initFailed, setInitFailed] = useState(adsInitFailed);
+export const AdNative: React.FC = React.memo(() => {
+    const [isReady, setIsReady] = useState(isAdMobInitialized());
     const [adFailed, setAdFailed] = useState(false);
-    const [retryCount, setRetryCount] = useState(0);
-    const [adKey, setAdKey] = useState(0);
     const [nativeAd, setNativeAd] = useState<NativeAd | null>(null);
     const [isLoading, setIsLoading] = useState(true);
+    const [triggerKey, setTriggerKey] = useState(0);
 
     const { colors, typography, isDark } = useTheme();
 
     useEffect(() => {
-        if (!adsInitialized && !adsInitFailed) {
-            initializeAds().then(() => {
-                setIsReady(adsInitialized);
-                setInitFailed(adsInitFailed);
+        if (!isAdMobInitialized()) {
+            initAdMob().then(() => {
+                setIsReady(isAdMobInitialized());
             });
         } else {
-            setIsReady(adsInitialized);
-            setInitFailed(adsInitFailed);
+            setIsReady(true);
         }
     }, []);
 
     useEffect(() => {
+        if (!isReady) return;
+
         let active = true;
         let adInstance: NativeAd | null = null;
+        let timer: NodeJS.Timeout | null = null;
 
         const loadNativeAd = async () => {
+            const delay = getAdRequestDelay(NATIVE_AD_UNIT_ID);
+            if (delay > 0) {
+                setIsLoading(true);
+                timer = setTimeout(() => {
+                    setTriggerKey(prev => prev + 1);
+                }, delay);
+                return;
+            }
+
             setIsLoading(true);
             setAdFailed(false);
             try {
+                recordAdRequest(NATIVE_AD_UNIT_ID);
                 const adRequestPromise = NativeAd.createForAdRequest(NATIVE_AD_UNIT_ID);
                 const timeoutPromise = new Promise<never>((_, reject) =>
                     setTimeout(() => reject(new Error('Timeout loading native ad')), 5000)
@@ -209,65 +189,46 @@ export const AdNative: React.FC = () => {
                     ad.destroy();
                 }
             } catch (err) {
-                console.warn('Failed to load native ad:', err);
                 if (active) {
                     setAdFailed(true);
                     setIsLoading(false);
                     triggerAdblockAlert(err);
+                    activateAdRequestCooldown();
                 }
             }
         };
 
-        if (isReady) {
-            loadNativeAd();
-        }
+        loadNativeAd();
 
         return () => {
             active = false;
             if (adInstance) {
                 adInstance.destroy();
             }
+            if (timer) {
+                clearTimeout(timer);
+            }
         };
-    }, [isReady, adKey]);
+    }, [isReady, triggerKey]);
 
-    useEffect(() => {
-        if (adFailed && retryCount < MAX_RETRIES) {
-            const delay = 3000 * (retryCount + 1);
-            const timeout = setTimeout(() => {
-                setAdFailed(false);
-                setAdKey((prev) => prev + 1);
-                setRetryCount((prev) => prev + 1);
-                setNativeAd(null);
-            }, delay);
-            return () => clearTimeout(timeout);
-        }
-    }, [adFailed, retryCount]);
-
-    if (adsInitFailed || initFailed || adFailed) {
-        return <AdBlockerFallback isNative />;
-    }
-
-    const showPlaceholder = !isReady || adFailed || isLoading || !nativeAd;
+    const showAd = isReady && !isLoading && nativeAd;
+    const showPlaceholder = !isReady || isLoading;
 
     return (
         <View style={[styles.container, {
-            minHeight: 90,
             justifyContent: 'center',
             backgroundColor: showPlaceholder ? (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.015)') : colors.card,
             borderColor: colors.border,
             borderWidth: 1,
             borderRadius: 16,
             overflow: 'hidden',
-            shadowColor: '#000',
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: isDark ? 0.2 : 0.05,
-            shadowRadius: 8,
-            elevation: 2,
         }]}>
             {showPlaceholder ? (
                 <View style={styles.placeholderContent}>
                     <BouncingDots size="small" color={colors.textSecondary} style={{ opacity: 0.5 }} />
                 </View>
+            ) : !showAd ? (
+                <AdBlockerFallbackContent isNative={true} />
             ) : (
                 <NativeAdView
                     nativeAd={nativeAd}
@@ -322,7 +283,7 @@ export const AdNative: React.FC = () => {
             )}
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     bannerContainer: {
@@ -330,11 +291,15 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         borderRadius: 12,
         overflow: 'hidden',
+        height: 60,
+        width: '100%',
+        justifyContent: 'center',
     },
     container: {
         marginBottom: 16,
         overflow: 'hidden',
         width: '100%',
+        height: 90,
     },
     placeholderContent: {
         position: 'absolute',
@@ -348,8 +313,8 @@ const styles = StyleSheet.create({
     nativeAdContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
-        minHeight: 90,
+        padding: 10,
+        height: 90,
         width: '100%',
     },
     adIcon: {
@@ -389,25 +354,12 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         overflow: 'hidden',
     },
-    fallback: {
-        padding: 12,
-        marginBottom: 16,
-    },
-    nativeFallback: {
-        padding: 18,
-        marginBottom: 16,
-        minHeight: 90,
-        justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.05,
-        shadowRadius: 4,
-        elevation: 2,
-    },
     fallbackContent: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 6,
+        justifyContent: 'center',
+        flex: 1,
+        paddingHorizontal: 16,
     },
     fallbackTextContainer: {
         flex: 1,

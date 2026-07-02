@@ -1,8 +1,10 @@
-import { Tabs, useRouter } from 'expo-router';
+import { Tabs, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import { View, StyleSheet, StatusBar, Platform, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { runOnJS } from 'react-native-reanimated';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
@@ -70,12 +72,16 @@ const TabIcon = ({ name, color, focused, badge }: { name: string; color: string;
 export default function TabLayout() {
   const { colors } = useTheme();
   const router = useRouter();
+  const segments = useSegments();
   const { isAuthenticated, credentials } = useAuthStore();
   const { smsCount } = useSMSStore();
   const { connectedDevices } = useWiFiStore();
   const { badgesEnabled } = useThemeStore();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
+
+  const currentTab = segments[segments.length - 1];
+  const tabs = ['home', 'wifi', 'sms', 'settings'];
 
   useEffect(() => {
     if (!isAuthenticated || !credentials) {
@@ -87,56 +93,87 @@ export default function TabLayout() {
     return null;
   }
 
+  const handleSwipeLeft = () => {
+    const currentIndex = tabs.indexOf(currentTab);
+    if (currentIndex >= 0 && currentIndex < tabs.length - 1) {
+      const nextTab = tabs[currentIndex + 1];
+      router.navigate(`/(tabs)/${nextTab}`);
+    }
+  };
+
+  const handleSwipeRight = () => {
+    const currentIndex = tabs.indexOf(currentTab);
+    if (currentIndex > 0) {
+      const prevTab = tabs[currentIndex - 1];
+      router.navigate(`/(tabs)/${prevTab}`);
+    }
+  };
+
+  const swipeGesture = Gesture.Pan()
+    .activeOffsetX([-30, 30])
+    .failOffsetY([-30, 30])
+    .onEnd((event) => {
+      if (event.velocityX < -500 || event.translationX < -100) {
+        runOnJS(handleSwipeLeft)();
+      } else if (event.velocityX > 500 || event.translationX > 100) {
+        runOnJS(handleSwipeRight)();
+      }
+    });
+
   return (
     <>
       <StatusBarHeader />
-      <Tabs
-        tabBar={(props) => <CustomTabBar {...props} />}
-        // @ts-ignore: sceneContainerStyle is valid for BottomTabNavigator but missing in Expo Router types
-        sceneContainerStyle={{ backgroundColor: colors.background }}
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: colors.textSecondary,
-        }}
-      >
-        <Tabs.Screen
-          name="home"
-          options={{
-            title: t('tabs.home'),
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="home" color={color} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="wifi"
-          options={{
-            title: t('tabs.wifi'),
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="wifi" color={color} focused={focused} badge={badgesEnabled ? connectedDevices.length : undefined} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="sms"
-          options={{
-            title: t('tabs.sms'),
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="sms" color={color} focused={focused} badge={badgesEnabled ? smsCount?.localUnread : undefined} />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="settings"
-          options={{
-            title: t('tabs.settings'),
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="settings" color={color} focused={focused} />
-            ),
-          }}
-        />
-      </Tabs>
+      <GestureDetector gesture={swipeGesture}>
+        <View style={{ flex: 1 }}>
+          <Tabs
+            tabBar={(props) => <CustomTabBar {...props} />}
+            // @ts-ignore: sceneContainerStyle is valid for BottomTabNavigator but missing in Expo Router types
+            sceneContainerStyle={{ backgroundColor: colors.background }}
+            screenOptions={{
+              headerShown: false,
+              tabBarActiveTintColor: colors.primary,
+              tabBarInactiveTintColor: colors.textSecondary,
+            }}
+          >
+            <Tabs.Screen
+              name="home"
+              options={{
+                title: t('tabs.home'),
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon name="home" color={color} focused={focused} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="wifi"
+              options={{
+                title: t('tabs.wifi'),
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon name="wifi" color={color} focused={focused} badge={badgesEnabled ? connectedDevices.length : undefined} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="sms"
+              options={{
+                title: t('tabs.sms'),
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon name="sms" color={color} focused={focused} badge={badgesEnabled ? smsCount?.localUnread : undefined} />
+                ),
+              }}
+            />
+            <Tabs.Screen
+              name="settings"
+              options={{
+                title: t('tabs.settings'),
+                tabBarIcon: ({ color, focused }) => (
+                  <TabIcon name="settings" color={color} focused={focused} />
+                ),
+              }}
+            />
+          </Tabs>
+        </View>
+      </GestureDetector>
     </>
   );
 }

@@ -297,7 +297,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
 
     const handleClose = () => {
         onClose();
-        showInterstitial(() => {});
     };
 
     const handleAntennaChange = async (mode: string) => {

@@ -22,6 +22,11 @@ const REWARDED_ID =
 const APP_OPEN_ID =
     Constants.expoConfig?.extra?.admobAppOpenUnitId || TestIds.APP_OPEN;
 
+export const BANNER_AD_UNIT_ID =
+    Constants.expoConfig?.extra?.admobBannerUnitId || TestIds.BANNER;
+export const NATIVE_AD_UNIT_ID =
+    Constants.expoConfig?.extra?.admobNativeAdvancedUnitId || TestIds.NATIVE;
+
 const translations: Record<string, any> = { en, id };
 
 function getTranslation(key: string): string {
@@ -49,15 +54,72 @@ function getTranslation(key: string): string {
 let isInitialized = false;
 let initPromise: Promise<void> | null = null;
 
-// Preloaded ad instances
 let preloadedInterstitial: InterstitialAd | null = null;
 let preloadedRewarded: RewardedAd | null = null;
 let preloadedAppOpen: AppOpenAd | null = null;
 
-// Tracks loading state to prevent duplicate parallel requests
 let isInterstitialLoading = false;
 let isRewardedLoading = false;
 let isAppOpenLoading = false;
+
+let globalAdRequestCooldownUntil = 0;
+const COOLDOWN_DURATION_MS = 30 * 1000;
+const GLOBAL_REQUEST_DEBOUNCE_MS = 15 * 1000;
+const BANNER_NATIVE_DEBOUNCE_MS = 2 * 1000;
+
+const lastRequestTimestamps: Record<string, number> = {};
+
+export function isAdMobInitialized(): boolean {
+    return isInitialized;
+}
+
+export function isAdRequestAllowed(adUnitId?: string): boolean {
+    const now = Date.now();
+    if (now < globalAdRequestCooldownUntil) {
+        return false;
+    }
+    if (adUnitId) {
+        const lastTime = lastRequestTimestamps[adUnitId] || 0;
+        const debounceLimit = (adUnitId === BANNER_AD_UNIT_ID || adUnitId === NATIVE_AD_UNIT_ID)
+            ? BANNER_NATIVE_DEBOUNCE_MS
+            : GLOBAL_REQUEST_DEBOUNCE_MS;
+
+        if (now - lastTime < debounceLimit) {
+            return false;
+        }
+    }
+    return true;
+}
+
+export function getAdRequestDelay(adUnitId?: string): number {
+    const now = Date.now();
+    let delay = 0;
+    if (now < globalAdRequestCooldownUntil) {
+        delay = Math.max(delay, globalAdRequestCooldownUntil - now);
+    }
+    if (adUnitId) {
+        const lastTime = lastRequestTimestamps[adUnitId] || 0;
+        const timeSinceLast = now - lastTime;
+        const debounceLimit = (adUnitId === BANNER_AD_UNIT_ID || adUnitId === NATIVE_AD_UNIT_ID)
+            ? BANNER_NATIVE_DEBOUNCE_MS
+            : GLOBAL_REQUEST_DEBOUNCE_MS;
+
+        if (timeSinceLast < debounceLimit) {
+            delay = Math.max(delay, debounceLimit - timeSinceLast);
+        }
+    }
+    return delay;
+}
+
+export function recordAdRequest(adUnitId: string): void {
+    const lastTime = lastRequestTimestamps[adUnitId];
+    const now = Date.now();
+    lastRequestTimestamps[adUnitId] = now;
+}
+
+export function activateAdRequestCooldown(): void {
+    globalAdRequestCooldownUntil = Date.now() + COOLDOWN_DURATION_MS;
+}
 
 function handleAdError(error: any) {
     if (!error) return;
@@ -79,7 +141,7 @@ export function initAdMob(): Promise<void> {
             try {
                 await AdsConsent.requestInfoUpdate();
                 await AdsConsent.loadAndShowConsentFormIfRequired();
-            } catch (_) {}
+            } catch (_) { }
 
             await mobileAds().setRequestConfiguration({
                 maxAdContentRating: MaxAdContentRating.G,
@@ -89,9 +151,7 @@ export function initAdMob(): Promise<void> {
 
             await mobileAds().initialize();
             isInitialized = true;
-            console.log('✅ AdMob SDK Initialized');
 
-            // Preload ads asynchronously after initialization
             preloadInterstitial();
             preloadRewarded();
             preloadAppOpenAd();
@@ -105,6 +165,8 @@ export function initAdMob(): Promise<void> {
 
 export function preloadInterstitial(): void {
     if (!isInitialized || preloadedInterstitial || isInterstitialLoading) return;
+    if (!isAdRequestAllowed(INTERSTITIAL_ID)) return;
+    recordAdRequest(INTERSTITIAL_ID);
 
     isInterstitialLoading = true;
     const ad = InterstitialAd.createForAdRequest(INTERSTITIAL_ID);
@@ -113,14 +175,13 @@ export function preloadInterstitial(): void {
         preloadedInterstitial = ad;
         isInterstitialLoading = false;
         cleanup();
-        console.log('✅ Interstitial ad preloaded and cached');
     });
 
     const unsubError = ad.addAdEventListener(AdEventType.ERROR, (error) => {
         isInterstitialLoading = false;
         preloadedInterstitial = null;
         cleanup();
-        console.warn('❌ Failed to preload Interstitial ad:', error);
+        activateAdRequestCooldown();
     });
 
     function cleanup() {
@@ -133,6 +194,8 @@ export function preloadInterstitial(): void {
 
 export function preloadRewarded(): void {
     if (!isInitialized || preloadedRewarded || isRewardedLoading) return;
+    if (!isAdRequestAllowed(REWARDED_ID)) return;
+    recordAdRequest(REWARDED_ID);
 
     isRewardedLoading = true;
     const ad = RewardedAd.createForAdRequest(REWARDED_ID);
@@ -141,15 +204,14 @@ export function preloadRewarded(): void {
         preloadedRewarded = ad;
         isRewardedLoading = false;
         cleanup();
-        console.log('✅ Rewarded ad preloaded and cached');
     });
 
     const unsubError = ad.addAdEventListener(AdEventType.ERROR, (error) => {
         isRewardedLoading = false;
         preloadedRewarded = null;
         cleanup();
-        console.warn('❌ Failed to preload Rewarded ad:', error);
         handleAdError(error);
+        activateAdRequestCooldown();
     });
 
     function cleanup() {
@@ -173,12 +235,12 @@ export function showInterstitial(onDone: () => void): void {
 
     if (preloadedInterstitial && preloadedInterstitial.loaded) {
         const ad = preloadedInterstitial;
-        preloadedInterstitial = null; // Consume the preloaded instance
+        preloadedInterstitial = null;
 
         const unsubClosed = ad.addAdEventListener(AdEventType.CLOSED, () => {
             unsubClosed();
             onDone();
-            preloadInterstitial(); // Cache next ad
+            preloadInterstitial();
         });
 
         ad.show().catch((err) => {
@@ -188,8 +250,11 @@ export function showInterstitial(onDone: () => void): void {
             preloadInterstitial();
         });
     } else {
-        // Fallback: load on-the-fly with a timeout
-        console.log('Interstitial ad not cached, loading on-the-fly...');
+        if (!isAdRequestAllowed(INTERSTITIAL_ID)) {
+            onDone();
+            return;
+        }
+        recordAdRequest(INTERSTITIAL_ID);
         const ad = InterstitialAd.createForAdRequest(INTERSTITIAL_ID);
         let completed = false;
 
@@ -199,8 +264,9 @@ export function showInterstitial(onDone: () => void): void {
                 cleanup();
                 onDone();
                 preloadInterstitial();
+                activateAdRequestCooldown();
             }
-        }, 5000); // 5-second timeout
+        }, 5000);
 
         const unsubLoaded = ad.addAdEventListener(AdEventType.LOADED, () => {
             if (!completed) {
@@ -227,6 +293,7 @@ export function showInterstitial(onDone: () => void): void {
                 cleanup();
                 onDone();
                 preloadInterstitial();
+                activateAdRequestCooldown();
             }
         });
 
@@ -282,7 +349,11 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
         });
     } else {
         // Fallback: load on-the-fly with a timeout
-        console.log('Rewarded ad not cached, loading on-the-fly...');
+        if (!isAdRequestAllowed(REWARDED_ID)) {
+            onRewarded();
+            return;
+        }
+        recordAdRequest(REWARDED_ID);
         const ad = RewardedAd.createForAdRequest(REWARDED_ID);
         let completed = false;
         let earned = false;
@@ -293,6 +364,7 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
                 cleanup();
                 onRewarded(); // Fallback: Proceed silently on timeout
                 preloadRewarded();
+                activateAdRequestCooldown();
             }
         }, 8000); // 8-second timeout for rewarded video
 
@@ -331,6 +403,7 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
                 handleAdError(error);
                 onRewarded(); // Fallback: Proceed silently on load error
                 preloadRewarded();
+                activateAdRequestCooldown();
             }
         });
 
@@ -354,6 +427,8 @@ function showLoadErrorAlert() {
 
 export function preloadAppOpenAd(): void {
     if (!isInitialized || preloadedAppOpen || isAppOpenLoading) return;
+    if (!isAdRequestAllowed(APP_OPEN_ID)) return;
+    recordAdRequest(APP_OPEN_ID);
 
     isAppOpenLoading = true;
     const ad = AppOpenAd.createForAdRequest(APP_OPEN_ID);
@@ -362,14 +437,13 @@ export function preloadAppOpenAd(): void {
         preloadedAppOpen = ad;
         isAppOpenLoading = false;
         cleanup();
-        console.log('✅ App Open ad preloaded and cached');
     });
 
     const unsubError = ad.addAdEventListener(AdEventType.ERROR, (error) => {
         isAppOpenLoading = false;
         preloadedAppOpen = null;
         cleanup();
-        console.warn('❌ Failed to preload App Open ad:', error);
+        activateAdRequestCooldown();
     });
 
     function cleanup() {

@@ -13,6 +13,7 @@ import {
   AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
@@ -533,8 +534,9 @@ export default function SMSScreen() {
                   {t('sms.recentMessages')}
                 </Text>
                 {smsCount && smsCount.localUnread > 0 && (
-                  <TouchableOpacity onPress={handleMarkAllAsRead}>
-                    <Text style={[typography.caption1, { color: colors.primary }]}>
+                  <TouchableOpacity onPress={handleMarkAllAsRead} style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialIcons name="check" size={16} color={colors.primary} style={{ marginRight: 4 }} />
+                    <Text style={[typography.caption1, { color: colors.primary, fontWeight: '600' }]}>
                       {t('sms.markAllAsRead')}
                     </Text>
                   </TouchableOpacity>
@@ -549,6 +551,7 @@ export default function SMSScreen() {
                   backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
                   borderWidth: 1,
                   borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                  marginBottom: spacing.md,
                 }]}>
                   <MaterialIcons name="sms" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
                   <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
@@ -558,11 +561,7 @@ export default function SMSScreen() {
 
               </>
             ) : (
-              <View style={[styles.messagesList, {
-                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                borderWidth: 1,
-                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-              }]}>
+              <View style={{ marginBottom: spacing.md }}>
                 {filteredMessages.map((message, index) => (
                   <React.Fragment key={`${message.boxType}-${message.index}`}>
                     <SMSListItem
@@ -580,7 +579,9 @@ export default function SMSScreen() {
                 ))}
               </View>
             )}
+
             <AdNative />
+
           </ScrollView>
 
           {isSelectionMode && (
@@ -632,12 +633,25 @@ export default function SMSScreen() {
             <TouchableOpacity
               style={[
                 styles.fab,
-                { backgroundColor: colors.primary }
+                { backgroundColor: 'transparent', elevation: 8 }
               ]}
               onPress={() => setShowCompose(true)}
               activeOpacity={0.8}
             >
-              <MaterialIcons name="add" size={28} color="#FFF" />
+              <LinearGradient
+                colors={['#06b6d4', '#6366f1']}
+                start={{ x: 0, y: 1 }}
+                end={{ x: 1, y: 0 }}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 28,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <MaterialIcons name="add" size={28} color="#FFF" />
+              </LinearGradient>
             </TouchableOpacity>
           )}
         </MeshGradientBackground>
