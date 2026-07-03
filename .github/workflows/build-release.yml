@@ -32,7 +32,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.get_version.outputs.version }}
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -68,6 +68,10 @@ jobs:
           VERSION=$(grep -oP "version:\s*'\\K[^']+" app.config.ts)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
+
+      # ⬇️ BARU: set versionCode unik untuk arm64-v8a (suffix 2)
+      - name: Set version code
+        run: echo "ANDROID_VERSION_CODE=$(( ${{ github.run_number }} * 10 + 2 ))" >> $GITHUB_ENV
 
       - name: Create google-services.json from secret
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
@@ -98,7 +102,7 @@ jobs:
 
   build-armv7:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -134,6 +138,10 @@ jobs:
           VERSION=$(grep -oP "version:\s*'\\K[^']+" app.config.ts)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
+
+      # ⬇️ BARU: set versionCode unik untuk armeabi-v7a (suffix 1)
+      - name: Set version code
+        run: echo "ANDROID_VERSION_CODE=$(( ${{ github.run_number }} * 10 + 1 ))" >> $GITHUB_ENV
 
       - name: Create google-services.json from secret
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
@@ -164,7 +172,7 @@ jobs:
 
   build-universal:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -201,6 +209,10 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "App version: $VERSION"
 
+      # ⬇️ BARU: set versionCode unik untuk universal (suffix 3)
+      - name: Set version code
+        run: echo "ANDROID_VERSION_CODE=$(( ${{ github.run_number }} * 10 + 3 ))" >> $GITHUB_ENV
+
       - name: Create google-services.json from secret
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
 
@@ -229,7 +241,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: [build-arm64, build-armv7, build-universal]
-    
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -250,54 +262,47 @@ jobs:
         run: |
           PREV_TAG="${{ steps.prev_tag.outputs.prev_tag }}"
           REPO="${{ github.repository }}"
-          
-          # Get commits since last tag (or all if no previous tag)
+
           if [ -n "$PREV_TAG" ]; then
             COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"%H" 2>/dev/null || echo "")
           else
             COMMITS=$(git log --pretty=format:"%H" 2>/dev/null || echo "")
           fi
-          
-          # Find merged PRs from commits
+
           echo "## What's Changed" > release_notes.md
           echo "" >> release_notes.md
-          
+
           PR_FOUND=false
           for COMMIT in $COMMITS; do
-            # Get PR number from commit (if merged via PR)
             PR_DATA=$(gh api "repos/${REPO}/commits/${COMMIT}/pulls" --jq '.[0] | {number, title, user: .user.login, html_url}' 2>/dev/null || echo "")
-            
+
             if [ -n "$PR_DATA" ] && [ "$PR_DATA" != "null" ]; then
               PR_NUM=$(echo "$PR_DATA" | jq -r '.number')
               PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')
               PR_USER=$(echo "$PR_DATA" | jq -r '.user')
               PR_URL=$(echo "$PR_DATA" | jq -r '.html_url')
-              
-              # Skip if PR number is null or empty (commit not from a PR)
+
               if [ -z "$PR_NUM" ] || [ "$PR_NUM" = "null" ]; then
                 continue
               fi
-              
-              # Check if already added (avoid duplicates)
+
               if ! grep -q "#${PR_NUM}" release_notes.md 2>/dev/null; then
                 echo "* ${PR_TITLE} by @${PR_USER} in [#${PR_NUM}](${PR_URL})" >> release_notes.md
                 PR_FOUND=true
               fi
             fi
           done
-          
+
           if [ "$PR_FOUND" = false ]; then
             echo "* Various improvements and bug fixes" >> release_notes.md
           fi
-          
+
           echo "" >> release_notes.md
-          
-          # Add full changelog link
+
           if [ -n "$PREV_TAG" ]; then
             echo "**Full Changelog**: https://github.com/${REPO}/compare/${PREV_TAG}...v${{ needs.build-arm64.outputs.version }}" >> release_notes.md
           fi
-          
-          # Output for use in release body
+
           {
             echo 'notes<<EOF'
             cat release_notes.md
@@ -335,59 +340,59 @@ jobs:
             > **armeabi-v7a**: Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v${{ needs.build-arm64.outputs.version }}/huawei-manager-armeabi-v7a.apk)
             >
             > **universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v${{ needs.build-arm64.outputs.version }}/huawei-manager-universal.apk)
-            
+
             ${{ steps.release_notes.outputs.notes }}
-            
+
             ---
-            
+
             ### 📄 File Descriptions / Deskripsi File
-            
+
             #### 🇺🇸 EN (English)
             * **huawei-manager-arm64-v8a.apk**
               * Target: Modern & High-end devices (64-bit)
               * Recommended for most Android phones released after 2016
               * ✅ Better performance
-              
+
             * **huawei-manager-armeabi-v7a.apk**
               * Target: Older & Low-end devices (32-bit)
               * Use this if arm64 version fails to install
               * ✅ Smaller file size
-              
+
             * **huawei-manager-universal.apk**
               * Target: All devices
               * Contains libraries for all architectures
               * ⚠️ Larger file size, use only if you are unsure which one to pick
-            
+
             #### 🇮🇩 ID (Bahasa Indonesia)
             * **huawei-manager-arm64-v8a.apk**
               * Target: Perangkat Modern & High-end (64-bit)
               * Direkomendasikan untuk sebagian besar HP Android keluaran di atas 2016
               * ✅ Performa lebih baik
-              
+
             * **huawei-manager-armeabi-v7a.apk**
               * Target: Perangkat Lama & Low-end (32-bit)
               * Gunakan ini jika versi arm64 gagal diinstall
               * ✅ Ukuran file lebih kecil
-              
+
             * **huawei-manager-universal.apk**
               * Target: Semua perangkat
               * Berisi library untuk semua arsitektur
               * ⚠️ Ukuran file lebih besar, gunakan hanya jika Anda ragu memilih versi
-            
+
             ### 🔧 Installation / Instalasi
-            
+
             #### 🇺🇸 English
             1. Download the APK suitable for your device (arm64 recommended).
             2. Enable "Install from unknown sources" in your Android Settings.
             3. Open the downloaded file to install.
-            
+
             #### 🇮🇩 Bahasa Indonesia
             1. Download APK yang sesuai dengan perangkat Anda (arm64 direkomendasikan).
             2. Aktifkan "Install from unknown sources" (Instal dari sumber tidak dikenal) di Pengaturan.
             3. Buka file APK untuk menginstall.
 
             ### 💡 Notes / Catatan
-            
+
             > **EN**
             > We appreciate your understanding and feedback to help improve Huawei Manager.
             >
@@ -422,52 +427,52 @@ jobs:
             > **armeabi-v7a**: Untuk Android 32-bit (Ukuran lebih kecil) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/${{ github.event.inputs.version }}/huawei-manager-armeabi-v7a.apk)
             >
             > **universal**: Untuk semua perangkat (Ukuran lebih besar) → [Link Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/${{ github.event.inputs.version }}/huawei-manager-universal.apk)
-            
+
             ${{ steps.release_notes.outputs.notes }}
-            
+
             ---
-            
+
             ### 📄 File Descriptions / Deskripsi File
-            
+
             #### 🇺🇸 EN (English)
             * **huawei-manager-arm64-v8a.apk**
               * Target: Modern & High-end devices (64-bit)
               * Recommended for most Android phones released after 2016
               * ✅ Better performance
-              
+
             * **huawei-manager-armeabi-v7a.apk**
               * Target: Older & Low-end devices (32-bit)
               * Use this if arm64 version fails to install
               * ✅ Smaller file size
-              
+
             * **huawei-manager-universal.apk**
               * Target: All devices
               * Contains libraries for all architectures
               * ⚠️ Larger file size, use only if you are unsure which one to pick
-            
+
             #### 🇮🇩 ID (Bahasa Indonesia)
             * **huawei-manager-arm64-v8a.apk**
               * Target: Perangkat Modern & High-end (64-bit)
               * Direkomendasikan untuk sebagian besar HP Android keluaran di atas 2016
               * ✅ Performa lebih baik
-              
+
             * **huawei-manager-armeabi-v7a.apk**
               * Target: Perangkat Lama & Low-end (32-bit)
               * Gunakan ini jika versi arm64 gagal diinstall
               * ✅ Ukuran file lebih kecil
-              
+
             * **huawei-manager-universal.apk**
               * Target: Semua perangkat
               * Berisi library untuk semua arsitektur
               * ⚠️ Ukuran file lebih besar, gunakan hanya jika Anda ragu memilih versi
-            
+
             ### 🔧 Installation / Instalasi
-            
+
             #### 🇺🇸 English
             1. Download the APK suitable for your device (arm64 recommended).
             2. Enable "Install from unknown sources" in your Android Settings.
             3. Open the downloaded file to install.
-            
+
             #### 🇮🇩 Bahasa Indonesia
             1. Download APK yang sesuai dengan perangkat Anda (arm64 direkomendasikan).
             2. Aktifkan "Install from unknown sources" (Instal dari sumber tidak dikenal) di Pengaturan.
