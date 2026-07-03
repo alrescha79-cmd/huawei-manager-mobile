@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Card, CardHeader, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator, AdBanner, AdNative } from '@/components';
 import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, WiFiSettingsSkeleton, ConnectedDevicesSkeleton, GuestWiFiSkeleton, ParentalControlSkeleton, wifiStyles as styles } from '@/components/wifi';
 import { useAuthStore } from '@/stores/auth.store';
@@ -49,6 +50,7 @@ export default function WiFiScreen() {
   const { colors, typography, spacing } = useTheme();
   const { t } = useTranslation();
   const { credentials } = useAuthStore();
+  const insets = useSafeAreaInsets();
   const {
     connectedDevices,
     wifiSettings,
@@ -484,7 +486,7 @@ export default function WiFiScreen() {
                   </View>
                 </ScrollView>
 
-                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 }]}>
                   <Pressable
                     style={({ pressed }) => [
                       styles.saveButtonFull,

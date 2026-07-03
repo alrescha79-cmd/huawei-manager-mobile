@@ -15,7 +15,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ModalMeshGradient } from './ModalMeshGradient';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
-import { ThemedAlertHelper } from '@/components';
+import { AdNative, ThemedAlertHelper } from '@/components';
 
 interface SpeedtestModalProps {
     visible: boolean;
@@ -307,7 +307,7 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
 
             // 2. DOWNLOAD SPEED PHASE
             setPhase('download');
-            
+
             // Set up smooth progress increment from 20 to 60
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
             progressIntervalRef.current = setInterval(() => {
@@ -533,7 +533,11 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                             />
                         </View>
 
-                        <View style={[styles.statsRow, { marginTop: spacing.lg }]}>
+                        <View style={{ paddingHorizontal: 4 }}>
+                            <AdNative />
+                        </View>
+
+                        <View style={[styles.statsRow, { marginTop: spacing.sm }]}>
                             <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
                                 <MaterialIcons name="timer" size={20} color={colors.primary} />
                                 <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>

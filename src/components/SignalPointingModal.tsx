@@ -12,7 +12,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useAuthStore } from '@/stores/auth.store';
-import { Card, PageSheetModal, SelectionModal, ThemedAlertHelper, BouncingDots, AdNative } from '@/components';
+import { Card } from './Card';
+import { PageSheetModal } from './PageSheetModal';
+import { SelectionModal } from './SelectionModal';
+import { ThemedAlertHelper } from './ThemedAlert';
+import { BouncingDots } from './ModernLoading';
+import { AdNative } from './AdBanner';
 import { SignalInfo } from '@/types';
 import { ModemService } from '@/services/modem.service';
 import { showInterstitial } from '@/services/ad.service';
@@ -296,7 +301,7 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
     };
 
     const handleClose = () => {
-        onClose();
+        showInterstitial(onClose);
     };
 
     const handleAntennaChange = async (mode: string) => {
@@ -309,7 +314,7 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
             setAntennaMode(mode);
             ThemedAlertHelper.alert(t('common.success'), t('settings.antennaModeChanged'));
             if (changed) {
-                showInterstitial(() => {});
+                showInterstitial(() => { });
             }
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeAntenna'));
@@ -351,224 +356,225 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                     </Card>
                 ) : (
                     <>
-                <View style={[styles.metricToggle, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
-                    <TouchableOpacity
-                        style={[styles.metricButton, signalMetric === 'rsrp' && { backgroundColor: colors.primary }]}
-                        onPress={() => handleMetricChange('rsrp')}
-                    >
-                        <Text style={[typography.caption1, { color: signalMetric === 'rsrp' ? '#fff' : colors.text, fontWeight: '600' }]}>
-                            RSRP
-                        </Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.metricButton, signalMetric === 'sinr' && { backgroundColor: colors.primary }]}
-                        onPress={() => handleMetricChange('sinr')}
-                    >
-                        <Text style={[typography.caption1, { color: signalMetric === 'sinr' ? '#fff' : colors.text, fontWeight: '600' }]}>
-                            SINR
-                        </Text>
-                    </TouchableOpacity>
-                </View>
-
-                <Card style={[styles.mainCard, { borderColor: quality.color, borderWidth: 2 }]}>
-                    <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginBottom: 8 }]}>
-                        {signalMetric === 'rsrp' ? t('home.metricRSRP') : t('home.metricSINR')}
-                    </Text>
-
-                    <Text style={[styles.rsrpValue, { color: quality.color }]}>
-                        {currentValue !== null ? `${currentValue}` : '-'}
-                        <Text style={styles.rsrpUnit}> {valueUnit}</Text>
-                    </Text>
-
-                    <View style={[styles.signalBarContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
-                        <View style={[styles.signalBarFill, { width: `${quality.percentage}%`, backgroundColor: quality.color }]} />
-                    </View>
-
-                    <Text style={[typography.headline, { color: quality.color, textAlign: 'center', marginTop: 12, textTransform: 'uppercase' }]}>
-                        {t(`home.signal${quality.level.charAt(0).toUpperCase() + quality.level.slice(1)}`)}
-                    </Text>
-
-                    {signalHistory.length < 2 ? (
-                        <View style={[styles.graphSkeleton, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
-                            <View style={[styles.skeletonBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
-                            <View style={[styles.skeletonBar, { height: 30, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
-                            <View style={[styles.skeletonBar, { height: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
-                        </View>
-                    ) : (
-                        <MiniSignalGraph history={signalHistory} colors={colors} isDark={isDark} metric={signalMetric} />
-                    )}
-
-                    {fetchTime !== null && (
-                        <Text style={[typography.caption2, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
-                            Update: {fetchTime}ms
-                        </Text>
-                    )}
-                </Card>
-
-
-
-                <Card style={{ marginTop: spacing.md }}>
-                    <View style={styles.detailsGrid}>
-                        <View style={styles.detailItem}>
-                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>RSRQ</Text>
-                            <Text style={[typography.headline, { color: colors.text }]}>
-                                {formatSignalValue(signalInfo?.rsrq, 'dB')}
-                            </Text>
-                        </View>
-                        <View style={styles.detailItem}>
-                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                                {signalMetric === 'rsrp' ? 'SINR' : 'RSRP'}
-                            </Text>
-                            <Text style={[typography.headline, { color: colors.text }]}>
-                                {signalMetric === 'rsrp'
-                                    ? formatSignalValue(signalInfo?.sinr, 'dB')
-                                    : formatSignalValue(signalInfo?.rsrp, 'dBm')}
-                            </Text>
-                        </View>
-                        <View style={styles.detailItem}>
-                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>RSSI</Text>
-                            <Text style={[typography.headline, { color: colors.text }]}>
-                                {formatSignalValue(signalInfo?.rssi, 'dBm')}
-                            </Text>
-                        </View>
-                        <View style={styles.detailItem}>
-                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>PCI</Text>
-                            <Text style={[typography.headline, { color: colors.text }]}>
-                                {signalInfo?.pci || '-'}
-                            </Text>
-                        </View>
-                    </View>
-                </Card>
-
-                <Card style={{ marginTop: spacing.md }}>
-                    <View style={styles.bestSignalRow}>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                                {t('home.bestSignal')}
-                            </Text>
-                            <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-                                <Text style={[typography.title2, { color: colors.success, fontWeight: 'bold' }]}>
-                                    {bestRsrp !== null ? `${bestRsrp} ${valueUnit}` : '-'}
+                        <View style={[styles.metricToggle, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+                            <TouchableOpacity
+                                style={[styles.metricButton, signalMetric === 'rsrp' && { backgroundColor: colors.primary }]}
+                                onPress={() => handleMetricChange('rsrp')}
+                            >
+                                <Text style={[typography.caption1, { color: signalMetric === 'rsrp' ? '#fff' : colors.text, fontWeight: '600' }]}>
+                                    RSRP
                                 </Text>
-                                {bestPci && (
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 12 }]}>
-                                        PCI: {bestPci}
-                                    </Text>
-                                )}
-                            </View>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.metricButton, signalMetric === 'sinr' && { backgroundColor: colors.primary }]}
+                                onPress={() => handleMetricChange('sinr')}
+                            >
+                                <Text style={[typography.caption1, { color: signalMetric === 'sinr' ? '#fff' : colors.text, fontWeight: '600' }]}>
+                                    SINR
+                                </Text>
+                            </TouchableOpacity>
                         </View>
+
+                        <Card style={[styles.mainCard, { borderColor: quality.color, borderWidth: 2 }]}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, textAlign: 'center', marginBottom: 8 }]}>
+                                {signalMetric === 'rsrp' ? t('home.metricRSRP') : t('home.metricSINR')}
+                            </Text>
+
+                            <Text style={[styles.rsrpValue, { color: quality.color }]}>
+                                {currentValue !== null ? `${currentValue}` : '-'}
+                                <Text style={styles.rsrpUnit}> {valueUnit}</Text>
+                            </Text>
+
+                            <View style={[styles.signalBarContainer, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }]}>
+                                <View style={[styles.signalBarFill, { width: `${quality.percentage}%`, backgroundColor: quality.color }]} />
+                            </View>
+
+                            <Text style={[typography.headline, { color: quality.color, textAlign: 'center', marginTop: 12, textTransform: 'uppercase' }]}>
+                                {t(`home.signal${quality.level.charAt(0).toUpperCase() + quality.level.slice(1)}`)}
+                            </Text>
+
+                            {signalHistory.length < 2 ? (
+                                <View style={[styles.graphSkeleton, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                                    <View style={[styles.skeletonBar, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
+                                    <View style={[styles.skeletonBar, { height: 30, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
+                                    <View style={[styles.skeletonBar, { height: 20, backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)' }]} />
+                                </View>
+                            ) : (
+                                <MiniSignalGraph history={signalHistory} colors={colors} isDark={isDark} metric={signalMetric} />
+                            )}
+
+                            {fetchTime !== null && (
+                                <Text style={[typography.caption2, { color: colors.textSecondary, textAlign: 'center', marginTop: 8 }]}>
+                                    Update: {fetchTime}ms
+                                </Text>
+                            )}
+                        </Card>
+
+
+
+                        <Card style={{ marginTop: spacing.md }}>
+                            <View style={styles.detailsGrid}>
+                                <View style={styles.detailItem}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>RSRQ</Text>
+                                    <Text style={[typography.headline, { color: colors.text }]}>
+                                        {formatSignalValue(signalInfo?.rsrq, 'dB')}
+                                    </Text>
+                                </View>
+                                <View style={styles.detailItem}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                                        {signalMetric === 'rsrp' ? 'SINR' : 'RSRP'}
+                                    </Text>
+                                    <Text style={[typography.headline, { color: colors.text }]}>
+                                        {signalMetric === 'rsrp'
+                                            ? formatSignalValue(signalInfo?.sinr, 'dB')
+                                            : formatSignalValue(signalInfo?.rsrp, 'dBm')}
+                                    </Text>
+                                </View>
+                                <View style={styles.detailItem}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>RSSI</Text>
+                                    <Text style={[typography.headline, { color: colors.text }]}>
+                                        {formatSignalValue(signalInfo?.rssi, 'dBm')}
+                                    </Text>
+                                </View>
+                                <View style={styles.detailItem}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>PCI</Text>
+                                    <Text style={[typography.headline, { color: colors.text }]}>
+                                        {signalInfo?.pci || '-'}
+                                    </Text>
+                                </View>
+                            </View>
+                        </Card>
+
+                        <View style={{ paddingHorizontal: 4, marginTop: 16 }}>
+                            <AdNative />
+                        </View>
+
+                        <Card style={{ marginTop: spacing.md }}>
+                            <View style={styles.bestSignalRow}>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                                        {t('home.bestSignal')}
+                                    </Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+                                        <Text style={[typography.title2, { color: colors.success, fontWeight: 'bold' }]}>
+                                            {bestRsrp !== null ? `${bestRsrp} ${valueUnit}` : '-'}
+                                        </Text>
+                                        {bestPci && (
+                                            <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 12 }]}>
+                                                PCI: {bestPci}
+                                            </Text>
+                                        )}
+                                    </View>
+                                </View>
+                                <TouchableOpacity
+                                    onPress={handleReset}
+                                    style={[styles.resetButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                                >
+                                    <MaterialIcons name="refresh" size={20} color={colors.textSecondary} />
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 4 }]}>
+                                        Reset
+                                    </Text>
+                                </TouchableOpacity>
+                            </View>
+                        </Card>
+
+                        <Card style={{ marginTop: spacing.md }}>
+                            <TouchableOpacity
+                                style={styles.antennaRow}
+                                onPress={() => setShowAntennaModal(true)}
+                                disabled={isChangingAntenna}
+                            >
+                                <View style={styles.antennaLeft}>
+                                    <MaterialIcons name="settings-input-antenna" size={22} color={colors.primary} />
+                                    <View style={{ marginLeft: 12 }}>
+                                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                                            {t('settings.antennaMode')}
+                                        </Text>
+                                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                                            {t(ANTENNA_MODES.find(m => m.value === antennaMode)?.labelKey || 'settings.antennaAuto')}
+                                        </Text>
+                                    </View>
+                                </View>
+                                {isChangingAntenna ? (
+                                    <BouncingDots size="small" color={colors.primary} />
+                                ) : (
+                                    <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
+                                )}
+                            </TouchableOpacity>
+                        </Card>
+
+                        {/* Tips - Standard positioning (hidden when external antenna selected) */}
+                        {antennaMode !== 'external' && (
+                            <Card style={{ marginTop: spacing.md, backgroundColor: isDark ? 'rgba(52,199,89,0.1)' : 'rgba(52,199,89,0.05)' }}>
+                                <View style={styles.tipsHeader}>
+                                    <MaterialIcons name="lightbulb" size={20} color={colors.success} />
+                                    <Text style={[typography.headline, { color: colors.text, marginLeft: 8 }]}>
+                                        {t('home.positioningTips')}
+                                    </Text>
+                                </View>
+                                <View style={styles.tipsList}>
+                                    <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
+                                        • {t('home.tipWindow')}
+                                    </Text>
+                                    <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
+                                        • {t('home.tipRotate')}
+                                    </Text>
+                                    <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
+                                        • {t('home.tipHeight')}
+                                    </Text>
+                                    <Text style={[typography.body, { color: colors.text }]}>
+                                        • {t('home.tipMetal')}
+                                    </Text>
+                                </View>
+                            </Card>
+                        )}
+
+                        {/* External Antenna Tips - Shown when external or auto antenna mode */}
+                        {(antennaMode === 'external' || antennaMode === 'auto') && (
+                            <Card style={{ marginTop: spacing.md, backgroundColor: isDark ? 'rgba(0,122,255,0.1)' : 'rgba(0,122,255,0.05)' }}>
+                                <View style={styles.tipsHeader}>
+                                    <MaterialIcons name="settings-input-antenna" size={20} color={colors.primary} />
+                                    <Text style={[typography.headline, { color: colors.text, marginLeft: 8 }]}>
+                                        {t('home.externalAntennaTips')}
+                                    </Text>
+                                </View>
+                                <View style={styles.tipsList}>
+                                    <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
+                                        • {t('home.tipExternalCable')}
+                                    </Text>
+                                    <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
+                                        • {t('home.tipExternalConnector')}
+                                    </Text>
+                                    <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
+                                        • {t('home.tipExternalDirection')}
+                                    </Text>
+                                    <Text style={[typography.body, { color: colors.text }]}>
+                                        • {t('home.tipExternalHeight')}
+                                    </Text>
+                                </View>
+                            </Card>
+                        )}
+
                         <TouchableOpacity
-                            onPress={handleReset}
-                            style={[styles.resetButton, { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}
+                            style={[styles.soundToggle, {
+                                backgroundColor: soundEnabled ? colors.primary : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
+                                marginTop: spacing.md,
+                            }]}
+                            onPress={() => setSoundEnabled(!soundEnabled)}
                         >
-                            <MaterialIcons name="refresh" size={20} color={colors.textSecondary} />
-                            <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 4 }]}>
-                                Reset
+                            <MaterialIcons
+                                name={soundEnabled ? 'vibration' : 'notifications-off'}
+                                size={24}
+                                color={soundEnabled ? '#FFFFFF' : colors.textSecondary}
+                            />
+                            <Text style={[typography.body, {
+                                color: soundEnabled ? '#FFFFFF' : colors.text,
+                                marginLeft: 8,
+                                fontWeight: '600',
+                            }]}>
+                                {t('home.vibrationFeedback')}: {soundEnabled ? 'ON' : 'OFF'}
                             </Text>
                         </TouchableOpacity>
-                    </View>
-                </Card>
-
-                <Card style={{ marginTop: spacing.md }}>
-                    <TouchableOpacity
-                        style={styles.antennaRow}
-                        onPress={() => setShowAntennaModal(true)}
-                        disabled={isChangingAntenna}
-                    >
-                        <View style={styles.antennaLeft}>
-                            <MaterialIcons name="settings-input-antenna" size={22} color={colors.primary} />
-                            <View style={{ marginLeft: 12 }}>
-                                <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
-                                    {t('settings.antennaMode')}
-                                </Text>
-                                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                                    {t(ANTENNA_MODES.find(m => m.value === antennaMode)?.labelKey || 'settings.antennaAuto')}
-                                </Text>
-                            </View>
-                        </View>
-                        {isChangingAntenna ? (
-                            <BouncingDots size="small" color={colors.primary} />
-                        ) : (
-                            <MaterialIcons name="chevron-right" size={24} color={colors.textSecondary} />
-                        )}
-                    </TouchableOpacity>
-                </Card>
-
-                {/* Tips - Standard positioning (hidden when external antenna selected) */}
-                {antennaMode !== 'external' && (
-                    <Card style={{ marginTop: spacing.md, backgroundColor: isDark ? 'rgba(52,199,89,0.1)' : 'rgba(52,199,89,0.05)' }}>
-                        <View style={styles.tipsHeader}>
-                            <MaterialIcons name="lightbulb" size={20} color={colors.success} />
-                            <Text style={[typography.headline, { color: colors.text, marginLeft: 8 }]}>
-                                {t('home.positioningTips')}
-                            </Text>
-                        </View>
-                        <View style={styles.tipsList}>
-                            <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
-                                • {t('home.tipWindow')}
-                            </Text>
-                            <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
-                                • {t('home.tipRotate')}
-                            </Text>
-                            <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
-                                • {t('home.tipHeight')}
-                            </Text>
-                            <Text style={[typography.body, { color: colors.text }]}>
-                                • {t('home.tipMetal')}
-                            </Text>
-                        </View>
-                    </Card>
-                )}
-
-                {/* External Antenna Tips - Shown when external or auto antenna mode */}
-                {(antennaMode === 'external' || antennaMode === 'auto') && (
-                    <Card style={{ marginTop: spacing.md, backgroundColor: isDark ? 'rgba(0,122,255,0.1)' : 'rgba(0,122,255,0.05)' }}>
-                        <View style={styles.tipsHeader}>
-                            <MaterialIcons name="settings-input-antenna" size={20} color={colors.primary} />
-                            <Text style={[typography.headline, { color: colors.text, marginLeft: 8 }]}>
-                                {t('home.externalAntennaTips')}
-                            </Text>
-                        </View>
-                        <View style={styles.tipsList}>
-                            <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
-                                • {t('home.tipExternalCable')}
-                            </Text>
-                            <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
-                                • {t('home.tipExternalConnector')}
-                            </Text>
-                            <Text style={[typography.body, { color: colors.text, marginBottom: 8 }]}>
-                                • {t('home.tipExternalDirection')}
-                            </Text>
-                            <Text style={[typography.body, { color: colors.text }]}>
-                                • {t('home.tipExternalHeight')}
-                            </Text>
-                        </View>
-                    </Card>
-                )}
-
-                <TouchableOpacity
-                    style={[styles.soundToggle, {
-                        backgroundColor: soundEnabled ? colors.primary : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
-                        marginTop: spacing.md,
-                    }]}
-                    onPress={() => setSoundEnabled(!soundEnabled)}
-                >
-                    <MaterialIcons
-                        name={soundEnabled ? 'vibration' : 'notifications-off'}
-                        size={24}
-                        color={soundEnabled ? '#FFFFFF' : colors.textSecondary}
-                    />
-                    <Text style={[typography.body, {
-                        color: soundEnabled ? '#FFFFFF' : colors.text,
-                        marginLeft: 8,
-                        fontWeight: '600',
-                    }]}>
-                        {t('home.vibrationFeedback')}: {soundEnabled ? 'ON' : 'OFF'}
-                    </Text>
-                </TouchableOpacity>
-                <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
-                    <AdNative />
-                </View>
                     </>
                 )}
             </ScrollView>

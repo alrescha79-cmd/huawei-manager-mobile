@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
@@ -21,6 +22,7 @@ import { ModemService } from '@/services/modem.service';
 import { ModalMeshGradient } from './ModalMeshGradient';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
 import { AdBanner, AdNative, InlineAdNative } from './AdBanner';
+import { BouncingDots } from './ModernLoading';
 
 
 const LTE_BANDS = [
@@ -72,12 +74,13 @@ export function BandSelectionModal({
 }: BandSelectionModalProps) {
     const { colors, typography, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
     const [selectedBandBits, setSelectedBandBits] = useState<number[]>([]);
     const [initialBandBits, setInitialBandBits] = useState<number[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterType, setFilterType] = useState<'ALL' | 'TDD' | 'FDD'>('ALL');
+    const [filterType, setFilterType] = useState<'ALL' | 'INDONESIA' | 'TDD' | 'FDD'>('ALL');
 
     const hasChanges = JSON.stringify([...selectedBandBits].sort()) !== JSON.stringify([...initialBandBits].sort());
 
@@ -88,11 +91,11 @@ export function BandSelectionModal({
                 t('common.discardChangesMessage'),
                 [
                     { text: t('common.cancel'), style: 'cancel' },
-                    { text: t('common.discard'), style: 'destructive', onPress: onClose }
+                    { text: t('common.discard'), style: 'destructive', onPress: () => showInterstitial(onClose) }
                 ]
             );
         } else {
-            onClose();
+            showInterstitial(onClose);
         }
     };
 
@@ -192,7 +195,10 @@ export function BandSelectionModal({
             band.region.toLowerCase().includes(searchQuery.toLowerCase());
 
         let matchesType = true;
-        if (filterType === 'TDD') {
+        if (filterType === 'INDONESIA') {
+            const indonesianBands = ['B1', 'B3', 'B5', 'B8', 'B40'];
+            matchesType = indonesianBands.includes(band.name);
+        } else if (filterType === 'TDD') {
             matchesType = (band.type === 'TDD' || band.type === 'LAA' || band.type === 'CBRS');
         } else if (filterType === 'FDD') {
             matchesType = (band.type === 'FDD' || band.type === 'SDL');
@@ -250,6 +256,12 @@ export function BandSelectionModal({
                         onPress={() => setFilterType('ALL')}
                     >
                         <Text style={[styles.filterText, { color: colors.textSecondary }, filterType === 'ALL' && { color: '#FFF' }]}>{t('settings.allBands')}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.card }, filterType === 'INDONESIA' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
+                        onPress={() => setFilterType('INDONESIA')}
+                    >
+                        <Text style={[styles.filterText, { color: colors.textSecondary }, filterType === 'INDONESIA' && { color: '#FFF' }]}>{t('settings.indonesiaBands')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
                         style={[styles.filterChip, { borderColor: colors.border, backgroundColor: colors.card }, filterType === 'TDD' && { backgroundColor: colors.primary, borderColor: colors.primary }]}
@@ -335,17 +347,22 @@ export function BandSelectionModal({
                     experimentalBlurMethod='dimezisBlurView'
                     style={[styles.footer, {
                         backgroundColor: isDark ? 'rgba(10, 10, 10, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-                        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)'
+                        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                        paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24
                     }]}
                 >
                     <TouchableOpacity
                         style={[styles.applyButton, { backgroundColor: hasChanges ? colors.primary : colors.textSecondary }, isSaving && { opacity: 0.7 }]}
-                        onPress={hasChanges ? handleSave : onClose}
+                        onPress={hasChanges ? handleSave : handleClose}
                         disabled={isSaving}
                     >
-                        <Text style={styles.applyButtonText}>
-                            {isSaving ? t('common.saving') || 'Saving...' : hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
-                        </Text>
+                        {isSaving ? (
+                            <BouncingDots size="small" color="#FFFFFF" />
+                        ) : (
+                            <Text style={styles.applyButtonText}>
+                                {hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
+                            </Text>
+                        )}
                     </TouchableOpacity>
                 </BlurView>
             </BlurView>
@@ -398,6 +415,7 @@ const styles = StyleSheet.create({
     },
     filterContainer: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         paddingHorizontal: 20,
         gap: 12,
         marginBottom: 20,

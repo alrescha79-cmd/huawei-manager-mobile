@@ -22,6 +22,8 @@ import { ThemedSwitch } from './ThemedSwitch';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { showInterstitial } from '@/services/ad.service';
 import { AdNative } from './AdBanner';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BouncingDots } from './ModernLoading';
 
 
 
@@ -54,6 +56,7 @@ export function MonthlySettingsModal({
 }: MonthlySettingsModalProps) {
     const { colors, isDark } = useTheme();
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
     const [enabled, setEnabled] = useState(false);
     const [startDay, setStartDay] = useState(1);
@@ -315,7 +318,7 @@ export function MonthlySettingsModal({
                         </View>
                     </ScrollView>
 
-                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 }]}>
                         {hasChanges ? (
                             <TouchableOpacity
                                 style={[
@@ -330,7 +333,7 @@ export function MonthlySettingsModal({
                                 activeOpacity={0.8}
                             >
                                 {isSaving ? (
-                                    <ActivityIndicator color="#FFF" />
+                                    <BouncingDots size="small" color="#FFFFFF" />
                                 ) : (
                                     <Text style={styles.applyButtonText}>
                                         {t('settings.applyConfiguration')}

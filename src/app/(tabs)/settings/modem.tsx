@@ -90,7 +90,7 @@ export default function ModemSettingsScreen() {
             setAntennaMode(mode);
             ThemedAlertHelper.alert(t('common.success'), t('settings.antennaModeChanged'));
             if (changed) {
-                showInterstitial(() => {});
+                showInterstitial(() => { });
             }
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeAntenna'));
@@ -127,7 +127,9 @@ export default function ModemSettingsScreen() {
                         )}
                     </SettingsSection>
 
-
+                    <View style={{ paddingHorizontal: 16}}>
+                        <AdNative />
+                    </View>
 
                     <SettingsSection title={t('settings.antennaSettings')}>
                         <SettingsItem
@@ -153,10 +155,6 @@ export default function ModemSettingsScreen() {
                         }}
                         onClose={() => setShowAntennaModal(false)}
                     />
-
-                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
-                        <AdNative />
-                    </View>
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>

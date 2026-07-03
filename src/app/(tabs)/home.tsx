@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, SignalPointingModal, AdBanner, AdNative } from '@/components';
+import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, SignalPointingModal, AdBanner, AdNative, NoSignalModal } from '@/components';
 import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
@@ -26,7 +26,7 @@ import { useHomeActions } from '@/hooks/home/useHomeActions';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { colors, typography, spacing } = useTheme();
+  const { colors, typography, spacing, isDark, borderRadius } = useTheme();
   const { usageCardStyle } = useThemeStore();
   const { t } = useTranslation();
 
@@ -142,7 +142,7 @@ export default function HomeScreen() {
             />
           }
         >
-          <View style={styles.header}>
+          {/* <View style={styles.header}>
             {!hasValidData && (
               <TouchableOpacity
                 onPress={homeAuth.handleReLogin}
@@ -153,49 +153,9 @@ export default function HomeScreen() {
                 </Text>
               </TouchableOpacity>
             )}
-          </View>
+          </View> */}
 
-          {!hasValidData && (
-            <Card style={{ marginBottom: spacing.md, backgroundColor: colors.error + '10', borderColor: colors.error, borderWidth: 1 }}>
-              <Text style={[typography.headline, { color: colors.error, marginBottom: spacing.sm, textAlign: 'center' }]}>
-                <MaterialIcons name="warning" size={24} color={colors.error} /> {t('alerts.noSignalData')}
-              </Text>
-              <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-              <Text style={[typography.body, { color: colors.text }]}>
-                {t('alerts.noSignalMessage')}{'\n\n'}
-                <Text style={{ fontWeight: 'bold' }}>{t('alerts.possibleCauses')}</Text>{'\n'}
-                • {t('alerts.notLoggedIn')}{'\n'}
-                • {t('alerts.sessionExpired')}{'\n'}
-                • {t('alerts.modemNotResponding')}
-              </Text>
 
-              <TouchableOpacity
-                onPress={homeAuth.handleRetrySilent}
-                disabled={homeAuth.isRetryingSilent}
-                style={[styles.reLoginButtonLarge, {
-                  backgroundColor: colors.primary,
-                  marginTop: spacing.md,
-                  opacity: homeAuth.isRetryingSilent ? 0.7 : 1
-                }]}
-              >
-                {homeAuth.isRetryingSilent ? (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <BouncingDots size="small" color="#FFFFFF" />
-                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600', marginLeft: 8 }]}>
-                      {t('common.retrying')}
-                    </Text>
-                  </View>
-                ) : (
-                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <MaterialIcons name="refresh" size={18} color="#FFFFFF" style={{ marginRight: 6 }} />
-                    <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-                      {t('common.retryConnection')}
-                    </Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            </Card>
-          )}
 
           {!signalInfo && homeData.isRefreshing && (
             <>
@@ -230,6 +190,7 @@ export default function HomeScreen() {
             modemStatus={modemStatus}
             wanInfo={wanInfo}
             trafficStats={trafficStats}
+            selectedBands={homeData.selectedBands}
           />
 
           <AdNative />
@@ -309,6 +270,12 @@ export default function HomeScreen() {
           <SignalPointingModal
             visible={showSignalPointingModal}
             onClose={() => setShowSignalPointingModal(false)}
+          />
+
+          <NoSignalModal
+            visible={!hasValidData}
+            onRetry={homeAuth.handleRetrySilent}
+            isRetrying={homeAuth.isRetryingSilent}
           />
         </ScrollView>
       </MeshGradientBackground>

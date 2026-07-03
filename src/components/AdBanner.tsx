@@ -89,7 +89,6 @@ export const AdBanner: React.FC = React.memo(() => {
     }, [isReady, triggerKey, delay]);
 
     const renderAd = isReady && shouldLoad && !adFailed;
-    const showFallback = !renderAd || !isLoaded;
 
     return (
         <View style={[
@@ -97,13 +96,15 @@ export const AdBanner: React.FC = React.memo(() => {
             {
                 backgroundColor: colors.card,
                 borderColor: colors.border,
-                borderWidth: 1,
+                borderWidth: isLoaded ? 1 : 0,
                 borderRadius: 16,
+                height: isLoaded ? 60 : 0,
+                marginBottom: isLoaded ? 16 : 0,
+                opacity: isLoaded ? 1 : 0,
+                overflow: 'hidden',
             }
         ]}>
-            {showFallback ? (
-                <AdBlockerFallbackContent isNative={false} />
-            ) : (
+            {renderAd && (
                 <View style={{ height: 58, width: '100%', alignItems: 'center', justifyContent: 'center' }}>
                     <BannerAd
                         key={triggerKey}
@@ -211,76 +212,69 @@ export const AdNative: React.FC = React.memo(() => {
         };
     }, [isReady, triggerKey]);
 
-    const showAd = isReady && !isLoading && nativeAd;
-    const showPlaceholder = !isReady || isLoading;
+    if (!isReady || isLoading || adFailed || !nativeAd) {
+        return null; // Keep it completely hidden to prevent empty slots / jumping UI
+    }
 
     return (
         <View style={[styles.container, {
             justifyContent: 'center',
-            backgroundColor: showPlaceholder ? (isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.015)') : colors.card,
+            backgroundColor: colors.card,
             borderColor: colors.border,
             borderWidth: 1,
             borderRadius: 16,
             overflow: 'hidden',
         }]}>
-            {showPlaceholder ? (
-                <View style={styles.placeholderContent}>
-                    <BouncingDots size="small" color={colors.textSecondary} style={{ opacity: 0.5 }} />
-                </View>
-            ) : !showAd ? (
-                <AdBlockerFallbackContent isNative={true} />
-            ) : (
-                <NativeAdView
-                    nativeAd={nativeAd}
-                    style={styles.nativeAdContainer}
-                >
-                    {/* Left Column: Icon */}
-                    {nativeAd.icon && (
-                        <NativeAsset assetType={NativeAssetType.ICON}>
-                            <Image
-                                source={{ uri: nativeAd.icon.url }}
-                                style={[styles.adIcon, { borderRadius: 10 }]}
-                            />
-                        </NativeAsset>
-                    )}
+            <NativeAdView
+                nativeAd={nativeAd}
+                style={styles.nativeAdContainer}
+            >
+                {/* Left Column: Icon */}
+                {nativeAd.icon && (
+                    <NativeAsset assetType={NativeAssetType.ICON}>
+                        <Image
+                            source={{ uri: nativeAd.icon.url }}
+                            style={[styles.adIcon, { borderRadius: 10 }]}
+                        />
+                    </NativeAsset>
+                )}
 
-                    {/* Middle Column: Text Assets */}
-                    <View style={styles.textColumn}>
-                        <View style={styles.headerRow}>
-                            <View style={[styles.badgeContainer, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
-                                <Text style={[styles.badgeText, { color: colors.primary }]}>AD</Text>
-                            </View>
-                            <NativeAsset assetType={NativeAssetType.HEADLINE}>
-                                <Text
-                                    numberOfLines={1}
-                                    style={[typography.body, { color: colors.text, fontWeight: '700', flex: 1 }]}
-                                >
-                                    {nativeAd.headline}
-                                </Text>
-                            </NativeAsset>
+                {/* Middle Column: Text Assets */}
+                <View style={styles.textColumn}>
+                    <View style={styles.headerRow}>
+                        <View style={[styles.badgeContainer, { backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
+                            <Text style={[styles.badgeText, { color: colors.primary }]}>AD</Text>
                         </View>
-
-                        <NativeAsset assetType={NativeAssetType.BODY}>
+                        <NativeAsset assetType={NativeAssetType.HEADLINE}>
                             <Text
-                                numberOfLines={2}
-                                style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, lineHeight: 16 }]}
+                                numberOfLines={1}
+                                style={[typography.body, { color: colors.text, fontWeight: '700', flex: 1 }]}
                             >
-                                {nativeAd.body}
+                                {nativeAd.headline}
                             </Text>
                         </NativeAsset>
                     </View>
 
-                    {/* Right Column: CTA Button */}
-                    <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
-                        <Text style={[styles.ctaButton, {
-                            backgroundColor: colors.primary,
-                            color: '#FFFFFF',
-                        }]}>
-                            {nativeAd.callToAction || 'Open'}
+                    <NativeAsset assetType={NativeAssetType.BODY}>
+                        <Text
+                            numberOfLines={2}
+                            style={[typography.caption1, { color: colors.textSecondary, marginTop: 4, lineHeight: 16 }]}
+                        >
+                            {nativeAd.body}
                         </Text>
                     </NativeAsset>
-                </NativeAdView>
-            )}
+                </View>
+
+                {/* Right Column: CTA Button */}
+                <NativeAsset assetType={NativeAssetType.CALL_TO_ACTION}>
+                    <Text style={[styles.ctaButton, {
+                        backgroundColor: colors.primary,
+                        color: '#FFFFFF',
+                    }]}>
+                        {nativeAd.callToAction || 'Open'}
+                    </Text>
+                </NativeAsset>
+            </NativeAdView>
         </View>
     );
 });

@@ -20,6 +20,8 @@ import { useTranslation } from '@/i18n';
 import { ConnectedDevice } from '@/types';
 import { MeshGradientBackground } from './MeshGradientBackground';
 import { AdNative } from './AdBanner';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BouncingDots } from './ModernLoading';
 
 
 interface DeviceDetailModalProps {
@@ -79,6 +81,7 @@ export function DeviceDetailModal({
 }: DeviceDetailModalProps) {
     const { colors, isDark } = useTheme();
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
     const [deviceName, setDeviceName] = useState('');
     const [isSaving, setIsSaving] = useState(false);
@@ -174,6 +177,10 @@ export function DeviceDetailModal({
                             </View>
                         </View>
 
+                        <View style={{ paddingHorizontal: 4 }}>
+                            <AdNative />
+                        </View>
+
                         <View style={styles.section}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>
                                 {t('wifi.networkInfo') || 'Network Information'}
@@ -238,12 +245,9 @@ export function DeviceDetailModal({
                                 </TouchableOpacity>
                             )}
                         </View>
-                        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
-                            <AdNative />
-                        </View>
                     </ScrollView>
 
-                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 }]}>
                         <Pressable
                             style={({ pressed }) => [
                                 styles.saveButton,
@@ -261,7 +265,7 @@ export function DeviceDetailModal({
                             disabled={isSaving}
                         >
                             {isSaving ? (
-                                <ActivityIndicator color="#FFF" />
+                                <BouncingDots size="small" color="#FFFFFF" />
                             ) : (
                                 <Text style={styles.saveButtonText}>
                                     {hasChanges ? t('common.save') : t('common.cancel')}

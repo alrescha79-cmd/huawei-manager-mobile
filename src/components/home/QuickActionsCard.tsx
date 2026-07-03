@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { CollapsibleCard, BouncingDots } from '@/components';
@@ -188,7 +188,7 @@ export function QuickActionsCard({
                         borderColor: colors.border,
                         borderWidth: 1,
                     }]}>
-                        <MaterialIcons name="location-on" size={16} color={colors.primary} />
+                        <MaterialIcons name="my-location" size={16} color={colors.primary} />
                     </View>
                     <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
                         <TextTicker
@@ -220,7 +220,7 @@ export function QuickActionsCard({
                                 borderColor: colors.border,
                                 borderWidth: 1,
                             }]}>
-                                <MaterialIcons name="flash-on" size={16} color={colors.primary} />
+                                <MaterialIcons name="network-check" size={16} color={colors.primary} />
                             </View>
                             <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
                                 <TextTicker
