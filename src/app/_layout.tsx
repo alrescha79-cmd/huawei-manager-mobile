@@ -86,6 +86,8 @@ export default function RootLayout() {
     const lastAppOpenShowTimeRef = useRef<number>(0);
     const [isRestoringSession, setIsRestoringSession] = useState(false);
     const [authReady, setAuthReady] = useState(false);
+    const pendingNotificationRoute = useRef<string | null>(null);
+    const pendingNotificationUrl = useRef<string | null>(null);
 
     const onLayoutRootView = useCallback(async () => {
         if (fontsLoaded) {
@@ -253,21 +255,48 @@ export default function RootLayout() {
             url = data.body.url;
         }
 
-        if (route && typeof route === 'string') {
-            console.log('📱 Navigating to route:', route);
-            setTimeout(() => {
+        if (authReady) {
+            if (route && typeof route === 'string') {
+                console.log('📱 Navigating to route immediately:', route);
                 router.push(route as any);
-            }, 500);
-            return;
-        }
-
-        if (url && typeof url === 'string') {
-            console.log('📱 Opening URL:', url);
-            Linking.openURL(url).catch(err => {
-                console.log('Failed to open URL from notification:', err);
-            });
+            } else if (url && typeof url === 'string') {
+                console.log('📱 Opening URL immediately:', url);
+                Linking.openURL(url).catch(err => {
+                    console.log('Failed to open URL from notification:', err);
+                });
+            }
+        } else {
+            if (route && typeof route === 'string') {
+                console.log('📱 Queued notification route:', route);
+                pendingNotificationRoute.current = route;
+            } else if (url && typeof url === 'string') {
+                console.log('📱 Queued notification URL:', url);
+                pendingNotificationUrl.current = url;
+            }
         }
     };
+
+    useEffect(() => {
+        if (authReady) {
+            if (pendingNotificationRoute.current) {
+                const route = pendingNotificationRoute.current;
+                pendingNotificationRoute.current = null;
+                console.log('📱 Executing queued notification route:', route);
+                setTimeout(() => {
+                    router.push(route as any);
+                }, 800);
+            } else if (pendingNotificationUrl.current) {
+                const url = pendingNotificationUrl.current;
+                pendingNotificationUrl.current = null;
+                console.log('📱 Executing queued notification URL:', url);
+                setTimeout(() => {
+                    Linking.openURL(url).catch(err => {
+                        console.log('Failed to open URL from notification:', err);
+                    });
+                }, 800);
+            }
+        }
+    }, [authReady, router]);
 
     useEffect(() => {
         const handleAppStateChange = async (nextAppState: AppStateStatus) => {
@@ -356,6 +385,8 @@ export default function RootLayout() {
     };
 
     useEffect(() => {
+        if (!fontsLoaded || !authReady) return;
+
         const inAuthGroup = segments[0] === '(tabs)';
 
         if (!isAuthenticated && inAuthGroup) {
@@ -363,7 +394,7 @@ export default function RootLayout() {
         } else if (isAuthenticated && !inAuthGroup) {
             router.replace('/(tabs)/home');
         }
-    }, [isAuthenticated, segments]);
+    }, [isAuthenticated, segments, fontsLoaded, authReady]);
 
     if (!fontsLoaded || !authReady) {
         return <AnimatedSplashScreen isLoading={true} />;

@@ -443,7 +443,9 @@ export default function UpdateScreen() {
                                     </>
                                 )}
 
-
+                                <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
+                                    <AdNative />
+                                </View>
                                 <TouchableOpacity
                                     style={[styles.buttonOutline, { borderColor: colors.border, marginTop: 16 }]}
                                     onPress={checkUpdate}
@@ -473,10 +475,6 @@ export default function UpdateScreen() {
                                 </TouchableOpacity>
                             </View>
                         ) : null}
-                    </View>
-
-                    <View style={{ paddingHorizontal: 24, paddingBottom: 24, width: '100%' }}>
-                        <AdNative />
                     </View>
                 </View>
             </MeshGradientBackground>

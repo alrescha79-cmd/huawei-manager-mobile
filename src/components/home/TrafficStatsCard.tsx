@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import {
@@ -9,6 +9,7 @@ import {
     UsageCard,
     CompactUsageCard,
     MonthlyComparisonCard,
+    BouncingDots,
 } from '@/components';
 import { formatDuration, DurationUnits } from '@/utils/helpers';
 
@@ -156,7 +157,7 @@ export function TrafficStatsCard({
                     disabled={isClearingHistory}
                 >
                     {isClearingHistory ? (
-                        <ActivityIndicator size="small" color={colors.error} />
+                        <BouncingDots size="small" color={colors.error} />
                     ) : (
                         <>
                             <MaterialIcons name="delete-outline" size={18} color={colors.error} />

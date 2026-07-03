@@ -42,7 +42,7 @@ export const AdblockAlertHelper = {
             if (lastShownStr) {
                 const lastShown = parseInt(lastShownStr, 10);
                 if (now - lastShown < COOLDOWN_MS) {
-                    isAlertRequestPendingOrShown = false; // Reset lock if within cooldown
+                    isAlertRequestPendingOrShown = false;
                     return;
                 }
             }
@@ -74,7 +74,7 @@ export const AdblockAlertHelper = {
 
 export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
     const [visible, setVisible] = useState(false);
-    const { colors, typography, isDark, borderRadius } = useTheme();
+    const { colors, typography, isDark, borderRadius, glassmorphism } = useTheme();
     const { t } = useTranslation();
     const [slideAnim] = useState(new Animated.Value(0));
     const insets = useSafeAreaInsets();
@@ -99,7 +99,7 @@ export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
             }
         });
         return () => {
-            setAdblockListener(() => {});
+            setAdblockListener(() => { });
         };
     }, [slideAnim]);
 
@@ -142,62 +142,89 @@ export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
                     styles.sheetContainer,
                     {
                         transform: [{ translateY }],
-                        backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
-                        borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+                        backgroundColor: isDark ? 'rgba(28, 28, 30, 0.98)' : 'rgba(255, 255, 255, 0.98)',
+                        borderColor: colors.border,
                         paddingBottom: Math.max(insets.bottom, 20) + 28,
                     }
                 ]}>
-                    {/* Top drag handle indicator */}
                     <View style={[styles.dragHandle, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.15)' }]} />
 
-                    {/* Shield Icon Container */}
                     <View style={[
                         styles.iconContainer,
-                        { backgroundColor: isDark ? 'rgba(239, 68, 68, 0.12)' : 'rgba(239, 68, 68, 0.08)' }
+                        {
+                            borderColor: colors.error + '25',
+                            backgroundColor: isDark ? `${colors.error}10` : `${colors.error}05`,
+                            borderWidth: 1.5,
+                        }
                     ]}>
-                        <Ionicons name="shield-outline" size={32} color="#EF4444" />
+                        <Ionicons name="shield-outline" size={32} color={colors.error} />
                     </View>
 
-                    {/* Title */}
                     <Text style={[typography.headline, styles.title, { color: colors.text }]}>
                         {t('ads.modalTitle')}
                     </Text>
 
-                    {/* Description */}
                     <Text style={[typography.body, styles.description, { color: colors.textSecondary }]}>
                         {t('ads.modalDescription')}
                     </Text>
 
-                    {/* Guide Card */}
-                    <View style={[
-                        styles.guideCard,
-                        {
-                            backgroundColor: isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)',
-                            borderColor: colors.border,
-                        }
-                    ]}>
-                        <View style={styles.guideHeader}>
-                            <MaterialIcons name="verified-user" size={18} color={colors.primary} />
-                            <Text style={[typography.body, styles.guideTitle, { color: colors.text }]}>
-                                {t('ads.stepsTitle')}
-                            </Text>
+                    {/* How to disable AdBlock Header */}
+                    <View style={styles.troubleHeader}>
+                        <View style={[styles.troubleDot, { backgroundColor: colors.primary }]} />
+                        <Text style={[typography.caption1, styles.troubleHeaderText, { color: colors.textSecondary }]}>
+                            {t('ads.stepsTitle').toUpperCase()}
+                        </Text>
+                    </View>
+
+                    {/* Step Cards List */}
+                    <View style={styles.troubleList}>
+                        {/* Step 1 */}
+                        <View style={[styles.troubleCard, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)' }]}>
+                            <View style={[styles.troubleIconContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                                <Text style={[typography.body, { color: colors.primary, fontWeight: 'bold', fontSize: 15 }]}>1</Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[typography.caption1, { color: colors.text, fontSize: 13, lineHeight: 18 }]}>
+                                    {t('ads.step1')}
+                                </Text>
+                            </View>
                         </View>
-                        <View style={styles.stepsContainer}>
-                            <Text style={[typography.footnote, styles.stepText, { color: colors.textSecondary }]}>
-                                1. {t('ads.step1')}
-                            </Text>
-                            <Text style={[typography.footnote, styles.stepText, { color: colors.textSecondary }]}>
-                                2. {t('ads.step2')}
-                            </Text>
-                            <Text style={[typography.footnote, styles.stepText, { color: colors.textSecondary }]}>
-                                3. {t('ads.step3')}
-                            </Text>
+
+                        {/* Step 2 */}
+                        <View style={[styles.troubleCard, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)' }]}>
+                            <View style={[styles.troubleIconContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                                <Text style={[typography.body, { color: colors.primary, fontWeight: 'bold', fontSize: 15 }]}>2</Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[typography.caption1, { color: colors.text, fontSize: 13, lineHeight: 18 }]}>
+                                    {t('ads.step2')}
+                                </Text>
+                            </View>
+                        </View>
+
+                        {/* Step 3 */}
+                        <View style={[styles.troubleCard, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0, 0, 0, 0.02)' }]}>
+                            <View style={[styles.troubleIconContainer, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                                <Text style={[typography.body, { color: colors.primary, fontWeight: 'bold', fontSize: 15 }]}>3</Text>
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={[typography.caption1, { color: colors.text, fontSize: 13, lineHeight: 18 }]}>
+                                    {t('ads.step3')}
+                                </Text>
+                            </View>
                         </View>
                     </View>
 
-                    {/* Action Buttons */}
                     <TouchableOpacity
-                        style={[styles.primaryButton, { borderRadius: borderRadius.md }]}
+                        style={[
+                            styles.primaryButton,
+                            {
+                                borderRadius: 24,
+                                backgroundColor: colors.error,
+                                shadowColor: colors.error,
+                                marginTop: 12,
+                            }
+                        ]}
                         activeOpacity={0.8}
                         onPress={handleClose}
                     >
@@ -215,8 +242,6 @@ export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
                             {t('ads.btnLater')}
                         </Text>
                     </TouchableOpacity>
-
-                    {/* Guarantee Text Notice */}
                     <Text style={[styles.guaranteeText, { color: colors.textSecondary }]}>
                         {t('ads.guaranteeNotice')}
                     </Text>
@@ -262,7 +287,7 @@ const styles = StyleSheet.create({
     iconContainer: {
         width: 64,
         height: 64,
-        borderRadius: 18,
+        borderRadius: 32,
         justifyContent: 'center',
         alignItems: 'center',
         alignSelf: 'center',
@@ -280,33 +305,47 @@ const styles = StyleSheet.create({
         lineHeight: 20,
         marginBottom: 20,
     },
-    guideCard: {
-        borderRadius: 16,
-        borderWidth: 1,
-        padding: 16,
-        marginBottom: 24,
-    },
-    guideHeader: {
+    troubleHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 12,
+        alignSelf: 'flex-start',
+        marginBottom: 10,
+        marginTop: 12,
+    },
+    troubleDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginRight: 6,
+    },
+    troubleHeaderText: {
+        fontWeight: 'bold',
+        letterSpacing: 0.5,
+    },
+    troubleList: {
+        width: '100%',
         gap: 8,
+        marginBottom: 16,
     },
-    guideTitle: {
-        fontWeight: '600',
+    troubleCard: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderRadius: 14,
+        padding: 12,
+        gap: 12,
     },
-    stepsContainer: {
-        gap: 8,
-    },
-    stepText: {
-        lineHeight: 18,
+    troubleIconContainer: {
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     primaryButton: {
-        backgroundColor: '#EF4444',
         paddingVertical: 16,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#EF4444',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.2,
         shadowRadius: 8,

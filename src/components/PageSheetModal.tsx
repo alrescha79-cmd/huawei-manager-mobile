@@ -7,13 +7,13 @@ import {
     StyleSheet,
     StatusBar,
     Platform,
-    ActivityIndicator,
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { BlurView } from 'expo-blur';
 import { ModalMeshGradient } from './ModalMeshGradient';
 import { ThemedAlertHelper } from './ThemedAlert';
+import { BouncingDots } from './ModernLoading';
 
 interface PageSheetModalProps {
     visible: boolean;
@@ -87,7 +87,7 @@ export function PageSheetModal({
                     {onSave ? (
                         <TouchableOpacity onPress={onSave} disabled={isSaving}>
                             {isSaving ? (
-                                <ActivityIndicator color={colors.primary} size="small" />
+                                <BouncingDots size="small" color={colors.primary} />
                             ) : (
                                 <Text style={[typography.body, { color: colors.primary, fontWeight: '600' }]}>{saveText}</Text>
                             )}

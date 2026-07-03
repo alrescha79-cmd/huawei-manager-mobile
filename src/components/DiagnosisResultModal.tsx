@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ModalMeshGradient } from './ModalMeshGradient';
+import { showInterstitial } from '@/services/ad.service';
 
 interface DiagnosisResultModalProps {
     visible: boolean;
@@ -36,12 +37,16 @@ export function DiagnosisResultModal({
     const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
+    const handleClose = () => {
+        showInterstitial(onClose);
+    };
+
     return (
         <Modal
             visible={visible}
             animationType="fade"
             transparent={true}
-            onRequestClose={onClose}
+            onRequestClose={handleClose}
         >
             <View style={styles.overlay}>
                 <BlurView
@@ -104,7 +109,7 @@ export function DiagnosisResultModal({
 
                     <TouchableOpacity
                         style={[styles.closeButton, { backgroundColor: colors.primary }]}
-                        onPress={onClose}
+                        onPress={handleClose}
                     >
                         <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
                             {t('common.ok')}

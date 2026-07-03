@@ -138,7 +138,7 @@ export default function MobileNetworkSettingsScreen() {
         try {
             await modemService.toggleMobileData(value);
             setMobileDataEnabled(value);
-            showInterstitial(() => {});
+            showInterstitial(() => { });
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
             setMobileDataEnabled(!value);
@@ -153,7 +153,7 @@ export default function MobileNetworkSettingsScreen() {
         try {
             await modemService.setDataRoaming(value);
             setDataRoamingEnabled(value);
-            showInterstitial(() => {});
+            showInterstitial(() => { });
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
             setDataRoamingEnabled(!value);
@@ -168,7 +168,7 @@ export default function MobileNetworkSettingsScreen() {
         try {
             await modemService.setAutoNetwork(value);
             setAutoNetworkEnabled(value);
-            showInterstitial(() => {});
+            showInterstitial(() => { });
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
             setAutoNetworkEnabled(!value);
@@ -189,7 +189,7 @@ export default function MobileNetworkSettingsScreen() {
             setNetworkMode(mode);
             ThemedAlertHelper.alert(t('common.success'), t('settings.networkModeChanged'));
             if (changed) {
-                showInterstitial(() => {});
+                showInterstitial(() => { });
             }
         } catch (error: any) {
             let errorMessage = t('alerts.failedChangeNetwork');
@@ -261,7 +261,9 @@ export default function MobileNetworkSettingsScreen() {
                         />
                     </SettingsSection>
 
-
+                    <View style={{ paddingHorizontal: 16 }}>
+                        <AdNative />
+                    </View>
 
                     <SettingsSection title={t('settings.preferredNetwork')}>
                         <SettingsItem
@@ -340,9 +342,6 @@ export default function MobileNetworkSettingsScreen() {
                         visible={showSignalPointingModal}
                         onClose={() => setShowSignalPointingModal(false)}
                     />
-                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
-                        <AdNative />
-                    </View>
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>

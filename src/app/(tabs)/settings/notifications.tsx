@@ -68,7 +68,7 @@ export default function NotificationSettingsScreen() {
         const newSettings = { ...settings, [key]: value };
         setSettings(newSettings);
         await saveNotificationSettings(newSettings);
-        showInterstitial(() => {});
+        showInterstitial(() => { });
 
         if (key === 'badgesEnabled') {
             setBadgesEnabled(value);
@@ -145,7 +145,6 @@ export default function NotificationSettingsScreen() {
                                 disabled={usageLimitDisabled}
                             />
                         </View>
-
                         {usageLimitDisabled && (
                             <View style={[styles.warningBox, { backgroundColor: colors.warning + '20' }]}>
                                 <MaterialIcons name="info-outline" size={16} color={colors.warning} />
@@ -154,6 +153,10 @@ export default function NotificationSettingsScreen() {
                                 </Text>
                             </View>
                         )}
+                    </View>
+
+                    <View style={{ paddingHorizontal: 2 }}>
+                        <AdNative />
                     </View>
 
                     {/* IP Change Notification */}
@@ -215,10 +218,6 @@ export default function NotificationSettingsScreen() {
                                 onValueChange={(v) => updateSetting('badgesEnabled', v)}
                             />
                         </View>
-                    </View>
-
-                    <View style={{ marginBottom: 16 }}>
-                        <AdNative />
                     </View>
                     <View style={{ height: 40 }} />
                 </ScrollView>

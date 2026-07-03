@@ -4,9 +4,9 @@ import {
   Text,
   StyleSheet,
   ViewStyle,
-  ActivityIndicator
 } from 'react-native';
 import { useTheme } from '@/theme';
+import { BouncingDots } from './ModernLoading';
 
 interface ButtonProps {
   title: string;
@@ -69,7 +69,7 @@ export const Button: React.FC<ButtonProps> = ({
       activeOpacity={0.7}
     >
       {loading ? (
-        <ActivityIndicator size={isSmall ? 'small' : 'small'} color={getTextColor()} />
+        <BouncingDots size="small" color={getTextColor()} />
       ) : (
         <Text
           style={[

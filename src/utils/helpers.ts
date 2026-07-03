@@ -489,3 +489,100 @@ export const getLteBandInfo = (band: string | undefined): string => {
 
   return band;
 };
+
+export const estimateLteBand = (cellId: number | string | undefined, plmn: string | undefined): string | undefined => {
+  if (!cellId) return undefined;
+  const cidNum = typeof cellId === 'string' ? parseInt(cellId, 10) : cellId;
+  if (isNaN(cidNum) || cidNum <= 0) return undefined;
+
+  const sectorId = cidNum % 256;
+  const plmnStr = plmn || '';
+
+  // Indonesian operators PLMN codes (Telkomsel, XL, Indosat, Tri, Smartfren)
+  if (plmnStr.startsWith('510')) {
+    // Telkomsel (51010)
+    if (plmnStr === '51010') {
+      if (sectorId >= 1 && sectorId <= 6) return 'B3';
+      if (sectorId >= 7 && sectorId <= 9) return 'B8';
+      if (sectorId >= 31 && sectorId <= 33) return 'B1';
+      if (sectorId >= 40 && sectorId <= 42) return 'B40';
+    }
+    // XL Axiata (51011)
+    if (plmnStr === '51011') {
+      if (sectorId >= 1 && sectorId <= 3) return 'B3';
+      if (sectorId >= 7 && sectorId <= 9) return 'B8';
+      if (sectorId >= 31 && sectorId <= 33) return 'B1';
+      if (sectorId >= 40 && sectorId <= 42) return 'B40';
+    }
+    // Indosat (51009)
+    if (plmnStr === '51009') {
+      if (sectorId >= 1 && sectorId <= 3) return 'B3';
+      if (sectorId >= 7 && sectorId <= 9) return 'B8';
+      if (sectorId >= 31 && sectorId <= 33) return 'B1';
+    }
+    // Three (51089)
+    if (plmnStr === '51089') {
+      if (sectorId >= 1 && sectorId <= 3) return 'B3';
+      if (sectorId >= 31 && sectorId <= 33) return 'B1';
+    }
+    // Smartfren (51028)
+    if (plmnStr === '51028') {
+      if (sectorId >= 1 && sectorId <= 3) return 'B40';
+      if (sectorId >= 7 && sectorId <= 9) return 'B5';
+    }
+  }
+
+  return undefined;
+};
+
+export const estimateLteBandwidth = (band: string | undefined): { dl: string; ul: string } | undefined => {
+  if (!band) return undefined;
+  const normalizedBand = band.toUpperCase().trim();
+  if (normalizedBand === 'B8' || normalizedBand === '8') {
+    return { dl: '5 MHz', ul: '5 MHz' };
+  }
+  if (normalizedBand === 'B3' || normalizedBand === '3') {
+    return { dl: '20 MHz', ul: '20 MHz' };
+  }
+  if (normalizedBand === 'B1' || normalizedBand === '1') {
+    return { dl: '15 MHz', ul: '15 MHz' };
+  }
+  if (normalizedBand === 'B40' || normalizedBand === '40') {
+    return { dl: '20 MHz', ul: '20 MHz' };
+  }
+  if (normalizedBand === 'B5' || normalizedBand === '5') {
+    return { dl: '10 MHz', ul: '10 MHz' };
+  }
+  return undefined;
+};
+
+export const decodeLteBandBitmask = (lteBandHex: string | undefined): string[] => {
+  if (!lteBandHex) return [];
+  try {
+    const cleanHex = lteBandHex.replace(/^0x/i, '').trim();
+    if (!cleanHex) return [];
+
+    const lteBandValue = BigInt('0x' + cleanHex);
+    const activeBands: string[] = [];
+
+    const bitToBandName: Record<number, string> = {
+      0: 'B1', 1: 'B2', 2: 'B3', 3: 'B4', 4: 'B5', 6: 'B7', 7: 'B8',
+      11: 'B12', 12: 'B13', 16: 'B17', 17: 'B18', 18: 'B19', 19: 'B20', 20: 'B21',
+      24: 'B25', 25: 'B26', 27: 'B28', 28: 'B29', 29: 'B30', 31: 'B32',
+      65: 'B66', 70: 'B71', 33: 'B34', 37: 'B38', 38: 'B39', 39: 'B40',
+      40: 'B41', 41: 'B42', 42: 'B43', 45: 'B46', 47: 'B48'
+    };
+
+    for (const [bitStr, bandName] of Object.entries(bitToBandName)) {
+      const bit = parseInt(bitStr, 10);
+      if ((lteBandValue >> BigInt(bit)) & BigInt(1)) {
+        activeBands.push(bandName);
+      }
+    }
+    return activeBands;
+  } catch (e) {
+    console.error('Error decoding LTE band bitmask:', e);
+    return [];
+  }
+};
+

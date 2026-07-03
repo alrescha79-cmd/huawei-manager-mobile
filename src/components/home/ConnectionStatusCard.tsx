@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { CollapsibleCard, SignalBar } from '@/components';
@@ -13,6 +13,8 @@ import {
     getConnectionStatusText,
     getNetworkTypeText,
     getLteBandInfo,
+    estimateLteBand,
+    estimateLteBandwidth,
 } from '@/utils/helpers';
 
 interface ConnectionStatusCardProps {
@@ -23,6 +25,7 @@ interface ConnectionStatusCardProps {
         band?: string;
         ulbandwidth?: string;
         dlbandwidth?: string;
+        cellId?: string;
     };
     networkInfo?: {
         shortName?: string;
@@ -30,6 +33,7 @@ interface ConnectionStatusCardProps {
         networkName?: string;
         spnName?: string;
         currentNetworkType?: string;
+        numeric?: string;
     };
     modemStatus?: {
         connectionStatus?: string;
@@ -46,6 +50,7 @@ interface ConnectionStatusCardProps {
         currentDownloadRate?: number;
         currentUploadRate?: number;
     };
+    selectedBands?: string[];
 }
 
 /**
@@ -58,6 +63,7 @@ export function ConnectionStatusCard({
     modemStatus,
     wanInfo,
     trafficStats,
+    selectedBands,
 }: ConnectionStatusCardProps) {
     const { colors, typography, isDark } = useTheme();
 
@@ -119,6 +125,40 @@ export function ConnectionStatusCard({
         </View>
     );
 
+    let activeBand = signalInfo?.band;
+    let isBandEstimated = false;
+
+    if (!activeBand || activeBand === '-' || activeBand === '') {
+        if (selectedBands && selectedBands.length === 1 && selectedBands[0] !== 'All' && selectedBands[0] !== 'Semua') {
+            activeBand = selectedBands[0];
+        } else {
+            const estimated = estimateLteBand(signalInfo?.cellId, networkInfo?.numeric);
+            if (estimated) {
+                activeBand = estimated;
+                isBandEstimated = true;
+            }
+        }
+    }
+
+    const bandDisplay = activeBand
+        ? (isBandEstimated
+            ? `${getLteBandInfo(activeBand)} (${t('home.estimated') || 'Est.'})`
+            : getLteBandInfo(activeBand))
+        : '-';
+
+    let dlBandwidth = signalInfo?.dlbandwidth;
+    let ulBandwidth = signalInfo?.ulbandwidth;
+    let isBandwidthEstimated = false;
+
+    if ((!dlBandwidth || dlBandwidth === '-' || dlBandwidth === '') && (!ulBandwidth || ulBandwidth === '-' || ulBandwidth === '')) {
+        const estBw = estimateLteBandwidth(activeBand);
+        if (estBw) {
+            dlBandwidth = estBw.dl;
+            ulBandwidth = estBw.ul;
+            isBandwidthEstimated = true;
+        }
+    }
+
     const gridItemBg = isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)';
     const gridItemBorder = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
 
@@ -131,20 +171,36 @@ export function ConnectionStatusCard({
                 <View style={styles.providerSection}>
                     <SignalBar strength={getSignalBars()} label="" />
                     <View style={styles.providerInfoColumn}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 2 }}>
                             <Text style={styles.sectionLabel}>{t('home.provider').toUpperCase()}</Text>
+                        </View>
+                        <View style={{ flexDirection: 'row', alignItems: 'flex-start', marginTop: 2 }}>
+                            <View style={{ flexShrink: 1, marginRight: 4, overflow: 'hidden' }}>
+                                <TextTicker
+                                    style={StyleSheet.flatten([typography.title3, { color: colors.text, fontWeight: '700' }])}
+                                    duration={4000}
+                                    loop
+                                    bounce
+                                    repeatSpacer={50}
+                                    marqueeDelay={1000}
+                                >
+                                    {networkInfo?.shortName || networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
+                                </TextTicker>
+                            </View>
                             {networkType ? (
                                 <View style={[
                                     styles.networkBadge,
                                     {
                                         borderColor: colors.primary,
                                         backgroundColor: isDark ? 'rgba(129, 140, 248, 0.15)' : 'rgba(79, 70, 229, 0.1)',
-                                        paddingVertical: 1,
-                                        paddingHorizontal: 4,
+                                        paddingVertical: 0.5,
+                                        paddingHorizontal: 3,
+                                        borderRadius: 3,
+                                        marginTop: 1,
                                     }
                                 ]}>
                                     <Text
-                                        style={[typography.caption2, { color: colors.primary, fontWeight: '700', fontSize: 8, lineHeight: 10 }]}
+                                        style={[typography.caption2, { color: colors.primary, fontWeight: '800', fontSize: 7, lineHeight: 8 }]}
                                         adjustsFontSizeToFit
                                         numberOfLines={1}
                                     >
@@ -153,32 +209,20 @@ export function ConnectionStatusCard({
                                 </View>
                             ) : null}
                         </View>
-                        <View style={styles.providerNameRow}>
-                            <TextTicker
-                                style={StyleSheet.flatten([typography.title3, { color: colors.text, fontWeight: '700' }])}
-                                duration={4000}
-                                loop
-                                bounce
-                                repeatSpacer={50}
-                                marqueeDelay={1000}
-                            >
-                                {networkInfo?.shortName || networkInfo?.fullName || networkInfo?.networkName || networkInfo?.spnName || t('common.unknown')}
-                            </TextTicker>
-                        </View>
                     </View>
                 </View>
 
                 <View style={styles.speedSection}>
                     <Text style={[styles.sectionLabel, { textAlign: 'right' }]}>{t('home.networkSpeed').toUpperCase()}</Text>
                     <View style={[styles.speedSubRow, { marginTop: 4 }]}>
-                        <MaterialIcons name="arrow-downward" size={16} color={colors.primary} />
-                        <Text style={[typography.body, { color: colors.primary, fontWeight: '700', marginLeft: 4 }]}>
+                        <MaterialCommunityIcons name="download" size={16} color={colors.primary} />
+                        <Text style={[typography.body, { color: colors.primary, fontWeight: '600', marginLeft: 4 }]}>
                             {formatSpeed((trafficStats?.currentDownloadRate || 0) * 8)}
                         </Text>
                     </View>
                     <View style={[styles.speedSubRow, { marginTop: 2 }]}>
-                        <MaterialIcons name="arrow-upward" size={16} color={colors.text} />
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '700', marginLeft: 4 }]}>
+                        <MaterialCommunityIcons name="upload" size={16} color={colors.text} />
+                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 4 }]}>
                             {formatSpeed((trafficStats?.currentUploadRate || 0) * 8)}
                         </Text>
                     </View>
@@ -235,7 +279,7 @@ export function ConnectionStatusCard({
                                 repeatSpacer={50}
                                 marqueeDelay={1000}
                             >
-                                {getLteBandInfo(signalInfo?.band) || '-'}
+                                {bandDisplay}
                             </TextTicker>
                         </View>
                     </View>
@@ -245,22 +289,27 @@ export function ConnectionStatusCard({
                 <View style={[styles.gridItem, { backgroundColor: gridItemBg, borderColor: gridItemBorder, width: '48.5%', marginBottom: 12 }]}>
                     <Text style={styles.gridItemLabel}>{t('home.bandwidth').toUpperCase()}</Text>
                     <View style={styles.gridItemContent}>
-                        <MaterialIcons name="show-chart" size={18} color={colors.primary} />
+                        <MaterialCommunityIcons name="signal-distance-variant" size={18} color={colors.primary} />
                         <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 8, flexWrap: 'wrap', flex: 1 }}>
-                            {signalInfo?.dlbandwidth || signalInfo?.ulbandwidth ? (
+                            {dlBandwidth || ulBandwidth ? (
                                 <>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 8 }}>
                                         <MaterialIcons name="arrow-upward" size={12} color={colors.text} />
                                         <Text style={[typography.caption1, { color: colors.text, fontWeight: '700' }]}>
-                                            {signalInfo.ulbandwidth || '-'}
+                                            {ulBandwidth || '-'}
                                         </Text>
                                     </View>
-                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginRight: 4 }}>
                                         <MaterialIcons name="arrow-downward" size={12} color={colors.text} />
                                         <Text style={[typography.caption1, { color: colors.text, fontWeight: '700' }]}>
-                                            {signalInfo.dlbandwidth || '-'}
+                                            {dlBandwidth || '-'}
                                         </Text>
                                     </View>
+                                    {isBandwidthEstimated && (
+                                        <Text style={[typography.caption2, { color: colors.primary, fontWeight: '600' }]}>
+                                            ({t('home.estimated') || 'Est.'})
+                                        </Text>
+                                    )}
                                 </>
                             ) : (
                                 <Text style={[typography.subheadline, { color: colors.text, fontWeight: '700' }]}>-</Text>

@@ -17,6 +17,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative } from '@/components';
@@ -34,6 +35,7 @@ export default function LanSettingsScreen() {
     const { colors, typography, spacing } = useTheme();
     const { t } = useTranslation();
     const { credentials } = useAuthStore();
+    const insets = useSafeAreaInsets();
 
     const [networkSettingsService, setNetworkSettingsService] = useState<NetworkSettingsService | null>(null);
 
@@ -134,7 +136,7 @@ export default function LanSettingsScreen() {
             setEthernetStatus(settings.status);
             ThemedAlertHelper.alert(t('common.success'), t('networkSettings.profileSaved'));
             if (changed) {
-                showInterstitial(() => {});
+                showInterstitial(() => { });
             }
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
@@ -453,11 +455,13 @@ export default function LanSettingsScreen() {
                                         loading={isSavingDhcp}
                                     />
                                 </View>
-                            </View>
+                            </View> 
                         )}
                     </SettingsSection>
 
-
+                    <View style={{ paddingHorizontal: 16}}>
+                        <AdNative />
+                    </View>
 
                     <SettingsSection title={t('networkSettings.apnProfiles')}>
 
@@ -604,7 +608,7 @@ export default function LanSettingsScreen() {
                                     </View>
                                 </ScrollView>
 
-                                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 }]}>
                                     <Pressable
                                         style={({ pressed }) => [
                                             styles.saveButton,
@@ -633,10 +637,6 @@ export default function LanSettingsScreen() {
                             </KeyboardAvoidingView>
                         </View>
                     </Modal>
-
-                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
-                        <AdNative />
-                    </View>
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>

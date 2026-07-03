@@ -1,7 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
+import { BouncingDots } from './ModernLoading';
 
 interface SettingsSectionProps {
     title?: string;
@@ -94,7 +95,7 @@ export const SettingsItem = ({
                     </View>
 
                     {loading ? (
-                        <ActivityIndicator size="small" color={colors.textSecondary} />
+                        <BouncingDots size="small" color={colors.textSecondary} />
                     ) : (
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                             {value && (

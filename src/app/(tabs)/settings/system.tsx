@@ -407,6 +407,10 @@ export default function SystemSettingsScreen() {
                         </View>
                     </SettingsSection>
 
+                    <View style={{ paddingHorizontal: 16}}>
+                        <AdNative />
+                    </View>
+
                     {/* Edit Profile Modal */}
                     <PageSheetModal
                         visible={showEditProfile}
@@ -514,10 +518,6 @@ export default function SystemSettingsScreen() {
                             ))}
                         </ScrollView>
                     </PageSheetModal>
-
-                    <View style={{ paddingHorizontal: 16, marginTop: 8 }}>
-                        <AdNative />
-                    </View>
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>
