@@ -81,6 +81,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
             },
             predictiveBackGestureEnabled: false,
             package: isDev ? 'com.alrescha79.hmmobile.dev' : 'com.alrescha79.hmmobile',
+            versionCode: parseInt(process.env.ANDROID_VERSION_CODE || '1', 10),
             googleServicesFile: './google-services.json',
             permissions: [
                 'android.permission.REQUEST_INSTALL_PACKAGES',

@@ -132,11 +132,9 @@ export default function RootLayout() {
 
             const data = await response.json();
             const latestVersion = data.tag_name?.replace(/^v/, '') || '';
-            const currentVersion = Constants.expoConfig?.version || '1.0.0';
+            const currentVersion = Constants.expoConfig?.version || '1.1.50';
 
             if (compareVersions(latestVersion, currentVersion) > 0) {
-                const downloadUrl = data.html_url || 'https://github.com/alrescha79-cmd/huawei-manager-mobile/releases';
-
                 ThemedAlertHelper.alert(
                     t('settings.updateAvailable') + ` v${latestVersion}`,
                     t('alerts.newVersionAvailable'),
@@ -144,7 +142,7 @@ export default function RootLayout() {
                         { text: t('common.cancel'), style: 'cancel' },
                         {
                             text: t('settings.downloadUpdate'),
-                            onPress: () => Linking.openURL(downloadUrl)
+                            onPress: () => router.push('/settings/update')
                         },
                     ]
                 );
@@ -405,6 +403,7 @@ export default function RootLayout() {
             <KeyboardProvider>
                 <Stack
                     screenOptions={{
+                        headerShown: false,
                         headerStyle: {
                             backgroundColor: colors.background,
                         },
@@ -415,6 +414,12 @@ export default function RootLayout() {
                         animationDuration: 200,
                     }}
                 >
+                    <Stack.Screen
+                        name="index"
+                        options={{
+                            headerShown: false,
+                        }}
+                    />
                     <Stack.Screen
                         name="login"
                         options={{
