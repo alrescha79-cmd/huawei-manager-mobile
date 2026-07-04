@@ -17,7 +17,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card, CardHeader, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, ModernRefreshIndicator, AdBanner, AdNative } from '@/components';
+import { Card, CardHeader, ThemedAlertHelper, DeviceDetailModal, SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, RefreshIndicator, AdBanner, AdNative } from '@/components';
 import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, WiFiSettingsSkeleton, ConnectedDevicesSkeleton, GuestWiFiSkeleton, ParentalControlSkeleton, wifiStyles as styles } from '@/components/wifi';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -161,13 +161,16 @@ export default function WiFiScreen() {
   return (
     <AnimatedScreen>
       <MeshGradientBackground>
-        <ModernRefreshIndicator refreshing={isRefreshing} />
+        <RefreshIndicator refreshing={isRefreshing} />
 
         <ScrollView
           style={[styles.container, { backgroundColor: 'transparent' }]}
           contentContainerStyle={[
             styles.content,
-            { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
+            { 
+              paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0),
+              paddingBottom: 110 + (insets.bottom > 0 ? insets.bottom : 16)
+            }
           ]}
           refreshControl={
             <RefreshControl

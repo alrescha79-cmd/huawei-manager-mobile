@@ -1,145 +1,216 @@
-
-import React, { useEffect, useMemo, useState } from 'react';
-import { View, StyleSheet, LayoutChangeEvent, Dimensions, Platform, TouchableOpacity, Text } from 'react-native';
+import React, { useEffect } from 'react';
+import { View, StyleSheet, Platform, TouchableOpacity, Text, useWindowDimensions, StyleProp, ViewStyle } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
-import Svg, { Path, Circle, Defs, LinearGradient, RadialGradient, Stop, Rect, Line } from 'react-native-svg';
+import { Route } from '@react-navigation/native';
 import Animated, {
-    useAnimatedProps,
-    useDerivedValue,
-    withSpring,
-    withTiming,
     useSharedValue,
-    Easing,
+    withSpring,
     useAnimatedStyle,
     interpolate,
-    interpolateColor,
-    Extrapolation,
+    SharedValue,
 } from 'react-native-reanimated';
-import { useTheme } from '@/theme';
-import { MaterialIcons } from '@expo/vector-icons';
+import { useTheme, Theme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BlurView } from 'expo-blur';
 
-const AnimatedPath = Animated.createAnimatedComponent(Path);
-const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedView = Animated.createAnimatedComponent(View);
-const AnimatedText = Animated.createAnimatedComponent(Text);
-
-const TAB_HEIGHT = 50;
-const SVG_TOP_OFFSET = 30;
-
-const getPath = (width: number, tabWidth: number, currentX: number) => {
-    'worklet';
-    'worklet';
+const TABLET_BREAKPOINT = 500;
+const TAB_BAR_MAX_WIDTH = 460;
+const TAB_BAR_SIDE_MARGIN = 16;
+const TAB_BAR_BOTTOM_MARGIN = 16;
 
 
-    return `
-      M0,${SVG_TOP_OFFSET} 
-      L${width},${SVG_TOP_OFFSET} 
-      L${width},${TAB_HEIGHT + 100 + SVG_TOP_OFFSET} 
-      L0,${TAB_HEIGHT + 100 + SVG_TOP_OFFSET} 
-      Z
-    `;
+const FOCUS_SPRING_CONFIG = {
+    damping: 14,
+    stiffness: 160,
+    mass: 0.5,
+} as const;
+
+
+const AnimatedTabLabel = Animated.createAnimatedComponent(Text);
+
+
+type ThemeColors = Theme['colors'];
+type ThemeTypography = Theme['typography'];
+
+type TabIconRenderer = (props: {
+    focused: boolean;
+    color: string;
+    size: number;
+}) => React.ReactNode;
+
+interface TabItemProps {
+    route: Route<string>;
+    isFocused: boolean;
+    label: string;
+    onPress: () => void;
+    onLongPress: () => void;
+    icon?: TabIconRenderer;
+    colors: ThemeColors;
+    typography: ThemeTypography;
+    isDark: boolean;
+}
+
+
+const TabItem: React.FC<TabItemProps> = ({
+    route,
+    isFocused,
+    label,
+    onPress,
+    onLongPress,
+    icon,
+    colors,
+    typography,
+    isDark,
+}) => {
+    /**
+     * focusProgress: animated 0 → 1 value.
+     * 0 = tab is not selected, 1 = tab is selected.
+     */
+    const focusProgress = useSharedValue(0);
+
+    useEffect(() => {
+        focusProgress.value = withSpring(isFocused ? 1 : 0, FOCUS_SPRING_CONFIG);
+    }, [isFocused]);
+
+    const iconContainerStyle = useAnimatedStyle(() => ({
+        transform: [
+            { scale: interpolate(focusProgress.value, [0, 1], [0.95, 1.15]) as number },
+            { translateY: interpolate(focusProgress.value, [0, 1], [0, -6]) as number },
+        ] as any,
+    }));
+
+    const iconBackgroundStyle = useAnimatedStyle(() => ({
+        opacity: focusProgress.value,
+    }));
+
+    const glowStyle = useAnimatedStyle(() => ({
+        opacity: focusProgress.value,
+        transform: [
+            { scale: interpolate(focusProgress.value, [0, 1], [0.8, 1.15]) as number },
+        ] as any,
+    }));
+
+    const dotStyle = useAnimatedStyle(() => ({
+        opacity: focusProgress.value,
+        transform: [
+            { scale: focusProgress.value as number },
+            { translateY: interpolate(focusProgress.value, [0, 1], [4, 0]) as number },
+        ] as any,
+    }));
+
+    const labelStyle = useAnimatedStyle(() => ({
+        opacity: interpolate(focusProgress.value, [0, 1], [0.6, 1.0]),
+        transform: [
+            { scale: interpolate(focusProgress.value, [0, 1], [0.95, 1.0]) as number },
+        ] as any,
+    }));
+
+    return (
+        <TouchableOpacity
+            accessibilityRole="button"
+            accessibilityLabel={label}
+            accessibilityState={isFocused ? { selected: true } : {}}
+            onPress={onPress}
+            onLongPress={onLongPress}
+            style={styles.tabItem}
+            activeOpacity={0.8}
+        >
+            <Animated.View
+                style={[
+                    { backgroundColor: colors.primary, shadowColor: colors.primary },
+                    glowStyle,
+                ]}
+            />
+
+            <Animated.View style={[styles.iconWrapper, iconContainerStyle]}>
+                <Animated.View
+                    style={[
+                        StyleSheet.absoluteFill,
+                        iconBackgroundStyle,
+                        { borderRadius: 12, backgroundColor: colors.primary },
+                    ]}
+                />
+                <View style={styles.iconContent}>
+                    {icon?.({
+                        focused: isFocused,
+                        color: isFocused ? '#FFFFFF' : colors.textSecondary,
+                        size: 22,
+                    })}
+                </View>
+            </Animated.View>
+
+            <AnimatedTabLabel
+                style={[
+                    typography.caption2,
+                    styles.tabLabel,
+                    {
+                        color: isFocused ? colors.text : colors.textSecondary,
+                        fontWeight: isFocused ? '600' : '400',
+                    },
+                    labelStyle,
+                ]}
+            >
+                {label}
+            </AnimatedTabLabel>
+
+            <Animated.View
+                style={[
+                    styles.indicatorDot,
+                    { backgroundColor: colors.primary },
+                    dotStyle,
+                ]}
+            />
+        </TouchableOpacity>
+    );
 };
+
 
 export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, navigation }) => {
     const { colors, typography, isDark } = useTheme();
-    const { bottom } = useSafeAreaInsets();
-    const [layout, setLayout] = useState({ width: Dimensions.get('window').width, height: 0 });
+    const { bottom: safeAreaBottom } = useSafeAreaInsets();
+    const { width: screenWidth } = useWindowDimensions();
 
-    const activeIndex = useSharedValue(state.index);
-
-    useEffect(() => {
-        activeIndex.value = withSpring(state.index, {
-            damping: 25,
-            stiffness: 300,
-            mass: 0.5,
-        });
-    }, [state.index]);
-
-    const tabWidth = useMemo(() => layout.width / state.routes.length, [layout.width, state.routes.length]);
-
-    const animatedPathProps = useAnimatedProps(() => {
-        const currentX = (activeIndex.value * tabWidth) + (tabWidth / 2);
-        return {
-            d: getPath(layout.width, tabWidth, currentX),
-        };
-    });
-
-    const animatedCircleProps = useAnimatedProps(() => {
-        const currentX = (activeIndex.value * tabWidth) + (tabWidth / 2);
-        return {
-            cx: currentX,
-        };
-    });
-
-    const onLayout = (e: LayoutChangeEvent) => {
-        setLayout(e.nativeEvent.layout);
-    };
+    const tabBarWidth = screenWidth > TABLET_BREAKPOINT
+        ? TAB_BAR_MAX_WIDTH
+        : screenWidth - TAB_BAR_SIDE_MARGIN * 2;
 
     return (
         <View
-            style={[styles.container, { paddingBottom: bottom + 10 }]}
-            onLayout={onLayout}
+            style={[
+                styles.container,
+                {
+                    bottom: safeAreaBottom > 0 ? safeAreaBottom : TAB_BAR_BOTTOM_MARGIN,
+                    width: tabBarWidth,
+                },
+            ]}
             pointerEvents="box-none"
         >
-            <View style={styles.svgContainer} pointerEvents="none">
-                <Svg width={layout.width} height={TAB_HEIGHT + 100 + SVG_TOP_OFFSET} style={styles.svg}>
-                    <Defs>
-                        <LinearGradient id="tabBarGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                            <Stop offset="0%" stopColor={isDark ? '#1A1A2E' : '#FFFFFF'} stopOpacity="1" />
-                            <Stop offset="50%" stopColor={isDark ? '#16213E' : '#F8F9FC'} stopOpacity="1" />
-                            <Stop offset="100%" stopColor={isDark ? '#0D0D18' : '#F0F2F8'} stopOpacity="1" />
-                        </LinearGradient>
-                        <RadialGradient id="tabBarBlob1" cx="20%" cy="30%" rx="40%" ry="60%">
-                            <Stop offset="0%" stopColor={isDark ? '#2A1A4E' : '#E8ECFF'} stopOpacity={isDark ? '0.4' : '0.6'} />
-                            <Stop offset="100%" stopColor={isDark ? '#2A1A4E' : '#E8ECFF'} stopOpacity="0" />
-                        </RadialGradient>
-                        <RadialGradient id="tabBarBlob2" cx="80%" cy="50%" rx="35%" ry="50%">
-                            <Stop offset="0%" stopColor={isDark ? '#0A84FF' : '#D8E0FF'} stopOpacity={isDark ? '0.2' : '0.5'} />
-                            <Stop offset="100%" stopColor={isDark ? '#0A84FF' : '#D8E0FF'} stopOpacity="0" />
-                        </RadialGradient>
-                    </Defs>
-
-                    <AnimatedPath
-                        animatedProps={animatedPathProps}
-                        fill="url(#tabBarGradient)"
-                        stroke="none"
-                    />
-                    <Rect x="0" y={SVG_TOP_OFFSET} width={layout.width} height={TAB_HEIGHT + 100} fill="url(#tabBarBlob1)" />
-                    <Rect x="0" y={SVG_TOP_OFFSET} width={layout.width} height={TAB_HEIGHT + 100} fill="url(#tabBarBlob2)" />
-
-                    <Line
-                        x1="0"
-                        y1={SVG_TOP_OFFSET}
-                        x2={layout.width}
-                        y2={SVG_TOP_OFFSET}
-                        stroke={isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)'}
-                        strokeWidth="0.5"
-                    />
-
-                    <AnimatedCircle
-                        animatedProps={animatedCircleProps}
-                        cy={12 + SVG_TOP_OFFSET}
-                        r={23}
-                        fill={colors.primary}
-                        stroke="none"
-                    />
-                </Svg>
-            </View>
-
-            <View style={[styles.tabsContainer, { height: TAB_HEIGHT }]}>
+            <BlurView
+                intensity={Platform.OS === 'ios' ? 85 : 95}
+                tint={isDark ? 'dark' : 'light'}
+                style={[
+                    styles.blurContainer,
+                    {
+                        backgroundColor: isDark
+                            ? 'rgba(28, 28, 30, 0.55)'
+                            : 'rgba(255, 255, 255, 0.052)',
+                        borderColor: isDark
+                            ? 'rgba(255, 255, 255, 0.10)'
+                            : 'rgba(0, 0, 0, 0.05)',
+                    },
+                ]}
+            >
                 {state.routes.map((route, index) => {
                     const { options } = descriptors[route.key];
+
                     const label =
-                        options.tabBarLabel !== undefined
+                        typeof options.tabBarLabel === 'string'
                             ? options.tabBarLabel
-                            : options.title !== undefined
-                                ? options.title
-                                : route.name;
+                            : options.title ?? route.name;
 
                     const isFocused = state.index === index;
 
-                    const onPress = () => {
+                    const handlePress = () => {
                         const event = navigation.emit({
                             type: 'tabPress',
                             target: route.key,
@@ -151,116 +222,84 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                         }
                     };
 
-                    const onLongPress = () => {
+                    const handleLongPress = () => {
                         navigation.emit({
                             type: 'tabLongPress',
                             target: route.key,
                         });
                     };
 
-                    const IconComp = options.tabBarIcon;
-                    const animatedIconContainerStyle = useAnimatedStyle(() => {
-                        'worklet';
-                        const diff = Math.abs(activeIndex.value - index);
-                        const translateY = interpolate(diff, [0, 1], [-4, 6], Extrapolation.CLAMP);
-                        const scale = interpolate(diff, [0, 0.5, 1], [1.15, 1.05, 1], Extrapolation.CLAMP);
-                        const opacity = interpolate(diff, [0, 0.3], [1, 0.7], Extrapolation.CLAMP);
-                        return {
-                            transform: [
-                                { translateY: translateY },
-                                { scale: scale }
-                            ] as const,
-                            opacity: opacity,
-                        };
-                    });
-
-                    const animatedTextStyle = useAnimatedStyle(() => {
-                        const diff = Math.abs(activeIndex.value - index);
-                        const color = interpolateColor(
-                            diff,
-                            [0, 1],
-                            [colors.primary, colors.textSecondary]
-                        );
-                        const scale = interpolate(diff, [0, 1], [1.05, 1], Extrapolation.CLAMP);
-                        const opacity = interpolate(diff, [0, 0.5, 1], [1, 0.8, 0.7], Extrapolation.CLAMP);
-                        return {
-                            color,
-                            transform: [{ scale }],
-                            opacity,
-                        };
-                    });
-
-
                     return (
-                        <TouchableOpacity
+                        <TabItem
                             key={route.key}
-                            accessibilityRole="button"
-                            accessibilityState={isFocused ? { selected: true } : {}}
-                            accessibilityLabel={options.tabBarAccessibilityLabel}
-                            onPress={onPress}
-                            onLongPress={onLongPress}
-                            style={styles.tabItem}
-                            activeOpacity={0.8}
-                        >
-                            <AnimatedView style={[styles.iconContainer, animatedIconContainerStyle]}>
-                                {options.tabBarIcon
-                                    ? options.tabBarIcon({
-                                        focused: isFocused,
-                                        color: isFocused ? '#FFF' : colors.textSecondary,
-                                        size: 24,
-                                    })
-                                    : null}
-                            </AnimatedView>
-
-                            <AnimatedText style={[
-                                typography.caption2,
-                                { marginTop: 6, fontWeight: isFocused ? '600' : '400' },
-                                animatedTextStyle
-                            ]}>
-                                {typeof label === 'string' ? label : route.name}
-                            </AnimatedText>
-                        </TouchableOpacity>
+                            route={route}
+                            isFocused={isFocused}
+                            label={label}
+                            onPress={handlePress}
+                            onLongPress={handleLongPress}
+                            icon={options.tabBarIcon as TabIconRenderer | undefined}
+                            colors={colors}
+                            typography={typography}
+                            isDark={isDark}
+                        />
                     );
                 })}
-            </View>
+            </BlurView>
         </View>
     );
 };
 
+
 const styles = StyleSheet.create({
     container: {
-        elevation: 0,
-        backgroundColor: 'transparent',
-    },
-    svgContainer: {
         position: 'absolute',
-        top: -30,
-        left: 0,
-        right: 0,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 10,
-    },
-    svg: {
-        // backgroundColor: 'transparent'
-    },
-    tabsContainer: {
-        flexDirection: 'row',
+        alignSelf: 'center',
         backgroundColor: 'transparent',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.16,
+        shadowRadius: 16,
+        elevation: 8,
+    },
+    blurContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-around',
+        paddingVertical: 10,
+        paddingHorizontal: 6,
+        borderRadius: 24,
+        borderWidth: 1.5,
+        overflow: 'hidden',
     },
     tabItem: {
         flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
-        height: 50,
+        position: 'relative',
+        height: 64,
     },
-    iconContainer: {
-        alignItems: 'center',
+    iconWrapper: {
+        width: 38,
+        height: 38,
+        borderRadius: 12,
         justifyContent: 'center',
-    }
+        alignItems: 'center',
+        backgroundColor: 'transparent',
+    },
+    iconContent: {
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    tabLabel: {
+        fontSize: 12,
+        marginTop: 4,
+    },
+    indicatorDot: {
+        width: 4,
+        height: 4,
+        borderRadius: 2,
+        position: 'absolute',
+        bottom: -2,
+    },
 });

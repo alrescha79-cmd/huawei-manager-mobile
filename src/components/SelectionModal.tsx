@@ -11,7 +11,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { ModalMeshGradient } from './ModalMeshGradient';
+import { ModalBackground } from './ModalBackground';
 
 
 export interface SelectionOption {
@@ -60,7 +60,7 @@ export function SelectionModal({
                         }
                     ]}
                 >
-                    <ModalMeshGradient />
+                    <ModalBackground />
                     <View style={styles.modalHeader}>
                         <Text style={[styles.modalTitle, { color: colors.text }]}>{title}</Text>
                     </View>

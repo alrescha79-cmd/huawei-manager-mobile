@@ -40,8 +40,8 @@ interface UseModemActionsReturn {
     isRetryingSilent: boolean;
     handleRetrySilent: () => Promise<void>;
 
-    showSpeedtestModal: boolean;
-    setShowSpeedtestModal: (show: boolean) => void;
+    showSpeedTestModal: boolean;
+    setShowSpeedTestModal: (show: boolean) => void;
 }
 
 /**
@@ -71,12 +71,12 @@ export function useModemActions({
 
     const [isRetryingSilent, setIsRetryingSilent] = useState(false);
 
-    const [showSpeedtestModal, setShowSpeedtestModal] = useState(false);
+    const [showSpeedTestModal, setShowSpeedTestModal] = useState(false);
 
     const handleToggleMobileData = useCallback(async () => {
         if (!modemService || isTogglingData) return;
 
-        const newState = !mobileDataStatus?.dataswitch;
+        const newState = !mobileDataStatus?.isEnabled;
 
         const performToggle = async () => {
             setIsTogglingData(true);
@@ -149,7 +149,7 @@ export function useModemActions({
     const handleDiagnosis = useCallback(async () => {
         if (!modemService || isRunningDiagnosis) return;
 
-        if (!mobileDataStatus?.dataswitch) {
+        if (!mobileDataStatus?.isEnabled) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.mobileDataRequired'));
             return;
         }
@@ -187,7 +187,7 @@ export function useModemActions({
     const handleOneClickCheck = useCallback(async () => {
         if (!modemService || isRunningCheck) return;
 
-        if (!mobileDataStatus?.dataswitch) {
+        if (!mobileDataStatus?.isEnabled) {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.mobileDataRequired'));
             return;
         }
@@ -301,7 +301,7 @@ export function useModemActions({
         handleReLogin,
         isRetryingSilent,
         handleRetrySilent,
-        showSpeedtestModal,
-        setShowSpeedtestModal,
+        showSpeedTestModal,
+        setShowSpeedTestModal,
     };
 }

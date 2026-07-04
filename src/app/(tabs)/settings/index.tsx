@@ -17,12 +17,14 @@ import { SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, 
 import { useThemeStore } from '@/stores/theme.store';
 import { useDebugStore } from '@/stores/debug.store';
 import { showInterstitial } from '@/services/ad.service';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsIndex() {
     const router = useRouter();
     const { colors, typography } = useTheme();
     const { t } = useTranslation();
     const { themeMode, setThemeMode, language, setLanguage, usageCardStyle, setUsageCardStyle, accentColor, setAccentColor } = useThemeStore();
+    const insets = useSafeAreaInsets();
 
     const [showThemeModal, setShowThemeModal] = React.useState(false);
     const [showLanguageModal, setShowLanguageModal] = React.useState(false);
@@ -58,7 +60,7 @@ export default function SettingsIndex() {
                 <PageHeader title={t('tabs.settings')} />
                 <ScrollView
                     style={[styles.container, { backgroundColor: 'transparent' }]}
-                    contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
+                    contentContainerStyle={{ paddingBottom: 110 + (insets.bottom > 0 ? insets.bottom : 16), paddingTop: 8 }}
                 >
                     <SettingsSection title={t('settings.connection')}>
                         <SettingsItem

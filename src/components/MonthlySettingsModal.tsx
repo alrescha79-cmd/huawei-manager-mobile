@@ -23,7 +23,7 @@ import { ThemedAlertHelper } from './ThemedAlert';
 import { showInterstitial } from '@/services/ad.service';
 import { AdNative } from './AdBanner';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BouncingDots } from './ModernLoading';
+import { BouncingDots } from './LoadingIndicators';
 
 
 

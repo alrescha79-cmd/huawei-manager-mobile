@@ -15,7 +15,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { BouncingDots, KeyboardAnimatedView, AdNative } from '@/components';
 import { SMSMessage } from '@/types';
-import { smsStyles as styles } from './smsStyles';
+import { smsStyles as styles } from './sms.styles';
 
 interface SMSDetailModalProps {
     visible: boolean;

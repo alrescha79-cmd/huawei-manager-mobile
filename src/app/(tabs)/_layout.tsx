@@ -50,6 +50,10 @@ const TabIcon = ({ name, color, focused, badge }: { name: string; color: string;
   };
 
   const iconName = iconNames[name] || 'circle';
+  const accentColor = colors.primary;
+
+  const badgeBgColor = focused ? '#FFFFFF' : accentColor;
+  const badgeTextColor = focused ? accentColor : '#FFFFFF';
 
   return (
     <View style={styles.iconContainer}>
@@ -59,8 +63,17 @@ const TabIcon = ({ name, color, focused, badge }: { name: string; color: string;
         color={color}
       />
       {badge !== undefined && badge > 0 && (
-        <View style={[styles.badge, { backgroundColor: colors.notification }]}>
-          <Text style={styles.badgeText}>
+        <View 
+          style={[
+            styles.badge, 
+            { 
+              backgroundColor: badgeBgColor,
+              borderWidth: focused ? 1 : 0,
+              borderColor: accentColor,
+            }
+          ]}
+        >
+          <Text style={[styles.badgeText, { color: badgeTextColor }]}>
             {badge > 99 ? '99+' : badge}
           </Text>
         </View>

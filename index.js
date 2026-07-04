@@ -1,5 +1,5 @@
 import { registerWidgetTaskHandler } from 'react-native-android-widget';
-import { widgetTaskHandler } from './src/widget/WidgetTaskHandler';
+import { widgetTaskHandler } from './src/widget/widget-task-handler';
 
 registerWidgetTaskHandler(widgetTaskHandler);
 

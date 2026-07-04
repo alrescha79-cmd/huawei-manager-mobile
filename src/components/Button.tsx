@@ -6,7 +6,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useTheme } from '@/theme';
-import { BouncingDots } from './ModernLoading';
+import { BouncingDots } from './LoadingIndicators';
 
 interface ButtonProps {
   title: string;

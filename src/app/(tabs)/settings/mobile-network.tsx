@@ -76,7 +76,7 @@ export default function MobileNetworkSettingsScreen() {
                 service.getMonthlyDataSettings(),
             ]);
 
-            setMobileDataEnabled(mobileData.dataswitch);
+            setMobileDataEnabled(mobileData.isEnabled);
             setDataRoamingEnabled(roaming);
             setAutoNetworkEnabled(autoNetwork);
             setNetworkMode(netMode);

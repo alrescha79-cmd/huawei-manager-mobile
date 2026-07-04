@@ -16,7 +16,7 @@ import { useTranslation } from '@/i18n';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-interface AdblockAlertModalProps {
+interface AdBlockAlertModalProps {
     visible?: boolean;
     onClose?: () => void;
 }
@@ -32,7 +32,7 @@ export const setAdblockListener = (listener: (visible: boolean) => void) => {
     adblockListener = listener;
 };
 
-export const AdblockAlertHelper = {
+export const AdBlockAlertHelper = {
     show: async () => {
         if (isAlertRequestPendingOrShown) return;
         isAlertRequestPendingOrShown = true;
@@ -72,7 +72,7 @@ export const AdblockAlertHelper = {
     }
 };
 
-export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
+export const AdBlockAlertModal: React.FC<AdBlockAlertModalProps> = () => {
     const [visible, setVisible] = useState(false);
     const { colors, typography, isDark, borderRadius, glassmorphism } = useTheme();
     const { t } = useTranslation();
@@ -104,7 +104,7 @@ export const AdblockAlertModal: React.FC<AdblockAlertModalProps> = () => {
     }, [slideAnim]);
 
     const handleClose = () => {
-        AdblockAlertHelper.hide();
+        AdBlockAlertHelper.hide();
     };
 
     if (!visible) return null;

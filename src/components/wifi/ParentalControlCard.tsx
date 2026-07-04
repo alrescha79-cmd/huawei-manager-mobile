@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, Button, ThemedSwitch, BouncingDots } from '@/components';
-import { wifiStyles as styles } from './wifiStyles';
+import { wifiStyles as styles } from './wifi.styles';
 
 interface ParentalProfile {
     id: string;

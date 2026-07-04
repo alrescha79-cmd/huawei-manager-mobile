@@ -19,10 +19,10 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { ModemService } from '@/services/modem.service';
-import { ModalMeshGradient } from './ModalMeshGradient';
+import { ModalBackground } from './ModalBackground';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
 import { AdBanner, AdNative, InlineAdNative } from './AdBanner';
-import { BouncingDots } from './ModernLoading';
+import { BouncingDots } from './LoadingIndicators';
 
 
 const LTE_BANDS = [
@@ -223,7 +223,7 @@ export function BandSelectionModal({
                     { backgroundColor: isDark ? 'rgba(20, 20, 22, 0.92)' : glassmorphism.background.light.modal }
                 ]}
             >
-                <ModalMeshGradient />
+                <ModalBackground />
                 {/* Header */}
                 <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
                     <View>

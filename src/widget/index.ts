@@ -1,5 +1,5 @@
 export { ModemStatusWidget, LoadingWidget, ErrorWidget } from './ModemStatusWidget';
-export { widgetTaskHandler } from './WidgetTaskHandler';
-export { fetchWidgetData, fetchSpeedData, formatBytes, formatSpeed } from './WidgetDataService';
-export { updateModemWidget, startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from './WidgetUpdater';
-export type { WidgetData, SpeedData } from './WidgetDataService';
+export { widgetTaskHandler } from './widget-task-handler';
+export { fetchWidgetData, fetchSpeedData, formatBytes, formatSpeed } from './widget-data.service';
+export { updateModemWidget, startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from './widget-updater';
+export type { WidgetData, SpeedData } from './widget-data.service';

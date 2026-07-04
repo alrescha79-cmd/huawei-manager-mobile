@@ -3,7 +3,7 @@ import { requestWidgetUpdate, requestWidgetUpdateById, getWidgetInfo } from 'rea
 import { AppState } from 'react-native';
 import type { AppStateStatus } from 'react-native';
 import { ModemStatusWidget } from './ModemStatusWidget';
-import { fetchWidgetData, fetchSpeedData, WidgetData } from './WidgetDataService';
+import { fetchWidgetData, fetchSpeedData, WidgetData } from './widget-data.service';
 
 const WIDGET_NAME = 'ModemStatus';
 const SPEED_UPDATE_INTERVAL = 2000;

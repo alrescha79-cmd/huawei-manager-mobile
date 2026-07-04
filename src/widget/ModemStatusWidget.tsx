@@ -6,7 +6,7 @@ import {
     formatBytes,
     formatSpeed,
     getNetworkTypeName,
-} from './WidgetDataService';
+} from './widget-data.service';
 
 const colors = {
     background: '#0f172a' as ColorProp,

@@ -12,7 +12,7 @@ import { BlurView } from 'expo-blur';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { ModalMeshGradient } from './ModalMeshGradient';
+import { ModalBackground } from './ModalBackground';
 import { showInterstitial } from '@/services/ad.service';
 
 interface DiagnosisResultModalProps {
@@ -62,7 +62,7 @@ export function DiagnosisResultModal({
                         }
                     ]}
                 >
-                    <ModalMeshGradient />
+                    <ModalBackground />
                     <View style={[styles.header, { borderBottomColor: colors.border }]}>
                         <MaterialIcons name="fact-check" size={28} color={colors.primary} />
                         <Text style={[typography.headline, { color: colors.text, marginLeft: spacing.sm, textAlign: 'center' }]}>

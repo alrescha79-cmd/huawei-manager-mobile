@@ -10,7 +10,7 @@ import mobileAds, {
 } from 'react-native-google-mobile-ads';
 import Constants from 'expo-constants';
 import { ThemedAlertHelper } from '@/components/ThemedAlert';
-import { AdblockAlertHelper } from '@/components/AdblockAlertModal';
+import { AdBlockAlertHelper } from '@/components/AdBlockAlertModal';
 import { useThemeStore } from '@/stores/theme.store';
 import en from '@/i18n/en.json';
 import id from '@/i18n/id.json';
@@ -125,7 +125,7 @@ function handleAdError(error: any) {
     if (!error) return;
     const errMsg = error?.message || String(error);
     if (errMsg.includes('doubleclick') || errMsg.includes('ad server') || errMsg.includes('Failed to connect')) {
-        AdblockAlertHelper.show();
+        AdBlockAlertHelper.show();
     }
 }
 

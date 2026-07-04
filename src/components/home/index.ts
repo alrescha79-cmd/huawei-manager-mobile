@@ -5,4 +5,4 @@ export * from './SignalInfoCard';
 export * from './TrafficStatsCard';
 export * from './HomeSkeleton';
 export * from './BatteryIndicator';
-export { homeStyles } from './homeStyles';
+export { homeStyles } from './home.styles';

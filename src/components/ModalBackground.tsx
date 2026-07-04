@@ -3,7 +3,7 @@ import { StyleSheet, View, Dimensions } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 import { useTheme } from '@/theme';
 
-interface ModalMeshGradientProps {
+interface ModalBackgroundProps {
     style?: any;
 }
 
@@ -13,7 +13,7 @@ const { width, height } = Dimensions.get('window');
  * A subtle mesh gradient overlay for modals
  * Should be placed as the first child inside modal container
  */
-export const ModalMeshGradient = ({ style }: ModalMeshGradientProps) => {
+export const ModalBackground = ({ style }: ModalBackgroundProps) => {
     const { isDark } = useTheme();
 
     const meshColors = isDark
@@ -56,4 +56,4 @@ export const ModalMeshGradient = ({ style }: ModalMeshGradientProps) => {
     );
 };
 
-export default ModalMeshGradient;
+export default ModalBackground;
