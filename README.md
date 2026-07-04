@@ -52,21 +52,12 @@
 > **⚡ Built with Expo SDK 54**
 
 > **📡 Tested on Huawei B312-929 (Orbit Star 2) and Android 15 (Iqoo Z7)**
-
-> [!NOTE]
-> **⚠️ Known Issue / Masalah yang Diketahui** 
-> 
-> **🇬🇧 EN** — SMS feature may not work properly on some devices due to limited modem SMS support.
-> 
-> **🇮🇩 ID** — Fitur SMS mungkin belum berfungsi sepenuhnya pada beberapa perangkat karena keterbatasan modem yang mendukung SMS.
-
 ---
 
 ## 📸 App Preview
 
-![dark](docs/screenshots/dark-en.png)
-![dark](docs/screenshots/dark-en-1.png)
-![light](docs/screenshots/light-id.png)
+<img width="1440" height="1024" alt="dark-en" src="https://github.com/user-attachments/assets/b5c25691-177d-4fbb-870c-935f84ba2eba" />
+<img width="1440" height="1024" alt="light-id" src="https://github.com/user-attachments/assets/8fa75331-88f7-46ea-95ab-f6ba4f2c49b3" />
 
 ---
 
