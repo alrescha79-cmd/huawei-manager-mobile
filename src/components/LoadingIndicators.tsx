@@ -1,14 +1,14 @@
 import React, { useEffect, useRef } from 'react';
-import { View, StyleSheet, Animated, Easing } from 'react-native';
+import { View, StyleSheet, Animated, Easing, StyleProp, ViewStyle } from 'react-native';
 import { useTheme } from '@/theme';
 
-interface ModernLoadingProps {
+interface SpinnerLoadingProps {
     size?: 'small' | 'medium' | 'large';
     color?: string;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
 }
 
-export function ModernLoading({ size = 'medium', color, style }: ModernLoadingProps) {
+export function SpinnerLoading({ size = 'medium', color, style }: SpinnerLoadingProps) {
     const { colors, isDark } = useTheme();
     const spinnerColor = color || colors.primary;
 
@@ -132,7 +132,7 @@ export function ModernLoading({ size = 'medium', color, style }: ModernLoadingPr
 interface BouncingDotsProps {
     size?: 'small' | 'medium' | 'large';
     color?: string;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
 }
 
 export function BouncingDots({ size = 'medium', color, style }: BouncingDotsProps) {
@@ -236,7 +236,7 @@ export function BouncingDots({ size = 'medium', color, style }: BouncingDotsProp
 interface PulseRingProps {
     size?: number;
     color?: string;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
 }
 
 export function PulseRing({ size = 40, color, style }: PulseRingProps) {
@@ -363,4 +363,4 @@ const styles = StyleSheet.create({
     pulseDot: {},
 });
 
-export default ModernLoading;
+export default SpinnerLoading;

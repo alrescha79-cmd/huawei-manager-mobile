@@ -17,7 +17,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, KeyboardAnimatedView, AdBanner, AdNative } from '@/components';
+import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, KeyboardAnimatedView, AdBanner, AdNative } from '@/components';
 import { SMSListItem, SMSStatsCard, SMSDetailModal, SMSStatsSkeleton, SMSListSkeleton, SMSSearchSkeleton, smsStyles as styles, SMSFilterType } from '@/components/sms';
 import { formatTimeAgo } from '@/utils/formatters';
 import { useAuthStore } from '@/stores/auth.store';
@@ -440,7 +440,7 @@ export default function SMSScreen() {
     <>
       <AnimatedScreen>
         <MeshGradientBackground>
-          <ModernRefreshIndicator refreshing={isRefreshing} />
+          <RefreshIndicator refreshing={isRefreshing} />
 
           {isSelectionMode && (
             <View style={[
@@ -470,7 +470,7 @@ export default function SMSScreen() {
               styles.content,
               {
                 paddingTop: isSelectionMode ? 0 : (8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0)),
-                paddingBottom: isSelectionMode ? 100 : 80
+                paddingBottom: isSelectionMode ? 140 : 110 + (insets.bottom > 0 ? insets.bottom : 16)
               }
             ]}
             refreshControl={

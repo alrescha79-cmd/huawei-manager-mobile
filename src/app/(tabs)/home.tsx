@@ -11,13 +11,14 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, DiagnosisResultModal, SpeedtestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, ModernRefreshIndicator, SignalPointingModal, AdBanner, AdNative, NoSignalModal } from '@/components';
+import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, DiagnosisResultModal, SpeedTestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, SignalPointingModal, AdBanner, AdNative, NoSignalModal } from '@/components';
 import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { formatBytes, formatDuration, DurationUnits } from '@/utils/helpers';
 import { useTranslation } from '@/i18n';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 // Custom Hooks
 import { useHomeAuth } from '@/hooks/home/useHomeAuth';
@@ -29,6 +30,7 @@ export default function HomeScreen() {
   const { colors, typography, spacing, isDark, borderRadius } = useTheme();
   const { usageCardStyle } = useThemeStore();
   const { t } = useTranslation();
+  const insets = useSafeAreaInsets();
 
   const {
     credentials,
@@ -61,7 +63,7 @@ export default function HomeScreen() {
 
   const [showBandModal, setShowBandModal] = useState(false);
   const [showMonthlySettingsModal, setShowMonthlySettingsModal] = useState(false);
-  const [showSpeedtestModal, setShowSpeedtestModal] = useState(false);
+  const [showSpeedTestModal, setShowSpeedTestModal] = useState(false);
   const [showSignalPointingModal, setShowSignalPointingModal] = useState(false);
 
   // Hook Initialization
@@ -123,13 +125,16 @@ export default function HomeScreen() {
   return (
     <AnimatedScreen>
       <MeshGradientBackground>
-        <ModernRefreshIndicator refreshing={homeData.isRefreshing} />
+        <RefreshIndicator refreshing={homeData.isRefreshing} />
 
         <ScrollView
           style={[styles.container, { backgroundColor: 'transparent' }]}
           contentContainerStyle={[
             styles.content,
-            { paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0) }
+            { 
+              paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0),
+              paddingBottom: 110 + (insets.bottom > 0 ? insets.bottom : 16)
+            }
           ]}
           refreshControl={
             <RefreshControl
@@ -170,7 +175,7 @@ export default function HomeScreen() {
               t={t}
               selectedBands={homeData.selectedBands}
               wanIpAddress={wanInfo?.wanIPAddress}
-              mobileDataEnabled={!!mobileDataStatus?.dataswitch}
+              mobileDataEnabled={!!mobileDataStatus?.isEnabled}
               isTogglingData={homeActions.isTogglingData}
               isChangingIp={homeActions.isChangingIp}
               isRunningCheck={homeActions.isRunningCheck}
@@ -179,7 +184,7 @@ export default function HomeScreen() {
               onToggleMobileData={homeActions.handleToggleMobileData}
               onSignalPointing={() => setShowSignalPointingModal(true)}
               onQuickCheck={homeActions.handleOneClickCheck}
-              onSpeedtest={() => setShowSpeedtestModal(true)}
+              onSpeedtest={() => setShowSpeedTestModal(true)}
             />
           )}
 
@@ -262,9 +267,9 @@ export default function HomeScreen() {
             summary={homeActions.diagnosisSummary}
           />
 
-          <SpeedtestModal
-            visible={showSpeedtestModal}
-            onClose={() => setShowSpeedtestModal(false)}
+          <SpeedTestModal
+            visible={showSpeedTestModal}
+            onClose={() => setShowSpeedTestModal(false)}
           />
 
           <SignalPointingModal

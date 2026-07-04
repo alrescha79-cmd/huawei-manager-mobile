@@ -91,7 +91,7 @@ export interface ConnectedDevice {
 /**
  * WiFi security mode
  */
-export enum WifiAuthMode {
+export enum WiFiAuthMode {
   OPEN = 'OPEN',
   SHARED = 'SHARED',
   WPA_PSK = 'WPA-PSK',
@@ -104,7 +104,7 @@ export enum WifiAuthMode {
 /**
  * WiFi encryption mode
  */
-export enum WifiEncryptionMode {
+export enum WiFiEncryptionMode {
   NONE = 'NONE',
   WEP = 'WEP',
   TKIP = 'TKIP',
@@ -177,7 +177,8 @@ export interface WanInfo {
 }
 
 export interface MobileDataStatus {
-  dataswitch: boolean;
+  /** Whether mobile data is enabled on the modem */
+  isEnabled: boolean;
 }
 
 // Network Settings Types

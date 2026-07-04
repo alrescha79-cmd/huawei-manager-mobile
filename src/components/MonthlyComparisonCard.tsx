@@ -12,7 +12,7 @@ import {
     getCurrentMonthKey,
     getLastMonthKey,
     MonthlyUsageData
-} from '@/services/usageHistory.service';
+} from '@/services/usage-history.service';
 
 interface MonthlyComparisonCardProps {
     totalDownload: number;

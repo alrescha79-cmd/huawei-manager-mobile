@@ -16,7 +16,7 @@ import { Card } from './Card';
 import { PageSheetModal } from './PageSheetModal';
 import { SelectionModal } from './SelectionModal';
 import { ThemedAlertHelper } from './ThemedAlert';
-import { BouncingDots } from './ModernLoading';
+import { BouncingDots } from './LoadingIndicators';
 import { AdNative } from './AdBanner';
 import { SignalInfo } from '@/types';
 import { ModemService } from '@/services/modem.service';

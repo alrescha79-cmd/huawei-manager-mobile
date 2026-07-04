@@ -21,7 +21,7 @@ import { ConnectedDevice } from '@/types';
 import { MeshGradientBackground } from './MeshGradientBackground';
 import { AdNative } from './AdBanner';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BouncingDots } from './ModernLoading';
+import { BouncingDots } from './LoadingIndicators';
 
 
 interface DeviceDetailModalProps {

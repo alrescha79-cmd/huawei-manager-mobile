@@ -12,7 +12,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BouncingDots } from './ModernLoading';
+import { BouncingDots } from './LoadingIndicators';
 
 interface NoSignalModalProps {
     visible: boolean;
@@ -310,5 +310,3 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
 });
-
-export default NoSignalModal;

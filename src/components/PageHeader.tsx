@@ -72,5 +72,3 @@ const styles = StyleSheet.create({
         padding: 4,
     },
 });
-
-export default PageHeader;

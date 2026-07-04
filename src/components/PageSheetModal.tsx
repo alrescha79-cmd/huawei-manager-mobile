@@ -11,9 +11,9 @@ import {
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { BlurView } from 'expo-blur';
-import { ModalMeshGradient } from './ModalMeshGradient';
+import { ModalBackground } from './ModalBackground';
 import { ThemedAlertHelper } from './ThemedAlert';
-import { BouncingDots } from './ModernLoading';
+import { BouncingDots } from './LoadingIndicators';
 
 interface PageSheetModalProps {
     visible: boolean;
@@ -73,7 +73,7 @@ export function PageSheetModal({
                     { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }
                 ]}
             >
-                <ModalMeshGradient />
+                <ModalBackground />
                 <View style={[styles.header, {
                     borderBottomColor: colors.border,
                     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16

@@ -19,7 +19,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, Input, Button, WebViewLogin, ThemedAlertHelper, PageSheetModal } from '@/components';
 import { useAuthStore } from '@/stores/auth.store';
-import { useModemProfileStore } from '@/stores/modemProfile.store';
+import { useModemProfileStore } from '@/stores/modem-profile.store';
 import { getModemProfilePassword } from '@/utils/storage';
 import { networkService } from '@/services/network.service';
 import { ModemAPIClient } from '@/services/api.service';

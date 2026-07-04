@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/theme';
 
-interface CustomRefreshScrollViewProps extends ScrollViewProps {
+interface PullToRefreshViewProps extends ScrollViewProps {
     onRefresh: () => void;
     refreshing: boolean;
     onPullProgress?: (progress: number) => void;
@@ -25,7 +25,7 @@ interface CustomRefreshScrollViewProps extends ScrollViewProps {
  * Custom ScrollView with pull-to-refresh that allows custom refresh indicator
  * Uses PanResponder on Android to detect pull gesture when at top
  */
-export const CustomRefreshScrollView: React.FC<CustomRefreshScrollViewProps> = ({
+export const PullToRefreshView: React.FC<PullToRefreshViewProps> = ({
     onRefresh,
     refreshing,
     onPullProgress,
@@ -136,4 +136,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default CustomRefreshScrollView;
+export default PullToRefreshView;

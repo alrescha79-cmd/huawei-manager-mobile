@@ -39,7 +39,7 @@ export function useHomeActions({
   const handleToggleMobileData = async () => {
     if (!modemService || isTogglingData) return;
 
-    const newState = !mobileDataStatus?.dataswitch;
+    const newState = !mobileDataStatus?.isEnabled;
 
     const performToggle = async () => {
       setIsTogglingData(true);
@@ -116,7 +116,7 @@ export function useHomeActions({
   const handleDiagnosis = async () => {
     if (!modemService || isRunningDiagnosis) return;
 
-    if (!mobileDataStatus?.dataswitch) {
+    if (!mobileDataStatus?.isEnabled) {
       ThemedAlertHelper.alert(
         t('common.error'),
         t('alerts.mobileDataRequired')
@@ -153,7 +153,7 @@ export function useHomeActions({
   const handleOneClickCheck = async () => {
     if (!modemService || isRunningCheck) return;
 
-    if (!mobileDataStatus?.dataswitch) {
+    if (!mobileDataStatus?.isEnabled) {
       ThemedAlertHelper.alert(
         t('common.error'),
         t('alerts.mobileDataRequired')

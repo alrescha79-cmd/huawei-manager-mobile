@@ -4,12 +4,12 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-interface ModernRefreshIndicatorProps {
+interface RefreshIndicatorProps {
     refreshing: boolean;
     pullProgress?: number;
 }
 
-export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernRefreshIndicatorProps) {
+export function RefreshIndicator({ refreshing, pullProgress = 0 }: RefreshIndicatorProps) {
     const { colors, isDark } = useTheme();
     const insets = useSafeAreaInsets();
 
@@ -207,9 +207,9 @@ export function ModernRefreshIndicator({ refreshing, pullProgress = 0 }: ModernR
     );
 }
 
-export function useCustomRefresh(refreshing: boolean, onRefresh: () => void) {
+export function usePullToRefresh(refreshing: boolean, onRefresh: () => void) {
     return {
-        refreshIndicator: <ModernRefreshIndicator refreshing={refreshing} />,
+        refreshIndicator: <RefreshIndicator refreshing={refreshing} />,
         refreshControlProps: {
             refreshing,
             onRefresh,
@@ -273,4 +273,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default ModernRefreshIndicator;
+export default RefreshIndicator;

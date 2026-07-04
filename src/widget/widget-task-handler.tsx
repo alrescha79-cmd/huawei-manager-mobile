@@ -1,7 +1,7 @@
 import React from 'react';
 import type { WidgetTaskHandlerProps } from 'react-native-android-widget';
 import { ModemStatusWidget, ErrorWidget } from './ModemStatusWidget';
-import { fetchWidgetData } from './WidgetDataService';
+import { fetchWidgetData } from './widget-data.service';
 
 export async function widgetTaskHandler(props: WidgetTaskHandlerProps) {
     const widgetInfo = props.widgetInfo;

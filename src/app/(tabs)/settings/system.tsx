@@ -18,7 +18,7 @@ import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative, PageSheetModal } from '@/components';
 import { showInterstitial } from '@/services/ad.service';
-import { useModemProfileStore } from '@/stores/modemProfile.store';
+import { useModemProfileStore } from '@/stores/modem-profile.store';
 import { getModemProfilePassword } from '@/utils/storage';
 
 const TIMEZONES = [

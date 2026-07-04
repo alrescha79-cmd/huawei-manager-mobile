@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdblockAlertModal, ChangelogModal, ChangelogHelper } from '@/components';
+import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdBlockAlertModal, ChangelogModal, ChangelogHelper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -184,7 +184,7 @@ export default function RootLayout() {
             if (credentials) {
                 // Auto-migrate legacy credentials to multi-profile store on app update
                 try {
-                    const { useModemProfileStore } = await import('@/stores/modemProfile.store');
+                    const { useModemProfileStore } = await import('@/stores/modem-profile.store');
                     await useModemProfileStore.getState().ensureProfile({
                         modemIp: credentials.modemIp,
                         username: credentials.username,
@@ -442,7 +442,7 @@ export default function RootLayout() {
                     onDismiss={dismissAlert}
                 />
 
-                <AdblockAlertModal />
+                <AdBlockAlertModal />
                 <ChangelogModal />
             </KeyboardProvider>
         </GestureHandlerRootView>

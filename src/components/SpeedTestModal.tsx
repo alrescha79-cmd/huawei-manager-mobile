@@ -13,11 +13,11 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { ModalMeshGradient } from './ModalMeshGradient';
+import { ModalBackground } from './ModalBackground';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
 import { AdNative, ThemedAlertHelper } from '@/components';
 
-interface SpeedtestModalProps {
+interface SpeedTestModalProps {
     visible: boolean;
     onClose: () => void;
 }
@@ -189,7 +189,7 @@ const gaugeStyles = StyleSheet.create({
 const CF_DOWNLOAD_URL = 'https://speed.cloudflare.com/__down';
 const CF_UPLOAD_URL = 'https://speed.cloudflare.com/__up';
 
-export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose }) => {
+export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose }) => {
     const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
@@ -471,7 +471,7 @@ export const SpeedtestModal: React.FC<SpeedtestModalProps> = ({ visible, onClose
                     style={styles.blurContainer}
                 >
                     <View style={[styles.modalContent, { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }]}>
-                        <ModalMeshGradient />
+                        <ModalBackground />
                         <View style={styles.header}>
                             <Text style={[typography.title2, { color: colors.text, fontWeight: '700' }]}>
                                 {t('home.speedtestTitle')}
@@ -646,4 +646,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default SpeedtestModal;
+export default SpeedTestModal;

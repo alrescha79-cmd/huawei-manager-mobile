@@ -3,7 +3,7 @@ import { View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { SelectionModal, BouncingDots } from '@/components';
-import { wifiStyles as styles } from './wifiStyles';
+import { wifiStyles as styles } from './wifi.styles';
 
 interface WiFiEditSettingsProps {
     t: (key: string) => string;

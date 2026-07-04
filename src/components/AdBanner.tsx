@@ -13,8 +13,8 @@ import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { BouncingDots } from './ModernLoading';
-import { AdblockAlertHelper } from './AdblockAlertModal';
+import { BouncingDots } from './LoadingIndicators';
+import { AdBlockAlertHelper } from './AdBlockAlertModal';
 import {
     initAdMob,
     isAdMobInitialized,
@@ -29,7 +29,7 @@ function triggerAdblockAlert(error: any) {
     if (!error) return;
     const errMsg = error?.message || String(error);
     if (errMsg.includes('doubleclick') || errMsg.includes('ad server') || errMsg.includes('Failed to connect') || errMsg.includes('Timeout')) {
-        AdblockAlertHelper.show();
+        AdBlockAlertHelper.show();
     }
 }
 
@@ -352,7 +352,7 @@ export const InlineAdNative: React.FC = React.memo(() => {
     }, [isReady, triggerKey]);
 
     if (!isLoaded || !nativeAd) {
-        return null; // Keep it completely hidden to prevent empty slots / jumping UI
+        return null;
     }
 
     return (

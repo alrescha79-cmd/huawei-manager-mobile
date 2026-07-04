@@ -323,9 +323,9 @@ export class ModemService {
     try {
       const response = await this.apiClient.get('/api/dialup/mobile-dataswitch');
 
-      const dataswitch = parseXMLValue(response, 'dataswitch');
+      const rawDataSwitch = parseXMLValue(response, 'dataswitch');
       return {
-        dataswitch: dataswitch === '1',
+        isEnabled: rawDataSwitch === '1',
       };
     } catch (error) {
       console.error('Error getting mobile data status:', error);

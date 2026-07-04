@@ -3,12 +3,12 @@ import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '@/theme';
 
-interface GradientBackgroundProps {
+interface LinearGradientBackgroundProps {
     children: React.ReactNode;
     style?: any;
 }
 
-export const GradientBackground = ({ children, style }: GradientBackgroundProps) => {
+export const LinearGradientBackground = ({ children, style }: LinearGradientBackgroundProps) => {
     const { colors } = useTheme();
 
     return (
@@ -29,4 +29,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default GradientBackground;
+export default LinearGradientBackground;

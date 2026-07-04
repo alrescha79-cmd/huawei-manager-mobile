@@ -1,13 +1,13 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { BouncingDots } from './ModernLoading';
+import { BouncingDots } from './LoadingIndicators';
 
 interface SettingsSectionProps {
     title?: string;
     children: React.ReactNode;
-    style?: any;
+    style?: StyleProp<ViewStyle>;
 }
 
 export const SettingsSection = ({ title, children, style }: SettingsSectionProps) => {
