@@ -86,6 +86,10 @@ export interface ConnectedDevice {
   id: string;
   associatedTime: string;
   isBlock: boolean;
+  deviceType?: string;
+  connectionType?: string;
+  vendorClassId?: string;
+  frequency?: string;
 }
 
 /**
@@ -159,6 +163,7 @@ export interface ModemStatus {
   connectionStatus: string;
   signalIcon: string;
   currentNetworkType: string;
+  currentNetworkTypeEx?: string;
   currentServiceDomain: string;
   roamingStatus: string;
   batteryStatus: string;

@@ -160,10 +160,26 @@ export function BandSelectionModal({
                         onSaved?.();
                     } catch (error: any) {
                         let errorMessage = error?.message || t('alerts.failedSaveBands');
+                        
+                        const isNetworkDrop = errorMessage.includes('Network error') || 
+                                              errorMessage.includes('timeout') || 
+                                              errorMessage.toLowerCase().includes('network') ||
+                                              errorMessage.includes('125003') || 
+                                              errorMessage.includes('125002');
+                                              
                         if (error?.huaweiErrorCode === '100003') {
                             errorMessage = t('alerts.bandNotSupported') || 'LTE Band selection is not supported on this modem model.';
+                            ThemedAlertHelper.alert(t('common.error'), errorMessage);
+                        } else if (isNetworkDrop) {
+                            ThemedAlertHelper.alert(
+                                t('common.info'), 
+                                t('settings.bandAppliedNetworkRestarting') || 'Band selection sent. The modem may be restarting its network connection.'
+                            );
+                            onClose();
+                            onSaved?.();
+                        } else {
+                            ThemedAlertHelper.alert(t('common.error'), errorMessage);
                         }
-                        ThemedAlertHelper.alert(t('common.error'), errorMessage);
                     } finally {
                         setIsSaving(false);
                     }

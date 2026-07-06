@@ -10,8 +10,24 @@ interface ConnectedDevicesListProps {
     onDevicePress: (device: ConnectedDevice) => void;
 }
 
-function getDeviceIcon(hostName: string): string {
-    const name = (hostName || '').toLowerCase();
+function getDeviceIcon(device: ConnectedDevice): string {
+    if (device.vendorClassId) {
+        const vendor = device.vendorClassId.toLowerCase();
+        if (vendor.includes('android')) return 'smartphone';
+        if (vendor.includes('apple') || vendor.includes('iphone') || vendor.includes('ipad') || vendor.includes('ios')) return 'smartphone';
+        if (vendor.includes('windows') || vendor.includes('msft')) return 'computer';
+        if (vendor.includes('mac') || vendor.includes('darwin')) return 'computer';
+    }
+
+    if (device.deviceType) {
+        const type = device.deviceType.toLowerCase();
+        if (type.includes('computer') || type.includes('pc') || type.includes('desktop') || type.includes('mac') || type.includes('laptop')) return 'computer';
+        if (type.includes('router') || type.includes('cpe')) return 'router';
+        if (type.includes('tv') || type.includes('display')) return 'tv';
+        if (type.includes('phone') || type.includes('mobile')) return 'smartphone';
+    }
+
+    const name = (device.hostName || '').toLowerCase();
     if (
         name.includes('pc') ||
         name.includes('workstation') ||
@@ -64,12 +80,36 @@ export function ConnectedDevicesList({
                 </View>
             ) : (
                 devices.map((device) => {
-                    const isComputer = getDeviceIcon(device.hostName) === 'computer';
-                    const iconName = isComputer ? 'desktop-windows' : 'smartphone';
+                    const deviceIconType = getDeviceIcon(device);
+                    let iconName = 'smartphone';
+                    if (deviceIconType === 'computer') iconName = 'desktop-windows';
+                    else if (deviceIconType === 'router') iconName = 'router';
+                    else if (deviceIconType === 'tv') iconName = 'tv';
+
+                    const isComputer = deviceIconType === 'computer';
                     const iconColor = isComputer ? '#a855f7' : colors.primary;
                     const iconBg = isComputer ? '#a855f715' : colors.primary + '15';
 
-                    const band = parseInt(device.macAddress.replace(/[^0-9]/g, '').slice(-1) || '0', 10) % 2 === 0 ? '5 GHz' : '2.4 GHz';
+                    let band = parseInt(device.macAddress.replace(/[^0-9]/g, '').slice(-1) || '0', 10) % 2 === 0 ? '5 GHz' : '2.4 GHz';
+                    let connIcon = 'wifi';
+                    
+                    if (device.frequency) {
+                        band = device.frequency.replace('GHz', ' GHz');
+                    }
+                    
+                    if (device.connectionType) {
+                        const connType = device.connectionType.toLowerCase();
+                        if (connType.includes('ethernet') || connType.includes('lan')) {
+                            band = 'LAN';
+                            connIcon = 'settings-ethernet';
+                        }
+                        else if (!device.frequency) {
+                            if (connType.includes('802.11a') || connType.includes('ac') || connType.includes('5g')) band = '5 GHz';
+                            else if (connType.includes('802.11b') || connType.includes('g') || connType.includes('n') || connType.includes('2.4')) band = '2.4 GHz';
+                            else if (connType.includes('wireless')) band = ''; // Just use the wifi icon
+                            else band = device.connectionType;
+                        }
+                    }
 
                     const timeText = formatElapsedTime(device.associatedTime, t);
 
@@ -87,7 +127,7 @@ export function ConnectedDevicesList({
                             activeOpacity={0.7}
                         >
                             <View style={[styles.iconBox, { backgroundColor: iconBg }]}>
-                                <MaterialIcons name={iconName} size={22} color={iconColor} />
+                                <MaterialIcons name={iconName as any} size={22} color={iconColor} />
                             </View>
 
                             <View style={styles.middleColumn}>
@@ -95,10 +135,13 @@ export function ConnectedDevicesList({
                                     <Text style={[typography.body, { color: colors.text, fontWeight: '700', flexShrink: 1 }]} numberOfLines={1}>
                                         {device.hostName || 'Unknown Device'}
                                     </Text>
-                                    <View style={[styles.bandBadge, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)' }]}>
-                                        <Text style={[styles.bandText, { color: colors.textSecondary }]}>
-                                            {band}
-                                        </Text>
+                                    <View style={[styles.bandBadge, { backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)', flexDirection: 'row', alignItems: 'center' }]}>
+                                        <MaterialIcons name={connIcon as any} size={12} color={colors.textSecondary} />
+                                        {band ? (
+                                            <Text style={[styles.bandText, { color: colors.textSecondary, marginLeft: 4 }]}>
+                                                {band}
+                                            </Text>
+                                        ) : null}
                                     </View>
                                 </View>
                                 <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: 4 }]}>

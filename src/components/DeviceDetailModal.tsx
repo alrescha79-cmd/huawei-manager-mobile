@@ -238,7 +238,6 @@ export function DeviceDetailModal({
                                     style={[styles.dangerButton, { backgroundColor: isDark ? 'rgba(255,59,48,0.15)' : 'rgba(255,59,48,0.1)' }]}
                                     onPress={handleBlock}
                                 >
-                                    <MaterialIcons name="block" size={20} color={colors.error} />
                                     <Text style={[styles.dangerButtonText, { color: colors.error }]}>
                                         {t('wifi.blockDevice')}
                                     </Text>

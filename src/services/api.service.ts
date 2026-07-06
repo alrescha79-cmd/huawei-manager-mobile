@@ -547,11 +547,24 @@ export class ModemAPIClient {
         },
       });
 
+      const responseData = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+      if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
+        this.sessionToken = '';
+        this.sessionCookie = '';
+        this.tokenExpiry = 0;
+        markSessionUnhealthy();
+        const errorCode = responseData.includes('125003') ? '125003' : '125002';
+        throw new Error(`Session expired (${errorCode}). Please re-login.`);
+      }
+
       updateSessionActivity();
 
       return response.data;
-    } catch (error) {
-      console.error(`Error getting ${endpoint}:`, error);
+    } catch (error: any) {
+      const isSessionError = error?.message?.includes('125003') || error?.message?.includes('125002');
+      if (!isSessionError) {
+        console.error(`Error getting ${endpoint}:`, error);
+      }
       throw error;
     }
   }

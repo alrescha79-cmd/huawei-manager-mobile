@@ -721,7 +721,7 @@
     "monthlyUsageTitle": "Penggunaan Bulanan Tinggi",
     "monthlyUsageBody": "Sudah menggunakan {{used}} GB bulan ini (batas: {{limit}} GB)",
     "ipChangeTitle": "IP Address Berubah",
-    "ipChangeBody": "IP berubah setelah {{duration}} sesi",
+    "ipChangeBody": "IP berubah {{duration}} yang lalu",
     "ipChangeBodyJustNow": "IP baru saja berubah",
     "ipChangeBodyAlert": "Alamat IP berhasil diubah.",
     "minutesAgo": "{{minutes}} menit yang lalu",
