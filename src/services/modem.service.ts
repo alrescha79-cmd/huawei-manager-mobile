@@ -85,7 +85,7 @@ export class ModemService {
         mode: parseXMLValue(response, 'mode'),
         pci: parseXMLValue(response, 'pci'),
         cellId: parseXMLValue(response, 'cell_id'),
-        band: parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo'),
+        band: parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo') || (response.match(/<earfcn>([\s\S]*?)<\/band>/)?.[1]?.trim() || ''),
         dlbandwidth: parseXMLValue(response, 'dlbandwidth') || lteBandwidth,
         ulbandwidth: parseXMLValue(response, 'ulbandwidth') || lteBandwidth,
       };
@@ -122,7 +122,7 @@ export class ModemService {
         mode: parseXMLValue(response, 'mode'),
         pci: parseXMLValue(response, 'pci'),
         cellId: parseXMLValue(response, 'cell_id'),
-        band: parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo'),
+        band: parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo') || (response.match(/<earfcn>([\s\S]*?)<\/band>/)?.[1]?.trim() || ''),
         dlbandwidth: parseXMLValue(response, 'dlbandwidth') || lteBandwidth,
         ulbandwidth: parseXMLValue(response, 'ulbandwidth') || lteBandwidth,
       };
@@ -233,6 +233,7 @@ export class ModemService {
         connectionStatus: parseXMLValue(response, 'ConnectionStatus'),
         signalIcon: parseXMLValue(response, 'SignalIcon'),
         currentNetworkType: parseXMLValue(response, 'CurrentNetworkType'),
+        currentNetworkTypeEx: parseXMLValue(response, 'CurrentNetworkTypeEx'),
         currentServiceDomain: parseXMLValue(response, 'CurrentServiceDomain'),
         roamingStatus: parseXMLValue(response, 'RoamingStatus'),
         batteryStatus: parseXMLValue(response, 'BatteryStatus') || '',  // MOCK: 1=charging, 0=not charging

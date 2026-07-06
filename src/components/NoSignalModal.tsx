@@ -27,12 +27,25 @@ export const NoSignalModal: React.FC<NoSignalModalProps> = ({
 }) => {
     const { colors, typography, isDark, borderRadius, glassmorphism } = useTheme();
     const { t } = useTranslation();
-    const [sheetVisible, setSheetVisible] = useState(visible);
+    const [sheetVisible, setSheetVisible] = useState(false);
+    const [shouldShow, setShouldShow] = useState(false);
     const [slideAnim] = useState(new Animated.Value(0));
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
+        let timeout: NodeJS.Timeout;
         if (visible) {
+            timeout = setTimeout(() => {
+                setShouldShow(true);
+            }, 3500);
+        } else {
+            setShouldShow(false);
+        }
+        return () => clearTimeout(timeout);
+    }, [visible]);
+
+    useEffect(() => {
+        if (shouldShow) {
             setSheetVisible(true);
             Animated.timing(slideAnim, {
                 toValue: 1,
@@ -48,9 +61,9 @@ export const NoSignalModal: React.FC<NoSignalModalProps> = ({
                 setSheetVisible(false);
             });
         }
-    }, [visible, slideAnim]);
+    }, [shouldShow, slideAnim]);
 
-    if (!sheetVisible) return null;
+    if (!sheetVisible && !shouldShow) return null;
 
     const screenHeight = Dimensions.get('window').height;
     const translateY = slideAnim.interpolate({
@@ -193,7 +206,6 @@ export const NoSignalModal: React.FC<NoSignalModalProps> = ({
                             </View>
                         ) : (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <MaterialIcons name="refresh" size={22} color="#FFFFFF" />
                                 <Text style={styles.primaryButtonText}>
                                     {t('common.retryConnection')}
                                 </Text>

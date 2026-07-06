@@ -721,7 +721,7 @@
     "monthlyUsageTitle": "High Monthly Usage",
     "monthlyUsageBody": "You've used {{used}} GB this month (limit: {{limit}} GB)",
     "ipChangeTitle": "IP Address Changed",
-    "ipChangeBody": "IP changed after {{duration}} session",
+    "ipChangeBody": "IP changed {{duration}} ago",
     "ipChangeBodyJustNow": "IP just changed",
     "ipChangeBodyAlert": "IP Address has changed successfully.",
     "minutesAgo": "{{minutes}} minutes ago",

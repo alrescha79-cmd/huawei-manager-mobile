@@ -127,7 +127,12 @@ export function RefreshIndicator({ refreshing, pullProgress = 0 }: RefreshIndica
                         { scale: refreshing ? scaleAnim : pullScale },
                         { translateY: refreshing ? 0 : pullTranslateY },
                     ],
-                    backgroundColor: isDark ? 'rgba(30, 41, 59, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+                    backgroundColor: isDark
+                        ? 'rgba(28, 28, 30, 0.95)'
+                        : 'rgba(255, 255, 255, 0.95)',
+                    borderColor: isDark
+                        ? 'rgba(255, 255, 255, 0.05)'
+                        : 'rgba(0, 0, 0, 0.1)',
                     top: insets.top + 10,
                 },
             ]}
@@ -199,10 +204,6 @@ export function RefreshIndicator({ refreshing, pullProgress = 0 }: RefreshIndica
                     <MaterialIcons name="smartphone" size={20} color={colors.primary} />
                 </View>
             </View>
-
-            <Text style={[styles.loadingText, { color: colors.textSecondary }]}>
-                {refreshing ? 'Syncing...' : 'Pull to refresh'}
-            </Text>
         </Animated.View>
     );
 }

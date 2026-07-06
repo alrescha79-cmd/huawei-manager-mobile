@@ -346,8 +346,8 @@ const styles = StyleSheet.create({
         paddingVertical: 1,
     },
     progressBarTrack: {
-        height: 8,
-        borderRadius: 4,
+        height: 24,
+        borderRadius: 12,
         overflow: 'hidden',
         marginTop: 8,
     },

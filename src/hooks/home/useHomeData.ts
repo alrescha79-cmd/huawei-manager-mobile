@@ -148,14 +148,19 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
       const errorMessage = error?.message || '';
       const isSessionError = errorMessage.includes('125003') ||
+        errorMessage.includes('125002') ||
         errorMessage.includes('session') ||
         errorMessage.includes('login') ||
         !modemStatus;
 
-
-      if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        requestRelogin();
-        setReloginAttempts(prev => prev + 1);
+      if (isSessionError) {
+        setSignalInfo(null);
+        setModemStatus(null);
+        
+        if (credentials && reloginAttempts < 3 && !showReloginWebView) {
+          requestRelogin();
+          setReloginAttempts(prev => prev + 1);
+        }
       } else {
         ThemedAlertHelper.alert(t('common.error'), t('alerts.failedLoadModemData'));
       }
@@ -195,12 +200,18 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
     } catch (error: any) {
       const errorMessage = error?.message || '';
       const isSessionError = errorMessage.includes('125003') ||
+        errorMessage.includes('125002') ||
         errorMessage.includes('session') ||
         !modemStatus;
 
-      if (isSessionError && credentials && reloginAttempts < 3 && !showReloginWebView) {
-        requestRelogin();
-        setReloginAttempts(prev => prev + 1);
+      if (isSessionError) {
+        setSignalInfo(null);
+        setModemStatus(null);
+        
+        if (credentials && reloginAttempts < 3 && !showReloginWebView) {
+          requestRelogin();
+          setReloginAttempts(prev => prev + 1);
+        }
       }
     }
   };

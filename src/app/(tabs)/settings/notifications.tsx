@@ -93,7 +93,7 @@ export default function NotificationSettingsScreen() {
             {/* Header */}
             <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 60 }]}>
                 <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-                    <MaterialIcons name="arrow-back" size={24} color={colors.text} />
+                    <MaterialIcons name="arrow-back-ios" size={24} color={colors.primary} />
                 </TouchableOpacity>
                 <Text style={[styles.headerTitle, { color: colors.text }]}>
                     {t('notifications.title')}

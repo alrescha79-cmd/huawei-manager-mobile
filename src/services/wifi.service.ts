@@ -44,29 +44,47 @@ export class WiFiService {
           try {
             hostInfoList = JSON.parse(hostInfoResponse);
           } catch (e) {
-            // Ignore parse errors
+            // Might be XML
+            const hostsXML = hostInfoResponse.match(/<Host>([\s\S]*?)<\/Host>/g);
+            if (hostsXML) {
+              hostInfoList = hostsXML.map(hostXML => ({
+                HostName: parseXMLValue(hostXML, 'HostName'),
+                MACAddress: parseXMLValue(hostXML, 'MacAddress') || parseXMLValue(hostXML, 'MACAddress'),
+                AssociatedTime: parseXMLValue(hostXML, 'AssociatedTime') || parseXMLValue(hostXML, 'AssociatedSsidTime'),
+                DeviceType: parseXMLValue(hostXML, 'DeviceType'),
+                InterfaceType: parseXMLValue(hostXML, 'InterfaceType'),
+                VendorClassID: parseXMLValue(hostXML, 'VendorClassID'),
+                Frequency: parseXMLValue(hostXML, 'Frequency')
+              }));
+            }
           }
         } else if (Array.isArray(hostInfoResponse)) {
           hostInfoList = hostInfoResponse;
         }
 
         if (Array.isArray(hostInfoList)) {
-          const timeMap = new Map<string, number>();
+          const infoMap = new Map<string, any>();
           hostInfoList.forEach((host: any) => {
-            if (host.MACAddress && host.AssociatedTime) {
-              timeMap.set(host.MACAddress.toUpperCase(), host.AssociatedTime);
+            const mac = host.MACAddress || host.MacAddress;
+            if (mac) {
+              infoMap.set(mac.toUpperCase(), host);
             }
           });
 
           devices.forEach((device) => {
-            const time = timeMap.get(device.macAddress.toUpperCase());
-            if (time) {
-              device.associatedTime = String(time);
+            const info = infoMap.get(device.macAddress.toUpperCase());
+            if (info) {
+              if (info.AssociatedTime) device.associatedTime = String(info.AssociatedTime);
+              if (info.DeviceType) device.deviceType = info.DeviceType;
+              if (info.InterfaceType) device.connectionType = info.InterfaceType;
+              if (info.VendorClassID) device.vendorClassId = info.VendorClassID;
+              if (info.Frequency) device.frequency = info.Frequency;
             }
           });
         }
       } catch (hostInfoError) {
         // Ignore error, keep original AssociatedTime
+        console.log('[WiFi] Error getting HostInfo:', hostInfoError);
       }
 
       return devices;

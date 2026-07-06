@@ -182,7 +182,7 @@ export async function fetchWidgetData(): Promise<WidgetData> {
             });
             const statusData = statusResponse.data;
             connectionStatus = parseXMLValue(statusData, 'ConnectionStatus');
-            networkType = parseXMLValue(statusData, 'CurrentNetworkType');
+            networkType = parseXMLValue(statusData, 'CurrentNetworkTypeEx') || parseXMLValue(statusData, 'CurrentNetworkType');
             signalStrength = parseXMLValue(statusData, 'SignalIcon') || parseXMLValue(statusData, 'SignalStrength');
         } catch {
             // Status not available
@@ -290,6 +290,8 @@ export function getNetworkTypeName(networkType: string): string {
         '45': 'HSPA+',
         '46': 'DC-HSPA+',
         '101': 'LTE',
+        '1011': '5G',
+        '1012': '5G',
     };
     return types[networkType] || networkType || 'Unknown';
 }
