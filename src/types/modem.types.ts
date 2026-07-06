@@ -92,29 +92,6 @@ export interface ConnectedDevice {
   frequency?: string;
 }
 
-/**
- * WiFi security mode
- */
-export enum WiFiAuthMode {
-  OPEN = 'OPEN',
-  SHARED = 'SHARED',
-  WPA_PSK = 'WPA-PSK',
-  WPA2_PSK = 'WPA2-PSK',
-  WPA_WPA2_PSK = 'WPA/WPA2-PSK',
-  WPA_ENTERPRISE = 'WPA',
-  WPA2_ENTERPRISE = 'WPA2',
-}
-
-/**
- * WiFi encryption mode
- */
-export enum WiFiEncryptionMode {
-  NONE = 'NONE',
-  WEP = 'WEP',
-  TKIP = 'TKIP',
-  AES = 'AES',
-  TKIP_AES = 'TKIPAES',
-}
 
 export interface WiFiSettings {
   ssid: string;
@@ -247,11 +224,6 @@ export interface TimeSettings {
   timezone: string;
 }
 
-// Parental Control Types
-export interface ParentalControlSettings {
-  enabled: boolean;
-  profiles: ParentalControlProfile[];
-}
 
 export interface ParentalControlProfile {
   id: string;

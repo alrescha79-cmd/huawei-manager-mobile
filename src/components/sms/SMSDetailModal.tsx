@@ -75,7 +75,7 @@ export function SMSDetailModal({
                     }
                 ]}>
                     <TouchableOpacity onPress={handleClose} style={{ width: 40 }}>
-                        <MaterialIcons name="arrow-back" size={24} color={colors.primary} />
+                        <MaterialIcons name="arrow-back-ios" size={24} color={colors.primary} />
                     </TouchableOpacity>
                     <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]}>
                         {selectedMessage?.phone || ''}

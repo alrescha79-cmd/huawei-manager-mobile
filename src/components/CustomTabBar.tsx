@@ -139,19 +139,21 @@ const TabItem: React.FC<TabItemProps> = ({
                 </View>
             </Animated.View>
 
-            <AnimatedTabLabel
-                style={[
-                    typography.caption2,
-                    styles.tabLabel,
-                    {
-                        color: isFocused ? colors.text : colors.textSecondary,
-                        fontWeight: isFocused ? '600' : '400',
-                    },
-                    labelStyle,
-                ]}
-            >
-                {label}
-            </AnimatedTabLabel>
+            {isFocused && (
+                <AnimatedTabLabel
+                    style={[
+                        typography.caption2,
+                        styles.tabLabel,
+                        {
+                            color: colors.text,
+                            fontWeight: '600',
+                        },
+                        labelStyle,
+                    ]}
+                >
+                    {label}
+                </AnimatedTabLabel>
+            )}
 
             <Animated.View
                 style={[
@@ -296,7 +298,7 @@ const styles = StyleSheet.create({
         marginTop: 4,
     },
     indicatorDot: {
-        width: 4,
+        width: 38,
         height: 4,
         borderRadius: 2,
         position: 'absolute',

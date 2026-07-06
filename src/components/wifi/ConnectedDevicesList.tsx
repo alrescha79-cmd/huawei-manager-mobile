@@ -86,17 +86,16 @@ export function ConnectedDevicesList({
                     else if (deviceIconType === 'router') iconName = 'router';
                     else if (deviceIconType === 'tv') iconName = 'tv';
 
-                    const isComputer = deviceIconType === 'computer';
-                    const iconColor = isComputer ? '#a855f7' : colors.primary;
-                    const iconBg = isComputer ? '#a855f715' : colors.primary + '15';
+                    const iconColor = colors.primary;
+                    const iconBg = colors.primary + '15';
 
                     let band = parseInt(device.macAddress.replace(/[^0-9]/g, '').slice(-1) || '0', 10) % 2 === 0 ? '5 GHz' : '2.4 GHz';
                     let connIcon = 'wifi';
-                    
+
                     if (device.frequency) {
                         band = device.frequency.replace('GHz', ' GHz');
                     }
-                    
+
                     if (device.connectionType) {
                         const connType = device.connectionType.toLowerCase();
                         if (connType.includes('ethernet') || connType.includes('lan')) {
@@ -106,7 +105,7 @@ export function ConnectedDevicesList({
                         else if (!device.frequency) {
                             if (connType.includes('802.11a') || connType.includes('ac') || connType.includes('5g')) band = '5 GHz';
                             else if (connType.includes('802.11b') || connType.includes('g') || connType.includes('n') || connType.includes('2.4')) band = '2.4 GHz';
-                            else if (connType.includes('wireless')) band = ''; // Just use the wifi icon
+                            else if (connType.includes('wireless')) band = '';
                             else band = device.connectionType;
                         }
                     }

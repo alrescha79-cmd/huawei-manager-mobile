@@ -29,10 +29,6 @@ export class ModemService {
     try {
       const response = await this.apiClient.get('/api/device/information');
 
-      // Debug: log raw response and uptime value
-      console.log('[ModemService] Device info response:', response);
-      console.log('[ModemService] Uptime raw value:', parseXMLValue(response, 'Uptime'));
-
       return {
         deviceName: parseXMLValue(response, 'DeviceName'),
         serialNumber: parseXMLValue(response, 'SerialNumber'),
