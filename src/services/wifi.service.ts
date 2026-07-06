@@ -244,11 +244,9 @@ export class WiFiService {
       const encPubKeyE = parseXMLValue(pubkeyResponse, 'encpubkeye') || '010001';
       const encPubKeyN = parseXMLValue(pubkeyResponse, 'encpubkeyn') || '';
 
-      console.log('[WiFi DEBUG] Public Key E:', encPubKeyE);
-      console.log('[WiFi DEBUG] Public Key N length:', encPubKeyN.length);
+
 
       if (!encPubKeyN) {
-        console.log('[WiFi DEBUG] No public key found, returning plain password');
         return password;
       }
 
@@ -353,7 +351,7 @@ export class WiFiService {
         const pskFields = encryptedPsk ? `
                 <WifiWpapsk>${encryptedPsk}</WifiWpapsk>` : '';
 
-        console.log('[WiFi DEBUG] Encrypted PSK length:', encryptedPsk.length);
+
 
         requestBody = `<?xml version="1.0" encoding="UTF-8"?>
           <request>

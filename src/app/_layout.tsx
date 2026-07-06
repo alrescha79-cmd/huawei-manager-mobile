@@ -156,7 +156,7 @@ export default function RootLayout() {
 
     const checkAndShowChangelog = async () => {
         try {
-            const currentVersion = Constants.expoConfig?.version || '1.1.50';
+            const currentVersion = Constants.expoConfig?.version || '1.1.55';
             const shownVersion = await AsyncStorage.getItem(CHANGELOG_SHOWN_VERSION_KEY);
 
             if (shownVersion !== currentVersion) {

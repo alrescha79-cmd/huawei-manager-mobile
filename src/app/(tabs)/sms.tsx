@@ -32,6 +32,7 @@ export default function SMSScreen() {
   const { t } = useTranslation();
   const { credentials } = useAuthStore();
   const insets = useSafeAreaInsets();
+  const bottomOffset = 88 + (insets.bottom > 0 ? insets.bottom : 16);
   const {
     messages,
     smsCount,
@@ -127,7 +128,6 @@ export default function SMSScreen() {
             sentMessages = await service.getSMSList(1, 20, 2);
           }
         } catch (outboxError) {
-          console.log('Outbox loading skipped:', outboxError);
           console.log('Outbox loading skipped:', outboxError);
         }
 
@@ -588,6 +588,7 @@ export default function SMSScreen() {
               {
                 backgroundColor: colors.card,
                 borderTopColor: colors.border,
+                paddingBottom: bottomOffset + 12,
               }
             ]}>
               <TouchableOpacity
@@ -598,11 +599,11 @@ export default function SMSScreen() {
                 <MaterialIcons
                   name="mark-chat-read"
                   size={24}
-                  color={selectedIds.size === 0 ? colors.textSecondary : colors.text}
+                  color={selectedIds.size === 0 ? colors.textSecondary : colors.primary}
                 />
                 <Text style={[
                   typography.caption1,
-                  { color: selectedIds.size === 0 ? colors.textSecondary : colors.text }
+                  { color: selectedIds.size === 0 ? colors.textSecondary : colors.primary }
                 ]}>
                   {t('sms.markAllAsRead')}
                 </Text>
@@ -615,11 +616,11 @@ export default function SMSScreen() {
                 <MaterialIcons
                   name="delete-outline"
                   size={24}
-                  color={selectedIds.size === 0 ? colors.textSecondary : colors.text}
+                  color={selectedIds.size === 0 ? colors.textSecondary : colors.error}
                 />
                 <Text style={[
                   typography.caption1,
-                  { color: selectedIds.size === 0 ? colors.textSecondary : colors.text }
+                  { color: selectedIds.size === 0 ? colors.textSecondary : colors.error }
                 ]}>
                   {t('common.delete')}
                 </Text>
@@ -631,7 +632,10 @@ export default function SMSScreen() {
             <TouchableOpacity
               style={[
                 styles.fab,
-                { backgroundColor: colors.primary }
+                {
+                  backgroundColor: colors.primary,
+                  bottom: bottomOffset + 16,
+                }
               ]}
               onPress={() => setShowCompose(true)}
               activeOpacity={0.8}
