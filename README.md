@@ -56,8 +56,9 @@
 
 ## 📸 App Preview
 
-<img width="1440" height="1024" alt="dark-en" src="https://github.com/user-attachments/assets/b5c25691-177d-4fbb-870c-935f84ba2eba" />
-<img width="1440" height="1024" alt="light-id" src="https://github.com/user-attachments/assets/8fa75331-88f7-46ea-95ab-f6ba4f2c49b3" />
+<img width="1440" height="1024" alt="dark-en" src="https://github.com/user-attachments/assets/50373f1c-b6a5-4c9a-8584-d6b03f289241" />
+
+<img width="1440" height="1024" alt="light-id" src="https://github.com/user-attachments/assets/e7b4a71f-2a98-4113-96bd-c48fa1733d91" />
 
 ---
 

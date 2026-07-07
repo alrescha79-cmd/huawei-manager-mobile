@@ -65,12 +65,15 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                     androidAppId: process.env.ADMOB_ANDROID_APP_ID || 'ca-app-pub-3940256099942544~3347511713',
                 },
             ],
+            [
+                'expo-splash-screen',
+                {
+                    image: './assets/logo.png',
+                    resizeMode: 'contain',
+                    backgroundColor: '#ffffff',
+                },
+            ],
         ],
-        splash: {
-            image: './assets/logo.png',
-            resizeMode: 'contain',
-            backgroundColor: '#ffffff',
-        },
         ios: {
             supportsTablet: true,
         },
