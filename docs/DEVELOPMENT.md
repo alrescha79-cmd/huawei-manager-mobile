@@ -1,9 +1,10 @@
 # Development Guide
 
-## 🚨 **IMPORTANT: Android Connection Issues**
+## 🚨 Android Connection Issues
 
-### Problem: Cannot connect via LAN mode
-**Current Status:** `npm dev` doesn't work on Android, only `npx expo start --tunnel` works but NO hot reload.
+> [!IMPORTANT]
+> **Problem: Cannot connect via LAN mode**
+> **Current Status:** `npm dev` doesn't work on Android, only `npx expo start --tunnel` works but NO hot reload.
 
 ### ✅ **SOLUTION 1: LAN Mode (RECOMMENDED - WITH HOT RELOAD)**
 
@@ -161,11 +162,10 @@ npm run web      # Web version (limited functionality)
 src/
 ├── app/                    # Expo Router screens (file-based routing)
 │   ├── (tabs)/            # Bottom tab navigation
-│   │   ├── _layout.tsx    # Tab layout configuration
-│   │   ├── home.tsx       # Dashboard screen
-│   │   ├── wifi.tsx       # WiFi management
-│   │   ├── sms.tsx        # SMS management
-│   │   └── settings.tsx   # Settings screen
+│   │   ├── home/          # Dashboard components & screens
+│   │   ├── wifi/          # WiFi management components
+│   │   ├── sms/           # SMS management components
+│   │   └── _layout.tsx    # Tab layout configuration
 │   ├── _layout.tsx        # Root layout with auth guard
 │   ├── index.tsx          # Entry point (redirects)
 │   └── login.tsx          # Login screen
@@ -173,10 +173,15 @@ src/
 ├── components/            # Reusable UI components
 │   ├── Button.tsx         # Custom button
 │   ├── Card.tsx           # Card with blur support
-│   ├── InfoRow.tsx        # Key-value display row
-│   ├── Input.tsx          # Text input with validation
-│   ├── SignalBar.tsx      # Signal strength indicator
-│   └── index.ts           # Component exports
+│   ├── LoadingIndicators.tsx # Spinners and loaders
+│   ├── Skeleton.tsx       # Loading skeletons
+│   └── ThemedAlert.tsx    # Custom alert components
+│
+├── hooks/                 # Custom React Hooks
+│   └── useModemData.ts    # Example hooks
+│
+├── i18n/                  # Internationalization
+│   └── index.ts           # Translation configuration
 │
 ├── services/              # Business logic & API
 │   ├── api.service.ts     # Base HTTP client (Axios)
@@ -199,9 +204,13 @@ src/
 │   ├── modem.types.ts     # Modem-related types
 │   └── index.ts           # Type exports
 │
-└── utils/                 # Helper functions
-    ├── helpers.ts         # Formatting utilities
-    └── storage.ts         # Secure storage helpers
+├── utils/                 # Helper functions
+│   ├── helpers.ts         # Formatting utilities
+│   └── constants.ts       # App constants
+│
+└── widget/                # Android Home Screen Widgets
+    ├── ModemStatusWidget.tsx
+    └── widget-task-handler.tsx
 ```
 
 ## Key Technologies
@@ -314,11 +323,11 @@ npm test
 - [x] View traffic stats
 - [x] View connected devices
 - [x] Kick device
-- [ ] Toggle WiFi
-- [ ] Read SMS
+- [x] Toggle WiFi
+- [x] Read SMS
 - [ ] Send SMS
-- [ ] Logout
-- [ ] Reboot modem
+- [x] Logout
+- [x] Reboot modem
 - [x] Toggle dark mode
 
 ## Common Issues

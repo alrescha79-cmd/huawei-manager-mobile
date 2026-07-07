@@ -23,6 +23,11 @@
 - **dayjs** - Date formatting
 - **react-native-toast-message** - Toast notifications
 - **expo-crypto** - SHA256 hashing for login
+- **i18n-js** / **expo-localization** - Multi-language support
+
+## Native Integrations
+- **react-native-android-widget** - Android Home Screen Widgets
+- **react-native-google-mobile-ads** - AdMob integration
 
 ---
 
@@ -32,12 +37,22 @@
 src/
 ├── app/                    # Expo Router screens
 │   ├── (tabs)/            # Tab navigation
-│   │   ├── home.tsx       # Dashboard
-│   │   ├── wifi.tsx       # WiFi management
-│   │   ├── sms.tsx        # SMS management
-│   │   └── settings.tsx   # Settings
+│   │   ├── home/          # Dashboard components & screens
+│   │   ├── wifi/          # WiFi management components
+│   │   ├── sms/           # SMS management components
+│   │   └── _layout.tsx    # Tab navigation layout
 │   ├── login.tsx          # Login screen
 │   └── _layout.tsx        # Root layout
+├── components/            # Reusable components
+│   ├── Button.tsx
+│   ├── Card.tsx
+│   ├── LoadingIndicators.tsx
+│   ├── Skeleton.tsx
+│   └── ThemedAlert.tsx
+├── hooks/                 # Custom React Hooks
+│   └── useModemData.ts    # Example hooks
+├── i18n/                  # Internationalization
+│   └── index.ts           # Translation configuration
 ├── services/              # API & business logic
 │   ├── api.service.ts     # Base API client with auth
 │   ├── modem.service.ts   # Modem operations
@@ -50,24 +65,16 @@ src/
 │   ├── wifi.store.ts
 │   ├── sms.store.ts
 │   └── theme.store.ts
-├── components/            # Reusable components
-│   ├── Card.tsx
-│   ├── CardHeader.tsx
-│   ├── Button.tsx
-│   ├── Input.tsx
-│   ├── InfoRow.tsx
-│   ├── SignalBar.tsx
-│   ├── SignalMeter.tsx
-│   ├── SpeedGauge.tsx
-│   ├── DataPieChart.tsx
-│   └── ThemedAlert.tsx
 ├── theme/                 # Design system
 │   └── index.ts
 ├── types/                 # TypeScript types
 │   └── modem.types.ts
-└── utils/                 # Helper functions
-    ├── helpers.ts
-    └── constants.ts
+├── utils/                 # Helper functions
+│   ├── helpers.ts
+│   └── constants.ts
+└── widget/                # Android Home Screen Widgets
+    ├── ModemStatusWidget.tsx
+    └── widget-task-handler.tsx
 ```
 
 ---

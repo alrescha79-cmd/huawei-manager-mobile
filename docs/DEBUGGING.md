@@ -229,9 +229,10 @@ Subject: `[Huawei Manager] Bug Report - <model modem>`
 
 ## 🔐 Catatan Keamanan
 
-> ⚠️ **PENTING**: 
-> - Gunakan incognito mode browser saat debugging agar tidak ada data pribadi yang terkirim
-> - Jangan buka tab lain selama debugging (hanya web ui modem)
+> [!WARNING]
+> **PENTING**: 
+> - Gunakan **incognito mode** browser saat debugging agar tidak ada data pribadi yang terkirim.
+> - Jangan buka tab lain selama debugging (hanya web UI modem).
 
 ---
 

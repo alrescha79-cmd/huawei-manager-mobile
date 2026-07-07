@@ -177,6 +177,17 @@ Body:
 </request>
 ```
 
+### Clear Traffic Statistics
+```
+POST /api/monitoring/clear-traffic
+```
+Body:
+```xml
+<request>
+  <ClearTraffic>1</ClearTraffic>
+</request>
+```
+
 ---
 
 ## Network
@@ -333,7 +344,32 @@ Body:
 
 ---
 
+## System / Time
+
+### Get SNTP Settings
+```
+GET /api/sntp/sntpswitch
+```
+
+### Set SNTP Settings
+```
+POST /api/sntp/sntpswitch
+```
+
+### Get Time Settings
+```
+GET /api/time/settings
+```
+
+---
+
 ## SMS
+
+### Check SMS Feature Support
+```
+GET /api/sms/sms-feature-switch
+```
+Returns whether the modem supports SMS functionality.
 
 ### Get SMS List
 ```

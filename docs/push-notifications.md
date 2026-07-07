@@ -148,9 +148,10 @@ Notifications.addNotificationResponseReceivedListener(response => {
 
 ## Important Notes
 
-1. **Development Build Required**: Push tokens only work on development/release builds, not Expo Go
-2. **EAS Project ID**: Requires EAS project setup for token generation
-3. **Token Storage**: Tokens are unique per device and should be stored in a database for mass notifications
+> [!WARNING]
+> 1. **Development Build Required**: Push tokens only work on development/release builds, not Expo Go
+> 2. **EAS Project ID**: Requires EAS project setup for token generation
+> 3. **Token Storage**: Tokens are unique per device and should be stored in a database for mass notifications
 
 ## Sending to All Users
 

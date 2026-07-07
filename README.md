@@ -56,9 +56,9 @@
 
 ## 📸 App Preview
 
-<img width="1440" height="1024" alt="dark-en" src="https://github.com/user-attachments/assets/50373f1c-b6a5-4c9a-8584-d6b03f289241" />
+<img width="1440" height="1024" alt="dark-en" src="https://github.com/user-attachments/assets/7f8d8a0c-a4ce-4a3a-aea3-461864265d64" />
 
-<img width="1440" height="1024" alt="light-id" src="https://github.com/user-attachments/assets/e7b4a71f-2a98-4113-96bd-c48fa1733d91" />
+<img width="1440" height="1024" alt="light-id" src="https://github.com/user-attachments/assets/d3505361-dff5-411e-8e73-6ceffd70e4bf" />
 
 ---
 
@@ -74,6 +74,7 @@
 | 📱 **Profile APN** | Kelola APN settings |
 | 🖧 **Ethernet** | Kelola Ethernet settings |
 | 📟 **Widget** | Widget untuk monitoring signal, traffic, dan status koneksi |
+| 🔔 **Push Notifications** | Menerima pemberitahuan dan update aplikasi |
 | 🌙 **Dark Mode** | Support light dan dark theme |
 | 🔤 **Language** | Pilih bahasa (Bahasa Indonesia dan Bahasa Inggris) |
 | 📱 **More Features** | Masih banyak fitur yang akan ditambahkan |

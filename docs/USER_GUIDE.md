@@ -41,8 +41,16 @@ Pastikan smartphone terhubung ke WiFi modem Huawei.
   - Antenna Mode (Auto/Internal/External)
   - Network Type (Auto/4G/3G/2G)
   - LTE Band Selection
-- **App Settings** - Theme (Light/Dark/System)
+- **App Settings** - Theme (Light/Dark/System), Language
 - **Modem Control** - Reboot modem, Logout
+
+### 📱 Android Home Screen Widgets
+- **Modem Status Widget** - Pantau status koneksi, sinyal, dan penggunaan data langsung dari home screen.
+- Auto-refresh widget setiap jam atau manual via tombol refresh di widget.
+
+### 💰 Ad-Supported (Free Version)
+- Aplikasi ini didukung oleh iklan (AdMob).
+- Pengguna yang menggunakan ad-blocker mungkin perlu menonaktifkan ad-blocker untuk mendukung pengembangan (opsional).
 
 ---
 
@@ -61,25 +69,29 @@ Bisa diubah manual di login screen jika berbeda.
 
 ## Troubleshooting
 
-### ❌ Login Gagal
-1. Pastikan terhubung ke WiFi modem
-2. Cek IP modem di browser: `http://192.168.8.1`
-3. Pastikan username/password benar
-4. Coba WebView login jika error terus
+> [!NOTE]
+> **❌ Login Gagal**
+> 1. Pastikan terhubung ke WiFi modem
+> 2. Cek IP modem di browser: `http://192.168.8.1`
+> 3. Pastikan username/password benar
+> 4. Coba WebView login jika error terus
 
-### ❌ Data Tidak Muncul
-1. Pull to refresh (swipe down)
-2. Logout dan login kembali
-3. Restart modem
-4. Cek koneksi WiFi
+> [!TIP]
+> **❌ Data Tidak Muncul**
+> 1. Pull to refresh (swipe down)
+> 2. Logout dan login kembali
+> 3. Restart modem
+> 4. Cek koneksi WiFi
 
-### ❌ SMS Tidak Berfungsi
-- Tidak semua modem Huawei mendukung SMS via API
-- Beberapa firmware tidak support
+> [!WARNING]
+> **❌ SMS Tidak Berfungsi**
+> - Tidak semua modem Huawei mendukung SMS via API
+> - Beberapa firmware tidak support
 
-### ❌ Band Lock Tidak Tersimpan
-- Perubahan band membutuhkan modem restart
-- Tidak semua modem support band lock
+> [!IMPORTANT]
+> **❌ Band Lock Tidak Tersimpan**
+> - Perubahan band membutuhkan modem restart
+> - Tidak semua modem support band lock
 
 ---
 
