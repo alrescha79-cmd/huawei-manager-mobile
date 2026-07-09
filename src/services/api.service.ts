@@ -9,6 +9,7 @@ export class ModemAPIClient {
   private sessionToken: string = '';
   private sessionCookie: string = '';
   private tokenExpiry: number = 0;
+  private credentials: { username?: string; password?: string } = {};
 
   constructor(private baseURL: string) {
     this.client = axios.create({
@@ -156,11 +157,9 @@ export class ModemAPIClient {
     for (let i = 0; i < hex.length; i++) {
       bytes[i] = hex.charCodeAt(i);
     }
-    let binary = '';
-    for (let i = 0; i < bytes.length; i++) {
-      binary += String.fromCharCode(bytes[i]);
-    }
-    return btoa(binary);
+    // Use Buffer for base64 encoding (React Native compatible)
+    const buffer = Buffer.from(bytes.buffer);
+    return buffer.toString('base64');
   }
 
   private async generateNonce(): Promise<string> {
@@ -408,6 +407,7 @@ export class ModemAPIClient {
   }
 
   async login(username: string, password: string): Promise<boolean> {
+    this.credentials = { username, password }; // Store credentials for session-expiry retry
     try {
       const alreadyLoggedIn = await this.isLoggedIn();
       if (alreadyLoggedIn) {
@@ -516,6 +516,7 @@ export class ModemAPIClient {
   }
 
   async logout(): Promise<boolean> {
+    this.credentials = {}; // Clear credentials on logout
     try {
       const { token } = await this.getToken();
 
@@ -602,12 +603,21 @@ export class ModemAPIClient {
       const responseData = typeof response.data === 'string' ? response.data : '';
 
       if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
-        this.sessionToken = '';
-        this.sessionCookie = '';
-        this.tokenExpiry = 0;
+        if (retryCount < 1 && this.credentials.username && this.credentials.password) {
+          console.log('[API] Session expired, attempting re-login and retry...');
+          this.sessionToken = '';
+          this.sessionCookie = '';
+          this.tokenExpiry = 0;
+          markSessionUnhealthy();
+
+          const reLoggedIn = await this.login(this.credentials.username, this.credentials.password);
+          if (reLoggedIn) {
+            console.log('[API] Re-login successful, retrying original request...');
+            return this.post(endpoint, data, retryCount + 1); // Retry once
+          }
+        }
 
         markSessionUnhealthy();
-
         const errorCode = responseData.includes('125003') ? '125003' : '125002';
         throw new Error(`Session expired (${errorCode}). Please re-login.`);
       }

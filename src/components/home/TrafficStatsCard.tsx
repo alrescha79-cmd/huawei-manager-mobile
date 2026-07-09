@@ -44,7 +44,6 @@ interface TrafficStatsCardProps {
     lastClearedDate?: string;
     isClearingHistory?: boolean;
     onClearHistory?: () => void;
-    onOpenMonthlySettings?: () => void;
 }
 
 export function TrafficStatsCard({
@@ -56,7 +55,6 @@ export function TrafficStatsCard({
     lastClearedDate,
     isClearingHistory,
     onClearHistory,
-    onOpenMonthlySettings,
 }: TrafficStatsCardProps) {
     const { colors, typography, spacing } = useTheme();
 
@@ -141,7 +139,7 @@ export function TrafficStatsCard({
 
             <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: spacing.md, gap: 12 }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.md }}>
                 <TouchableOpacity
                     style={{
                         flex: 1,
@@ -166,24 +164,6 @@ export function TrafficStatsCard({
                             </Text>
                         </>
                     )}
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                    style={{
-                        flex: 1,
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        paddingVertical: spacing.sm,
-                        backgroundColor: colors.primary + '15',
-                        borderRadius: 8,
-                    }}
-                    onPress={onOpenMonthlySettings}
-                >
-                    <MaterialIcons name="data-saver-on" size={18} color={colors.primary} />
-                    <Text style={[typography.caption1, { color: colors.primary, marginLeft: 6, fontWeight: '600' }]}>
-                        {t('home.monthlySettings') || 'Monthly Limit'}
-                    </Text>
                 </TouchableOpacity>
             </View>
 

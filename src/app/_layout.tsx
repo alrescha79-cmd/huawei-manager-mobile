@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdBlockAlertModal, ChangelogModal, ChangelogHelper } from '@/components';
+import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdBlockAlertModal, ChangelogModal, ChangelogHelper, SignalBubble } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -76,7 +76,7 @@ export default function RootLayout() {
         startSessionKeepAlive,
         stopSessionKeepAlive
     } = useAuthStore();
-    const { initializeLanguage } = useThemeStore();
+    const { initializeLanguage, signalBubbleEnabled } = useThemeStore();
     const { t } = useTranslation();
     const segments = useSegments();
     const router = useRouter();
@@ -444,6 +444,7 @@ export default function RootLayout() {
 
                 <AdBlockAlertModal />
                 <ChangelogModal />
+                {isAuthenticated && signalBubbleEnabled && <SignalBubble />}
             </KeyboardProvider>
         </GestureHandlerRootView>
     );

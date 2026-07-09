@@ -36,6 +36,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
     setWanInfo,
     setMobileDataStatus,
     setMonthlySettings,
+    setModemInfo,
     loadFromCache,
   } = useModemStore();
 
@@ -65,13 +66,14 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
     try {
       setIsRefreshing(true);
 
-      const [signal, network, traffic, status, wan, dataStatus] = await Promise.all([
+      const [signal, network, traffic, status, wan, dataStatus, modemInfo] = await Promise.all([
         service.getSignalInfo().catch(() => null),
         service.getNetworkInfo(),
         service.getTrafficStats(),
         service.getModemStatus(),
         service.getWanInfo().catch(() => null),
         service.getMobileDataStatus().catch(() => null),
+        service.getModemInfo().catch(() => null),
       ]);
 
       setSignalInfo(signal);
@@ -80,6 +82,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
+      if (modemInfo) setModemInfo(modemInfo);
 
       const currentTotal = traffic.totalDownload + traffic.totalUpload;
       if (previousTotalTraffic > 1024 * 1024 * 100 && currentTotal < previousTotalTraffic * 0.1) {
@@ -171,13 +174,14 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
   const loadDataSilent = async (service: ModemService) => {
     try {
-      const [signal, network, traffic, status, wan, dataStatus] = await Promise.all([
+      const [signal, network, traffic, status, wan, dataStatus, modemInfo] = await Promise.all([
         service.getSignalInfo().catch(() => null),
         service.getNetworkInfo(),
         service.getTrafficStats(),
         service.getModemStatus(),
         service.getWanInfo().catch(() => null),
         service.getMobileDataStatus().catch(() => null),
+        service.getModemInfo().catch(() => null),
       ]);
 
       setSignalInfo(signal);
@@ -186,6 +190,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
+      if (modemInfo) setModemInfo(modemInfo);
 
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
@@ -334,6 +339,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
     setLastClearedDate,
     previousTotalTraffic,
     setPreviousTotalTraffic,
+    modemInfo: useModemStore((s) => s.modemInfo),
     loadData,
     loadBands,
     loadMonthlySettings,

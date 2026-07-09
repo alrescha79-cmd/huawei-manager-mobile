@@ -28,7 +28,7 @@ import { useHomeActions } from '@/hooks/home/useHomeActions';
 export default function HomeScreen() {
   const router = useRouter();
   const { colors, typography, spacing, isDark, borderRadius } = useTheme();
-  const { usageCardStyle } = useThemeStore();
+  const { usageCardStyle, setUsageCardStyle, themeMode, setThemeMode, signalBubbleEnabled, setSignalBubbleEnabled } = useThemeStore();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -65,7 +65,6 @@ export default function HomeScreen() {
   const [showMonthlySettingsModal, setShowMonthlySettingsModal] = useState(false);
   const [showSpeedTestModal, setShowSpeedTestModal] = useState(false);
   const [showSignalPointingModal, setShowSignalPointingModal] = useState(false);
-
   // Hook Initialization
   const {
     showReloginWebView,
@@ -170,23 +169,32 @@ export default function HomeScreen() {
             </>
           )}
 
-          {signalInfo && (
-            <QuickActionsCard
-              t={t}
-              selectedBands={homeData.selectedBands}
-              wanIpAddress={wanInfo?.wanIPAddress}
-              mobileDataEnabled={!!mobileDataStatus?.isEnabled}
-              isTogglingData={homeActions.isTogglingData}
-              isChangingIp={homeActions.isChangingIp}
-              isRunningCheck={homeActions.isRunningCheck}
-              onOpenBandModal={() => setShowBandModal(true)}
-              onChangeIp={homeActions.handleChangeIp}
-              onToggleMobileData={homeActions.handleToggleMobileData}
-              onSignalPointing={() => setShowSignalPointingModal(true)}
-              onQuickCheck={homeActions.handleOneClickCheck}
-              onSpeedtest={() => setShowSpeedTestModal(true)}
-            />
-          )}
+           {signalInfo && (
+               <QuickActionsCard
+               t={t}
+               selectedBands={homeData.selectedBands}
+               wanIpAddress={wanInfo?.wanIPAddress}
+               mobileDataEnabled={!!mobileDataStatus?.isEnabled}
+               isTogglingData={homeActions.isTogglingData}
+               isChangingIp={homeActions.isChangingIp}
+               isRunningCheck={homeActions.isRunningCheck}
+               deviceName={homeData.modemInfo?.deviceName}
+               onOpenBandModal={() => setShowBandModal(true)}
+               onChangeIp={homeActions.handleChangeIp}
+               onToggleMobileData={homeActions.handleToggleMobileData}
+               onSignalPointing={() => setShowSignalPointingModal(true)}
+               onQuickCheck={homeActions.handleOneClickCheck}
+               onSpeedtest={() => setShowSpeedTestModal(true)}
+               onOpenMonthlySettings={() => setShowMonthlySettingsModal(true)}
+               onToggleUsageStyle={() => setUsageCardStyle(usageCardStyle === 'split' ? 'compact' : 'split')}
+               usageCardStyle={usageCardStyle}
+               onToggleSignalBubble={() => setSignalBubbleEnabled(!signalBubbleEnabled)}
+               onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+               isSignalBubbleEnabled={signalBubbleEnabled}
+               isDarkTheme={isDark}
+               monthlySettings={monthlySettings}
+             />
+           )}
 
           <ConnectionStatusCard
             t={t}
@@ -207,17 +215,16 @@ export default function HomeScreen() {
           />
 
           {trafficStats && (
-            <TrafficStatsCard
-              t={t}
-              trafficStats={trafficStats}
-              monthlySettings={monthlySettings}
-              usageCardStyle={usageCardStyle}
-              durationUnits={durationUnits}
-              lastClearedDate={homeData.lastClearedDate}
-              isClearingHistory={homeActions.isClearingHistory}
-              onClearHistory={homeActions.handleClearHistory}
-              onOpenMonthlySettings={() => setShowMonthlySettingsModal(true)}
-            />
+                <TrafficStatsCard
+                    t={t}
+                    trafficStats={trafficStats}
+                    monthlySettings={monthlySettings}
+                    usageCardStyle={usageCardStyle}
+                    durationUnits={durationUnits}
+                    lastClearedDate={homeData.lastClearedDate}
+                    isClearingHistory={homeActions.isClearingHistory}
+                    onClearHistory={homeActions.handleClearHistory}
+                />
           )}
 
           <AdBanner />

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { Card } from './Card';
@@ -45,11 +46,18 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
         <Card style={[styles.container, style]}>
             <View style={styles.content}>
                 <View style={styles.leftSide}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, overflow: 'hidden' }}>
                         <MaterialIcons name="today" size={18} color={primaryColor} style={{ marginRight: 8 }} />
-                        <Text style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}>
+                        <TextTicker
+                            style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
                             {t('home.dailyUsage')}
-                        </Text>
+                        </TextTicker>
                     </View>
                     <View style={styles.usageRow}>
                         <Text style={[styles.usageValue, { color: primaryColor }]}>

@@ -23,7 +23,7 @@ export default function SettingsIndex() {
     const router = useRouter();
     const { colors, typography } = useTheme();
     const { t } = useTranslation();
-    const { themeMode, setThemeMode, language, setLanguage, usageCardStyle, setUsageCardStyle, accentColor, setAccentColor } = useThemeStore();
+    const { themeMode, setThemeMode, language, setLanguage, usageCardStyle, setUsageCardStyle, accentColor, setAccentColor, signalBubbleEnabled, setSignalBubbleEnabled } = useThemeStore();
     const insets = useSafeAreaInsets();
 
     const [showThemeModal, setShowThemeModal] = React.useState(false);
@@ -81,6 +81,18 @@ export default function SettingsIndex() {
                             title={t('settings.lanSettings')}
                             subtitle={t('settings.lanSettingsSubtitle') || 'Ethernet, DHCP, APN'}
                             onPress={() => router.push('/settings/lan')}
+                        />
+                        <SettingsItem
+                            icon="bubble-chart"
+                            title={t('settings.signalBubble') || 'Signal Bubble'}
+                            subtitle={t('settings.signalBubbleHint') || 'Show floating signal indicator'}
+                            showChevron={false}
+                            rightElement={
+                                <ThemedSwitch
+                                    value={signalBubbleEnabled}
+                                    onValueChange={setSignalBubbleEnabled}
+                                />
+                            }
                             isLast
                         />
                     </SettingsSection>

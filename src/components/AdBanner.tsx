@@ -3,17 +3,14 @@ import { View, Text, StyleSheet, Image } from 'react-native';
 import {
     BannerAd,
     BannerAdSize,
-    TestIds,
     NativeAd,
     NativeAdView,
     NativeAsset,
     NativeAssetType,
 } from 'react-native-google-mobile-ads';
-import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { BouncingDots } from './LoadingIndicators';
 import { AdBlockAlertHelper } from './AdBlockAlertModal';
 import {
     initAdMob,
@@ -121,7 +118,6 @@ export const AdBanner: React.FC = React.memo(() => {
                             triggerAdblockAlert(error);
                             activateAdRequestCooldown();
 
-                            // Retry loading after cooldown expires
                             const cooldownMs = getAdRequestDelay(BANNER_AD_UNIT_ID) || 30000;
                             setTimeout(() => {
                                 setAdFailed(false);

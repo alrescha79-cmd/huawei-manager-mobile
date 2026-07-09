@@ -27,7 +27,12 @@ interface ModemState {
   isLoading: boolean;
   isUsingCache: boolean;
   error: string | null;
+  lastClearedDate: string | null;
+  isClearingHistory: boolean;
 
+  setLastClearedDate: (date: string | null) => void;
+  setIsClearingHistory: (isClearing: boolean) => void;
+  clearHistory: () => Promise<void>;
   setModemInfo: (info: ModemInfo) => void;
   setSignalInfo: (info: SignalInfo) => void;
   setNetworkInfo: (info: NetworkInfo) => void;
@@ -61,6 +66,15 @@ export const useModemStore = create<ModemState>((set, get) => ({
   isLoading: false,
   isUsingCache: false,
   error: null,
+  lastClearedDate: null,
+  isClearingHistory: false,
+
+  setLastClearedDate: (date) => set({ lastClearedDate: date }),
+  setIsClearingHistory: (isClearing) => set({ isClearingHistory: isClearing }),
+
+  clearHistory: async () => {
+    // This will be handled in useHomeActions, just providing the function here
+  },
 
   setModemInfo: (info) => {
     set({ modemInfo: info });

@@ -20,13 +20,22 @@ interface QuickActionsCardProps {
     onSignalPointing: () => void;
     onQuickCheck: () => void;
     onSpeedtest: () => void;
+    onOpenMonthlySettings: () => void;
+    onToggleUsageStyle: () => void;
+    usageCardStyle: 'split' | 'compact';
+    onToggleSignalBubble: () => void;
+    onToggleTheme: () => void;
+    isSignalBubbleEnabled: boolean;
+    isDarkTheme: boolean;
+    monthlySettings: any;
+    deviceName?: string;
 }
 
 /**
  * Quick actions card for home screen
  * Contains: Band selection, Change IP, Toggle Data, Signal Pointing, Quick Check, Speedtest
  */
-export function QuickActionsCard({
+  export function QuickActionsCard({
     t,
     selectedBands,
     wanIpAddress,
@@ -40,15 +49,45 @@ export function QuickActionsCard({
     onSignalPointing,
     onQuickCheck,
     onSpeedtest,
+    onOpenMonthlySettings,
+    onToggleUsageStyle,
+    usageCardStyle,
+    onToggleSignalBubble,
+    onToggleTheme,
+    isSignalBubbleEnabled,
+    isDarkTheme,
+    monthlySettings,
+    deviceName,
 }: QuickActionsCardProps) {
     const { colors, typography, isDark } = useTheme();
 
     const itemBg = isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)';
     const itemBorder = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
 
+    const headerRightBadge = (
+        <View style={[
+            styles.headerStatusBadge,
+            {
+                borderColor: colors.success,
+                backgroundColor: 'rgba(34, 197, 94, 0.1)',
+            }
+        ]}>
+            <Text style={[
+                typography.caption1,
+                {
+                    color: colors.success,
+                    fontWeight: '700',
+                }
+            ]}>
+                {deviceName || 'Modem'}
+            </Text>
+        </View>
+    );
+
     return (
         <CollapsibleCard
             title={t('home.actions')}
+            headerRight={headerRightBadge}
         >
             {/* Top row - Large actions */}
             <View style={styles.topRow}>
@@ -126,7 +165,7 @@ export function QuickActionsCard({
                 </TouchableOpacity>
             </View>
 
-            {/* Bottom row - Small actions */}
+            {/* Bottom row - Small actions (Row 1) */}
             <View style={styles.bottomRow}>
                 {/* Data Seluler */}
                 <TouchableOpacity
@@ -150,10 +189,10 @@ export function QuickActionsCard({
                                 <MaterialIcons
                                     name="swap-vert"
                                     size={16}
-                                    color={mobileDataEnabled ? colors.background : colors.primary}
+                                    color={mobileDataEnabled ? '#eeeeee' : colors.primary}
                                 />
                             </View>
-                            <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
+                            <View style={styles.smallActionTextContainer}>
                                 <TextTicker
                                     style={StyleSheet.flatten([
                                         typography.caption2,
@@ -190,7 +229,7 @@ export function QuickActionsCard({
                     }]}>
                         <MaterialIcons name="my-location" size={16} color={colors.primary} />
                     </View>
-                    <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={styles.smallActionTextContainer}>
                         <TextTicker
                             style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
                             duration={4000}
@@ -222,7 +261,7 @@ export function QuickActionsCard({
                             }]}>
                                 <MaterialIcons name="network-check" size={16} color={colors.primary} />
                             </View>
-                            <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
+                            <View style={styles.smallActionTextContainer}>
                                 <TextTicker
                                     style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
                                     duration={4000}
@@ -251,7 +290,7 @@ export function QuickActionsCard({
                     }]}>
                         <MaterialIcons name="speed" size={16} color={colors.primary} />
                     </View>
-                    <View style={{ width: '100%', overflow: 'hidden', marginTop: 8, alignItems: 'center', justifyContent: 'center' }}>
+                    <View style={styles.smallActionTextContainer}>
                         <TextTicker
                             style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
                             duration={4000}
@@ -261,6 +300,138 @@ export function QuickActionsCard({
                             marqueeDelay={1000}
                         >
                             {t('home.speedtest')}
+                        </TextTicker>
+                    </View>
+                </TouchableOpacity>
+            </View>
+            
+            {/* Bottom row - Small actions (Row 2) */}
+            <View style={styles.bottomRow}>
+                {/* Usage Limit */}
+                <TouchableOpacity
+                    style={styles.smallAction}
+                    onPress={onOpenMonthlySettings}
+                    activeOpacity={0.7}
+                >
+                    <View style={[styles.smallIconCircle, {
+                        backgroundColor: monthlySettings?.enabled ? colors.primary : colors.itemBg,
+                        borderColor: monthlySettings?.enabled ? colors.border : colors.border,
+                        borderWidth: 1,
+                    }]}>
+                        <MaterialIcons name="data-usage" size={16} color={monthlySettings?.enabled ? '#eeeeee' : colors.primary} />
+                    </View>
+                    <View style={styles.smallActionTextContainer}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
+                            {t('home.monthlySettings')}
+                        </TextTicker>
+                    </View>
+                </TouchableOpacity>
+
+                {/* Toggle Usage Style */}
+                <TouchableOpacity
+                    style={styles.smallAction}
+                    onPress={onToggleUsageStyle}
+                    activeOpacity={0.7}
+                >
+                    <View style={[
+                        styles.smallIconCircle,
+                        {
+                            backgroundColor: usageCardStyle === 'compact' ? colors.primary : itemBg,
+                            borderColor: usageCardStyle === 'compact' ? colors.border : itemBorder,
+                            borderWidth: 1,
+                        }
+                    ]}>
+                        <MaterialIcons 
+                            name={usageCardStyle === 'compact' ? "view-compact" : "view-agenda"} 
+                            size={16} 
+                            color={usageCardStyle === 'compact' ? '#eeeeee' : colors.primary} 
+                        />
+                    </View>
+                    <View style={styles.smallActionTextContainer}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
+                            {t('home.usageStyle')}
+                        </TextTicker>
+                    </View>
+                </TouchableOpacity>
+
+                {/* Signal Bubble */}
+                <TouchableOpacity
+                    style={styles.smallAction}
+                    onPress={onToggleSignalBubble}
+                    activeOpacity={0.7}
+                >
+                    <View style={[
+                        styles.smallIconCircle,
+                        {
+                            backgroundColor: isSignalBubbleEnabled ? colors.primary : itemBg,
+                            borderColor: isSignalBubbleEnabled ? colors.border : itemBorder,
+                            borderWidth: 1,
+                        }
+                    ]}>
+                        <MaterialIcons
+                            name="bubble-chart"
+                            size={16}
+                            color={isSignalBubbleEnabled ? '#eeeeee' : colors.primary}
+                        />
+                    </View>
+                    <View style={styles.smallActionTextContainer}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
+                            {t('settings.signalBubble')}
+                        </TextTicker>
+                    </View>
+                </TouchableOpacity>
+
+                {/* Theme Toggle */}
+                <TouchableOpacity
+                    style={styles.smallAction}
+                    onPress={onToggleTheme}
+                    activeOpacity={0.7}
+                >
+                    <View style={[
+                        styles.smallIconCircle,
+                        {
+                            backgroundColor: isDarkTheme ? colors.primary : itemBg,
+                            borderColor: isDarkTheme ? colors.border : itemBorder,
+                            borderWidth: 1,
+                        }
+                    ]}>
+                        <MaterialIcons
+                            name={isDarkTheme ? "light-mode" : "dark-mode"}
+                            size={16}
+                            color={isDarkTheme ? '#eeeeee' : colors.primary}
+                        />
+                    </View>
+                    <View style={styles.smallActionTextContainer}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
+                            {isDarkTheme ? t('settings.themeLight') : t('settings.themeDark')}
                         </TextTicker>
                     </View>
                 </TouchableOpacity>
@@ -275,6 +446,14 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         letterSpacing: 0.5,
         color: '#8e8e93',
+    },
+    headerStatusBadge: {
+        borderWidth: 1,
+        borderRadius: 20,
+        paddingHorizontal: 12,
+        paddingVertical: 4,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     topRow: {
         flexDirection: 'row',
@@ -305,9 +484,17 @@ const styles = StyleSheet.create({
     bottomRow: {
         flexDirection: 'row',
         justifyContent: 'space-between',
+        marginTop: 12,
     },
     smallAction: {
-        width: '24%',
+        width: '22.8%',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    smallActionTextContainer: {
+        width: '100%',
+        overflow: 'hidden',
+        marginTop: 8,
         alignItems: 'center',
         justifyContent: 'center',
     },

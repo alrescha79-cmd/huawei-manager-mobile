@@ -194,8 +194,8 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, descriptors, 
                     styles.blurContainer,
                     {
                         backgroundColor: isDark
-                            ? 'rgba(28, 28, 30, 0.55)'
-                            : 'rgba(255, 255, 255, 0.052)',
+                            ? 'rgba(28, 28, 30, 0.8)'
+                            : 'rgba(255, 255, 255, 0.75)',
                         borderColor: isDark
                             ? 'rgba(255, 255, 255, 0.10)'
                             : 'rgba(0, 0, 0, 0.05)',
@@ -268,8 +268,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-around',
         paddingVertical: 10,
-        paddingHorizontal: 6,
-        borderRadius: 24,
+        paddingHorizontal: 8,
+        borderRadius: 42,
         borderWidth: 1.5,
         overflow: 'hidden',
     },
