@@ -62,7 +62,7 @@ export default function SettingsIndex() {
                     style={[styles.container, { backgroundColor: 'transparent' }]}
                     contentContainerStyle={{ paddingBottom: 110 + (insets.bottom > 0 ? insets.bottom : 16), paddingTop: 8 }}
                 >
-                    <SettingsSection title={t('settings.connection')}>
+                    <SettingsSection title={t('settings.modem')}>
                         <SettingsItem
                             icon="router"
                             title={t('settings.modemInfo')}
@@ -75,13 +75,26 @@ export default function SettingsIndex() {
                             subtitle={t('settings.mobileNetworkSubtitle') || 'Data, Roaming, Bands'}
                             onPress={() => router.push('/settings/mobile-network')}
                         />
-
                         <SettingsItem
                             icon="settings-ethernet"
                             title={t('settings.lanSettings')}
                             subtitle={t('settings.lanSettingsSubtitle') || 'Ethernet, DHCP, APN'}
                             onPress={() => router.push('/settings/lan')}
                         />
+                        <SettingsItem
+                            icon="settings"
+                            title={t('settings.system')}
+                            subtitle={t('settings.systemSubtitle') || 'Time, Reboot, Reset'}
+                            onPress={() => router.push('/settings/system')}
+                            isLast
+                        />
+                    </SettingsSection>
+
+                    <View style={{ marginHorizontal: 16 }}>
+                        <AdNative />
+                    </View>
+
+                    <SettingsSection title={t('settings.application')}>
                         <SettingsItem
                             icon="bubble-chart"
                             title={t('settings.signalBubble') || 'Signal Bubble'}
@@ -93,22 +106,13 @@ export default function SettingsIndex() {
                                     onValueChange={setSignalBubbleEnabled}
                                 />
                             }
+                        />
+                        <SettingsItem
+                            icon="notifications"
+                            title={t('notifications.title')}
+                            onPress={() => router.push('/settings/notifications')}
                             isLast
                         />
-                    </SettingsSection>
-
-                    <View style={{ marginHorizontal: 16 }}>
-                        <AdNative />
-                    </View>
-
-                    <SettingsSection title={t('settings.general')}>
-                        <SettingsItem
-                            icon="settings"
-                            title={t('settings.system')}
-                            subtitle={t('settings.systemSubtitle') || 'Time, Reboot, Reset'}
-                            onPress={() => router.push('/settings/system')}
-                        />
-
                         <SettingsItem
                             icon="data-usage"
                             title="Data Usage View"
@@ -125,9 +129,6 @@ export default function SettingsIndex() {
                                 </TouchableOpacity>
                             }
                         />
-
-
-
                         <SettingsItem
                             icon="brightness-6"
                             title={t('settings.theme')}
@@ -178,13 +179,6 @@ export default function SettingsIndex() {
                                     <MaterialIcons name="arrow-drop-down" size={20} color={colors.textSecondary} />
                                 </TouchableOpacity>
                             }
-                        />
-
-                        <SettingsItem
-                            icon="notifications"
-                            title={t('notifications.title')}
-                            onPress={() => router.push('/settings/notifications')}
-                            isLast
                         />
                     </SettingsSection>
 
