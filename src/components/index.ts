@@ -41,3 +41,4 @@ export * from './AdBanner';
 export * from './AdBlockAlertModal';
 export * from './ChangelogModal';
 export * from './NoSignalModal';
+export * from './SignalBubble';

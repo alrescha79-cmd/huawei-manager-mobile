@@ -145,6 +145,7 @@
     "connecting": "Connecting",
     "networkInfo": "Network Info",
     "operator": "ISP",
+    "usageStyle": "Compact Usage view",
     "networkType": "Network Type",
     "roaming": "Roaming",
     "signalInfo": "Signal Info",
@@ -541,7 +542,9 @@
     "bandsFound": "{{count}} BANDS FOUND",
     "deselectAll": "Deselect All",
     "selectAll": "Select All",
-    "accentColor": "Accent Color"
+    "accentColor": "Accent Color",
+    "signalBubble": "Signal Bubble",
+    "signalBubbleHint": "Show floating signal indicator"
   },
   "webViewLogin": {
     "title": "Modem Login",

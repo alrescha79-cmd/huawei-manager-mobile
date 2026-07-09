@@ -12,6 +12,7 @@ interface ThemeState {
   language: string;
   isLanguageInitialized: boolean;
   badgesEnabled: boolean;
+  signalBubbleEnabled: boolean;
 
   setThemeMode: (mode: ThemeMode) => void;
   setAccentColor: (color: string) => void;
@@ -21,6 +22,7 @@ interface ThemeState {
   setLanguage: (language: string) => void;
   initializeLanguage: () => void;
   setBadgesEnabled: (enabled: boolean) => void;
+  setSignalBubbleEnabled: (enabled: boolean) => void;
 }
 
 export const useThemeStore = create<ThemeState>()(
@@ -32,6 +34,7 @@ export const useThemeStore = create<ThemeState>()(
       language: 'en',
       isLanguageInitialized: false,
       badgesEnabled: true,
+      signalBubbleEnabled: true,
 
       setThemeMode: (mode) => {
         set({ themeMode: mode });
@@ -42,6 +45,7 @@ export const useThemeStore = create<ThemeState>()(
       setRefreshInterval: (interval) => set({ refreshInterval: interval }),
       setLanguage: (language) => set({ language }),
       setBadgesEnabled: (enabled) => set({ badgesEnabled: enabled }),
+      setSignalBubbleEnabled: (enabled) => set({ signalBubbleEnabled: enabled }),
 
       initializeLanguage: () => {
         const { isLanguageInitialized } = get();

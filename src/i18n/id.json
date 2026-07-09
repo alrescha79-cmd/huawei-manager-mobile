@@ -145,6 +145,7 @@
     "connecting": "Menghubungkan",
     "networkInfo": "Info Jaringan",
     "operator": "ISP",
+    "usageStyle": "Tampilan Penggunaan Ringkas",
     "networkType": "Tipe Jaringan",
     "roaming": "Roaming",
     "signalInfo": "Info Sinyal",
@@ -541,7 +542,9 @@
     "tddOnly": "Hanya TDD",
     "fddOnly": "Hanya FDD",
     "bandsFound": "{{count}} DITEMUKAN",
-    "accentColor": "Warna Aksen"
+    "accentColor": "Warna Aksen",
+    "signalBubble": "Bubble Sinyal",
+    "signalBubbleHint": "Tampilkan indikator sinyal mengambang"
   },
   "webViewLogin": {
     "title": "Login Modem",
