@@ -13,7 +13,7 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { ModalBackground } from './ModalBackground';
+import { ModalBackground } from '../ModalBackground';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
 import { AdNative, ThemedAlertHelper } from '@/components';
 

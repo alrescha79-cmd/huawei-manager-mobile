@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Alert, Platform } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Platform, ScrollView } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated, {
     useAnimatedStyle,
     useSharedValue,
@@ -14,7 +14,8 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import Constants from 'expo-constants';
 import * as FileSystem from 'expo-file-system/legacy';
-import { MeshGradientBackground, PageHeader, AnimatedScreen, AdNative } from '@/components';
+import { MeshGradientBackground, AnimatedScreen, AdNative, ThemedAlertHelper } from '@/components';
+import { PageHeader, ReleaseNotesModal } from '@/components/settings';
 
 let IntentLauncher: any = null;
 try {
@@ -53,6 +54,7 @@ function compareVersions(v1: string, v2: string): number {
     return 0;
 }
 
+
 export default function UpdateScreen() {
     const { colors, typography, spacing, isDark } = useTheme();
     const { t } = useTranslation();
@@ -69,6 +71,8 @@ export default function UpdateScreen() {
     const [downloading, setDownloading] = useState(false);
     const [downloadProgress, setDownloadProgress] = useState(0);
     const [downloadResumable, setDownloadResumable] = useState<FileSystem.DownloadResumable | null>(null);
+    const isCancelledRef = useRef(false);
+    const [selectedNotes, setSelectedNotes] = useState<{ version: string; notes: string } | null>(null);
 
     const rotation = useSharedValue(0);
 
@@ -188,6 +192,7 @@ export default function UpdateScreen() {
         try {
             setDownloading(true);
             setDownloadProgress(0);
+            isCancelledRef.current = false;
 
             const filename = `huawei-manager-v${versionName}.apk`;
             const localUri = `${FileSystem.cacheDirectory}${filename}`;
@@ -211,6 +216,7 @@ export default function UpdateScreen() {
 
             const result = await resumable.downloadAsync();
             setDownloading(false);
+            setDownloadResumable(null);
 
             if (result && result.uri) {
                 let launched = false;
@@ -231,7 +237,7 @@ export default function UpdateScreen() {
                 }
 
                 if (!launched) {
-                    Alert.alert(
+                    ThemedAlertHelper.alert(
                         t('common.success') || 'Success',
                         t('settings.downloadComplete') || 'Update downloaded successfully. Please open and install the APK file manually, or open the link in your browser.',
                         [
@@ -244,11 +250,18 @@ export default function UpdateScreen() {
                 throw new Error('Download failed: result is empty');
             }
         } catch (err: any) {
+            if (isCancelledRef.current) {
+                isCancelledRef.current = false;
+                return;
+            }
             console.error('Download/Install failed:', err);
             setDownloading(false);
-            Alert.alert(
+            setDownloadResumable(null);
+
+            const message = err instanceof Error ? err.message : String(err);
+            ThemedAlertHelper.alert(
                 t('common.error') || 'Error',
-                t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.',
+                `${t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.'}\n\n${message}`,
                 [
                     { text: t('common.ok') || 'OK' },
                     { text: t('settings.downloadUpdate') || 'Open Browser', onPress: () => Linking.openURL(url) }
@@ -260,28 +273,28 @@ export default function UpdateScreen() {
     const handleCancelDownload = async () => {
         if (downloadResumable) {
             try {
-                await downloadResumable.pauseAsync();
+                isCancelledRef.current = true;
+                await downloadResumable.cancelAsync();
                 setDownloading(false);
                 setDownloadProgress(0);
+                setDownloadResumable(null);
+                ThemedAlertHelper.alert(
+                    t('settings.downloadCancelledTitle') || 'Cancelled',
+                    t('settings.downloadCancelledMessage') || 'Download cancelled.'
+                );
             } catch (e) {
-                console.error('Error pausing download:', e);
+                console.error('Error cancelling download:', e);
+                isCancelledRef.current = false;
+                const message = e instanceof Error ? e.message : String(e);
+                ThemedAlertHelper.alert(
+                    t('common.error') || 'Error',
+                    `${t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.'}\n\n${message}`
+                );
             }
         }
     };
 
-    const getStatusIcon = () => {
-        if (checking) return 'sync';
-        if (error) return 'error-outline';
-        if (updateAvailable) return 'system-update';
-        return 'check-circle';
-    };
-
-    const getStatusColor = () => {
-        if (checking) return colors.primary;
-        if (error) return colors.error;
-        if (updateAvailable) return colors.primary;
-        return colors.success;
-    };
+    const availableCount = (updateAvailable ? 1 : 0) + (preReleaseAvailable ? 1 : 0);
 
     return (
         <AnimatedScreen noAnimation>
@@ -290,41 +303,73 @@ export default function UpdateScreen() {
                 <View style={[styles.container, { backgroundColor: 'transparent' }]}>
                     <Stack.Screen options={{ title: t('settings.checkUpdate') }} />
 
-                    <View style={styles.content}>
-                        <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
-                            {checking ? (
-                                <Animated.View style={animatedStyle}>
-                                    <MaterialIcons
-                                        name="sync"
-                                        size={64}
+                    <ScrollView
+                        style={styles.scrollView}
+                        contentContainerStyle={styles.scrollContent}
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {/* Device status header */}
+                        <View style={styles.headerSection}>
+                            <View style={[styles.deviceOuterCircle, { borderColor: colors.primary }]}>
+                                <View style={[styles.deviceInnerSquare, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)' }]}>
+                                    <MaterialCommunityIcons
+                                        name="cellphone"
+                                        size={42}
                                         color={colors.primary}
                                     />
-                                </Animated.View>
-                            ) : (
-                                <MaterialIcons
-                                    name={getStatusIcon()}
-                                    size={64}
-                                    color={getStatusColor()}
-                                />
+                                </View>
+                            </View>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 16 }]}>
+                                {t('settings.currentAppVersion')}
+                            </Text>
+                            <View style={styles.currentVersionRow}>
+                                <Text style={[typography.title1, { color: colors.text, fontWeight: '700' }]}>
+                                    v{Constants.expoConfig?.version}
+                                </Text>
+                                <View style={[styles.installedBadge, { backgroundColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.06)' }]}>
+                                    <Text style={[typography.caption2, { color: colors.textSecondary, fontWeight: '700' }]}>
+                                        {t('settings.installedBadge')}
+                                    </Text>
+                                </View>
+                            </View>
+                            {hasChecked && !updateAvailable && !preReleaseAvailable && (
+                                <View style={[styles.upToDateBadge, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.25)', borderWidth: 1, marginTop: 12 }]}>
+                                    <MaterialCommunityIcons name="check-circle" size={14} color="#10B981" style={{ marginRight: 6 }} />
+                                    <Text style={[typography.caption2, { color: '#10B981', fontWeight: '700' }]}>
+                                        {t('settings.appUpToDate').toUpperCase()}
+                                    </Text>
+                                </View>
                             )}
                         </View>
 
                         {checking ? (
                             <View style={styles.statusContainer}>
-                                <Text style={[typography.headline, { color: colors.text, marginBottom: 8, textAlign: 'center' }]}>
+                                <Animated.View style={animatedStyle}>
+                                    <MaterialCommunityIcons
+                                        name="sync"
+                                        size={48}
+                                        color={colors.primary}
+                                    />
+                                </Animated.View>
+                                <Text style={[typography.headline, { color: colors.text, marginTop: 16, textAlign: 'center' }]}>
                                     {t('settings.checkingUpdate') || 'Checking for updates...'}
                                 </Text>
                             </View>
                         ) : error ? (
                             <View style={styles.statusContainer}>
-                                <Text style={[typography.headline, { color: colors.error, marginBottom: 8, textAlign: 'center' }]}>
+                                <MaterialCommunityIcons
+                                    name="alert-circle-outline"
+                                    size={48}
+                                    color={colors.error}
+                                />
+                                <Text style={[typography.headline, { color: colors.error, marginTop: 16, marginBottom: 8, textAlign: 'center' }]}>
                                     {t('settings.updateCheckFailed') || 'Update check failed'}
                                 </Text>
                                 <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 16, textAlign: 'center' }]}>
                                     {error}
                                 </Text>
                                 <TouchableOpacity
-                                    style={[styles.button, { backgroundColor: colors.primary }]}
+                                    style={[styles.checkNowBtn, { backgroundColor: colors.primary }]}
                                     onPress={checkUpdate}
                                 >
                                     <Text style={[typography.body, { color: '#FFF', fontWeight: '600' }]}>
@@ -333,10 +378,19 @@ export default function UpdateScreen() {
                                 </TouchableOpacity>
                             </View>
                         ) : updateAvailable || preReleaseAvailable ? (
-                            <View style={styles.statusContainer}>
-                                <Text style={[typography.body, { color: colors.textSecondary, marginBottom: 8 }]}>
-                                    {t('settings.appVersion')}: v{Constants.expoConfig?.version}
-                                </Text>
+                            <View style={{ width: '100%' }}>
+                                <View style={styles.sectionHeaderRow}>
+                                    <Text style={[typography.subheadline, { color: colors.textSecondary, fontWeight: '700', letterSpacing: 0.5 }]}>
+                                        {t('settings.updatesAvailableHeader')}
+                                    </Text>
+                                    <View style={[styles.versionsCountBadge, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
+                                        <Text style={[typography.caption2, { color: colors.success, fontWeight: '700' }]}>
+                                            {availableCount === 2
+                                                ? t('settings.newVersionsBadge', { count: 2 })
+                                                : t('settings.newVersionBadge')}
+                                        </Text>
+                                    </View>
+                                </View>
 
                                 {downloading ? (
                                     <View style={[styles.downloadCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
@@ -364,78 +418,93 @@ export default function UpdateScreen() {
                                     <>
                                         {/* Stable Release Section */}
                                         {updateAvailable && releaseInfo && (
-                                            <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.primary }]}>
+                                            <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1 }]}>
                                                 <View style={styles.releaseHeader}>
-                                                    <Text style={[typography.headline, { color: colors.text }]}>
+                                                    <Text style={[typography.headline, { color: colors.text, fontSize: 20, fontWeight: '700' }]}>
                                                         v{releaseInfo.version}
                                                     </Text>
-                                                    <View style={[styles.badge, { backgroundColor: colors.success }]}>
-                                                        <Text style={[typography.caption2, { color: '#FFF', fontWeight: '600' }]}>
-                                                            {t('settings.stableBadge')}
+                                                    <View style={[styles.badge, { backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)', borderWidth: 1 }]}>
+                                                        <MaterialCommunityIcons name="shield-check" size={14} color={colors.success} style={{ marginRight: 4 }} />
+                                                        <Text style={[typography.caption2, { color: colors.success, fontWeight: '700', letterSpacing: 0.5 }]}>
+                                                            {t('settings.stableBadge').toUpperCase()}
                                                         </Text>
                                                     </View>
                                                 </View>
-                                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 12 }]}>
-                                                    {t('settings.updateAvailable')}
-                                                </Text>
+
+                                                <View style={styles.infoRow}>
+                                                    <MaterialCommunityIcons name="information-outline" size={16} color={colors.success} />
+                                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 6, flex: 1 }]}>
+                                                        {t('settings.stableBadgeText')}
+                                                    </Text>
+                                                </View>
+
+                                                <View style={styles.divider} />
+
                                                 <View style={styles.releaseActions}>
                                                     <TouchableOpacity
-                                                        style={[styles.smallButton, { backgroundColor: colors.primary }]}
+                                                        style={[styles.downloadBtn, { backgroundColor: '#10B981' }]} // Teal/green
                                                         onPress={() => releaseInfo.downloadUrl && handleDownloadAndInstall(releaseInfo.downloadUrl, releaseInfo.version)}
                                                     >
-                                                        <MaterialIcons name="download" size={16} color="#FFF" />
-                                                        <Text style={[typography.caption1, { color: '#FFF', marginLeft: 4 }]}>
+                                                        <MaterialCommunityIcons name="download" size={18} color="#FFF" />
+                                                        <Text style={[typography.body, { color: '#FFF', fontWeight: '700', marginLeft: 6 }]}>
                                                             {t('settings.downloadUpdate')}
                                                         </Text>
                                                     </TouchableOpacity>
                                                     <TouchableOpacity
-                                                        style={[styles.smallButtonOutline, { borderColor: colors.border }]}
-                                                        onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${releaseInfo.tagName}`)}
+                                                        style={[styles.notesBtn, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}
+                                                        onPress={() => setSelectedNotes({ version: releaseInfo.version || releaseInfo.tagName, notes: releaseInfo.releaseNotes })}
                                                     >
-                                                        <Text style={[typography.caption1, { color: colors.text }]}>{t('settings.viewReleaseNotes')}</Text>
+                                                        <MaterialCommunityIcons name="file-document-outline" size={18} color={colors.text} />
+                                                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 6 }]}>
+                                                            Notes
+                                                        </Text>
                                                     </TouchableOpacity>
                                                 </View>
                                             </View>
                                         )}
 
-                                        {/* If only stable is up to date but pre-release available */}
-                                        {!updateAvailable && preReleaseAvailable && (
-                                            <Text style={[typography.caption1, { color: colors.success, marginBottom: 8, textAlign: 'center' }]}>
-                                                ✓ {t('settings.stableUpToDate')}
-                                            </Text>
-                                        )}
-
                                         {/* Pre-release Section */}
                                         {preReleaseAvailable && preReleaseInfo && (
-                                            <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: colors.warning, marginTop: updateAvailable ? 12 : 0 }]}>
+                                            <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, marginTop: updateAvailable ? 16 : 0 }]}>
                                                 <View style={styles.releaseHeader}>
-                                                    <Text style={[typography.headline, { color: colors.text }]}>
+                                                    <Text style={[typography.headline, { color: colors.text, fontSize: 20, fontWeight: '700' }]}>
                                                         {preReleaseInfo.version ? `v${preReleaseInfo.version}` : preReleaseInfo.tagName}
                                                     </Text>
-                                                    <View style={[styles.badge, { backgroundColor: colors.warning }]}>
-                                                        <Text style={[typography.caption2, { color: '#FFF', fontWeight: '600' }]}>
-                                                            {t('settings.preReleaseBadge')}
+                                                    <View style={[styles.badge, { backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)', borderWidth: 1 }]}>
+                                                        <MaterialCommunityIcons name="flask" size={14} color={colors.warning} style={{ marginRight: 4 }} />
+                                                        <Text style={[typography.caption2, { color: colors.warning, fontWeight: '700', letterSpacing: 0.5 }]}>
+                                                            {t('settings.preReleaseBadge').toUpperCase()}
                                                         </Text>
                                                     </View>
                                                 </View>
-                                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 12 }]}>
-                                                    {t('settings.preReleaseHint')}
-                                                </Text>
+
+                                                <View style={styles.infoRow}>
+                                                    <MaterialCommunityIcons name="alert-outline" size={16} color={colors.warning} />
+                                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 6, flex: 1 }]}>
+                                                        {t('settings.preReleaseBadgeText')}
+                                                    </Text>
+                                                </View>
+
+                                                <View style={styles.divider} />
+
                                                 <View style={styles.releaseActions}>
                                                     <TouchableOpacity
-                                                        style={[styles.smallButton, { backgroundColor: colors.warning }]}
+                                                        style={[styles.downloadBtn, { backgroundColor: '#F59E0B' }]} // Yellow/Orange
                                                         onPress={() => preReleaseInfo.downloadUrl && handleDownloadAndInstall(preReleaseInfo.downloadUrl, preReleaseInfo.version || preReleaseInfo.tagName)}
                                                     >
-                                                        <MaterialIcons name="download" size={16} color="#FFF" />
-                                                        <Text style={[typography.caption1, { color: '#FFF', marginLeft: 4 }]}>
+                                                        <MaterialCommunityIcons name="lightning-bolt" size={18} color="#FFF" />
+                                                        <Text style={[typography.body, { color: '#FFF', fontWeight: '700', marginLeft: 6 }]}>
                                                             {t('settings.downloadUpdate')}
                                                         </Text>
                                                     </TouchableOpacity>
                                                     <TouchableOpacity
-                                                        style={[styles.smallButtonOutline, { borderColor: colors.border }]}
-                                                        onPress={() => Linking.openURL(`https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}/releases/tag/${preReleaseInfo.tagName}`)}
+                                                        style={[styles.notesBtn, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}
+                                                        onPress={() => setSelectedNotes({ version: preReleaseInfo.version || preReleaseInfo.tagName, notes: preReleaseInfo.releaseNotes })}
                                                     >
-                                                        <Text style={[typography.caption1, { color: colors.text }]}>{t('settings.viewReleaseNotes')}</Text>
+                                                        <MaterialCommunityIcons name="file-document-outline" size={18} color={colors.text} />
+                                                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 6 }]}>
+                                                            Notes
+                                                        </Text>
                                                     </TouchableOpacity>
                                                 </View>
                                             </View>
@@ -443,41 +512,46 @@ export default function UpdateScreen() {
                                     </>
                                 )}
 
-                                <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
+                                <View style={{ paddingHorizontal: 0, marginTop: 24, marginBottom: 12 }}>
                                     <AdNative />
                                 </View>
-                                <TouchableOpacity
-                                    style={[styles.buttonOutline, { borderColor: colors.border, marginTop: 16 }]}
-                                    onPress={checkUpdate}
-                                    disabled={downloading}
-                                >
-                                    <Text style={[typography.body, { color: colors.text }]}>
-                                        {t('settings.checkAgain')}
-                                    </Text>
-                                </TouchableOpacity>
+
+                                {(updateAvailable || preReleaseAvailable) && !downloading && (
+                                    <TouchableOpacity
+                                        style={[styles.checkAgainBtn, { borderColor: colors.border }]}
+                                        onPress={checkUpdate}
+                                        disabled={checking}
+                                    >
+                                        <MaterialCommunityIcons name="refresh" size={18} color={colors.text} style={{ marginRight: 6 }} />
+                                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
+                                            {t('settings.checkAgain')}
+                                        </Text>
+                                    </TouchableOpacity>
+                                )}
                             </View>
                         ) : hasChecked ? (
-                            <View style={styles.statusContainer}>
-                                <Text style={[typography.headline, { color: colors.text, marginBottom: 8, textAlign: 'center' }]}>
-                                    {t('settings.appUpToDate')}
-                                </Text>
-                                <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 24 }]}>
-                                    {t('settings.appVersion')}: v{Constants.expoConfig?.version}
-                                </Text>
-
+                            <View style={{ width: '100%', alignItems: 'center', marginTop: 16 }}>
                                 <TouchableOpacity
-                                    style={[styles.button, { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border }]}
+                                    style={[styles.checkNowBtn, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}
                                     onPress={checkUpdate}
+                                    disabled={checking}
                                 >
-                                    <Text style={[typography.body, { color: colors.text }]}>
+                                    <MaterialCommunityIcons name="refresh" size={18} color={colors.text} style={{ marginRight: 6 }} />
+                                    <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
                                         {t('settings.checkNow')}
                                     </Text>
                                 </TouchableOpacity>
                             </View>
                         ) : null}
-                    </View>
+                    </ScrollView>
                 </View>
             </MeshGradientBackground>
+
+            <ReleaseNotesModal
+                visible={selectedNotes !== null}
+                onClose={() => setSelectedNotes(null)}
+                selectedNotes={selectedNotes}
+            />
         </AnimatedScreen>
     );
 }
@@ -486,84 +560,116 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
     },
-    content: {
+    scrollView: {
         flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        padding: 24,
     },
-    statusContainer: {
-        alignItems: 'center',
+    scrollContent: {
+        padding: 20,
+        paddingBottom: 120,
     },
-    iconContainer: {
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        justifyContent: 'center',
+    headerSection: {
         alignItems: 'center',
-        marginBottom: 24,
+        marginTop: 20,
+        marginBottom: 30,
     },
-    button: {
-        flexDirection: 'row',
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        borderRadius: 24,
-        marginTop: 16,
-        alignItems: 'center',
-    },
-    buttonOutline: {
-        paddingVertical: 12,
-        paddingHorizontal: 32,
-        borderRadius: 24,
-        marginTop: 12,
+    deviceOuterCircle: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
         borderWidth: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    deviceInnerSquare: {
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    currentVersionRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: 4,
+    },
+    installedBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 6,
+        marginLeft: 8,
+    },
+    sectionHeaderRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 16,
+        marginTop: 10,
+    },
+    versionsCountBadge: {
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
     },
     releaseCard: {
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 2,
-        width: '100%',
+        padding: 20,
+        borderRadius: 20,
+        borderWidth: 1,
     },
     releaseHeader: {
         flexDirection: 'row',
+        justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
+        marginBottom: 12,
     },
     badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
         paddingHorizontal: 8,
-        paddingVertical: 2,
-        borderRadius: 4,
-        marginLeft: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    infoRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 16,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: 'rgba(255, 255, 255, 0.05)',
+        marginBottom: 16,
     },
     releaseActions: {
         flexDirection: 'row',
-        gap: 8,
+        gap: 12,
     },
-    smallButton: {
+    downloadBtn: {
+        flex: 2,
         flexDirection: 'row',
+        height: 48,
+        borderRadius: 14,
+        justifyContent: 'center',
         alignItems: 'center',
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
     },
-    smallButtonOutline: {
-        paddingVertical: 8,
-        paddingHorizontal: 12,
-        borderRadius: 8,
+    notesBtn: {
+        flex: 1.1,
+        flexDirection: 'row',
+        height: 48,
+        borderRadius: 14,
         borderWidth: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     downloadCard: {
-        padding: 16,
-        borderRadius: 12,
-        borderWidth: 2,
-        width: '100%',
+        padding: 20,
+        borderRadius: 20,
+        borderWidth: 1,
         marginBottom: 16,
     },
     progressBarContainer: {
         height: 8,
         borderRadius: 4,
         overflow: 'hidden',
-        marginBottom: 8,
+        marginBottom: 12,
     },
     progressBar: {
         height: '100%',
@@ -572,5 +678,37 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+    },
+    checkAgainBtn: {
+        flexDirection: 'row',
+        height: 48,
+        borderRadius: 14,
+        borderWidth: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        marginTop: 24,
+        alignSelf: 'center',
+        paddingHorizontal: 24,
+        backgroundColor: 'rgba(255, 255, 255, 0.02)',
+    },
+    upToDateBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 5,
+        paddingHorizontal: 10,
+        borderRadius: 8,
+    },
+    checkNowBtn: {
+        flexDirection: 'row',
+        height: 48,
+        borderRadius: 14,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 24,
+    },
+    statusContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 60,
     },
 });

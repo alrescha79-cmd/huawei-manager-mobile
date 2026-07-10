@@ -258,3 +258,17 @@ export interface MonthlyDataSettings {
   trafficMaxLimit: number;
 }
 
+// Firmware Update Check
+export interface FirmwareUpdateInfo {
+  /** Whether a newer firmware version is available */
+  isUpdateAvailable: boolean;
+  /** Current installed firmware version */
+  currentVersion: string;
+  /** New firmware version (if available) */
+  newVersion: string;
+  /** Changelog/description of the new version */
+  description: string;
+  /** Raw update status code from the modem */
+  status: string;
+}
+

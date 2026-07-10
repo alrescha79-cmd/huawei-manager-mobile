@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { DurationUnits, formatDuration } from '@/utils/helpers';
-import { Card } from './Card';
+import { Card } from '../Card';
 import { LinearGradient } from 'expo-linear-gradient';
 
 interface UsageCardProps {

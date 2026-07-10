@@ -12,16 +12,19 @@ import { useTheme } from '@/theme';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, SettingsSection, SettingsItem, MonthlySettingsModal, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, SignalPointingModal, AdNative } from '@/components';
+import { BandSelectionModal, ThemedAlertHelper, getSelectedBandsDisplay, MonthlySettingsModal, SelectionModal, MeshGradientBackground, ThemedSwitch, BouncingDots, AnimatedScreen, SignalPointingModal, AdNative } from '@/components';
+import { SettingsSection, SettingsItem, PageHeader } from '@/components/settings';
 import { MaterialIcons } from '@expo/vector-icons';
 import { showInterstitial } from '@/services/ad.service';
 
 const NETWORK_MODES = [
     { value: '00', labelKey: 'settings.networkAuto' },
+    { value: '04', labelKey: 'settings.network5gOnly' },
+    { value: '0403', labelKey: 'settings.network5g4g' },
     { value: '03', labelKey: 'settings.network4gOnly' },
+    { value: '0302', labelKey: 'settings.network4g3g' },
     { value: '02', labelKey: 'settings.network3gOnly' },
     { value: '01', labelKey: 'settings.network2gOnly' },
-    { value: '0302', labelKey: 'settings.network4g3g' },
 ];
 
 export default function MobileNetworkSettingsScreen() {
@@ -210,7 +213,7 @@ export default function MobileNetworkSettingsScreen() {
                 <PageHeader title={t('settings.mobileNetwork')} showBackButton />
                 <ScrollView
                     style={[styles.container, { backgroundColor: 'transparent' }]}
-                    contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
+                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 8 }}
                 >
                     <SettingsSection title={t('settings.mobileData')}>
                         <SettingsItem

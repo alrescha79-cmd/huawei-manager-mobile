@@ -12,7 +12,7 @@ import { BlurView } from 'expo-blur';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { ModalBackground } from './ModalBackground';
+import { ModalBackground } from '../ModalBackground';
 import { showInterstitial } from '@/services/ad.service';
 
 interface DiagnosisResultModalProps {

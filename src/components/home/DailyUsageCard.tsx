@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { Card } from './Card';
+import { Card } from '../Card';
 
 /*
   Daily Usage Card

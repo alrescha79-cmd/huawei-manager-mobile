@@ -4,7 +4,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useThemeStore } from '@/stores/theme.store';
-import { Card } from './Card';
+import { Card } from '../Card';
 import {
     getLastMonthUsage,
     checkAndSaveMonthlyUsage,

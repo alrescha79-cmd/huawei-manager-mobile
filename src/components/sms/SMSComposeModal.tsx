@@ -12,7 +12,8 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { KeyboardAnimatedView, BouncingDots, AdNative } from '@/components';
+import { BouncingDots, AdNative } from '@/components';
+import { KeyboardAnimatedView } from './KeyboardAnimatedView';
 
 interface SMSComposeModalProps {
     visible: boolean;

@@ -6,7 +6,7 @@ import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { formatDuration } from '@/utils/helpers';
-import { Card } from './Card';
+import { Card } from '../Card';
 
 /*
   Compact Usage Card

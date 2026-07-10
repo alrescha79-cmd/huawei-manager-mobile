@@ -30,7 +30,7 @@ const translations: Record<string, typeof en> = {
 export function useTranslation() {
     const { language } = useThemeStore();
 
-    const t = (key: string, options?: Record<string, string | number>): string => {
+    const t = (key: TranslationKey | (string & {}), options?: Record<string, string | number>): string => {
         const keys = key.split('.');
         const translation = translations[language] || translations.en;
 

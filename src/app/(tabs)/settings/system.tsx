@@ -16,7 +16,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, SettingsSection, SettingsItem, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative, PageSheetModal } from '@/components';
+import { ThemedAlertHelper, Button, MeshGradientBackground, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative, PageSheetModal } from '@/components';
+import { SettingsSection, SettingsItem, PageHeader, ProfileEditModal } from '@/components/settings';
 import { showInterstitial } from '@/services/ad.service';
 import { useModemProfileStore } from '@/stores/modem-profile.store';
 import { getModemProfilePassword } from '@/utils/storage';
@@ -84,7 +85,6 @@ export default function SystemSettingsScreen() {
     // Profile edit state
     const [showEditProfile, setShowEditProfile] = useState(false);
     const [editingProfile, setEditingProfile] = useState<{ id: string; name: string; modemIp: string; username: string; password: string } | null>(null);
-    const [isSavingEdit, setIsSavingEdit] = useState(false);
 
     useEffect(() => { loadProfiles(); }, []);
 
@@ -256,7 +256,7 @@ export default function SystemSettingsScreen() {
                 <PageHeader title={t('settings.system')} showBackButton />
                 <ScrollView
                     style={[styles.container, { backgroundColor: 'transparent' }]}
-                    contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
+                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 8 }}
                 >
                     {/* Time Settings */}
                     <SettingsSection title={t('timeSettings.title')}>
@@ -411,69 +411,14 @@ export default function SystemSettingsScreen() {
                         <AdNative />
                     </View>
 
-                    {/* Edit Profile Modal */}
-                    <PageSheetModal
+                    <ProfileEditModal
                         visible={showEditProfile}
                         onClose={() => { setShowEditProfile(false); setEditingProfile(null); }}
-                        title={t('settings.editProfileTitle')}
-                    >
-                        {editingProfile && (
-                            <View style={{ paddingHorizontal: 16, paddingBottom: 24, gap: 12 }}>
-                                <View style={styles.inputGroup}>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.profileName')}</Text>
-                                    <TextInput
-                                        value={editingProfile.name}
-                                        onChangeText={(v) => setEditingProfile({ ...editingProfile, name: v })}
-                                        style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                    />
-                                </View>
-                                <View style={styles.inputGroup}>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.modemIpLabel')}</Text>
-                                    <TextInput
-                                        value={editingProfile.modemIp}
-                                        onChangeText={(v) => setEditingProfile({ ...editingProfile, modemIp: v })}
-                                        style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                        keyboardType="numeric"
-                                    />
-                                </View>
-                                <View style={styles.inputGroup}>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.usernameLabel')}</Text>
-                                    <TextInput
-                                        value={editingProfile.username}
-                                        onChangeText={(v) => setEditingProfile({ ...editingProfile, username: v })}
-                                        style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                        autoCapitalize="none"
-                                    />
-                                </View>
-                                <View style={styles.inputGroup}>
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.passwordLabel')}</Text>
-                                    <TextInput
-                                        value={editingProfile.password}
-                                        onChangeText={(v) => setEditingProfile({ ...editingProfile, password: v })}
-                                        secureTextEntry
-                                        style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                                    />
-                                </View>
-                                <Button
-                                    title={isSavingEdit ? t('common.saving') : t('common.save')}
-                                    loading={isSavingEdit}
-                                    disabled={isSavingEdit || !editingProfile.name.trim()}
-                                    onPress={async () => {
-                                        setIsSavingEdit(true);
-                                        await updateProfile(editingProfile.id, {
-                                            name: editingProfile.name,
-                                            modemIp: editingProfile.modemIp,
-                                            username: editingProfile.username,
-                                            password: editingProfile.password,
-                                        });
-                                        setIsSavingEdit(false);
-                                        setShowEditProfile(false);
-                                        setEditingProfile(null);
-                                    }}
-                                />
-                            </View>
-                        )}
-                    </PageSheetModal>
+                        profile={editingProfile}
+                        onSave={async (id, updatedData) => {
+                            await updateProfile(id, updatedData);
+                        }}
+                    />
 
                     {/* Actions */}
                     <SettingsSection title={t('settings.actions')}>
@@ -529,24 +474,7 @@ const styles = StyleSheet.create({
     innerContent: {
         padding: 16,
     },
-    inputGroup: {
-        marginBottom: 16,
-    },
-    input: {
-        borderWidth: 1,
-        borderRadius: 8,
-        padding: 10,
-        fontSize: 16,
-        marginTop: 4,
-    },
-    modalContainer: { flex: 1 },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        padding: 16,
-        borderBottomWidth: 1,
-    },
+
     modalItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',

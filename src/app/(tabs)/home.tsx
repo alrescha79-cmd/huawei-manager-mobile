@@ -11,8 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, DiagnosisResultModal, SpeedTestModal, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, SignalPointingModal, AdBanner, AdNative, NoSignalModal } from '@/components';
-import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles } from '@/components/home';
+import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, SignalPointingModal, AdBanner, AdNative } from '@/components';
+import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles, DiagnosisResultModal, SpeedTestModal, NoSignalModal } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
