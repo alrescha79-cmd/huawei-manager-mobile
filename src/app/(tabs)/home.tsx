@@ -146,21 +146,6 @@ export default function HomeScreen() {
             />
           }
         >
-          {/* <View style={styles.header}>
-            {!hasValidData && (
-              <TouchableOpacity
-                onPress={homeAuth.handleReLogin}
-                style={[styles.reLoginButton, { backgroundColor: colors.error }]}
-              >
-                <Text style={[typography.caption1, { color: '#FFFFFF' }]}>
-                  {t('home.reLogin')}
-                </Text>
-              </TouchableOpacity>
-            )}
-          </View> */}
-
-
-
           {!signalInfo && homeData.isRefreshing && (
             <>
               <ConnectionStatusSkeleton />
