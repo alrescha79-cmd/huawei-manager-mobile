@@ -6,7 +6,8 @@ import {
   TrafficStats,
   ModemStatus,
   WanInfo,
-  MobileDataStatus
+  MobileDataStatus,
+  FirmwareUpdateInfo
 } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
 
@@ -803,6 +804,39 @@ export class ModemService {
     } catch (error) {
       console.error('Error clearing traffic history:', error);
       return false;
+    }
+  }
+
+  // ============ Firmware Update Check ============
+
+  async checkFirmwareUpdate(): Promise<FirmwareUpdateInfo> {
+    // ponytail: single GET covers most modems; POST trigger + /status fallback added when needed
+    try {
+      const response = await this.apiClient.get('/api/online-update/check-new-version');
+
+      const newVersion = parseXMLValue(response, 'NewVersion') ||
+        parseXMLValue(response, 'newversion') ||
+        parseXMLValue(response, 'version') || '';
+      const curVersion = parseXMLValue(response, 'CurVersion') ||
+        parseXMLValue(response, 'curversion') ||
+        parseXMLValue(response, 'CurrentVersion') || '';
+      const status = parseXMLValue(response, 'Status') || parseXMLValue(response, 'status') || '';
+      const description = parseXMLValue(response, 'Desc') ||
+        parseXMLValue(response, 'desc') ||
+        parseXMLValue(response, 'Description') || '';
+
+      const isAvailable = status === '1' || status === '2' || newVersion !== '';
+
+      return {
+        isUpdateAvailable: isAvailable,
+        currentVersion: curVersion,
+        newVersion,
+        description,
+        status,
+      };
+    } catch (error) {
+      console.error('Error checking firmware update:', error);
+      throw error;
     }
   }
 }

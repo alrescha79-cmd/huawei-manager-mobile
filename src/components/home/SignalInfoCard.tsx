@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTheme } from '@/theme';
-import { CollapsibleCard } from '@/components';
+import { CollapsibleCard } from './CollapsibleCard';
 import {
     getSignalStrength,
     getSignalIconFromModemStatus,

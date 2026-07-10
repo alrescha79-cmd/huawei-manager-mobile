@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card } from './Card';
+import { Card } from '../Card';
 
 
 interface CollapsibleCardProps {

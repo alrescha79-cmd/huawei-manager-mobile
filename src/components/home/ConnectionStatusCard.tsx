@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
-import { CollapsibleCard, SignalBar } from '@/components';
+import { CollapsibleCard } from './CollapsibleCard';
+import { SignalBar } from './SignalBar';
 import { BatteryIndicator } from './BatteryIndicator';
 import {
     getSignalIcon,

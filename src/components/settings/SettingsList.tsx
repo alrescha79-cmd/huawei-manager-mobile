@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StyleProp, ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { BouncingDots } from './LoadingIndicators';
+import { BouncingDots } from '../LoadingIndicators';
 
 interface SettingsSectionProps {
     title?: string;

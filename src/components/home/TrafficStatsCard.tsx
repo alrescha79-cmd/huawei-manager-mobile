@@ -4,13 +4,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import {
     Card,
-    SpeedGauge,
-    DailyUsageCard,
-    UsageCard,
-    CompactUsageCard,
-    MonthlyComparisonCard,
     BouncingDots,
 } from '@/components';
+import { SpeedGauge } from './SpeedGauge';
+import { DailyUsageCard } from './DailyUsageCard';
+import { UsageCard } from './UsageCard';
+import { CompactUsageCard } from './CompactUsageCard';
+import { MonthlyComparisonCard } from './MonthlyComparisonCard';
 import { formatDuration, DurationUnits } from '@/utils/helpers';
 
 interface TrafficStats {

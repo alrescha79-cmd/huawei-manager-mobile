@@ -10,7 +10,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, BouncingDots, AnimatedScreen, AdNative } from '@/components';
+import { ThemedAlertHelper, SelectionModal, MeshGradientBackground, BouncingDots, AnimatedScreen, AdNative } from '@/components';
+import { SettingsSection, SettingsItem, PageHeader } from '@/components/settings';
 import { MaterialIcons } from '@expo/vector-icons';
 import { showInterstitial } from '@/services/ad.service';
 
@@ -31,6 +32,7 @@ export default function ModemSettingsScreen() {
     const [showAntennaModal, setShowAntennaModal] = useState(false);
     const [isChangingAntenna, setIsChangingAntenna] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
+    const [isCheckingFirmware, setIsCheckingFirmware] = useState(false);
 
     useEffect(() => {
         if (credentials?.modemIp) {
@@ -79,6 +81,30 @@ export default function ModemSettingsScreen() {
         return parts.join(' ');
     };
 
+    const handleCheckFirmware = async () => {
+        if (!modemService || isCheckingFirmware) return;
+
+        setIsCheckingFirmware(true);
+        try {
+            const updateInfo = await modemService.checkFirmwareUpdate();
+            if (updateInfo.isUpdateAvailable) {
+                ThemedAlertHelper.alert(
+                    t('settings.firmwareUpdateAvailable'),
+                    `${t('settings.currentVersion')}: ${updateInfo.currentVersion || modemInfo?.softwareVersion}\n${t('settings.newVersion')}: ${updateInfo.newVersion}\n\n${updateInfo.description}`
+                );
+            } else {
+                ThemedAlertHelper.alert(
+                    t('settings.checkFirmwareUpdate'),
+                    t('settings.firmwareUpToDate')
+                );
+            }
+        } catch (error) {
+            ThemedAlertHelper.alert(t('common.error'), t('alerts.failedCheckFirmware'));
+        } finally {
+            setIsCheckingFirmware(false);
+        }
+    };
+
     const handleAntennaChange = async (mode: 'auto' | 'internal' | 'external') => {
         if (!modemService || isChangingAntenna) return;
 
@@ -105,7 +131,7 @@ export default function ModemSettingsScreen() {
                 <PageHeader title={t('settings.modemInfo')} showBackButton />
                 <ScrollView
                     style={[styles.container, { backgroundColor: 'transparent' }]}
-                    contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
+                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 8 }}
                 >
                     <SettingsSection title={t('settings.deviceInfo')}>
                         {isLoading ? (
@@ -122,7 +148,13 @@ export default function ModemSettingsScreen() {
                                 <SettingsItem title={t('settings.imsi')} value={modemInfo?.imsi} showChevron={false} />
                                 <SettingsItem title={t('settings.hardwareVersion')} value={modemInfo?.hardwareVersion} showChevron={false} />
                                 <SettingsItem title={t('settings.softwareVersion')} value={modemInfo?.softwareVersion} showChevron={false} />
-                                <SettingsItem title={t('settings.webUiVersion')} value={modemInfo?.webUIVersion} showChevron={false} isLast />
+                                <SettingsItem title={t('settings.webUiVersion')} value={modemInfo?.webUIVersion} showChevron={false} />
+                                <SettingsItem 
+                                    title={t('settings.checkFirmwareUpdate')} 
+                                    onPress={handleCheckFirmware}
+                                    rightElement={isCheckingFirmware ? <BouncingDots size="small" color={colors.primary} /> : undefined}
+                                    isLast 
+                                />
                             </>
                         )}
                     </SettingsSection>

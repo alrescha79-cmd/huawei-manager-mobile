@@ -102,7 +102,11 @@ export default function NotificationSettingsScreen() {
             </View>
 
             <AnimatedScreen noAnimation>
-                <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                <ScrollView
+                    style={styles.content}
+                    contentContainerStyle={{ paddingBottom: 120 }}
+                    showsVerticalScrollIndicator={false}
+                >
 
                     {/* Usage Data Notifications */}
                     <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
@@ -219,7 +223,7 @@ export default function NotificationSettingsScreen() {
                             />
                         </View>
                     </View>
-                    <View style={{ height: 40 }} />
+
                 </ScrollView>
             </AnimatedScreen>
         </MeshGradientBackground>

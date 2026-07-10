@@ -3,7 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
-import { CollapsibleCard, BouncingDots } from '@/components';
+import { BouncingDots } from '@/components';
+import { CollapsibleCard } from './CollapsibleCard';
 import { colors } from 'react-native-keyboard-controller/lib/typescript/components/KeyboardToolbar/colors';
 
 interface QuickActionsCardProps {

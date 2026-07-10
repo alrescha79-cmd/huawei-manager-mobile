@@ -13,7 +13,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { BouncingDots, KeyboardAnimatedView, AdNative } from '@/components';
+import { BouncingDots, AdNative } from '@/components';
+import { KeyboardAnimatedView } from './KeyboardAnimatedView';
 import { SMSMessage } from '@/types';
 import { smsStyles as styles } from './sms.styles';
 

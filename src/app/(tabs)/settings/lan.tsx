@@ -5,14 +5,7 @@ import {
     StyleSheet,
     ScrollView,
     TouchableOpacity,
-    ActivityIndicator,
     TextInput,
-    Modal,
-    StatusBar,
-    Platform,
-    KeyboardAvoidingView,
-    Keyboard,
-    Pressable,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
@@ -20,7 +13,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NetworkSettingsService } from '@/services/network.settings.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, Button, InfoRow, SettingsSection, SettingsItem, SelectionModal, MeshGradientBackground, PageHeader, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative } from '@/components';
+import { ThemedAlertHelper, Button, SelectionModal, MeshGradientBackground, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative } from '@/components';
+import { InfoRow, SettingsSection, SettingsItem, PageHeader, ApnModal } from '@/components/settings';
 import { showInterstitial } from '@/services/ad.service';
 
 const ETHERNET_MODES = [
@@ -65,28 +59,8 @@ export default function LanSettingsScreen() {
 
     // APN Modal
     const [showApnModal, setShowApnModal] = useState(false);
-    const [editingApn, setEditingApn] = useState<string | null>(null);
-    const [apnName, setApnName] = useState('');
-    const [apnApn, setApnApn] = useState('');
-    const [apnUsername, setApnUsername] = useState('');
-    const [apnPassword, setApnPassword] = useState('');
-    const [apnAuthType, setApnAuthType] = useState<'none' | 'pap' | 'chap' | 'pap_chap'>('none');
-    const [apnIpType, setApnIpType] = useState<'ipv4' | 'ipv6' | 'ipv4v6'>('ipv4');
-    const [apnIsDefault, setApnIsDefault] = useState(false);
+    const [editingApn, setEditingApn] = useState<any | null>(null);
     const [isSavingApn, setIsSavingApn] = useState(false);
-
-    const [showApnAuthDropdown, setShowApnAuthDropdown] = useState(false);
-    const [showApnIpDropdown, setShowApnIpDropdown] = useState(false);
-
-    const [initialApnValues, setInitialApnValues] = useState<{
-        name: string;
-        apn: string;
-        username: string;
-        password: string;
-        authType: string;
-        ipType: string;
-        isDefault: boolean;
-    } | null>(null);
 
     useEffect(() => {
         if (credentials?.modemIp) {
@@ -184,100 +158,27 @@ export default function LanSettingsScreen() {
     // APN Logic
     const openAddApnModal = () => {
         setEditingApn(null);
-        setApnName('');
-        setApnApn('');
-        setApnUsername('');
-        setApnPassword('');
-        setApnAuthType('none');
-        setApnIpType('ipv4');
-        setApnIsDefault(false);
-        setInitialApnValues({
-            name: '',
-            apn: '',
-            username: '',
-            password: '',
-            authType: 'none',
-            ipType: 'ipv4',
-            isDefault: false,
-        });
         setShowApnModal(true);
     };
 
     const openEditApnModal = (profile: any) => {
-        setEditingApn(profile.id);
-        setApnName(profile.name);
-        setApnApn(profile.apn);
-        setApnUsername(profile.username);
-        setApnPassword(profile.password);
-        setApnAuthType(profile.authType);
-        setApnIpType(profile.ipType);
-        setApnIsDefault(profile.isDefault);
-        setInitialApnValues({
-            name: profile.name,
-            apn: profile.apn,
-            username: profile.username,
-            password: profile.password,
-            authType: profile.authType,
-            ipType: profile.ipType,
-            isDefault: profile.isDefault,
-        });
+        setEditingApn(profile);
         setShowApnModal(true);
     };
 
-    // Check if APN has changes
-    const hasApnChanges = () => {
-        if (!initialApnValues) return false;
-        return (
-            apnName !== initialApnValues.name ||
-            apnApn !== initialApnValues.apn ||
-            apnUsername !== initialApnValues.username ||
-            apnPassword !== initialApnValues.password ||
-            apnAuthType !== initialApnValues.authType ||
-            apnIpType !== initialApnValues.ipType ||
-            apnIsDefault !== initialApnValues.isDefault
-        );
-    };
-
-    // Handle APN modal close with confirmation
-    const handleCloseApnModal = () => {
-        if (hasApnChanges()) {
-            ThemedAlertHelper.alert(
-                t('common.unsavedChanges'),
-                t('common.discardChangesMessage'),
-                [
-                    { text: t('common.cancel'), style: 'cancel' },
-                    { text: t('common.discard'), style: 'destructive', onPress: () => setShowApnModal(false) }
-                ]
-            );
-        } else {
-            setShowApnModal(false);
-        }
-    };
-
-    const handleSaveApnProfile = async () => {
+    const handleSaveApnProfile = async (profileData: any) => {
         if (!networkSettingsService || isSavingApn) return;
-        if (!apnName.trim() || !apnApn.trim()) {
-            ThemedAlertHelper.alert(t('common.error'), t('networkSettings.apnRequired'));
-            return;
-        }
-
         setIsSavingApn(true);
         try {
-            const profileData = {
-                name: apnName.trim(),
-                apn: apnApn.trim(),
-                username: apnUsername,
-                password: apnPassword,
-                authType: apnAuthType,
-                ipType: apnIpType,
-                isDefault: apnIsDefault,
+            const data = {
+                ...profileData,
                 readOnly: false,
             };
 
             if (editingApn) {
-                await networkSettingsService.updateAPNProfile({ id: editingApn, ...profileData });
+                await networkSettingsService.updateAPNProfile({ id: editingApn.id, ...data });
             } else {
-                await networkSettingsService.createAPNProfile(profileData);
+                await networkSettingsService.createAPNProfile(data);
             }
             setShowApnModal(false);
             showInterstitial(() => {
@@ -348,7 +249,7 @@ export default function LanSettingsScreen() {
                 <PageHeader title={t('settings.lanSettings')} showBackButton />
                 <ScrollView
                     style={[styles.container, { backgroundColor: 'transparent' }]}
-                    contentContainerStyle={{ paddingBottom: 40, paddingTop: 8 }}
+                    contentContainerStyle={{ paddingBottom: 120, paddingTop: 8 }}
                 >
                     {/* Ethernet Section */}
                     <SettingsSection title={t('networkSettings.ethernet')}>
@@ -508,135 +409,14 @@ export default function LanSettingsScreen() {
                     </SettingsSection>
 
                     {/* APN Modal */}
-                    <Modal
+                    <ApnModal
                         visible={showApnModal}
-                        animationType="slide"
-                        presentationStyle="pageSheet"
-                        onRequestClose={handleCloseApnModal}
-                    >
-                        <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
-                            <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                                <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
-                                    {editingApn ? t('networkSettings.editApn') : t('networkSettings.addApn')}
-                                </Text>
-                                <TouchableOpacity onPress={handleCloseApnModal}>
-                                    <MaterialIcons name="close" size={28} color={colors.primary} />
-                                </TouchableOpacity>
-                            </View>
-
-                            <KeyboardAvoidingView
-                                behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-                                style={{ flex: 1 }}
-                            >
-                                <ScrollView
-                                    style={{ flex: 1, padding: 20 }}
-                                    contentContainerStyle={{ paddingBottom: 20 }}
-                                    keyboardShouldPersistTaps="handled"
-                                >
-                                    {/* Profile Name */}
-                                    <View style={{ marginBottom: 16 }}>
-                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('networkSettings.profileName')}</Text>
-                                        <TextInput
-                                            placeholder={t('networkSettings.profileName')}
-                                            placeholderTextColor={colors.textSecondary}
-                                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                            value={apnName}
-                                            onChangeText={setApnName}
-                                        />
-                                    </View>
-
-                                    {/* APN */}
-                                    <View style={{ marginBottom: 16 }}>
-                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>APN</Text>
-                                        <TextInput
-                                            placeholder="APN"
-                                            placeholderTextColor={colors.textSecondary}
-                                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                            value={apnApn}
-                                            onChangeText={setApnApn}
-                                        />
-                                    </View>
-
-
-
-                                    {/* Username */}
-                                    <View style={{ marginBottom: 16 }}>
-                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.usernameLabel')}</Text>
-                                        <TextInput
-                                            placeholder={t('settings.usernameLabel')}
-                                            placeholderTextColor={colors.textSecondary}
-                                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                            value={apnUsername}
-                                            onChangeText={setApnUsername}
-                                        />
-                                    </View>
-
-                                    {/* Password */}
-                                    <View style={{ marginBottom: 16 }}>
-                                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.passwordLabel')}</Text>
-                                        <TextInput
-                                            placeholder={t('settings.passwordLabel')}
-                                            placeholderTextColor={colors.textSecondary}
-                                            style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
-                                            secureTextEntry
-                                            value={apnPassword}
-                                            onChangeText={setApnPassword}
-                                        />
-                                    </View>
-
-                                    {/* Set as Default Toggle */}
-                                    <View style={{
-                                        flexDirection: 'row',
-                                        alignItems: 'center',
-                                        justifyContent: 'space-between',
-                                        marginBottom: 16,
-                                        backgroundColor: colors.card,
-                                        padding: 12,
-                                        borderRadius: 8,
-                                        borderWidth: 1,
-                                        borderColor: colors.border
-                                    }}>
-                                        <View style={{ flex: 1, marginRight: 12 }}>
-                                            <Text style={[typography.body, { color: colors.text, fontWeight: 'bold' }]}>{t('networkSettings.setAsDefault')}</Text>
-                                            <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('networkSettings.setAsDefaultHint')}</Text>
-                                        </View>
-                                        <ThemedSwitch
-                                            value={apnIsDefault}
-                                            onValueChange={setApnIsDefault}
-                                            disabled={editingApn === activeApnProfileId}
-                                        />
-                                    </View>
-                                </ScrollView>
-
-                                <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 }]}>
-                                    <Pressable
-                                        style={({ pressed }) => [
-                                            styles.saveButton,
-                                            { backgroundColor: hasApnChanges() ? colors.primary : colors.textSecondary },
-                                            pressed && { opacity: 0.8 }
-                                        ]}
-                                        onPress={() => {
-                                            Keyboard.dismiss();
-                                            if (hasApnChanges()) {
-                                                handleSaveApnProfile();
-                                            } else {
-                                                setShowApnModal(false);
-                                            }
-                                        }}
-                                        disabled={isSavingApn}
-                                    >
-                                        {isSavingApn ? (
-                                            <BouncingDots size="small" color="#FFF" />
-                                        ) : (
-                                            <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>
-                                                {hasApnChanges() ? t('common.save') : t('common.cancel')}
-                                            </Text>
-                                        )}
-                                    </Pressable>
-                                </View>
-                            </KeyboardAvoidingView>
-                        </View>
-                    </Modal>
+                        onClose={() => { setShowApnModal(false); setEditingApn(null); }}
+                        onSave={handleSaveApnProfile}
+                        profile={editingApn}
+                        activeApnProfileId={activeApnProfileId}
+                        isSaving={isSavingApn}
+                    />
                 </ScrollView>
             </MeshGradientBackground>
         </AnimatedScreen>
@@ -668,19 +448,4 @@ const styles = StyleSheet.create({
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingVertical: 12, paddingHorizontal: 16, marginLeft: 16,
     },
-    modalContainer: { flex: 1 },
-    modalHeader: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1
-    },
-    formGroup: { marginBottom: 24 },
-    input: {
-        height: 50, borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, fontSize: 16
-    },
-    footer: {
-        padding: 20, paddingBottom: 40, borderTopWidth: 1
-    },
-    saveButton: {
-        height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center'
-    }
 });
