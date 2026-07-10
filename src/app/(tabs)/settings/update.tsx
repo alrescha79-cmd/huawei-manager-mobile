@@ -1,300 +1,27 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, Linking, Platform, ScrollView } from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
-import Animated, {
-    useAnimatedStyle,
-    useSharedValue,
-    withRepeat,
-    withTiming,
-    Easing,
-    cancelAnimation
-} from 'react-native-reanimated';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { Stack } from 'expo-router';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import Animated from 'react-native-reanimated';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import Constants from 'expo-constants';
-import * as FileSystem from 'expo-file-system/legacy';
-import { MeshGradientBackground, AnimatedScreen, AdNative, ThemedAlertHelper } from '@/components';
+import { MeshGradientBackground, AnimatedScreen, AdNative } from '@/components';
 import { PageHeader, ReleaseNotesModal } from '@/components/settings';
-
-let IntentLauncher: any = null;
-try {
-    IntentLauncher = require('expo-intent-launcher');
-} catch (e) {
-    console.warn('expo-intent-launcher is not available in this environment:', e);
-}
-
-const GITHUB_OWNER = 'alrescha79-cmd';
-const GITHUB_REPO = 'huawei-manager-mobile';
-
-interface ReleaseInfo {
-    tagName: string;
-    version: string;
-    downloadUrl: string;
-    releaseNotes: string;
-    publishedAt: string;
-    isPreRelease: boolean;
-}
-
-/**
- * Compare semantic versions
- * Returns: 1 if v1 > v2, -1 if v1 < v2, 0 if equal
- */
-function compareVersions(v1: string, v2: string): number {
-    const normalize = (v: string) => v.replace(/^v/, '').replace(/-.*$/, '').split('.').map(n => parseInt(n, 10) || 0);
-    const parts1 = normalize(v1);
-    const parts2 = normalize(v2);
-
-    for (let i = 0; i < Math.max(parts1.length, parts2.length); i++) {
-        const p1 = parts1[i] || 0;
-        const p2 = parts2[i] || 0;
-        if (p1 > p2) return 1;
-        if (p1 < p2) return -1;
-    }
-    return 0;
-}
-
+import { useUpdateCheck, useUpdateDownload } from '@/hooks/settings';
 
 export default function UpdateScreen() {
-    const { colors, typography, spacing, isDark } = useTheme();
+    const { colors, typography, isDark } = useTheme();
     const { t } = useTranslation();
-    const router = useRouter();
 
-    const [checking, setChecking] = useState(false);
-    const [updateAvailable, setUpdateAvailable] = useState(false);
-    const [releaseInfo, setReleaseInfo] = useState<ReleaseInfo | null>(null);
-    const [preReleaseInfo, setPreReleaseInfo] = useState<ReleaseInfo | null>(null);
-    const [preReleaseAvailable, setPreReleaseAvailable] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [hasChecked, setHasChecked] = useState(false);
+    const {
+        checking, updateAvailable, releaseInfo, preReleaseInfo, preReleaseAvailable,
+        error, hasChecked, animatedStyle, availableCount, checkUpdate,
+    } = useUpdateCheck();
 
-    const [downloading, setDownloading] = useState(false);
-    const [downloadProgress, setDownloadProgress] = useState(0);
-    const [downloadResumable, setDownloadResumable] = useState<FileSystem.DownloadResumable | null>(null);
-    const isCancelledRef = useRef(false);
+    const { downloading, downloadProgress, handleDownloadAndInstall, handleCancelDownload } = useUpdateDownload({ t });
+
     const [selectedNotes, setSelectedNotes] = useState<{ version: string; notes: string } | null>(null);
-
-    const rotation = useSharedValue(0);
-
-    const animatedStyle = useAnimatedStyle(() => ({
-        transform: [{ rotate: `${rotation.value}deg` }],
-    }));
-
-    useEffect(() => {
-        if (checking) {
-            rotation.value = 0;
-            rotation.value = withRepeat(
-                withTiming(360, { duration: 1000, easing: Easing.linear }),
-                -1,
-                false
-            );
-        } else {
-            cancelAnimation(rotation);
-            rotation.value = 0;
-        }
-    }, [checking]);
-
-    useEffect(() => {
-        checkUpdate();
-    }, []);
-
-    const checkUpdate = useCallback(async () => {
-        setChecking(true);
-        setError(null);
-        setUpdateAvailable(false);
-        setPreReleaseAvailable(false);
-        setReleaseInfo(null);
-        setPreReleaseInfo(null);
-
-        try {
-            const response = await fetch(
-                `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/releases`,
-                {
-                    headers: {
-                        'Accept': 'application/vnd.github.v3+json',
-                    },
-                }
-            );
-
-            if (!response.ok) {
-                throw new Error(`GitHub API error: ${response.status}`);
-            }
-
-            const releases = await response.json();
-            const currentVersion = Constants.expoConfig?.version || '0.0.0';
-
-            const stableRelease = releases.find((r: any) => !r.prerelease && !r.draft);
-            const preRelease = releases.find((r: any) => r.prerelease && !r.draft);
-
-            const parseRelease = (data: any, isPreRelease: boolean): ReleaseInfo => {
-                const apkAsset = data.assets?.find((asset: any) =>
-                    asset.name?.endsWith('.apk') || asset.name?.includes('universal')
-                );
-
-                let version = '';
-                const tagName = data.tag_name || '';
-
-                const semverMatch = tagName.match(/v?(\d+\.\d+\.\d+)/);
-                if (semverMatch) {
-                    version = semverMatch[1];
-                } else {
-                    const nameMatch = (data.name || '').match(/v?(\d+\.\d+\.\d+)/);
-                    if (nameMatch) {
-                        version = nameMatch[1];
-                    } else if (apkAsset?.name) {
-                        const assetMatch = apkAsset.name.match(/v?(\d+\.\d+\.\d+)/);
-                        if (assetMatch) {
-                            version = assetMatch[1];
-                        }
-                    }
-                }
-
-                return {
-                    tagName: tagName,
-                    version: version,
-                    downloadUrl: apkAsset?.browser_download_url || data.html_url || '',
-                    releaseNotes: data.body || '',
-                    publishedAt: data.published_at || '',
-                    isPreRelease,
-                };
-            };
-
-            if (stableRelease) {
-                const info = parseRelease(stableRelease, false);
-                setReleaseInfo(info);
-                const comparison = compareVersions(info.version, currentVersion);
-                setUpdateAvailable(comparison > 0);
-            }
-
-            if (preRelease) {
-                const info = parseRelease(preRelease, true);
-                setPreReleaseInfo(info);
-                const comparison = info.version ? compareVersions(info.version, currentVersion) : 1;
-                setPreReleaseAvailable(comparison > 0);
-            }
-
-            setHasChecked(true);
-        } catch (err) {
-            console.error('Update check failed:', err);
-            setError(err instanceof Error ? err.message : 'Unknown error');
-            setHasChecked(true);
-        } finally {
-            setChecking(false);
-        }
-    }, []);
-
-    const handleDownloadAndInstall = async (url: string, versionName: string) => {
-        if (Platform.OS !== 'android') {
-            Linking.openURL(url);
-            return;
-        }
-
-        try {
-            setDownloading(true);
-            setDownloadProgress(0);
-            isCancelledRef.current = false;
-
-            const filename = `huawei-manager-v${versionName}.apk`;
-            const localUri = `${FileSystem.cacheDirectory}${filename}`;
-
-            const fileInfo = await FileSystem.getInfoAsync(localUri);
-            if (fileInfo.exists) {
-                await FileSystem.deleteAsync(localUri, { idempotent: true });
-            }
-
-            const resumable = FileSystem.createDownloadResumable(
-                url,
-                localUri,
-                {},
-                (downloadProgressData) => {
-                    const progress = downloadProgressData.totalBytesWritten / downloadProgressData.totalBytesExpectedToWrite;
-                    setDownloadProgress(Math.round(progress * 100));
-                }
-            );
-
-            setDownloadResumable(resumable);
-
-            const result = await resumable.downloadAsync();
-            setDownloading(false);
-            setDownloadResumable(null);
-
-            if (result && result.uri) {
-                let launched = false;
-                if (Platform.OS === 'android') {
-                    try {
-                        const contentUri = await FileSystem.getContentUriAsync(result.uri);
-                        if (IntentLauncher && IntentLauncher.startActivityAsync) {
-                            await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-                                data: contentUri,
-                                type: 'application/vnd.android.package-archive',
-                                flags: 1, // FLAG_GRANT_READ_URI_PERMISSION
-                            });
-                            launched = true;
-                        }
-                    } catch (e) {
-                        console.warn('Failed to launch APK installation intent:', e);
-                    }
-                }
-
-                if (!launched) {
-                    ThemedAlertHelper.alert(
-                        t('common.success') || 'Success',
-                        t('settings.downloadComplete') || 'Update downloaded successfully. Please open and install the APK file manually, or open the link in your browser.',
-                        [
-                            { text: t('common.ok') || 'OK' },
-                            { text: t('settings.downloadUpdate') || 'Open Browser', onPress: () => Linking.openURL(url) }
-                        ]
-                    );
-                }
-            } else {
-                throw new Error('Download failed: result is empty');
-            }
-        } catch (err: any) {
-            if (isCancelledRef.current) {
-                isCancelledRef.current = false;
-                return;
-            }
-            console.error('Download/Install failed:', err);
-            setDownloading(false);
-            setDownloadResumable(null);
-
-            const message = err instanceof Error ? err.message : String(err);
-            ThemedAlertHelper.alert(
-                t('common.error') || 'Error',
-                `${t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.'}\n\n${message}`,
-                [
-                    { text: t('common.ok') || 'OK' },
-                    { text: t('settings.downloadUpdate') || 'Open Browser', onPress: () => Linking.openURL(url) }
-                ]
-            );
-        }
-    };
-
-    const handleCancelDownload = async () => {
-        if (downloadResumable) {
-            try {
-                isCancelledRef.current = true;
-                await downloadResumable.cancelAsync();
-                setDownloading(false);
-                setDownloadProgress(0);
-                setDownloadResumable(null);
-                ThemedAlertHelper.alert(
-                    t('settings.downloadCancelledTitle') || 'Cancelled',
-                    t('settings.downloadCancelledMessage') || 'Download cancelled.'
-                );
-            } catch (e) {
-                console.error('Error cancelling download:', e);
-                isCancelledRef.current = false;
-                const message = e instanceof Error ? e.message : String(e);
-                ThemedAlertHelper.alert(
-                    t('common.error') || 'Error',
-                    `${t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.'}\n\n${message}`
-                );
-            }
-        }
-    };
-
-    const availableCount = (updateAvailable ? 1 : 0) + (preReleaseAvailable ? 1 : 0);
 
     return (
         <AnimatedScreen noAnimation>
@@ -442,7 +169,7 @@ export default function UpdateScreen() {
 
                                                 <View style={styles.releaseActions}>
                                                     <TouchableOpacity
-                                                        style={[styles.downloadBtn, { backgroundColor: '#10B981' }]} // Teal/green
+                                                        style={[styles.downloadBtn, { backgroundColor: '#10B981' }]}
                                                         onPress={() => releaseInfo.downloadUrl && handleDownloadAndInstall(releaseInfo.downloadUrl, releaseInfo.version)}
                                                     >
                                                         <MaterialCommunityIcons name="download" size={18} color="#FFF" />
@@ -489,7 +216,7 @@ export default function UpdateScreen() {
 
                                                 <View style={styles.releaseActions}>
                                                     <TouchableOpacity
-                                                        style={[styles.downloadBtn, { backgroundColor: '#F59E0B' }]} // Yellow/Orange
+                                                        style={[styles.downloadBtn, { backgroundColor: '#F59E0B' }]}
                                                         onPress={() => preReleaseInfo.downloadUrl && handleDownloadAndInstall(preReleaseInfo.downloadUrl, preReleaseInfo.version || preReleaseInfo.tagName)}
                                                     >
                                                         <MaterialCommunityIcons name="lightning-bolt" size={18} color="#FFF" />

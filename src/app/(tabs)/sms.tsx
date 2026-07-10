@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,432 +9,45 @@ import {
   StatusBar,
   Platform,
   TextInput,
-  Linking,
-  AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { LinearGradient } from 'expo-linear-gradient';
-import dayjs from 'dayjs';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { Card, CardHeader, Input, Button, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, AdBanner, AdNative } from '@/components';
-import { SMSListItem, SMSStatsCard, SMSDetailModal, SMSStatsSkeleton, SMSListSkeleton, SMSSearchSkeleton, smsStyles as styles, SMSFilterType, KeyboardAnimatedView } from '@/components/sms';
+import { MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, AdNative } from '@/components';
+import { SMSListItem, SMSStatsCard, SMSDetailModal, SMSStatsSkeleton, SMSListSkeleton, SMSSearchSkeleton, smsStyles as styles, KeyboardAnimatedView } from '@/components/sms';
 import { formatTimeAgo } from '@/utils/formatters';
-import { useAuthStore } from '@/stores/auth.store';
-import { useSMSStore } from '@/stores/sms.store';
-import { SMSService } from '@/services/sms.service';
-import { checkNewSMSNotification } from '@/services/notification.service';
 import { useTranslation } from '@/i18n';
-import { SMSMessage } from '@/types';
+import { useSMSData, useSMSActions, useMessageLinks } from '@/hooks/sms';
 
 export default function SMSScreen() {
   const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
   const { t } = useTranslation();
-  const { credentials } = useAuthStore();
   const insets = useSafeAreaInsets();
   const bottomOffset = 88 + (insets.bottom > 0 ? insets.bottom : 16);
-  const {
-    messages,
-    smsCount,
-    setMessages,
-    setSMSCount,
-    removeMessage,
-  } = useSMSStore();
 
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [pullProgress, setPullProgress] = useState(0);
-  const [smsService, setSMSService] = useState<SMSService | null>(null);
-  const [showCompose, setShowCompose] = useState(false);
-  const [newPhone, setNewPhone] = useState('');
-  const [newMessage, setNewMessage] = useState('');
-  const [isSending, setIsSending] = useState(false);
-  const [smsSupported, setSmsSupported] = useState(true);
-
-  const [selectedMessage, setSelectedMessage] = useState<SMSMessage | null>(null);
-  const [showDetail, setShowDetail] = useState(false);
-  const [replyMessage, setReplyMessage] = useState('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [messageFilter, setMessageFilter] = useState<SMSFilterType>('all');
-
-  const [isSelectionMode, setIsSelectionMode] = useState(false);
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-
-  useEffect(() => {
-    if (credentials?.modemIp) {
-      const service = new SMSService(credentials.modemIp);
-      setSMSService(service);
-
-      service.resetSMSCache();
-
-      loadData(service);
-
-      const intervalId = setInterval(() => {
-        if (AppState.currentState === 'active') {
-          loadDataSilent(service);
-        }
-      }, 10000);
-
-      return () => clearInterval(intervalId);
-    }
-  }, [credentials]);
-
-  const loadData = async (service: SMSService) => {
-    try {
-      setIsRefreshing(true);
-
-      let isSupported = false;
-      try {
-        isSupported = await service.isSMSSupported();
-      } catch (error: any) {
-        if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
-          const { requestRelogin } = useAuthStore.getState();
-          requestRelogin();
-        }
-        setSmsSupported(false);
-        return;
-      }
-
-      if (!isSupported) {
-        setSmsSupported(false);
-        setMessages([]);
-        setSMSCount({
-          localUnread: 0,
-          localInbox: 0,
-          localOutbox: 0,
-          localDraft: 0,
-          simUnread: 0,
-          simInbox: 0,
-          simOutbox: 0,
-          simDraft: 0,
-          newMsg: 0,
-          localDeleted: 0,
-          simDeleted: 0,
-          localMax: 0,
-          simMax: 0,
-        });
-        return;
-      }
-
-      try {
-        const [inboxMessages, count] = await Promise.all([
-          service.getSMSList(1, 20, 1),
-          service.getSMSCount(),
-        ]);
-
-        let sentMessages: typeof inboxMessages = [];
-        try {
-          if (count.localOutbox > 0) {
-            sentMessages = await service.getSMSList(1, 20, 2);
-          }
-        } catch (outboxError) {
-          console.log('Outbox loading skipped:', outboxError);
-        }
-
-        const allMessages = [...inboxMessages, ...sentMessages].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-
-        setMessages(allMessages);
-        setSMSCount(count);
-        setSmsSupported(true);
-
-        if (count.localUnread > 0) {
-          checkNewSMSNotification(count.localUnread, {
-            title: t('notifications.newSms'),
-            body: (n) => t('notifications.newSmsBody', { count: n }),
-          });
-        }
-      } catch (error: any) {
-        if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
-          const { requestRelogin } = useAuthStore.getState();
-          requestRelogin();
-        } else {
-          setSmsSupported(false);
-        }
-      }
-    } finally {
-      setIsRefreshing(false);
-    }
-  };
-
-  const loadDataSilent = async (service: SMSService) => {
-    try {
-      const isSupported = await service.isSMSSupported();
-      if (!isSupported) {
-        setSmsSupported(false);
-        return;
-      }
-
-      try {
-        const [inboxMessages, count] = await Promise.all([
-          service.getSMSList(1, 20, 1),
-          service.getSMSCount(),
-        ]);
-
-        let sentMessages: typeof inboxMessages = [];
-        try {
-          if (count.localOutbox > 0) {
-            sentMessages = await service.getSMSList(1, 20, 2);
-          }
-        } catch {
-        }
-
-        const allMessages = [...inboxMessages, ...sentMessages].sort(
-          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-        );
-
-        setMessages(allMessages);
-        setSMSCount(count);
-      } catch (error: any) {
-        if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
-          const { requestRelogin } = useAuthStore.getState();
-          requestRelogin();
-        }
-      }
-    } catch (error: any) {
-      if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
-        const { requestRelogin } = useAuthStore.getState();
-        requestRelogin();
-      }
-    }
-  };
-
-  const handleRefresh = () => {
-    if (smsService) {
-      loadData(smsService);
-    }
-  };
-
-  const handleDelete = async (index: string) => {
-    if (!smsService) return;
-
-    ThemedAlertHelper.alert(
-      t('sms.deleteSms'),
-      t('sms.deleteConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              await smsService.deleteSMS(index);
-              removeMessage(index);
-              ThemedAlertHelper.alert(t('common.success'), t('sms.messageDeleted'));
-            } catch (error) {
-              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedDeleteSms'));
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleLongPress = (message: SMSMessage) => {
-    if (!isSelectionMode) {
-      setIsSelectionMode(true);
-      setSelectedIds(new Set([`${message.boxType}-${message.index}`]));
-    }
-  };
-
-  const toggleSelect = (message: SMSMessage) => {
-    const id = `${message.boxType}-${message.index}`;
-    setSelectedIds(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(id)) {
-        newSet.delete(id);
-      } else {
-        newSet.add(id);
-      }
-      return newSet;
-    });
-  };
-
-  const handleSelectAll = () => {
-    if (selectedIds.size === filteredMessages.length) {
-      setSelectedIds(new Set());
-    } else {
-      const allIds = filteredMessages.map(m => `${m.boxType}-${m.index}`);
-      setSelectedIds(new Set(allIds));
-    }
-  };
-
-  const exitSelectionMode = () => {
-    setIsSelectionMode(false);
-    setSelectedIds(new Set());
-  };
-
-  const handleDeleteSelected = async () => {
-    if (!smsService || selectedIds.size === 0) return;
-
-    ThemedAlertHelper.alert(
-      t('sms.deleteSelected'),
-      t('sms.deleteSelectedConfirm', { count: selectedIds.size }),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.delete'),
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const idsToDelete = Array.from(selectedIds);
-              for (const id of idsToDelete) {
-                const index = id.split('-').slice(1).join('-');
-                await smsService.deleteSMS(index);
-                removeMessage(index);
-              }
-              ThemedAlertHelper.alert(
-                t('common.success'),
-                t('sms.messagesDeleted', { count: idsToDelete.length })
-              );
-              exitSelectionMode();
-            } catch (error) {
-              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedDeleteSms'));
-            }
-          },
-        },
-      ]
-    );
-  };
-
-  const handleSend = async () => {
-    if (!smsService || !newPhone || !newMessage) {
-      ThemedAlertHelper.alert(t('common.error'), t('sms.fillAllFields'));
-      return;
-    }
-
-    setIsSending(true);
-    try {
-      await smsService.sendSMS(newPhone, newMessage);
-      ThemedAlertHelper.alert(t('common.success'), t('sms.messageSent'));
-      setShowCompose(false);
-      setNewPhone('');
-      setNewMessage('');
-      handleRefresh();
-    } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSendSms'));
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleOpenDetail = async (message: SMSMessage) => {
-    setSelectedMessage(message);
-    setReplyMessage('');
-    setShowDetail(true);
-
-    if (smsService && message.smstat === '0') {
-      try {
-        await smsService.markAsRead(message.index);
-      } catch (error) {
-        console.error('Failed to mark SMS as read:', error);
-      }
-    }
-  };
-
-  const handleReply = async () => {
-    if (!smsService || !selectedMessage || !replyMessage) {
-      ThemedAlertHelper.alert(t('common.error'), t('sms.fillAllFields'));
-      return;
-    }
-
-    setIsSending(true);
-    try {
-      await smsService.sendSMS(selectedMessage.phone, replyMessage);
-      ThemedAlertHelper.alert(t('common.success'), t('sms.messageSent'));
-      setReplyMessage('');
-      setShowDetail(false);
-      setSelectedMessage(null);
-      handleRefresh();
-    } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSendSms'));
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const filteredMessages = messages.filter(msg => {
-    if (messageFilter === 'unread' && msg.smstat !== '0') return false;
-    if (messageFilter === 'sent' && msg.boxType !== 2) return false;
-
-    if (!searchQuery.trim()) return true;
-    const query = searchQuery.toLowerCase();
-    return (
-      msg.phone.toLowerCase().includes(query) ||
-      msg.content.toLowerCase().includes(query)
-    );
+  const smsData = useSMSData({ t });
+  const smsActions = useSMSActions({
+    smsService: smsData.smsService,
+    messages: smsData.messages,
+    filteredMessages: smsData.filteredMessages,
+    removeMessage: smsData.removeMessage,
+    handleRefresh: smsData.handleRefresh,
+    t,
   });
+  const { renderMessageWithLinks } = useMessageLinks();
 
+  const {
+    isRefreshing, smsSupported, searchQuery, setSearchQuery,
+    messageFilter, setMessageFilter, smsCount, filteredMessages, handleRefresh,
+  } = smsData;
 
-  const handleMarkAllAsRead = async () => {
-    if (!smsService) return;
-    const unreadMessages = messages.filter(m => m.smstat === '0');
-    for (const msg of unreadMessages) {
-      try {
-        await smsService.markAsRead(msg.index);
-      } catch (error) {
-        console.error('Failed to mark SMS as read:', error);
-      }
-    }
-    handleRefresh();
-  };
-
-  const renderMessageWithLinks = (content: string) => {
-    const urlRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|([a-zA-Z0-9][-a-zA-Z0-9]*\.[a-zA-Z]{2,}(?:\/[^\s]*)?)/gi;
-
-    const parts = content.split(urlRegex).filter(Boolean);
-
-    if (parts.length === 1 && !urlRegex.test(content)) {
-      return (
-        <Text style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
-          {content}
-        </Text>
-      );
-    }
-
-    urlRegex.lastIndex = 0;
-
-    const elements: React.ReactNode[] = [];
-    let lastIndex = 0;
-    let match;
-    let key = 0;
-
-    while ((match = urlRegex.exec(content)) !== null) {
-      if (match.index > lastIndex) {
-        elements.push(
-          <Text key={key++} style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
-            {content.substring(lastIndex, match.index)}
-          </Text>
-        );
-      }
-
-      const url = match[0];
-      const fullUrl = url.startsWith('http') ? url : `https://${url}`;
-
-      elements.push(
-        <Text
-          key={key++}
-          style={[typography.body, { color: colors.primary, lineHeight: 22, textDecorationLine: 'underline' }]}
-          onPress={() => Linking.openURL(fullUrl)}
-        >
-          {url}
-        </Text>
-      );
-
-      lastIndex = match.index + match[0].length;
-    }
-
-    if (lastIndex < content.length) {
-      elements.push(
-        <Text key={key++} style={[typography.body, { color: colors.text, lineHeight: 22 }]}>
-          {content.substring(lastIndex)}
-        </Text>
-      );
-    }
-
-    return <Text>{elements}</Text>;
-  };
+  const {
+    showCompose, setShowCompose, newPhone, setNewPhone, newMessage, setNewMessage,
+    isSending, handleSend, selectedMessage, setSelectedMessage, showDetail, setShowDetail,
+    replyMessage, setReplyMessage, handleOpenDetail, handleReply,
+    isSelectionMode, selectedIds, handleLongPress, toggleSelect, handleSelectAll,
+    exitSelectionMode, handleDeleteSelected, handleDelete, handleMarkAllAsRead,
+  } = smsActions;
 
   return (
     <>
@@ -544,7 +157,6 @@ export default function SMSScreen() {
 
             {!smsSupported || filteredMessages.length === 0 ? (
               <>
-
                 <View style={[styles.emptyState, {
                   backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
                   borderWidth: 1,
@@ -556,7 +168,6 @@ export default function SMSScreen() {
                     {isRefreshing ? t('sms.loadingMessages') : searchQuery ? t('sms.noSearchResults') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
                   </Text>
                 </View>
-
               </>
             ) : (
               <View style={{ marginBottom: spacing.md }}>
@@ -640,9 +251,7 @@ export default function SMSScreen() {
               onPress={() => setShowCompose(true)}
               activeOpacity={0.8}
             >
-
               <MaterialIcons name="add" size={28} color={colors.text} />
-
             </TouchableOpacity>
           )}
         </MeshGradientBackground>

@@ -143,7 +143,7 @@ jobs:
             | **Commit** | `${{ steps.get_info.outputs.short_sha }}` |
             
             > ⚠️ This is a test build, not for production use.
-            > 🗑️ This release will be deleted after testing.
+            > Silakan unduh jika ingin mencoba versi terbaru sebelum rilis resmi.
           prerelease: true
           files: ${{ steps.rename_apk.outputs.apk_filename }}
         env:
