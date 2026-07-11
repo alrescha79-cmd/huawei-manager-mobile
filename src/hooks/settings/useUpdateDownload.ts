@@ -78,7 +78,7 @@ export function useUpdateDownload({ t }: UseUpdateDownloadProps) {
                         t('common.success') || 'Success',
                         t('settings.downloadComplete') || 'Update downloaded successfully. Please open and install the APK file manually, or open the link in your browser.',
                         [
-                            { text: t('common.ok') || 'OK' },
+                            { text: t('common.ok') || 'OK', style: 'cancel' },
                             { text: t('settings.downloadUpdate') || 'Open Browser', onPress: () => Linking.openURL(url) }
                         ]
                     );
@@ -100,7 +100,7 @@ export function useUpdateDownload({ t }: UseUpdateDownloadProps) {
                 t('common.error') || 'Error',
                 `${t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.'}\n\n${message}`,
                 [
-                    { text: t('common.ok') || 'OK' },
+                    { text: t('common.ok') || 'OK', style: 'cancel' },
                     { text: t('settings.downloadUpdate') || 'Open Browser', onPress: () => Linking.openURL(url) }
                 ]
             );
@@ -117,7 +117,8 @@ export function useUpdateDownload({ t }: UseUpdateDownloadProps) {
                 setDownloadResumable(null);
                 ThemedAlertHelper.alert(
                     t('settings.downloadCancelledTitle') || 'Cancelled',
-                    t('settings.downloadCancelledMessage') || 'Download cancelled.'
+                    t('settings.downloadCancelledMessage') || 'Download cancelled.',
+                    [{ text: t('common.ok') || 'OK', style: 'default' }]
                 );
             } catch (e) {
                 console.error('Error cancelling download:', e);
@@ -125,7 +126,8 @@ export function useUpdateDownload({ t }: UseUpdateDownloadProps) {
                 const message = e instanceof Error ? e.message : String(e);
                 ThemedAlertHelper.alert(
                     t('common.error') || 'Error',
-                    `${t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.'}\n\n${message}`
+                    `${t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.'}\n\n${message}`,
+                    [{ text: t('common.ok') || 'OK', style: 'default' }]
                 );
             }
         }
