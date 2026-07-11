@@ -84,6 +84,35 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
+      - name: Setup release keystore
+        if: ${{ env.HAS_RELEASE_KEYSTORE == 'true' }}
+        env:
+          HAS_RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+
+          # Inject signingConfigs.release into build.gradle
+          GRADLE_FILE="android/app/build.gradle"
+          awk '
+          /signingConfigs \{/ { in_signing=1 }
+          in_signing && /^    \}/ {
+              print "        release {"
+              print "            storeFile file(\"release.keystore\")"
+              print "            storePassword System.getenv(\"RELEASE_KEYSTORE_PASSWORD\") ?: \"\""
+              print "            keyAlias System.getenv(\"RELEASE_KEY_ALIAS\") ?: \"\""
+              print "            keyPassword System.getenv(\"RELEASE_KEY_PASSWORD\") ?: \"\""
+              print "        }"
+              in_signing=0
+          }
+          { print }
+          ' "$GRADLE_FILE" > "${GRADLE_FILE}.tmp" && mv "${GRADLE_FILE}.tmp" "$GRADLE_FILE"
+
+          # Point release buildType to signingConfigs.release
+          sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' "$GRADLE_FILE"
+
       - name: Build APK (single architecture)
         if: ${{ github.event.inputs.architecture != 'all' }}
         run: |
@@ -93,6 +122,9 @@ jobs:
             --no-daemon
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
       - name: Build APK (all architectures)
         if: ${{ github.event.inputs.architecture == 'all' }}
@@ -101,6 +133,9 @@ jobs:
           ./gradlew assembleRelease --no-daemon
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
       - name: Rename APK
         id: rename_apk
