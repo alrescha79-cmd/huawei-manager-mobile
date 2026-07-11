@@ -84,6 +84,22 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
+      - name: Ensure debug keystore exists
+        run: |
+          # expo prebuild --clean may not create debug.keystore on CI,
+          # causing assembleRelease to produce an unsigned/invalid APK
+          if [ ! -f android/app/debug.keystore ]; then
+            keytool -genkeypair -v -storetype PKCS12 \
+              -keystore android/app/debug.keystore \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+            echo "Generated debug.keystore"
+          else
+            echo "debug.keystore already exists"
+          fi
+
       - name: Setup release keystore
         if: ${{ env.HAS_RELEASE_KEYSTORE == 'true' }}
         env:
