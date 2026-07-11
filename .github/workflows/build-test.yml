@@ -103,6 +103,22 @@ jobs:
             echo "debug.keystore already exists"
           fi
 
+      - name: Fix ABI Bleeding
+        run: |
+          # If building specific architectures, we MUST filter ABIs so AARs (like Reanimated) 
+          # don't bleed their other architecture binaries into the APK, causing crashes.
+          GRADLE_FILE="android/app/build.gradle"
+          awk '
+          /defaultConfig \{/ {
+              print
+              print "        if (project.hasProperty(\"reactNativeArchitectures\")) {"
+              print "            ndk {"
+              print "                abiFilters (*project.reactNativeArchitectures.split(\",\"))"
+              print "            }"
+              print "        }"
+              next
+          }1' "$GRADLE_FILE" > "${GRADLE_FILE}.tmp" && mv "${GRADLE_FILE}.tmp" "$GRADLE_FILE"
+
       - name: Setup release keystore
         if: ${{ env.HAS_RELEASE_KEYSTORE == 'true' }}
         env:
