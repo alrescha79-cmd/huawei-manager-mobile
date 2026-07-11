@@ -182,6 +182,7 @@ export function SignalInfoCard({ t, signalInfo, modemStatus }: SignalInfoCardPro
     return (
         <CollapsibleCard
             title={t('home.signalInfo')}
+            storageKey="home.signalInfo.expanded"
             headerRight={headerRightBadge}
         >
             <View style={styles.gridContainer}>

@@ -17,6 +17,7 @@ import { ModalBackground } from './ModalBackground';
 export interface SelectionOption {
     label: string;
     value: string | number;
+    color?: string;
 }
 
 interface SelectionModalProps {
@@ -83,15 +84,20 @@ export function SelectionModal({
                                     onPress={() => onSelect(option.value)}
                                     activeOpacity={0.7}
                                 >
-                                    <Text style={[
-                                        styles.modalItemText,
-                                        {
-                                            color: isSelected ? colors.primary : colors.text,
-                                            fontWeight: isSelected ? '700' : '500'
-                                        }
-                                    ]}>
-                                        {option.label}
-                                    </Text>
+                                    <View style={styles.modalItemLabel}>
+                                        {option.color && (
+                                            <View style={[styles.colorPreview, { backgroundColor: option.color }]} />
+                                        )}
+                                        <Text style={[
+                                            styles.modalItemText,
+                                            {
+                                                color: isSelected ? colors.primary : colors.text,
+                                                fontWeight: isSelected ? '700' : '500'
+                                            }
+                                        ]}>
+                                            {option.label}
+                                        </Text>
+                                    </View>
                                     <MaterialIcons
                                         name={isSelected ? "check-circle" : "radio-button-unchecked"}
                                         size={24}
@@ -153,8 +159,18 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         borderWidth: 1,
     },
+    modalItemLabel: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+    },
     modalItemText: {
         fontSize: 16,
+    },
+    colorPreview: {
+        width: 16,
+        height: 16,
+        borderRadius: 8,
     },
     closeButton: {
         borderRadius: 12,

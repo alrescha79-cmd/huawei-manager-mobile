@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdBlockAlertModal, ChangelogModal, ChangelogHelper, SignalBubble } from '@/components';
+import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdBlockAlertModal, ChangelogModal, ChangelogHelper, SignalBubble } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -135,17 +135,9 @@ export default function RootLayout() {
             const currentVersion = Constants.expoConfig?.version || '1.1.50';
 
             if (compareVersions(latestVersion, currentVersion) > 0) {
-                ThemedAlertHelper.alert(
-                    t('settings.updateAvailable') + ` v${latestVersion}`,
-                    t('alerts.newVersionAvailable'),
-                    [
-                        { text: t('common.cancel'), style: 'cancel' },
-                        {
-                            text: t('settings.downloadUpdate'),
-                            onPress: () => router.push('/settings/update')
-                        },
-                    ]
-                );
+                setTimeout(() => {
+                    UpdateAvailableHelper.show(latestVersion);
+                }, 3500);
             }
         } catch (error) {
             console.error('Error checking for updates:', error);
@@ -386,10 +378,11 @@ export default function RootLayout() {
         if (!fontsLoaded || !authReady) return;
 
         const inAuthGroup = segments[0] === '(tabs)';
+        const inWebview = segments[0] === 'webview';
 
         if (!isAuthenticated && inAuthGroup) {
             router.replace('/login');
-        } else if (isAuthenticated && !inAuthGroup) {
+        } else if (isAuthenticated && !inAuthGroup && !inWebview) {
             router.replace('/(tabs)/home');
         }
     }, [isAuthenticated, segments, fontsLoaded, authReady]);
@@ -432,6 +425,13 @@ export default function RootLayout() {
                             headerShown: false,
                         }}
                     />
+                    <Stack.Screen
+                        name="webview"
+                        options={{
+                            headerShown: false,
+                            presentation: 'modal',
+                        }}
+                    />
                 </Stack>
 
                 <ThemedAlert
@@ -443,7 +443,8 @@ export default function RootLayout() {
                 />
 
                 <AdBlockAlertModal />
-                <ChangelogModal />
+                <UpdateAvailableModal onDownload={() => router.push('/settings/update')} />
+<ChangelogModal />
                 {isAuthenticated && signalBubbleEnabled && <SignalBubble />}
             </KeyboardProvider>
         </GestureHandlerRootView>

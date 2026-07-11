@@ -20,7 +20,6 @@ import { formatBytes, formatDuration, DurationUnits } from '@/utils/helpers';
 import { useTranslation } from '@/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-// Custom Hooks
 import { useHomeAuth } from '@/hooks/home/useHomeAuth';
 import { useHomeData } from '@/hooks/home/useHomeData';
 import { useHomeActions } from '@/hooks/home/useHomeActions';
@@ -65,7 +64,7 @@ export default function HomeScreen() {
   const [showMonthlySettingsModal, setShowMonthlySettingsModal] = useState(false);
   const [showSpeedTestModal, setShowSpeedTestModal] = useState(false);
   const [showSignalPointingModal, setShowSignalPointingModal] = useState(false);
-  // Hook Initialization
+
   const {
     showReloginWebView,
     setShowReloginWebView,
@@ -81,16 +80,14 @@ export default function HomeScreen() {
     setRelogging,
     clearSessionExpired,
     tryQuietSessionRestore,
-    modemService: null, // Will be updated by useHomeData if needed, but we can pass it down. 
-    // Wait! Let's just pass modemService from useHomeData to useHomeAuth!
+    modemService: null, 
     t,
-    loadData: async () => { }, // mock initially
+    loadData: async () => { }, 
     loadBands: async () => { },
   });
 
   const homeData = useHomeData({ t, showReloginWebView });
 
-  // Re-bind the correct modemService to useHomeAuth functions
   const homeAuth = useHomeAuth({
     credentials,
     logout,

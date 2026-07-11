@@ -17,6 +17,7 @@ import { useTranslation } from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useRouter } from 'expo-router';
 import CHANGELOG_MD from '../../changelog.md';
 
 interface ChangelogModalProps {
@@ -49,8 +50,9 @@ export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
     const { t, language } = useTranslation();
     const [slideAnim] = useState(new Animated.Value(0));
     const insets = useSafeAreaInsets();
+    const router = useRouter();
 
-    const currentVersion = Constants.expoConfig?.version || '1.1.28';
+    const currentVersion = Constants.expoConfig?.version || '1.1.60';
     const GITHUB_REPO_URL = 'https://github.com/alrescha79-cmd/huawei-manager-mobile';
     const RELEASE_URL = `${GITHUB_REPO_URL}/releases/tag/v${currentVersion}`;
 
@@ -101,6 +103,15 @@ export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
             const content = isBullet ? line.trim().replace(/^[-*]\s+/, '') : line.trim();
 
             if (!content) return null;
+
+            const headingMatch = content.match(/^##\s+(.+)/);
+            if (headingMatch) {
+                return (
+                    <Text key={lineIndex} style={[typography.title3, styles.versionTitle, { color: colors.text }]}>
+                        {headingMatch[1]}
+                    </Text>
+                );
+            }
 
             // Match **Header** Description
             const boldMatch = content.match(/^\*\*(.*?)\*\*(.*)/);
@@ -221,12 +232,14 @@ export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
                     </View>
 
                     <Text style={[typography.headline, styles.title, { color: colors.text }]}>
-                        {language === 'id' ? 'Berhasil Diperbarui!' : 'Successfully Updated!'}
+                        {t('changelog.title')}
                     </Text>
 
                     <Text style={[typography.subheadline, styles.subtitle, { color: colors.primary, fontWeight: '700' }]}>
                         v{currentVersion}
                     </Text>
+
+                    <View style={{ height: 1, backgroundColor: colors.border }} />
 
                     <View style={styles.scrollArea}>
                         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -238,24 +251,26 @@ export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
                         <TouchableOpacity
                             style={[styles.primaryButton, { borderRadius: borderRadius.md, backgroundColor: colors.primary }]}
                             activeOpacity={0.8}
-                            onPress={async () => {
-                                Linking.openURL(GITHUB_REPO_URL);
+                            onPress={() => {
+                                handleClose();
+                                router.push({ pathname: '/webview', params: { url: GITHUB_REPO_URL, title: t('changelog.giveStar') } });
                             }}
                         >
                             <Text style={styles.primaryButtonText}>
-                                {language === 'id' ? 'Beri Bintang' : 'Give Star'}
+                                {t('changelog.giveStar')}
                             </Text>
                         </TouchableOpacity>
 
                         <TouchableOpacity
                             style={[styles.outlineButton, { borderRadius: borderRadius.md, borderColor: colors.border }]}
                             activeOpacity={0.7}
-                            onPress={async () => {
-                                Linking.openURL(RELEASE_URL);
+                            onPress={() => {
+                                handleClose();
+                                router.push({ pathname: '/webview', params: { url: RELEASE_URL, title: t('changelog.fullChangelog') } });
                             }}
                         >
                             <Text style={[typography.body, styles.outlineButtonText, { color: colors.text }]}>
-                                {language === 'id' ? 'Lihat Changelog Lengkap' : 'View Full Changelog'}
+                                {t('changelog.fullChangelog')}
                             </Text>
                         </TouchableOpacity>
 
@@ -265,7 +280,7 @@ export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
                             onPress={handleClose}
                         >
                             <Text style={[typography.body, styles.closeButtonText, { color: colors.textSecondary }]}>
-                                {language === 'id' ? 'Lanjutkan' : 'Continue'}
+                                {t('changelog.continue')}
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -337,6 +352,11 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         flexGrow: 1,
+    },
+    versionTitle: {
+        fontWeight: '800',
+        marginTop: 8,
+        marginBottom: 12,
     },
     bulletRow: {
         flexDirection: 'row',

@@ -21,4 +21,5 @@ export * from './SignalPointingModal';
 export * from './AdBanner';
 export * from './AdBlockAlertModal';
 export * from './ChangelogModal';
+export * from './UpdateAvailableModal';
 export * from './SignalBubble';
