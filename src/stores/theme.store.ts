@@ -34,13 +34,13 @@ export const useThemeStore = create<ThemeState>()(
       language: 'en',
       isLanguageInitialized: false,
       badgesEnabled: true,
-      signalBubbleEnabled: true,
+      signalBubbleEnabled: false,
 
       setThemeMode: (mode) => {
         set({ themeMode: mode });
       },
       setAccentColor: (color) => set({ accentColor: color }),
-      usageCardStyle: 'split',
+      usageCardStyle: 'compact',
       setUsageCardStyle: (style) => set({ usageCardStyle: style }),
       setRefreshInterval: (interval) => set({ refreshInterval: interval }),
       setLanguage: (language) => set({ language }),

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { PageSheetModal } from '../PageSheetModal';
+import { MeshGradientBackground } from '../MeshGradientBackground';
 import { Button } from '../Button';
 
 interface ProfileData {
@@ -17,7 +19,7 @@ interface ProfileEditModalProps {
     visible: boolean;
     onClose: () => void;
     profile: ProfileData | null;
-    onSave: (id: string, updatedData: Omit<ProfileData, 'id'>) => Promise<void>;
+    onSave: (id: string | null, updatedData: Omit<ProfileData, 'id'>) => Promise<void>;
 }
 
 export function ProfileEditModal({
@@ -33,22 +35,37 @@ export function ProfileEditModal({
     const [modemIp, setModemIp] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
+    const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
     useEffect(() => {
-        if (visible && profile) {
-            setName(profile.name || '');
-            setModemIp(profile.modemIp || '');
-            setUsername(profile.username || '');
-            setPassword(profile.password || '');
+        if (visible) {
+            if (profile) {
+                setName(profile.name || '');
+                setModemIp(profile.modemIp || '');
+                setUsername(profile.username || '');
+                setPassword(profile.password || '');
+            } else {
+                setName('');
+                setModemIp('192.168.8.1');
+                setUsername('admin');
+                setPassword('');
+            }
+            setIsPasswordVisible(false);
+            setPasswordError('');
         }
     }, [visible, profile]);
 
     const handleSave = async () => {
-        if (!profile) return;
+        if (password.length > 0 && password.length < 8) {
+            setPasswordError(t('settings.passwordLengthError'));
+            return;
+        }
+
         setIsSaving(true);
         try {
-            await onSave(profile.id, {
+            await onSave(profile ? profile.id : null, {
                 name,
                 modemIp,
                 username,
@@ -56,7 +73,6 @@ export function ProfileEditModal({
             });
             onClose();
         } catch (error) {
-            // Error handled by caller
         } finally {
             setIsSaving(false);
         }
@@ -66,9 +82,9 @@ export function ProfileEditModal({
         <PageSheetModal
             visible={visible}
             onClose={onClose}
-            title={t('settings.editProfileTitle')}
+            title={profile ? t('settings.editProfileTitle') : t('settings.addProfileTitle')}
         >
-            {profile && (
+            <MeshGradientBackground>
                 <View style={{ paddingHorizontal: 16, paddingBottom: 24, gap: 12 }}>
                     <View style={styles.inputGroup}>
                         <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.profileName')}</Text>
@@ -98,21 +114,41 @@ export function ProfileEditModal({
                     </View>
                     <View style={styles.inputGroup}>
                         <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.passwordLabel')}</Text>
-                        <TextInput
-                            value={password}
-                            onChangeText={setPassword}
-                            secureTextEntry
-                            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                        />
+                        <View style={styles.passwordContainer}>
+                            <TextInput
+                                value={password}
+                                onChangeText={(text) => {
+                                    setPassword(text);
+                                    if (text.length > 0 && text.length < 8) {
+                                        setPasswordError(t('settings.passwordLengthError'));
+                                    } else {
+                                        setPasswordError('');
+                                    }
+                                }}
+                                secureTextEntry={!isPasswordVisible}
+                                style={[styles.input, styles.passwordInput, { color: colors.text, borderColor: passwordError ? colors.error : colors.border }]}
+                            />
+                            <TouchableOpacity
+                                style={styles.eyeIcon}
+                                onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                            >
+                                <MaterialIcons
+                                    name={isPasswordVisible ? 'visibility' : 'visibility-off'}
+                                    size={24}
+                                    color={colors.textSecondary}
+                                />
+                            </TouchableOpacity>
+                        </View>
+                        {passwordError ? <Text style={{ color: colors.error, marginTop: 4 }}>{passwordError}</Text> : null}
                     </View>
                     <Button
                         title={isSaving ? t('common.saving') : t('common.save')}
                         loading={isSaving}
-                        disabled={isSaving || !name.trim()}
+                        disabled={isSaving || !name.trim() || !!passwordError}
                         onPress={handleSave}
                     />
                 </View>
-            )}
+            </MeshGradientBackground>
         </PageSheetModal>
     );
 }
@@ -127,5 +163,16 @@ const styles = StyleSheet.create({
         borderRadius: 12,
         paddingHorizontal: 16,
         fontSize: 16,
+    },
+    passwordContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    passwordInput: {
+        flex: 1,
+    },
+    eyeIcon: {
+        position: 'absolute',
+        right: 16,
     },
 });

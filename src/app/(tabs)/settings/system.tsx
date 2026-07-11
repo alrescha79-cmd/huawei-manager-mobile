@@ -9,7 +9,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { MeshGradientBackground, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative, PageSheetModal } from '@/components';
+import { MeshGradientBackground, ThemedSwitch, BouncingDots, AnimatedScreen, AdNative, PageSheetModal, Button } from '@/components';
 import { SettingsSection, SettingsItem, PageHeader, ProfileEditModal } from '@/components/settings';
 import { useSystemSettings } from '@/hooks/settings';
 
@@ -29,8 +29,8 @@ export default function SystemSettingsScreen() {
         showTimezoneModal, setShowTimezoneModal, isTogglingSntp,
         handleToggleSntp, handleTimezoneChange,
         profiles, showEditProfile, setShowEditProfile,
-        editingProfile, setEditingProfile, isSwitching, updateProfile,
-        handleOpenEditProfile, handleSwitchProfile, handleDeleteProfile,
+        editingProfile, setEditingProfile, isSwitching, updateProfile, addProfile,
+        handleOpenEditProfile, handleOpenAddProfile, handleSwitchProfile, handleDeleteProfile,
         handleReboot, handleLogout, handleReset,
     } = useSystemSettings({ t });
 
@@ -136,6 +136,14 @@ export default function SystemSettingsScreen() {
                                     </View>
                                 </View>
                             ))}
+                            <View style={{ marginTop: 8 }}>
+                                <Button
+                                    title={t('settings.addProfile')}
+                                    onPress={handleOpenAddProfile}
+                                    icon={<MaterialIcons name="add" size={16} color={colors.primary} />}
+                                    variant="outline"
+                                />
+                            </View>
                         </View>
                     </SettingsSection>
 
@@ -148,7 +156,11 @@ export default function SystemSettingsScreen() {
                         onClose={() => { setShowEditProfile(false); setEditingProfile(null); }}
                         profile={editingProfile}
                         onSave={async (id, updatedData) => {
-                            await updateProfile(id, updatedData);
+                            if (id) {
+                                await updateProfile(id, updatedData);
+                            } else {
+                                await addProfile(updatedData);
+                            }
                         }}
                     />
 

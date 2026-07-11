@@ -108,7 +108,6 @@ export function DeviceDetailModal({
             setHasChanges(false);
             onClose();
         } catch (error) {
-            // Error handled by parent
         } finally {
             setIsSaving(false);
         }

@@ -31,6 +31,7 @@ export default function SettingsIndex() {
     const [showLanguageModal, setShowLanguageModal] = React.useState(false);
     const [showUsageModal, setShowUsageModal] = React.useState(false);
     const [showAccentModal, setShowAccentModal] = React.useState(false);
+    const [showBugReportModal, setShowBugReportModal] = React.useState(false);
     const [isSendingDebugLog, setIsSendingDebugLog] = React.useState(false);
 
     // Debug store
@@ -205,7 +206,7 @@ export default function SettingsIndex() {
                             icon="bug-report"
                             title={t('settings.bugReport')}
                             subtitle={t('settings.bugReportHint')}
-                            onPress={() => router.push({ pathname: '/webview', params: { url: 'https://github.com/alrescha79-cmd/huawei-manager-mobile/issues', title: t('settings.bugReport') || 'Bug Report' } })}
+                            onPress={() => setShowBugReportModal(true)}
                             isLast
                         />
                     </SettingsSection>
@@ -427,6 +428,25 @@ export default function SettingsIndex() {
                             }
                         }}
                         onClose={() => setShowAccentModal(false)}
+                    />
+
+                    <SelectionModal
+                        visible={showBugReportModal}
+                        title={t('settings.bugReport')}
+                        options={[
+                            { label: t('settings.bugReportWebsite'), value: 'website' },
+                            { label: t('settings.bugReportGithub'), value: 'github' },
+                        ]}
+                        selectedValue=""
+                        onSelect={(val) => {
+                            setShowBugReportModal(false);
+                            if (val === 'website') {
+                                router.push({ pathname: '/webview', params: { url: 'https://hm.cakson.my.id/#support', title: t('settings.bugReport') || 'Bug Report' } });
+                            } else {
+                                router.push({ pathname: '/webview', params: { url: 'https://github.com/alrescha79-cmd/huawei-manager-mobile/issues', title: t('settings.bugReport') || 'Bug Report' } });
+                            }
+                        }}
+                        onClose={() => setShowBugReportModal(false)}
                     />
                 </ScrollView>
             </MeshGradientBackground>

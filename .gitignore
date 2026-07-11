@@ -53,3 +53,6 @@ GoogleService-Info.plist
 
 # Bruno 
 bruno-huawei-lte-api/
+
+# Kilo
+.kilo/

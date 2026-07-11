@@ -60,7 +60,7 @@ const formatModemTime = (time: string) => {
 export function useSystemSettings({ t }: UseSystemSettingsProps) {
     const router = useRouter();
     const { credentials, login, logout } = useAuthStore();
-    const { profiles, loadProfiles, deleteProfile, updateProfile, switchProfile, isSwitching } = useModemProfileStore();
+    const { profiles, loadProfiles, addProfile, deleteProfile, updateProfile, switchProfile, isSwitching } = useModemProfileStore();
 
     // Profile edit state
     const [showEditProfile, setShowEditProfile] = useState(false);
@@ -232,6 +232,11 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
         );
     };
 
+    const handleOpenAddProfile = () => {
+        setEditingProfile(null);
+        setShowEditProfile(true);
+    };
+
     const handleOpenEditProfile = async (profile: any) => {
         const pwd = await getModemProfilePassword(profile.id);
         setEditingProfile({
@@ -308,6 +313,8 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
         setEditingProfile,
         isSwitching,
         updateProfile,
+        addProfile,
+        handleOpenAddProfile,
         handleOpenEditProfile,
         handleSwitchProfile,
         handleDeleteProfile,
