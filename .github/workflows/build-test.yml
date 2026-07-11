@@ -78,6 +78,9 @@ jobs:
           echo "branch=$BRANCH" >> $GITHUB_OUTPUT
           echo "Build info: v$VERSION - $BRANCH ($SHORT_SHA)"
 
+      - name: Set version code
+        run: echo "ANDROID_VERSION_CODE=$(( ${{ github.run_number }} * 10 + 9 ))" >> $GITHUB_ENV
+
       - name: Create google-services.json from secret
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
 
@@ -216,5 +219,10 @@ jobs:
             echo "### 📥 Direct Download" >> $GITHUB_STEP_SUMMARY
             echo "[**Download APK**](https://github.com/${{ github.repository }}/releases/tag/test-${{ github.run_number }})" >> $GITHUB_STEP_SUMMARY
           else
-            echo "📦 APK available in **Artifacts** section above." >> $GITHUB_STEP_SUMMARY
+            echo "### 📦 Download Instructions" >> $GITHUB_STEP_SUMMARY
+            echo "APK is available in the **Artifacts** section at the bottom of this run summary." >> $GITHUB_STEP_SUMMARY
+            echo "> [!WARNING]" >> $GITHUB_STEP_SUMMARY
+            echo "> GitHub Actions automatically compresses artifacts into a **.zip** file." >> $GITHUB_STEP_SUMMARY
+            echo "> You MUST **extract/unzip** the downloaded file to get the `.apk`." >> $GITHUB_STEP_SUMMARY
+            echo "> Do not just rename the `.zip` to `.apk`, or it will say *\"package appears to be invalid\"*." >> $GITHUB_STEP_SUMMARY
           fi
