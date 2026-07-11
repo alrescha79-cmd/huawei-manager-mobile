@@ -1,4 +1,10 @@
 {
+  "changelog": {
+    "title": "Berhasil Diperbarui!",
+    "giveStar": "Beri Bintang",
+    "fullChangelog": "Lihat Changelog Lengkap",
+    "continue": "Lanjutkan"
+  },
   "ads": {
     "adblockNoticeMessage": "Pastikan Anda tidak menggunakan adblock untuk dapat menggunakan semua fitur dalam aplikasi ini secara maksimal.",
     "adblockNoticeTitle": "Pemberitahuan AdBlock",
@@ -127,7 +133,7 @@
     "changingIp": "Mengganti IP...",
     "checkFailed": "Pemeriksaan gagal. Silakan coba lagi.",
     "checkLogin": "Periksa apakah Anda sudah login ke modem",
-    "clearHistory": "Hapus Riwayat",
+    "clearHistory": "Hapus Riwayat Penggunaan",
     "clearHistoryConfirm": "Apakah Anda yakin ingin menghapus semua riwayat penggunaan? Tindakan ini tidak dapat dibatalkan.",
     "clearHistoryFailed": "Gagal menghapus riwayat penggunaan",
     "confirmDisableData": "Yakin ingin menonaktifkan data seluler?",

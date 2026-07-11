@@ -88,6 +88,7 @@ interface QuickActionsCardProps {
     return (
         <CollapsibleCard
             title={t('home.actions')}
+            storageKey="home.quickActions.expanded"
             headerRight={headerRightBadge}
         >
             {/* Top row - Large actions */}

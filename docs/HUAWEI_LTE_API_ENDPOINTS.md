@@ -1,7 +1,7 @@
 # Huawei LTE API — Pemetaan Endpoint Lengkap
 
-> **Sumber:** Reverse Engineering 
-> **Base URL:** `http://<router-ip>/api/`  
+> **Sumber:** Reverse Engineering    
+> **Base URL:** `http://<router-ip>`  
 > **Format request/response:** XML  
 > **Autentikasi:** Wajib login dulu, semua request butuh header `__RequestVerificationToken`
 

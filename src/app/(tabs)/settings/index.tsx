@@ -22,7 +22,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsIndex() {
     const router = useRouter();
-    const { colors, typography } = useTheme();
+    const { colors, typography, isDark } = useTheme();
     const { t } = useTranslation();
     const { themeMode, setThemeMode, language, setLanguage, usageCardStyle, setUsageCardStyle, accentColor, setAccentColor, signalBubbleEnabled, setSignalBubbleEnabled } = useThemeStore();
     const insets = useSafeAreaInsets();
@@ -37,7 +37,7 @@ export default function SettingsIndex() {
     const { debugEnabled, setDebugEnabled, apiLogs, sendDebugEmail, clearLogs, shareDebugLog } = useDebugStore();
 
     const handleOpenGitHub = () => {
-        Linking.openURL('https://github.com/alrescha79-cmd');
+        router.push({ pathname: '/webview', params: { url: 'https://github.com/alrescha79-cmd', title: t('settings.developer') || 'Developer' } });
     };
 
     const getThemeLabel = (mode: string) => {
@@ -118,6 +118,7 @@ export default function SettingsIndex() {
                             icon="data-usage"
                             title="Data Usage View"
                             onPress={() => setShowUsageModal(true)}
+                            showChevron={false}
                             rightElement={
                                 <TouchableOpacity
                                     style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -134,6 +135,7 @@ export default function SettingsIndex() {
                             icon="brightness-6"
                             title={t('settings.theme')}
                             onPress={() => setShowThemeModal(true)}
+                            showChevron={false}
                             rightElement={
                                 <TouchableOpacity
                                     style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -151,6 +153,7 @@ export default function SettingsIndex() {
                             icon="palette"
                             title={t('settings.accentColor')}
                             onPress={() => setShowAccentModal(true)}
+                            showChevron={false}
                             rightElement={
                                 <TouchableOpacity
                                     style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -169,6 +172,7 @@ export default function SettingsIndex() {
                             icon="translate"
                             title={t('settings.language')}
                             onPress={() => setShowLanguageModal(true)}
+                            showChevron={false}
                             rightElement={
                                 <TouchableOpacity
                                     style={[styles.dropdownTrigger, { backgroundColor: colors.card, borderColor: colors.border }]}
@@ -201,7 +205,7 @@ export default function SettingsIndex() {
                             icon="bug-report"
                             title={t('settings.bugReport')}
                             subtitle={t('settings.bugReportHint')}
-                            onPress={() => Linking.openURL('https://github.com/alrescha79-cmd/huawei-manager-mobile/issues')}
+                            onPress={() => router.push({ pathname: '/webview', params: { url: 'https://github.com/alrescha79-cmd/huawei-manager-mobile/issues', title: t('settings.bugReport') || 'Bug Report' } })}
                             isLast
                         />
                     </SettingsSection>
@@ -411,6 +415,7 @@ export default function SettingsIndex() {
                         options={Object.entries(ACCENT_PRESETS).map(([key, preset]) => ({
                             label: preset.label,
                             value: key,
+                            color: isDark ? preset.dark : preset.light,
                         }))}
                         selectedValue={accentColor}
                         onSelect={(val) => {

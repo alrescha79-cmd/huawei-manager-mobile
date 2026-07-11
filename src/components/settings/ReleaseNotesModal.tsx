@@ -1,8 +1,19 @@
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import {
+    View,
+    Text,
+    ScrollView,
+    Modal,
+    TouchableOpacity,
+    StyleSheet,
+    StatusBar,
+    Platform,
+    Linking,
+} from 'react-native';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { PageSheetModal } from '../PageSheetModal';
+import { BlurView } from 'expo-blur';
+import { ModalBackground } from '../ModalBackground';
 
 interface ReleaseNotesModalProps {
     visible: boolean;
@@ -49,18 +60,82 @@ function extractChangelog(body: string): string {
     return body.trim();
 }
 
-function renderInlineFormatting(text: string, colors: any) {
-    const parts = text.split('**');
-    if (parts.length <= 1) return <Text>{text}</Text>;
+// Inline markdown: **bold**, *italic*, `code`, [label](url), bare URL
+function renderInline(text: string, colors: any, typography: any, keyPrefix: string): React.ReactNode[] {
+    const regex =
+        /(\*\*[^*]+\*\*|\*[^*]+\*|`[^`]+`|\[[^\]]+\]\([^)]+\)|https?:\/\/[^\s)]+)/g;
+    const nodes: React.ReactNode[] = [];
+    let lastIndex = 0;
+    let match: RegExpExecArray | null;
+    let i = 0;
 
-    return parts.map((part, index) => {
-        const isBold = index % 2 === 1;
-        return (
-            <Text key={index} style={isBold ? { fontWeight: '700', color: colors.text } : undefined}>
-                {part}
+    while ((match = regex.exec(text)) !== null) {
+        if (match.index > lastIndex) {
+            nodes.push(
+                <Text key={`${keyPrefix}-t${i}`} style={{ color: colors.text }}>
+                    {text.slice(lastIndex, match.index)}
+                </Text>
+            );
+            i++;
+        }
+
+        const token = match[0];
+        if (token.startsWith('**')) {
+            nodes.push(
+                <Text key={`${keyPrefix}-b${i}`} style={{ fontWeight: '700', color: colors.text }}>
+                    {token.slice(2, -2)}
+                </Text>
+            );
+        } else if (token.startsWith('`')) {
+            nodes.push(
+                <Text key={`${keyPrefix}-c${i}`} style={[typography.body, { color: colors.primary, fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace' }]}>
+                    {token.slice(1, -1)}
+                </Text>
+            );
+        } else if (token.startsWith('*')) {
+            nodes.push(
+                <Text key={`${keyPrefix}-i${i}`} style={{ fontStyle: 'italic', color: colors.text }}>
+                    {token.slice(1, -1)}
+                </Text>
+            );
+        } else if (token.startsWith('[')) {
+            const linkMatch = token.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+            if (linkMatch) {
+                nodes.push(
+                    <Text
+                        key={`${keyPrefix}-l${i}`}
+                        style={{ color: colors.primary, textDecorationLine: 'underline' }}
+                        onPress={() => Linking.openURL(linkMatch[2])}
+                    >
+                        {linkMatch[1]}
+                    </Text>
+                );
+            }
+        } else {
+            nodes.push(
+                <Text
+                    key={`${keyPrefix}-u${i}`}
+                    style={{ color: colors.primary, textDecorationLine: 'underline' }}
+                    onPress={() => Linking.openURL(token)}
+                >
+                    {token}
+                </Text>
+            );
+        }
+
+        i++;
+        lastIndex = regex.lastIndex;
+    }
+
+    if (lastIndex < text.length) {
+        nodes.push(
+            <Text key={`${keyPrefix}-t${i}`} style={{ color: colors.text }}>
+                {text.slice(lastIndex)}
             </Text>
         );
-    });
+    }
+
+    return nodes;
 }
 
 function renderMarkdown(text: string, colors: any, typography: any) {
@@ -92,18 +167,33 @@ function renderMarkdown(text: string, colors: any, typography: any) {
                         }
                     ]}
                 >
-                    {headerText}
+                    {renderInline(headerText, colors, typography, `h${index}`)}
                 </Text>
             );
         }
 
-        if (trimmed.startsWith('-') || trimmed.startsWith('*')) {
+        if (/^[-*]\s+/.test(trimmed)) {
             const itemText = trimmed.replace(/^[-*]\s*/, '');
             return (
                 <View key={index} style={{ flexDirection: 'row', alignItems: 'flex-start', marginVertical: 3, paddingLeft: 8 }}>
                     <Text style={[typography.body, { color: colors.primary, marginRight: 6 }]}>•</Text>
                     <Text style={[typography.body, { color: colors.text, flex: 1, lineHeight: 22 }]}>
-                        {renderInlineFormatting(itemText, colors)}
+                        {renderInline(itemText, colors, typography, `u${index}`)}
+                    </Text>
+                </View>
+            );
+        }
+
+        const orderedMatch = trimmed.match(/^(\d+)\.\s+(.*)/);
+        if (orderedMatch) {
+            const itemText = orderedMatch[2];
+            return (
+                <View key={index} style={{ flexDirection: 'row', alignItems: 'flex-start', marginVertical: 3, paddingLeft: 8 }}>
+                    <Text style={[typography.body, { color: colors.primary, marginRight: 6, fontWeight: '600' }]}>
+                        {orderedMatch[1]}.
+                    </Text>
+                    <Text style={[typography.body, { color: colors.text, flex: 1, lineHeight: 22 }]}>
+                        {renderInline(itemText, colors, typography, `o${index}`)}
                     </Text>
                 </View>
             );
@@ -111,7 +201,7 @@ function renderMarkdown(text: string, colors: any, typography: any) {
 
         return (
             <Text key={index} style={[typography.body, { color: colors.text, marginVertical: 4, lineHeight: 22 }]}>
-                {renderInlineFormatting(trimmed, colors)}
+                {renderInline(trimmed, colors, typography, `p${index}`)}
             </Text>
         );
     });
@@ -122,28 +212,71 @@ export function ReleaseNotesModal({
     onClose,
     selectedNotes,
 }: ReleaseNotesModalProps) {
-    const { colors, typography } = useTheme();
+    const { colors, typography, isDark } = useTheme();
     const { t } = useTranslation();
 
     return (
-        <PageSheetModal
+        <Modal
             visible={visible}
-            onClose={onClose}
-            title={t('settings.releaseNotes') || 'Release Notes'}
-            cancelText={t('common.done') || 'Done'}
+            animationType="slide"
+            presentationStyle="overFullScreen"
+            transparent
+            onRequestClose={onClose}
         >
-            {selectedNotes && (
-                <ScrollView
-                    style={{ flex: 1 }}
-                    contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
-                >
-                    <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 12 }]}>
-                        {t('settings.version') || 'Version'} {selectedNotes.version}
+            <BlurView
+                intensity={18}
+                tint={isDark ? 'dark' : 'light'}
+                experimentalBlurMethod="dimezisBlurView"
+                style={[
+                    styles.container,
+                    {
+                        backgroundColor: isDark
+                            ? 'rgba(10, 10, 10, 0.82)'
+                            : 'rgba(255, 255, 255, 0.82)',
+                    }
+                ]}
+            >
+                <ModalBackground />
+                <View style={[styles.header, {
+                    borderBottomColor: colors.border,
+                    paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
+                }]}>
+                    <TouchableOpacity onPress={onClose}>
+                        <Text style={[typography.body, { color: colors.primary }]}>
+                            {t('common.done') || 'Done'}
+                        </Text>
+                    </TouchableOpacity>
+                    <Text style={[typography.headline, { color: colors.text, flex: 1, textAlign: 'center' }]} numberOfLines={1}>
+                        {t('settings.releaseNotes') || 'Release Notes'}
                     </Text>
-                    <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 16 }} />
-                    {renderMarkdown(extractChangelog(selectedNotes.notes), colors, typography)}
-                </ScrollView>
-            )}
-        </PageSheetModal>
+                    <View style={{ width: 50 }} />
+                </View>
+                {selectedNotes && (
+                    <ScrollView
+                        style={{ flex: 1 }}
+                        contentContainerStyle={{ padding: 20, paddingBottom: 60 }}
+                    >
+                        <Text style={[typography.subheadline, { color: colors.textSecondary, marginBottom: 12 }]}>
+                            {t('settings.version') || 'Version'} {selectedNotes.version}
+                        </Text>
+                        <View style={{ height: 1, backgroundColor: colors.border, marginBottom: 16 }} />
+                        {renderMarkdown(extractChangelog(selectedNotes.notes), colors, typography)}
+                    </ScrollView>
+                )}
+            </BlurView>
+        </Modal>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 16,
+        borderBottomWidth: 1,
+    },
+});

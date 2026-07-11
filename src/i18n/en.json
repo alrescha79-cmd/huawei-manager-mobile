@@ -1,4 +1,10 @@
 {
+  "changelog": {
+    "title": "Successfully Updated!",
+    "giveStar": "Give Star",
+    "fullChangelog": "Full Changelog",
+    "continue": "Continue"
+  },
   "ads": {
     "adblockNoticeMessage": "Please make sure you are not using an ad blocker to enjoy all the features of this app.",
     "adblockNoticeTitle": "AdBlock Notice",
@@ -127,9 +133,9 @@
     "changingIp": "Changing IP...",
     "checkFailed": "Check failed. Please try again.",
     "checkLogin": "Please check if you're logged in to the modem",
-    "clearHistory": "Clear History",
-    "clearHistoryConfirm": "Are you sure you want to clear all traffic history? This action cannot be undone.",
-    "clearHistoryFailed": "Failed to clear traffic history",
+    "clearHistory": "Clear Usage History",
+    "clearHistoryConfirm": "Are you sure you want to clear all usage history? This action cannot be undone.",
+    "clearHistoryFailed": "Failed to clear usage history",
     "confirmDisableData": "Are you sure you want to disable mobile data?",
     "confirmEnableData": "Are you sure you want to enable mobile data?",
     "connected": "Connected",

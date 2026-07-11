@@ -137,9 +137,7 @@ export function TrafficStatsCard({
                 </>
             )}
 
-            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-
-            <View style={{ flexDirection: 'row', justifyContent: 'center', marginTop: spacing.md }}>
+            <View style={{ flexDirection: 'row', justifyContent: 'center' }}>
                 <TouchableOpacity
                     style={{
                         flex: 1,

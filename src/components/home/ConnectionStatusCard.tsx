@@ -166,6 +166,7 @@ export function ConnectionStatusCard({
     return (
         <CollapsibleCard
             title={t('home.connectionStatus')}
+            storageKey="home.connectionStatus.expanded"
             headerRight={headerRightBadge}
         >
             <View style={styles.topRow}>
