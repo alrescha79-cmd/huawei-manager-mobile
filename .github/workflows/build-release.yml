@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Version tag (e.g., v1.0.0)'
+        description: 'Version tag (e.g., v1.0.0) — leave empty to auto-read from app.config.ts'
         required: false
         default: ''
       release_type:
@@ -28,79 +28,61 @@ env:
   ADMOB_APP_OPEN_UNIT_ID: ${{ secrets.ADMOB_APP_OPEN_UNIT_ID }}
 
 jobs:
-  build-arm64:
+  resolve-version:
     runs-on: ubuntu-latest
     outputs:
-      version: ${{ steps.get_version.outputs.version }}
-
+      version: ${{ steps.resolve.outputs.version }}
+      tag_name: ${{ steps.resolve.outputs.tag_name }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Get version from app.config.ts
-        id: get_version
+      - name: Resolve version and tag
+        id: resolve
         run: |
-          VERSION=$(grep -oP "version:\s*'\\K[^']+" app.config.ts)
+          if [ "${{ github.event_name }}" = "push" ]; then
+            # Tag push — extract version from the tag ref
+            TAG="${GITHUB_REF#refs/tags/}"
+            VERSION="${TAG#v}"
+          elif [ -n "${{ github.event.inputs.version }}" ]; then
+            # Manual trigger with version input — sanitize whitespace
+            RAW_INPUT="${{ github.event.inputs.version }}"
+            SANITIZED=$(echo "$RAW_INPUT" | tr -d '[:space:]')
+            VERSION="${SANITIZED#v}"
+          else
+            # Manual trigger without version — read from app.config.ts
+            VERSION=$(grep -oP "version:\s*'\K[^']+" app.config.ts)
+          fi
+
+          TAG_NAME="v${VERSION}"
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "App version: $VERSION"
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
+          echo "Resolved: version=$VERSION, tag_name=$TAG_NAME"
 
-      - name: Set version code
-        run: echo "ANDROID_VERSION_CODE=$(( ${{ github.run_number }} * 10 + 2 ))" >> $GITHUB_ENV
+          # Validate tag format (must be like v1.2.3)
+          if ! echo "$TAG_NAME" | grep -qP '^v\d+\.\d+\.\d+'; then
+            echo "::error::Invalid version format: '$TAG_NAME' — expected vX.Y.Z"
+            exit 1
+          fi
 
-      - name: Create google-services.json from secret
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
-
-      - name: Prebuild Android
-        run: npx expo prebuild --platform android --clean
-
-      - name: Build APK (arm64-v8a)
-        run: |
-          cd android
-          ./gradlew assembleRelease \
-            -PreactNativeArchitectures=arm64-v8a \
-            --no-daemon
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
-
-      - name: Rename and Upload arm64-v8a APK
-        run: |
-          mv android/app/build/outputs/apk/release/app-release.apk \
-             huawei-manager-arm64-v8a.apk
-
-      - name: Upload arm64-v8a APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-arm64-v8a
-          path: huawei-manager-*.apk
-          retention-days: 7
-
-  build-armv7:
+  build:
     runs-on: ubuntu-latest
+    needs: [resolve-version]
+    strategy:
+      matrix:
+        include:
+          - arch: arm64-v8a
+            artifact_name: apk-arm64-v8a
+            apk_suffix: arm64-v8a
+            version_code_offset: 2
+          - arch: armeabi-v7a
+            artifact_name: apk-armeabi-v7a
+            apk_suffix: armeabi-v7a
+            version_code_offset: 1
+          - arch: universal
+            artifact_name: apk-universal
+            apk_suffix: universal
+            version_code_offset: 3
 
     steps:
       - name: Checkout repository
@@ -131,15 +113,8 @@ jobs:
           eas-version: latest
           token: ${{ secrets.EXPO_TOKEN }}
 
-      - name: Get version from app.config.ts
-        id: get_version
-        run: |
-          VERSION=$(grep -oP "version:\s*'\\K[^']+" app.config.ts)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "App version: $VERSION"
-
       - name: Set version code
-        run: echo "ANDROID_VERSION_CODE=$(( ${{ github.run_number }} * 10 + 1 ))" >> $GITHUB_ENV
+        run: echo "ANDROID_VERSION_CODE=$(( ${{ github.run_number }} * 10 + ${{ matrix.version_code_offset }} ))" >> $GITHUB_ENV
 
       - name: Create google-services.json from secret
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
@@ -147,97 +122,66 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
-      - name: Build APK (armeabi-v7a)
+      - name: Setup release keystore
+        if: ${{ env.HAS_RELEASE_KEYSTORE == 'true' }}
+        env:
+          HAS_RELEASE_KEYSTORE: ${{ secrets.RELEASE_KEYSTORE_BASE64 != '' }}
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+        run: |
+          echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+
+          # Inject signingConfigs.release into build.gradle
+          GRADLE_FILE="android/app/build.gradle"
+          awk '
+          /signingConfigs \{/ { in_signing=1 }
+          in_signing && /^    \}/ {
+              print "        release {"
+              print "            storeFile file(\"release.keystore\")"
+              print "            storePassword System.getenv(\"RELEASE_KEYSTORE_PASSWORD\") ?: \"\""
+              print "            keyAlias System.getenv(\"RELEASE_KEY_ALIAS\") ?: \"\""
+              print "            keyPassword System.getenv(\"RELEASE_KEY_PASSWORD\") ?: \"\""
+              print "        }"
+              in_signing=0
+          }
+          { print }
+          ' "$GRADLE_FILE" > "${GRADLE_FILE}.tmp" && mv "${GRADLE_FILE}.tmp" "$GRADLE_FILE"
+
+          # Point release buildType to signingConfigs.release
+          sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' "$GRADLE_FILE"
+
+      - name: Build APK
         run: |
           cd android
-          ./gradlew assembleRelease \
-            -PreactNativeArchitectures=armeabi-v7a \
-            --no-daemon
+          if [ "${{ matrix.arch }}" = "universal" ]; then
+            ./gradlew assembleRelease --no-daemon
+          else
+            ./gradlew assembleRelease \
+              -PreactNativeArchitectures=${{ matrix.arch }} \
+              --no-daemon
+          fi
         env:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
 
-      - name: Rename and Upload armeabi-v7a APK
+      - name: Rename APK
         run: |
           mv android/app/build/outputs/apk/release/app-release.apk \
-             huawei-manager-armeabi-v7a.apk
+             huawei-manager-${{ matrix.apk_suffix }}.apk
 
-      - name: Upload armeabi-v7a APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: apk-armeabi-v7a
-          path: huawei-manager-*.apk
-          retention-days: 7
-
-  build-universal:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Setup Expo
-        uses: expo/expo-github-action@v8
-        with:
-          expo-version: latest
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
-
-      - name: Get version from app.config.ts
-        id: get_version
-        run: |
-          VERSION=$(grep -oP "version:\s*'\\K[^']+" app.config.ts)
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "App version: $VERSION"
-
-      - name: Set version code
-        run: echo "ANDROID_VERSION_CODE=$(( ${{ github.run_number }} * 10 + 3 ))" >> $GITHUB_ENV
-
-      - name: Create google-services.json from secret
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
-
-      - name: Prebuild Android
-        run: npx expo prebuild --platform android --clean
-
-      - name: Build Universal APK
-        run: |
-          cd android
-          ./gradlew assembleRelease --no-daemon
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
-
-      - name: Rename and Upload Universal APK
-        run: |
-          mv android/app/build/outputs/apk/release/app-release.apk \
-             huawei-manager-universal.apk
-
-      - name: Upload Universal APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: apk-universal
+          name: ${{ matrix.artifact_name }}
           path: huawei-manager-*.apk
           retention-days: 7
 
   release:
     runs-on: ubuntu-latest
-    needs: [build-arm64, build-armv7, build-universal]
+    needs: [resolve-version, build]
 
     steps:
       - name: Checkout repository
@@ -259,6 +203,7 @@ jobs:
         run: |
           PREV_TAG="${{ steps.prev_tag.outputs.prev_tag }}"
           REPO="${{ github.repository }}"
+          VERSION="${{ needs.resolve-version.outputs.version }}"
 
           if [ -n "$PREV_TAG" ]; then
             COMMITS=$(git log ${PREV_TAG}..HEAD --pretty=format:"%H" 2>/dev/null || echo "")
@@ -266,7 +211,7 @@ jobs:
             COMMITS=$(git log --pretty=format:"%H" 2>/dev/null || echo "")
           fi
 
-          echo "## What's Changed — v${{ needs.build-arm64.outputs.version }}" > release_notes.md
+          echo "## What's Changed — v${VERSION}" > release_notes.md
           echo "" >> release_notes.md
 
           PR_FOUND=false
@@ -297,7 +242,7 @@ jobs:
           echo "" >> release_notes.md
 
           if [ -n "$PREV_TAG" ]; then
-            echo "**Full Changelog**: https://github.com/${REPO}/compare/${PREV_TAG}...v${{ needs.build-arm64.outputs.version }}" >> release_notes.md
+            echo "**Full Changelog**: https://github.com/${REPO}/compare/${PREV_TAG}...v${VERSION}" >> release_notes.md
           fi
 
           {
@@ -316,10 +261,10 @@ jobs:
         run: ls -la apks/
 
       - name: Create GitHub Release
-        if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
-          name: Huawei Manager v${{ needs.build-arm64.outputs.version }}
+          tag_name: ${{ needs.resolve-version.outputs.tag_name }}
+          name: Huawei Manager v${{ needs.resolve-version.outputs.version }}
           body: |
             > [!WARNING]
             >
@@ -329,70 +274,15 @@ jobs:
 
             ---
 
-            # Huawei Manager v${{ needs.build-arm64.outputs.version }}
+            # Huawei Manager v${{ needs.resolve-version.outputs.version }}
 
             ## 📥 Download Cepat
 
             | Versi | Cocok Untuk | (MB) | Link |
             |-------|-------------|--------|------|
-            | **arm64-v8a** | HP Android 64-bit / terbaru | 38 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v${{ needs.build-arm64.outputs.version }}/huawei-manager-arm64-v8a.apk) |
-            | **armeabi-v7a** | HP Android 32-bit / lama | 33 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v${{ needs.build-arm64.outputs.version }}/huawei-manager-armeabi-v7a.apk) |
-            | **universal** | Semua perangkat | 88 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/v${{ needs.build-arm64.outputs.version }}/huawei-manager-universal.apk) |
-
-            > 💡 **Tidak tahu pilih yang mana?** Coba **arm64-v8a** dulu. Jika gagal install, gunakan **universal**.
-
-            --- 
-
-            ## 🔧 Cara Install
-
-            1. Download APK sesuai tabel di atas
-            2. Buka **Pengaturan → Keamanan → Aktifkan "Instal dari sumber tidak dikenal"**
-            3. Buka file APK yang sudah diunduh dan ikuti instruksi install
-
-            ---
-
-            ## 📌 Preview
-
-            <img width="1080" height="1350" alt="release" src="https://github.com/user-attachments/assets/df4972fd-1505-444c-8d15-c9d3f08c9e5d" />
-
-            ---
-
-            ${{ steps.release_notes.outputs.notes }}
-
-            ---
-
-            Terima kasih sudah menggunakan **Huawei Manager Mobile**! 🙏
-            Temukan masalah? Laporkan di [GitHub Issues](https://github.com/alrescha79-cmd/huawei-manager-mobile/issues).
-          files: apks/*.apk
-          draft: false
-          prerelease: ${{ github.event.inputs.release_type == 'pre-release' }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Create Release (Manual Trigger)
-        if: github.event_name == 'workflow_dispatch' && github.event.inputs.version != ''
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.event.inputs.version }}
-          name: Huawei Manager ${{ github.event.inputs.version }}
-          body: |
-            > [!WARNING]
-            >
-            > 🇬🇧 **Files are available in the `Assets` section below** 👇
-            > 
-            > 🇮🇩 **File download berada di bagian `Assets` di bawah** 👇
-
-            ---
-
-            # Huawei Manager ${{ github.event.inputs.version }}
-
-            ## 📥 Download Cepat
-
-            | Versi | Cocok Untuk | (MB) | Link |
-            |-------|-------------|--------|------|
-            | **arm64-v8a** | HP Android 64-bit / terbaru | 38 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/${{ github.event.inputs.version }}/huawei-manager-arm64-v8a.apk) |
-            | **armeabi-v7a** | HP Android 32-bit / lama | 33 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/${{ github.event.inputs.version }}/huawei-manager-armeabi-v7a.apk) |
-            | **universal** | Semua perangkat | 88 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/${{ github.event.inputs.version }}/huawei-manager-universal.apk) |
+            | **arm64-v8a** | HP Android 64-bit / terbaru | 38 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/${{ needs.resolve-version.outputs.tag_name }}/huawei-manager-arm64-v8a.apk) |
+            | **armeabi-v7a** | HP Android 32-bit / lama | 33 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/${{ needs.resolve-version.outputs.tag_name }}/huawei-manager-armeabi-v7a.apk) |
+            | **universal** | Semua perangkat | 88 | [Download](https://github.com/alrescha79-cmd/huawei-manager-mobile/releases/download/${{ needs.resolve-version.outputs.tag_name }}/huawei-manager-universal.apk) |
 
             > 💡 **Tidak tahu pilih yang mana?** Coba **arm64-v8a** dulu. Jika gagal install, gunakan **universal**.
 
