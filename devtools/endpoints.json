@@ -34,6 +34,81 @@
       "method": "GET",
       "endpoint": "/api/user/state-login",
       "description": "Check current login state"
+    },
+    "hilinkLogin": {
+      "method": "GET",
+      "endpoint": "/api/user/hilink_login",
+      "description": "HiLink login"
+    },
+    "historyLogin": {
+      "method": "GET",
+      "endpoint": "/api/user/history-login",
+      "description": "Get login history"
+    },
+    "heartbeat": {
+      "method": "GET",
+      "endpoint": "/api/user/heartbeat",
+      "description": "Keepalive active session"
+    },
+    "getRemind": {
+      "method": "GET",
+      "endpoint": "/api/user/remind",
+      "description": "Get reminder message"
+    },
+    "setRemind": {
+      "method": "POST",
+      "endpoint": "/api/user/remind",
+      "description": "Set reminder — body: remindstate"
+    },
+    "getPassword": {
+      "method": "GET",
+      "endpoint": "/api/user/password",
+      "description": "Get password info"
+    },
+    "getPwd": {
+      "method": "GET",
+      "endpoint": "/api/user/pwd",
+      "description": "Get pwd info"
+    },
+    "setPwd": {
+      "method": "POST",
+      "endpoint": "/api/user/pwd",
+      "description": "Set pwd — body: module, nonce"
+    },
+    "webFeatureSwitch": {
+      "method": "GET",
+      "endpoint": "/api/user/web-feature-switch",
+      "description": "Get web feature switch status"
+    },
+    "inputEvent": {
+      "method": "GET",
+      "endpoint": "/api/user/input_event",
+      "description": "Get input event (reverse engineered)"
+    },
+    "screenState": {
+      "method": "GET",
+      "endpoint": "/api/user/screen_state",
+      "description": "Get screen state (reverse engineered)"
+    },
+    "session": {
+      "method": "GET",
+      "endpoint": "/api/user/session",
+      "description": "Get session info (reverse engineered)"
+    },
+    "secondLogin": {
+      "method": "GET",
+      "endpoint": "/api/user/second_login",
+      "description": "Second login"
+    },
+    "rememberPwd": {
+      "method": "GET",
+      "endpoint": "/api/user/remember-pwd",
+      "description": "Get remember password status"
+    },
+    "rule": {
+      "method": "GET",
+      "endpoint": "/api/user/rule",
+      "description": "Get user rule"
     }
   },
   "device": {
@@ -41,6 +116,41 @@
       "method": "GET",
       "endpoint": "/api/device/information",
       "description": "Get device info (name, IMEI, WAN IP, etc.)"
+    },
+    "getBasicInformation": {
+      "method": "GET",
+      "endpoint": "/api/device/basic_information",
+      "description": "Get basic device information"
+    },
+    "setBasicInformation": {
+      "method": "POST",
+      "endpoint": "/api/device/basic_information",
+      "description": "Set basic info / restore default — body: restore_default_status"
+    },
+    "getBasicInformationAlt": {
+      "method": "GET",
+      "endpoint": "/api/device/basicinformation",
+      "description": "Get basic info (alternative endpoint)"
+    },
+    "getAutorunVersion": {
+      "method": "GET",
+      "endpoint": "/api/device/autorun-version",
+      "description": "Get autorun version"
+    },
+    "getDeviceFeatureSwitch": {
+      "method": "GET",
+      "endpoint": "/api/device/device-feature-switch",
+      "description": "Get device feature switch status"
+    },
+    "getUsbTetheringSwitch": {
+      "method": "GET",
+      "endpoint": "/api/device/usb-tethering-switch",
+      "description": "Get USB tethering status"
+    },
+    "getBootTime": {
+      "method": "GET",
+      "endpoint": "/api/device/boot_time",
+      "description": "Get device boot time"
     },
     "getSignal": {
       "method": "GET",
@@ -52,10 +162,30 @@
       "endpoint": "/api/device/control",
       "description": "Reboot device (Control=1)"
     },
+    "shutdown": {
+      "method": "POST",
+      "endpoint": "/api/device/control",
+      "description": "Shutdown device (Control=4)"
+    },
+    "getAntennaStatus": {
+      "method": "GET",
+      "endpoint": "/api/device/antenna_status",
+      "description": "Get antenna status"
+    },
+    "getAntennaSettings": {
+      "method": "GET",
+      "endpoint": "/api/device/antenna_settings",
+      "description": "Get antenna settings"
+    },
+    "setAntennaSettings": {
+      "method": "POST",
+      "endpoint": "/api/device/antenna_settings",
+      "description": "Set antenna type — body: antenna_type (AUTO/INTERNAL/EXTERNAL)"
+    },
     "getAntennaType": {
       "method": "GET",
-      "endpoint": "/api/device/antenna_set_type",
-      "description": "Get current antenna type setting"
+      "endpoint": "/api/device/antenna_type",
+      "description": "Get active antenna type"
     },
     "setAntennaType": {
       "method": "POST",
@@ -66,6 +196,41 @@
       "method": "POST",
       "endpoint": "/api/device/antenna_type",
       "description": "Alternative antenna type endpoint"
+    },
+    "getAntennaSetType": {
+      "method": "GET",
+      "endpoint": "/api/device/antenna_set_type",
+      "description": "Get antenna type that was set"
+    },
+    "getLogSetting": {
+      "method": "GET",
+      "endpoint": "/api/device/logsetting",
+      "description": "Get log settings"
+    },
+    "getLogPort": {
+      "method": "GET",
+      "endpoint": "/api/device/logport",
+      "description": "Get log port"
+    },
+    "getDataLock": {
+      "method": "GET",
+      "endpoint": "/api/device/datalock",
+      "description": "Get data lock status"
+    },
+    "setVendorName": {
+      "method": "POST",
+      "endpoint": "/api/device/vendorname",
+      "description": "Get vendor name — body: language"
+    },
+    "setMode": {
+      "method": "POST",
+      "endpoint": "/api/device/mode",
+      "description": "Set mode — body: mode (debug/telnet/production)"
+    },
+    "getCompressLogFile": {
+      "method": "GET",
+      "endpoint": "/api/device/compresslogfile",
+      "description": "Get compressed log file link"
     }
   },
   "monitoring": {
@@ -73,6 +238,16 @@
       "method": "GET",
       "endpoint": "/api/monitoring/status",
       "description": "Get connection status, network type, WiFi users, etc."
+    },
+    "getConvergedStatus": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/converged-status",
+      "description": "Get router convergence status"
+    },
+    "checkNotifications": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/check-notifications",
+      "description": "Check new notifications"
     },
     "getTrafficStats": {
       "method": "GET",
@@ -82,17 +257,57 @@
     "getMonthStats": {
       "method": "GET",
       "endpoint": "/api/monitoring/month_statistics",
-      "description": "Get monthly usage statistics"
+      "description": "Get monthly LTE usage statistics"
+    },
+    "getMonthStatsWlan": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/month_statistics_wlan",
+      "description": "Get monthly WLAN usage statistics"
     },
     "getStartDate": {
       "method": "GET",
       "endpoint": "/api/monitoring/start_date",
-      "description": "Get monthly data limit settings"
+      "description": "Get LTE monitoring start date settings"
     },
     "setStartDate": {
       "method": "POST",
       "endpoint": "/api/monitoring/start_date",
-      "description": "Set monthly data limit settings"
+      "description": "Set LTE monitoring — body: StartDay, DataLimit, MonthThreshold"
+    },
+    "getStartDateWlan": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/start_date_wlan",
+      "description": "Get WLAN monitoring start date settings"
+    },
+    "setStartDateWlan": {
+      "method": "POST",
+      "endpoint": "/api/monitoring/start_date_wlan",
+      "description": "Set WLAN monitoring — body: StartDay, DataLimit, MonthThreshold"
+    },
+    "clearTraffic": {
+      "method": "POST",
+      "endpoint": "/api/monitoring/clear-traffic",
+      "description": "Reset traffic statistics — body: ClearTraffic: 1"
+    },
+    "getWifiMonthSetting": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/wifi-month-setting",
+      "description": "Get WiFi month setting"
+    },
+    "getDailyDataLimit": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/daily-data-limit",
+      "description": "Get daily data limit"
+    },
+    "getStatisticFeatureSwitch": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/statistic-feature-switch",
+      "description": "Get statistic feature switch status"
+    },
+    "getOnekeyDiag": {
+      "method": "GET",
+      "endpoint": "/api/monitoring/onekey_diag",
+      "description": "Get one-click diagnostic status"
     }
   },
   "network": {
@@ -109,12 +324,57 @@
     "setNetMode": {
       "method": "POST",
       "endpoint": "/api/net/net-mode",
-      "description": "Set network mode and band (LTE band locking)"
+      "description": "Set network mode and band — body: NetworkMode, NetworkBand, LTEBand"
+    },
+    "getNetwork": {
+      "method": "GET",
+      "endpoint": "/api/net/network",
+      "description": "Get network info"
+    },
+    "setNetwork": {
+      "method": "POST",
+      "endpoint": "/api/net/network",
+      "description": "Set network — body: NetworkMode, NetworkBand"
+    },
+    "getRegister": {
+      "method": "GET",
+      "endpoint": "/api/net/register",
+      "description": "Get network registration status"
+    },
+    "setRegister": {
+      "method": "POST",
+      "endpoint": "/api/net/register",
+      "description": "Set registration manual/auto — body: Mode, Plmn, Rat"
+    },
+    "getNetModeList": {
+      "method": "GET",
+      "endpoint": "/api/net/net-mode-list",
+      "description": "Get available network modes"
     },
     "plmnList": {
       "method": "GET",
       "endpoint": "/api/net/plmn-list",
       "description": "Trigger PLMN scan (used for IP change)"
+    },
+    "getNetFeatureSwitch": {
+      "method": "GET",
+      "endpoint": "/api/net/net-feature-switch",
+      "description": "Get network feature switch status"
+    },
+    "getCellInfo": {
+      "method": "GET",
+      "endpoint": "/api/net/cell-info",
+      "description": "Get active cell info"
+    },
+    "getCspsState": {
+      "method": "GET",
+      "endpoint": "/api/net/csps_state",
+      "description": "Get CSPS state"
+    },
+    "reconnect": {
+      "method": "POST",
+      "endpoint": "/api/net/reconnect",
+      "description": "Reconnect to network — body: ReconnectAction: 1"
     }
   },
   "dialup": {
@@ -126,7 +386,7 @@
     "setMobileDataSwitch": {
       "method": "POST",
       "endpoint": "/api/dialup/mobile-dataswitch",
-      "description": "Toggle mobile data on/off"
+      "description": "Toggle mobile data on/off — body: dataswitch (0=off, 1=on)"
     },
     "getConnection": {
       "method": "GET",
@@ -136,7 +396,22 @@
     "setConnection": {
       "method": "POST",
       "endpoint": "/api/dialup/connection",
-      "description": "Set connection settings"
+      "description": "Set connection — body: RoamAutoConnectEnable, MaxIdelTime, ConnectMode, MTU"
+    },
+    "getProfiles": {
+      "method": "GET",
+      "endpoint": "/api/dialup/profiles",
+      "description": "Get dial-up profiles (APN list)"
+    },
+    "setProfiles": {
+      "method": "POST",
+      "endpoint": "/api/dialup/profiles",
+      "description": "Create/update/delete/set default APN profile"
+    },
+    "getAutoApn": {
+      "method": "GET",
+      "endpoint": "/api/dialup/auto-apn",
+      "description": "Get auto APN settings"
     },
     "getApnRetry": {
       "method": "GET",
@@ -147,6 +422,16 @@
       "method": "POST",
       "endpoint": "/api/dialup/apn-retry",
       "description": "Set APN retry settings"
+    },
+    "getDialupFeatureSwitch": {
+      "method": "GET",
+      "endpoint": "/api/dialup/dialup-feature-switch",
+      "description": "Get dial-up feature switch status"
+    },
+    "dial": {
+      "method": "POST",
+      "endpoint": "/api/dialup/dial",
+      "description": "Start dial-up connection — body: Action: 1"
     }
   },
   "wifi": {
@@ -163,7 +448,17 @@
     "setBasicSettings": {
       "method": "POST",
       "endpoint": "/api/wlan/basic-settings",
-      "description": "Set WiFi basic settings"
+      "description": "Set WiFi — body: WifiSsid, WifiHide, WifiRestart"
+    },
+    "getSecuritySettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/security-settings",
+      "description": "Get WiFi security settings"
+    },
+    "setSecuritySettings": {
+      "method": "POST",
+      "endpoint": "/api/wlan/security-settings",
+      "description": "Set WiFi security — body: WifiAuthmode, WifiWpapsk, WifiWpaencryptionmodes"
     },
     "getMultiBasicSettings": {
       "method": "GET",
@@ -173,7 +468,147 @@
     "setMultiBasicSettings": {
       "method": "POST",
       "endpoint": "/api/wlan/multi-basic-settings",
-      "description": "Set multi-SSID settings"
+      "description": "Set multi-SSID — body: Ssids.Ssid[], WifiRestart"
+    },
+    "getMultiSecuritySettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/multi-security-settings",
+      "description": "Get multi-SSID security settings"
+    },
+    "getMultiSecuritySettingsEx": {
+      "method": "GET",
+      "endpoint": "/api/wlan/multi-security-settings-ex",
+      "description": "Get multi-SSID security settings (extended)"
+    },
+    "getMultiSwitchSettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/multi-switch-settings",
+      "description": "Get multi-SSID switch settings"
+    },
+    "getMultiMacFilterSettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/multi-macfilter-settings",
+      "description": "Get multi-SSID MAC filter settings"
+    },
+    "setMultiMacFilterSettings": {
+      "method": "POST",
+      "endpoint": "/api/wlan/multi-macfilter-settings",
+      "description": "Set multi-SSID MAC filter"
+    },
+    "getMacFilterSettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/multi-macfilter-settings-ex",
+      "description": "Get MAC filter/blacklist settings (extended)"
+    },
+    "setMacFilterSettings": {
+      "method": "POST",
+      "endpoint": "/api/wlan/multi-macfilter-settings",
+      "description": "Set MAC filter (block/unblock devices)"
+    },
+    "getMacFilter": {
+      "method": "GET",
+      "endpoint": "/api/wlan/mac-filter",
+      "description": "Get WiFi MAC filter"
+    },
+    "setMacFilter": {
+      "method": "POST",
+      "endpoint": "/api/wlan/mac-filter",
+      "description": "Set WiFi MAC filter — body: wifihostname, WifiMacFilterMac"
+    },
+    "getStationInformation": {
+      "method": "GET",
+      "endpoint": "/api/wlan/station-information",
+      "description": "Get WiFi station info"
+    },
+    "getHandoverSetting": {
+      "method": "GET",
+      "endpoint": "/api/wlan/handover-setting",
+      "description": "Get WiFi/3G handover settings"
+    },
+    "setHandoverSetting": {
+      "method": "POST",
+      "endpoint": "/api/wlan/handover-setting",
+      "description": "Set handover — body: Handover"
+    },
+    "getWps": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wps",
+      "description": "Get WPS status"
+    },
+    "getWpsAppPin": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wps-appin",
+      "description": "Get WPS APP PIN"
+    },
+    "setWpsAppPin": {
+      "method": "POST",
+      "endpoint": "/api/wlan/wps-appin",
+      "description": "Set WPS APP PIN — body: wpsappintype, wpsappin"
+    },
+    "getWpsPbc": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wps-pbc",
+      "description": "Get WPS Push Button status"
+    },
+    "setWpsPbc": {
+      "method": "POST",
+      "endpoint": "/api/wlan/wps-pbc",
+      "description": "Trigger WPS PBC — body: WPSMode, ssidindex"
+    },
+    "getWpsSwitch": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wps-switch",
+      "description": "Get WPS switch status"
+    },
+    "setWpsSwitch": {
+      "method": "POST",
+      "endpoint": "/api/wlan/wps-switch",
+      "description": "Toggle WPS — body: appinenable"
+    },
+    "getStatusSwitchSettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/status-switch-settings",
+      "description": "Get switch settings status"
+    },
+    "getOledShowPassword": {
+      "method": "GET",
+      "endpoint": "/api/wlan/oled-showpassword",
+      "description": "Get OLED password display status"
+    },
+    "getWifiProfile": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wifiprofile",
+      "description": "Get WiFi profile"
+    },
+    "getWifiFrequence": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wififrequence",
+      "description": "Get WiFi frequency"
+    },
+    "getWifiScanResult": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wifiscanresult",
+      "description": "Get WiFi scan results"
+    },
+    "getWlanDbho": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wlandbho",
+      "description": "Get WLAN DBHO info"
+    },
+    "getWlanGuideSettings": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wlan-guide-settings",
+      "description": "Get WLAN guide/wizard settings"
+    },
+    "setWlanGuideSettings": {
+      "method": "POST",
+      "endpoint": "/api/wlan/wlan-guide-settings",
+      "description": "Set WLAN guide/wizard (encrypted)"
+    },
+    "getWlanIntelligent": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wlanintelligent",
+      "description": "Get WLAN intelligent settings"
     },
     "getGuestTimeSetting": {
       "method": "GET",
@@ -185,20 +620,250 @@
       "endpoint": "/api/wlan/guesttime-setting",
       "description": "Set guest WiFi time settings"
     },
+    "getWifiFeatureSwitch": {
+      "method": "GET",
+      "endpoint": "/api/wlan/wifi-feature-switch",
+      "description": "Get WiFi feature switch status"
+    },
     "toggleWifi": {
       "method": "POST",
       "endpoint": "/api/wlan/wifi-switch",
       "description": "Toggle WiFi on/off"
-    },
-    "getMacFilterSettings": {
+    }
+  },
+  "onlineUpdate": {
+    "getStatus": {
       "method": "GET",
-      "endpoint": "/api/wlan/multi-macfilter-settings-ex",
-      "description": "Get MAC filter/blacklist settings"
+      "endpoint": "/api/online-update/status",
+      "description": "Get firmware update status"
     },
-    "setMacFilterSettings": {
+    "checkNewVersion": {
+      "method": "GET",
+      "endpoint": "/api/online-update/check-new-version",
+      "description": "Check for new firmware version"
+    },
+    "triggerCheckNewVersion": {
       "method": "POST",
-      "endpoint": "/api/wlan/multi-macfilter-settings",
-      "description": "Set MAC filter (block/unblock devices)"
+      "endpoint": "/api/online-update/check-new-version",
+      "description": "Trigger check for new firmware version"
+    },
+    "getUrlList": {
+      "method": "GET",
+      "endpoint": "/api/online-update/url-list",
+      "description": "Get update URL list"
+    },
+    "getAckNewVersion": {
+      "method": "GET",
+      "endpoint": "/api/online-update/ack-newversion",
+      "description": "Get new version acknowledge status"
+    },
+    "ackNewVersion": {
+      "method": "POST",
+      "endpoint": "/api/online-update/ack-newversion",
+      "description": "Acknowledge new version — body: userAckNewVersion"
+    },
+    "getCancelDownloading": {
+      "method": "GET",
+      "endpoint": "/api/online-update/cancel-downloading",
+      "description": "Get cancel download status"
+    },
+    "cancelDownloading": {
+      "method": "POST",
+      "endpoint": "/api/online-update/cancel-downloading",
+      "description": "Cancel firmware download"
+    },
+    "getUpgradeMessagebox": {
+      "method": "GET",
+      "endpoint": "/api/online-update/upgrade-messagebox",
+      "description": "Get upgrade message"
+    },
+    "setUpgradeMessagebox": {
+      "method": "POST",
+      "endpoint": "/api/online-update/upgrade-messagebox",
+      "description": "Set upgrade message — body: messagebox"
+    },
+    "getConfiguration": {
+      "method": "GET",
+      "endpoint": "/api/online-update/configuration",
+      "description": "Get online update configuration"
+    },
+    "getAutoupdateConfig": {
+      "method": "GET",
+      "endpoint": "/api/online-update/autoupdate-config",
+      "description": "Get auto-update configuration"
+    },
+    "setAutoupdateConfig": {
+      "method": "POST",
+      "endpoint": "/api/online-update/autoupdate-config",
+      "description": "Set auto-update — body: auto_update, ui_download"
+    },
+    "getRedirectCancel": {
+      "method": "GET",
+      "endpoint": "/api/online-update/redirect_cancel",
+      "description": "Cancel redirect update"
+    }
+  },
+  "phonebook": {
+    "getPbCount": {
+      "method": "GET",
+      "endpoint": "/api/pb/pb-count",
+      "description": "Get contact count"
+    },
+    "getPbList": {
+      "method": "POST",
+      "endpoint": "/api/pb/pb-list",
+      "description": "Get contact list — body: PageIndex, ReadCount, GroupID, Storage"
+    },
+    "deletePb": {
+      "method": "POST",
+      "endpoint": "/api/pb/delete-pb",
+      "description": "Delete contact — body: Index, Storage"
+    }
+  },
+  "pin": {
+    "getStatus": {
+      "method": "GET",
+      "endpoint": "/api/pin/status",
+      "description": "Get SIM PIN status"
+    },
+    "getSimlock": {
+      "method": "GET",
+      "endpoint": "/api/pin/simlock",
+      "description": "Get SIM lock status"
+    },
+    "operate": {
+      "method": "POST",
+      "endpoint": "/api/pin/operate",
+      "description": "PIN operation — body: OperateType, CurrentPin, NewPin, PukCode"
+    }
+  },
+  "app": {
+    "getOperatorinfo": {
+      "method": "GET",
+      "endpoint": "/api/app/operatorinfo",
+      "description": "Get operator info — param: lang"
+    },
+    "getPrivacypolicy": {
+      "method": "GET",
+      "endpoint": "/api/app/privacypolicy",
+      "description": "Get privacy policy — param: lang"
+    },
+    "setPrivacypolicy": {
+      "method": "POST",
+      "endpoint": "/api/app/privacypolicy",
+      "description": "Accept/reject privacy policy — body: data.Approve"
+    }
+  },
+  "sms": {
+    "getSmsList": {
+      "method": "POST",
+      "endpoint": "/api/sms/sms-list",
+      "description": "Get SMS list — body: PageIndex, ReadCount, BoxType, SortType, Ascending, UnreadPreferred"
+    },
+    "getSmsCount": {
+      "method": "GET",
+      "endpoint": "/api/sms/sms-count",
+      "description": "Get SMS inbox count"
+    },
+    "getSmsCountContact": {
+      "method": "GET",
+      "endpoint": "/api/sms/sms-count-contact",
+      "description": "Get SMS count per contact"
+    },
+    "getSmsFeatureSwitch": {
+      "method": "GET",
+      "endpoint": "/api/sms/sms-feature-switch",
+      "description": "Get SMS feature switch status"
+    },
+    "getSplitInfoSms": {
+      "method": "GET",
+      "endpoint": "/api/sms/splitinfo-sms",
+      "description": "Get SMS multipart info"
+    },
+    "getSendStatus": {
+      "method": "GET",
+      "endpoint": "/api/sms/send-status",
+      "description": "Get last SMS send status"
+    },
+    "getCbsNewsList": {
+      "method": "GET",
+      "endpoint": "/api/sms/get-cbsnewslist",
+      "description": "Get CBS news list"
+    },
+    "getSplitSms": {
+      "method": "GET",
+      "endpoint": "/api/sms/split-sms",
+      "description": "Get split SMS info"
+    },
+    "recoverSms": {
+      "method": "GET",
+      "endpoint": "/api/sms/recover-sms",
+      "description": "Recover SMS"
+    },
+    "copySms": {
+      "method": "GET",
+      "endpoint": "/api/sms/copy-sms",
+      "description": "Copy SMS"
+    },
+    "moveSms": {
+      "method": "GET",
+      "endpoint": "/api/sms/move-sms",
+      "description": "Move SMS"
+    },
+    "getSmsConfig": {
+      "method": "GET",
+      "endpoint": "/api/sms/config",
+      "description": "Get default SMS configuration"
+    },
+    "setSmsConfig": {
+      "method": "POST",
+      "endpoint": "/api/sms/config",
+      "description": "Set SMS config — body: SaveMode, Validity, Sca, SendType, Priority"
+    },
+    "getSmsListContact": {
+      "method": "POST",
+      "endpoint": "/api/sms/sms-list-contact",
+      "description": "Get SMS list per contact — body: pageindex, readcount"
+    },
+    "getSmsListPdu": {
+      "method": "POST",
+      "endpoint": "/api/sms/sms-list-pdu",
+      "description": "Get SMS list in PDU format — body: PageIndex, ReadCount, BoxType"
+    },
+    "sendSms": {
+      "method": "POST",
+      "endpoint": "/api/sms/send-sms",
+      "description": "Send SMS — body: Index, Phones, Sca, Content, Length, Reserved, Date"
+    },
+    "sendSmsPdu": {
+      "method": "POST",
+      "endpoint": "/api/sms/send-sms-pdu",
+      "description": "Send SMS in PDU format — body: Index, PDU, Length, SaveMode"
+    },
+    "saveSms": {
+      "method": "POST",
+      "endpoint": "/api/sms/save-sms",
+      "description": "Save SMS as draft"
+    },
+    "deleteSms": {
+      "method": "POST",
+      "endpoint": "/api/sms/delete-sms",
+      "description": "Delete SMS — body: Index"
+    },
+    "setSmsRead": {
+      "method": "POST",
+      "endpoint": "/api/sms/set-read",
+      "description": "Mark SMS as read — body: Index"
+    },
+    "backupSim": {
+      "method": "POST",
+      "endpoint": "/api/sms/backup-sim",
+      "description": "Backup SMS to SIM — body: IsMove, Date"
+    },
+    "cancelSend": {
+      "method": "POST",
+      "endpoint": "/api/sms/cancel-send",
+      "description": "Cancel SMS sending"
     }
   },
   "lan": {
@@ -206,6 +871,11 @@
       "method": "POST",
       "endpoint": "/api/lan/changedevicename",
       "description": "Change connected device display name"
+    },
+    "getEthernetSwitchInfo": {
+      "method": "GET",
+      "endpoint": "/api/lan/ethernet-switch-info",
+      "description": "Get LAN Ethernet switch info"
     }
   },
   "system": {
@@ -213,33 +883,243 @@
       "method": "GET",
       "endpoint": "/api/system/HostInfo",
       "description": "Get detailed host info (JSON, includes AssociatedTime)"
+    },
+    "getDeviceInfo": {
+      "method": "GET",
+      "endpoint": "/api/system/deviceinfo",
+      "description": "Get system device info"
+    },
+    "upgradeDeviceCfg": {
+      "method": "POST",
+      "endpoint": "/api/system/upgrade-device-cfg",
+      "description": "Upgrade device configuration"
     }
   },
-  "sms": {
-    "getSmsList": {
-      "method": "POST",
-      "endpoint": "/api/sms/sms-list",
-      "description": "Get SMS list"
-    },
-    "getSmsCount": {
+  "bluetooth": {
+    "getSettings": {
       "method": "GET",
-      "endpoint": "/api/sms/sms-count",
-      "description": "Get SMS inbox count"
+      "endpoint": "/api/bluetooth/settings",
+      "description": "Get Bluetooth settings"
     },
-    "sendSms": {
+    "setSettings": {
       "method": "POST",
-      "endpoint": "/api/sms/send-sms",
-      "description": "Send SMS"
+      "endpoint": "/api/bluetooth/settings",
+      "description": "Set Bluetooth settings"
+    }
+  },
+  "cradle": {
+    "getStatusInfo": {
+      "method": "GET",
+      "endpoint": "/api/cradle/status-info",
+      "description": "Get cradle status info"
     },
-    "deleteSms": {
-      "method": "POST",
-      "endpoint": "/api/sms/delete-sms",
-      "description": "Delete SMS"
+    "getFeatureSwitch": {
+      "method": "GET",
+      "endpoint": "/api/cradle/feature-switch",
+      "description": "Get cradle feature switch"
     },
-    "setSmsRead": {
+    "getBasicInfo": {
+      "method": "GET",
+      "endpoint": "/api/cradle/basic-info",
+      "description": "Get cradle basic info"
+    },
+    "getFactoryMac": {
+      "method": "GET",
+      "endpoint": "/api/cradle/factory-mac",
+      "description": "Get cradle factory MAC"
+    }
+  },
+  "ddns": {
+    "getDdnsList": {
+      "method": "GET",
+      "endpoint": "/api/ddns/ddns-list",
+      "description": "Get DDNS list"
+    },
+    "setDdnsList": {
       "method": "POST",
-      "endpoint": "/api/sms/set-read",
-      "description": "Mark SMS as read"
+      "endpoint": "/api/ddns/ddns-list",
+      "description": "Set DDNS"
+    }
+  },
+  "dhcp": {
+    "getSettings": {
+      "method": "GET",
+      "endpoint": "/api/dhcp/settings",
+      "description": "Get DHCP settings"
+    },
+    "setSettings": {
+      "method": "POST",
+      "endpoint": "/api/dhcp/settings",
+      "description": "Set DHCP settings"
+    },
+    "getStaticAddrInfo": {
+      "method": "GET",
+      "endpoint": "/api/dhcp/static-addr-info",
+      "description": "Get static IP address info"
+    },
+    "setStaticAddrInfo": {
+      "method": "POST",
+      "endpoint": "/api/dhcp/static-addr-info",
+      "description": "Set static IP address"
+    }
+  },
+  "diagnosis": {
+    "ping": {
+      "method": "POST",
+      "endpoint": "/api/diagnosis/diagnose_ping",
+      "description": "Perform ping test to specified host"
+    },
+    "getTraceroute": {
+      "method": "GET",
+      "endpoint": "/api/diagnosis/traceroute",
+      "description": "Get traceroute status"
+    },
+    "traceroute": {
+      "method": "POST",
+      "endpoint": "/api/diagnosis/traceroute",
+      "description": "Run traceroute — body: host, timeout, maxHops"
+    }
+  },
+  "global": {
+    "getModuleSwitch": {
+      "method": "GET",
+      "endpoint": "/api/global/module-switch",
+      "description": "Get global module switch status"
+    }
+  },
+  "host": {
+    "getInfo": {
+      "method": "GET",
+      "endpoint": "/api/host/info",
+      "description": "Get host info"
+    }
+  },
+  "language": {
+    "getCurrentLanguage": {
+      "method": "GET",
+      "endpoint": "/api/language/current-language",
+      "description": "Get active language"
+    },
+    "setCurrentLanguage": {
+      "method": "POST",
+      "endpoint": "/api/language/current-language",
+      "description": "Set language"
+    }
+  },
+  "led": {
+    "getNightmode": {
+      "method": "GET",
+      "endpoint": "/api/led/nightmode",
+      "description": "Get LED night mode status"
+    },
+    "setNightmode": {
+      "method": "POST",
+      "endpoint": "/api/led/nightmode",
+      "description": "Set LED night mode"
+    }
+  },
+  "log": {
+    "getLogfile": {
+      "method": "GET",
+      "endpoint": "/api/log/logfile",
+      "description": "Get log file"
+    }
+  },
+  "mlog": {
+    "getMobileLogger": {
+      "method": "GET",
+      "endpoint": "/api/mlog/mobile-logger",
+      "description": "Get mobile logger"
+    }
+  },
+  "ntwk": {
+    "getCelllock": {
+      "method": "GET",
+      "endpoint": "/api/ntwk/celllock",
+      "description": "Get cell lock status"
+    },
+    "setCelllock": {
+      "method": "POST",
+      "endpoint": "/api/ntwk/celllock",
+      "description": "Set cell lock"
+    }
+  },
+  "ota": {
+    "getStatus": {
+      "method": "GET",
+      "endpoint": "/api/ota/status",
+      "description": "Get OTA update status"
+    }
+  },
+  "redirection": {
+    "getHomepage": {
+      "method": "GET",
+      "endpoint": "/api/redirection/homepage",
+      "description": "Get homepage redirection"
+    }
+  },
+  "sdcard": {
+    "getSdcardInfo": {
+      "method": "GET",
+      "endpoint": "/api/sdcard/sdcard-info",
+      "description": "Get SD card info"
+    },
+    "getSdcardList": {
+      "method": "GET",
+      "endpoint": "/api/sdcard/sdcard-list",
+      "description": "Get SD card file list"
+    }
+  },
+  "security": {
+    "getMacFilter": {
+      "method": "GET",
+      "endpoint": "/api/security/mac-filter",
+      "description": "Get security MAC filter"
+    },
+    "setMacFilter": {
+      "method": "POST",
+      "endpoint": "/api/security/mac-filter",
+      "description": "Set security MAC filter"
+    },
+    "getBridgemode": {
+      "method": "GET",
+      "endpoint": "/api/security/bridgemode",
+      "description": "Get bridge mode status"
+    }
+  },
+  "sntp": {
+    "getSntpSettings": {
+      "method": "GET",
+      "endpoint": "/api/sntp/sntpsettings",
+      "description": "Get SNTP settings"
+    }
+  },
+  "staticroute": {
+    "getStaticRouteList": {
+      "method": "GET",
+      "endpoint": "/api/staticroute/static-route-list",
+      "description": "Get static route list"
+    }
+  },
+  "statistic": {
+    "getStatisticsItemType": {
+      "method": "GET",
+      "endpoint": "/api/statistic/statistics_item_type",
+      "description": "Get statistics item type"
+    }
+  },
+  "syslog": {
+    "queryLog": {
+      "method": "GET",
+      "endpoint": "/api/syslog/querylog",
+      "description": "Query syslog"
+    }
+  },
+  "time": {
+    "getTimeout": {
+      "method": "GET",
+      "endpoint": "/api/time/timeout",
+      "description": "Get session timeout"
     }
   },
   "timeRule": {
@@ -254,11 +1134,68 @@
       "description": "Set parental control time rules"
     }
   },
-  "diagnosis": {
-    "ping": {
+  "usbprinter": {
+    "getPrinterinfo": {
+      "method": "GET",
+      "endpoint": "/api/usbprinter/printerinfo",
+      "description": "Get USB printer info"
+    }
+  },
+  "usbstorage": {
+    "getStorageinfo": {
+      "method": "GET",
+      "endpoint": "/api/usbstorage/storageinfo",
+      "description": "Get USB storage info"
+    }
+  },
+  "ussd": {
+    "getStatus": {
+      "method": "GET",
+      "endpoint": "/api/ussd/status",
+      "description": "Get USSD status"
+    },
+    "send": {
       "method": "POST",
-      "endpoint": "/api/diagnosis/diagnose_ping",
-      "description": "Perform ping test to specified host"
+      "endpoint": "/api/ussd/send",
+      "description": "Send USSD — body: content, codeType"
+    }
+  },
+  "vsim": {
+    "getStatus": {
+      "method": "GET",
+      "endpoint": "/api/vsim/status",
+      "description": "Get vSIM status"
+    }
+  },
+  "voice": {
+    "getVoipAccount": {
+      "method": "GET",
+      "endpoint": "/api/voice/voip-account",
+      "description": "Get VoIP account info"
+    },
+    "setVoipAccount": {
+      "method": "POST",
+      "endpoint": "/api/voice/voip-account",
+      "description": "Set VoIP account"
+    }
+  },
+  "vpn": {
+    "getBasicInfo": {
+      "method": "GET",
+      "endpoint": "/api/vpn/basic-info",
+      "description": "Get VPN info"
+    },
+    "setBasicInfo": {
+      "method": "POST",
+      "endpoint": "/api/vpn/basic-info",
+      "description": "Set VPN"
+    }
+  },
+  "webserver": {
+    "getToken": {
+      "method": "GET",
+      "endpoint": "/api/webserver/token",
+      "description": "Get web server token"
     }
   }
 }

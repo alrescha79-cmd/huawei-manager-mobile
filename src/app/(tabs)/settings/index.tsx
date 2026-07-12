@@ -443,7 +443,7 @@ export default function SettingsIndex() {
                             if (val === 'website') {
                                 router.push({ pathname: '/webview', params: { url: 'https://hm.cakson.my.id/#support', title: t('settings.bugReport') || 'Bug Report' } });
                             } else {
-                                router.push({ pathname: '/webview', params: { url: 'https://github.com/alrescha79-cmd/huawei-manager-mobile/issues', title: t('settings.bugReport') || 'Bug Report' } });
+                                router.push({ pathname: '/webview', params: { url: 'https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=bug&projects=&template=bug_report.md', title: t('settings.bugReport') || 'Bug Report' } });
                             }
                         }}
                         onClose={() => setShowBugReportModal(false)}

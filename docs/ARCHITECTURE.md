@@ -1,3 +1,15 @@
+# 🎯 Design Philosophy
+
+Aplikasi ini mengusung tema **macOS + iOS + Android** sebagai gaya visual utama. Perpaduan ini menghasilkan tampilan yang:
+
+- **macOS** — Glassmorphism (blur + transparansi), rounded corners besar, card-based layout, depth layering
+- **iOS** — SF Pro typography, haptic feedback patterns, sheet/modal presentation, tab bar navigation
+- **Android** — Material Design components (react-native-paper), Android Home Screen Widgets, AdMob integration
+
+Hasil akhir: antarmuka modern yang terasa native di semua platform, dengan estetika frosted glass yang konsisten baik di light maupun dark mode.
+
+---
+
 # 🛠️ Tech Stack
 
 ## Core
@@ -79,9 +91,28 @@ src/
 
 ---
 
-# 🎨 Design System
+# 🎨 Design System — macOS + iOS + Android Fusion
+
+Tampilan menggabungkan elemen terbaik dari tiga ekosistem:
+- **Frosted glass / glassmorphism** khas macOS (blur layer + transparansi)
+- **Typography & spacing** khas iOS (SF Pro scale, generous whitespace)
+- **Component library** dari Android Material Design (react-native-paper)
+- **Native widgets & ads** untuk platform Android
 
 ## Colors
+
+### Accent Colors
+| Name | Light | Dark |
+|---------|-------|-------|
+| Blue | `#007AFF` | `#0A84FF`|
+| Green | `#34C759` | `#30D158`|
+| Indigo | `#5856D6` | `#5E5CE6`|
+| Orange | `#FF9500` | `#FF9F0A`|
+| Pink | `#FF2D55` | `#FF375F`|
+| Purple | `#AF52DE` | `#BF5AF2`|
+| Red | `#FF3B30` | `#FF453A`|
+| Teal | `#5AC8FA` | `#64D2FF`|
+| Yellow | `#FFCC00` | `#FFD60A`|
 
 ### Light Mode
 | Element | Color |
@@ -113,7 +144,9 @@ src/
 | Error | `#FF453A` |
 | Tab Bar | `#1C1C1E` |
 
-## Glassmorphism
+## Glassmorphism (macOS-inspired)
+
+Efek frosted glass yang menjadi ciri khas macOS — memberikan kedalaman visual dan hierarchy antar layer. Digunakan pada card, modal, overlay, dan alert.
 
 ### Blur Intensity
 | Element | Value |
@@ -131,7 +164,7 @@ src/
 | Dark | `rgba(10, 10, 10, 0.4)` | `rgba(10, 10, 10, 0.6)` | `rgba(10, 10, 10, 0.5)` | `rgba(28, 28, 30, 1.0)` |
 | Light | `rgba(255, 255, 255, 0.4)` | `rgba(255, 255, 255, 0.6)` | `rgba(255, 255, 255, 0.5)` | `rgba(255, 255, 255, 0.98)` |
 
-## Spacing
+## Spacing (iOS Human Interface Guidelines)
 | Token | Value |
 |-------|-------|
 | xs | 4px |
@@ -141,7 +174,7 @@ src/
 | xl | 32px |
 | xxl | 48px |
 
-## Border Radius
+## Border Radius (macOS/iOS Rounded Corners)
 | Token | Value |
 |-------|-------|
 | sm | 8px |
@@ -150,8 +183,9 @@ src/
 | xl | 20px |
 | round | 999px |
 
-## Typography
-Following SF Pro style (Apple):
+## Typography (iOS SF Pro Scale)
+
+Mengikuti skala tipografi SF Pro dari Apple untuk konsistensi visual khas iOS:
 
 | Style | Size | Weight | Line Height |
 |-------|------|--------|-------------|

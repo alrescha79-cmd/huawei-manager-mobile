@@ -95,6 +95,19 @@ Bisa diubah manual di login screen jika berbeda.
 
 ---
 
+## 🐞 Lapor Bug & Feedback
+
+Menemukan bug atau punya saran?
+
+- **Via GitHub Issues (Disarankan)**:
+  Buat laporan teknis di [**halaman Issues GitHub kami**](https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=bug&projects=&template=bug_report.md).
+  Sertakan model modem, versi firmware, dan screenshot jika bisa.
+
+- **Via Formulir Web**:
+  Kirim feedback cepat melalui [**formulir online ini**](https://hm.cakson.my.id/#support).
+
+---
+
 ## Known Limitations
 
 1. **SMS Support** - Tergantung model dan firmware modem
