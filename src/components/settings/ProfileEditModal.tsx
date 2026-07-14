@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import {
+    View,
+    Text,
+    StyleSheet,
+    Modal,
+    TextInput,
+    TouchableOpacity,
+    Pressable,
+    Keyboard,
+    KeyboardAvoidingView,
+    Platform,
+    StatusBar,
+    ScrollView,
+} from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { PageSheetModal } from '../PageSheetModal';
-import { MeshGradientBackground } from '../MeshGradientBackground';
-import { Button } from '../Button';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ThemedAlertHelper } from '../ThemedAlert';
+import { BouncingDots } from '../LoadingIndicators';
 
 interface ProfileData {
     id: string;
@@ -30,36 +43,68 @@ export function ProfileEditModal({
 }: ProfileEditModalProps) {
     const { colors, typography } = useTheme();
     const { t } = useTranslation();
+    const insets = useSafeAreaInsets();
 
     const [name, setName] = useState('');
     const [modemIp, setModemIp] = useState('');
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [passwordError, setPasswordError] = useState('');
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
 
+    const [initialState, setInitialState] = useState({
+        name: '',
+        modemIp: '',
+        username: '',
+        password: '',
+    });
+
     useEffect(() => {
         if (visible) {
-            if (profile) {
-                setName(profile.name || '');
-                setModemIp(profile.modemIp || '');
-                setUsername(profile.username || '');
-                setPassword(profile.password || '');
-            } else {
-                setName('');
-                setModemIp('192.168.8.1');
-                setUsername('admin');
-                setPassword('');
-            }
+            const defaultState = {
+                name: profile?.name || '',
+                modemIp: profile?.modemIp || '192.168.8.1',
+                username: profile?.username || 'admin',
+                password: profile?.password || '',
+            };
+            setName(defaultState.name);
+            setModemIp(defaultState.modemIp);
+            setUsername(defaultState.username);
+            setPassword(defaultState.password);
+            setInitialState(defaultState);
             setIsPasswordVisible(false);
-            setPasswordError('');
         }
     }, [visible, profile]);
 
+    const hasChanges = () => {
+        return (
+            name !== initialState.name ||
+            modemIp !== initialState.modemIp ||
+            username !== initialState.username ||
+            password !== initialState.password
+        );
+    };
+
+    const handleClose = () => {
+        if (hasChanges()) {
+            ThemedAlertHelper.alert(
+                t('common.unsavedChanges'),
+                t('common.discardChangesMessage'),
+                [
+                    { text: t('common.cancel'), style: 'cancel' },
+                    { text: t('common.discard'), style: 'destructive', onPress: onClose }
+                ]
+            );
+        } else {
+            onClose();
+        }
+    };
+
     const handleSave = async () => {
+        Keyboard.dismiss();
+        if (!name.trim()) return;
         if (password.length > 0 && password.length < 8) {
-            setPasswordError(t('settings.passwordLengthError'));
+            ThemedAlertHelper.alert(t('common.error'), t('settings.passwordLengthError'));
             return;
         }
 
@@ -72,99 +117,143 @@ export function ProfileEditModal({
                 password,
             });
             onClose();
-        } catch (error) {
+        } catch {
         } finally {
             setIsSaving(false);
         }
     };
 
     return (
-        <PageSheetModal
+        <Modal
             visible={visible}
-            onClose={onClose}
-            title={profile ? t('settings.editProfileTitle') : t('settings.addProfileTitle')}
+            animationType="slide"
+            presentationStyle="pageSheet"
+            onRequestClose={handleClose}
         >
-            <MeshGradientBackground>
-                <View style={{ paddingHorizontal: 16, paddingBottom: 24, gap: 12 }}>
-                    <View style={styles.inputGroup}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.profileName')}</Text>
-                        <TextInput
-                            value={name}
-                            onChangeText={setName}
-                            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                        />
-                    </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.modemIpLabel')}</Text>
-                        <TextInput
-                            value={modemIp}
-                            onChangeText={setModemIp}
-                            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                            keyboardType="numeric"
-                        />
-                    </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.usernameLabel')}</Text>
-                        <TextInput
-                            value={username}
-                            onChangeText={setUsername}
-                            style={[styles.input, { color: colors.text, borderColor: colors.border }]}
-                            autoCapitalize="none"
-                        />
-                    </View>
-                    <View style={styles.inputGroup}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 4 }]}>{t('settings.passwordLabel')}</Text>
-                        <View style={styles.passwordContainer}>
-                            <TextInput
-                                value={password}
-                                onChangeText={(text) => {
-                                    setPassword(text);
-                                    if (text.length > 0 && text.length < 8) {
-                                        setPasswordError(t('settings.passwordLengthError'));
-                                    } else {
-                                        setPasswordError('');
-                                    }
-                                }}
-                                secureTextEntry={!isPasswordVisible}
-                                style={[styles.input, styles.passwordInput, { color: colors.text, borderColor: passwordError ? colors.error : colors.border }]}
-                            />
-                            <TouchableOpacity
-                                style={styles.eyeIcon}
-                                onPress={() => setIsPasswordVisible(!isPasswordVisible)}
-                            >
-                                <MaterialIcons
-                                    name={isPasswordVisible ? 'visibility' : 'visibility-off'}
-                                    size={24}
-                                    color={colors.textSecondary}
-                                />
-                            </TouchableOpacity>
-                        </View>
-                        {passwordError ? <Text style={{ color: colors.error, marginTop: 4 }}>{passwordError}</Text> : null}
-                    </View>
-                    <Button
-                        title={isSaving ? t('common.saving') : t('common.save')}
-                        loading={isSaving}
-                        disabled={isSaving || !name.trim() || !!passwordError}
-                        onPress={handleSave}
-                    />
+            <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
+                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
+                    <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
+                        {profile ? t('settings.editProfileTitle') : t('settings.addProfileTitle')}
+                    </Text>
+                    <TouchableOpacity onPress={handleClose}>
+                        <MaterialIcons name="close" size={28} color={colors.primary} />
+                    </TouchableOpacity>
                 </View>
-            </MeshGradientBackground>
-        </PageSheetModal>
+
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1 }}
+                >
+                    <ScrollView
+                        style={{ flex: 1, padding: 20 }}
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Profile Name */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.profileName')}</Text>
+                            <TextInput
+                                placeholder={t('settings.profileName')}
+                                placeholderTextColor={colors.textSecondary}
+                                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                value={name}
+                                onChangeText={setName}
+                            />
+                        </View>
+
+                        {/* Modem IP */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.modemIpLabel')}</Text>
+                            <TextInput
+                                placeholder="192.168.8.1"
+                                placeholderTextColor={colors.textSecondary}
+                                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                value={modemIp}
+                                onChangeText={setModemIp}
+                                keyboardType="numeric"
+                            />
+                        </View>
+
+                        {/* Username */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.usernameLabel')}</Text>
+                            <TextInput
+                                placeholder={t('settings.usernameLabel')}
+                                placeholderTextColor={colors.textSecondary}
+                                style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                value={username}
+                                onChangeText={setUsername}
+                                autoCapitalize="none"
+                            />
+                        </View>
+
+                        {/* Password */}
+                        <View style={{ marginBottom: 16 }}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginBottom: 8 }]}>{t('settings.passwordLabel')}</Text>
+                            <View style={styles.passwordRow}>
+                                <TextInput
+                                    placeholder={t('settings.passwordLabel')}
+                                    placeholderTextColor={colors.textSecondary}
+                                    style={[styles.input, styles.passwordInput, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text }]}
+                                    value={password}
+                                    onChangeText={setPassword}
+                                    secureTextEntry={!isPasswordVisible}
+                                />
+                                <TouchableOpacity
+                                    style={styles.eyeIcon}
+                                    onPress={() => setIsPasswordVisible(!isPasswordVisible)}
+                                >
+                                    <MaterialIcons
+                                        name={isPasswordVisible ? 'visibility' : 'visibility-off'}
+                                        size={22}
+                                        color={colors.textSecondary}
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </ScrollView>
+
+                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 }]}>
+                        <Pressable
+                            style={({ pressed }) => [
+                                styles.saveButton,
+                                { backgroundColor: hasChanges() && name.trim() ? colors.primary : colors.textSecondary },
+                                pressed && { opacity: 0.8 }
+                            ]}
+                            onPress={() => {
+                                if (hasChanges() && name.trim()) {
+                                    handleSave();
+                                } else {
+                                    onClose();
+                                }
+                            }}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <BouncingDots size="small" color="#FFF" />
+                            ) : (
+                                <Text style={{ color: '#FFF', fontSize: 16, fontWeight: 'bold' }}>
+                                    {hasChanges() && name.trim() ? t('common.save') : t('common.cancel')}
+                                </Text>
+                            )}
+                        </Pressable>
+                    </View>
+                </KeyboardAvoidingView>
+            </View>
+        </Modal>
     );
 }
 
 const styles = StyleSheet.create({
-    inputGroup: {
-        marginBottom: 8,
+    modalContainer: { flex: 1 },
+    modalHeader: {
+        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+        paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1
     },
     input: {
-        height: 48,
-        borderWidth: 1,
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        fontSize: 16,
+        height: 50, borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, fontSize: 16
     },
-    passwordContainer: {
+    passwordRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -174,5 +263,11 @@ const styles = StyleSheet.create({
     eyeIcon: {
         position: 'absolute',
         right: 16,
+    },
+    footer: {
+        padding: 20, paddingBottom: 40, borderTopWidth: 1
+    },
+    saveButton: {
+        height: 50, borderRadius: 12, alignItems: 'center', justifyContent: 'center'
     },
 });

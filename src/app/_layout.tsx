@@ -14,7 +14,7 @@ import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListe
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
-import { requestNotificationPermissions } from '@/services/notification.service';
+import { requestNotificationPermissions, getNotificationSettings } from '@/services/notification.service';
 import * as Notifications from 'expo-notifications';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
@@ -124,20 +124,58 @@ export default function RootLayout() {
 
     const checkForUpdates = async () => {
         try {
-            const response = await fetch(
-                'https://api.github.com/repos/alrescha79-cmd/huawei-manager-mobile/releases/latest'
-            );
-
-            if (!response.ok) return;
-
-            const data = await response.json();
-            const latestVersion = data.tag_name?.replace(/^v/, '') || '';
+            const notifSettings = await getNotificationSettings();
+            const checkPreRelease = notifSettings.preReleaseUpdateEnabled;
             const currentVersion = Constants.expoConfig?.version || '1.1.50';
 
-            if (compareVersions(latestVersion, currentVersion) > 0) {
-                setTimeout(() => {
-                    UpdateAvailableHelper.show(latestVersion);
-                }, 3500);
+            if (checkPreRelease) {
+                const response = await fetch(
+                    'https://api.github.com/repos/alrescha79-cmd/huawei-manager-mobile/releases'
+                );
+                if (!response.ok) return;
+
+                const releases = await response.json();
+                const stableRelease = releases.find((r: any) => !r.prerelease && !r.draft);
+                const preRelease = releases.find((r: any) => r.prerelease && !r.draft);
+
+                const extractVersion = (tag: string) => tag?.replace(/^v/, '') || '';
+
+                let bestVersion = '';
+                let bestIsPreRelease = false;
+
+                if (stableRelease) {
+                    bestVersion = extractVersion(stableRelease.tag_name);
+                }
+
+                if (preRelease) {
+                    const preVersion = extractVersion(preRelease.tag_name);
+                    if (preVersion && compareVersions(preVersion, currentVersion) > 0) {
+                        if (!bestVersion || compareVersions(preVersion, bestVersion) > 0) {
+                            bestVersion = preVersion;
+                            bestIsPreRelease = true;
+                        }
+                    }
+                }
+
+                if (bestVersion && compareVersions(bestVersion, currentVersion) > 0) {
+                    setTimeout(() => {
+                        UpdateAvailableHelper.show(bestVersion, bestIsPreRelease);
+                    }, 3500);
+                }
+            } else {
+                const response = await fetch(
+                    'https://api.github.com/repos/alrescha79-cmd/huawei-manager-mobile/releases/latest'
+                );
+                if (!response.ok) return;
+
+                const data = await response.json();
+                const latestVersion = data.tag_name?.replace(/^v/, '') || '';
+
+                if (compareVersions(latestVersion, currentVersion) > 0) {
+                    setTimeout(() => {
+                        UpdateAvailableHelper.show(latestVersion);
+                    }, 3500);
+                }
             }
         } catch (error) {
             console.error('Error checking for updates:', error);

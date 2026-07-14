@@ -38,21 +38,23 @@ export function CollapsibleCard({
     titleStyle,
 }: CollapsibleCardProps) {
     const { colors, typography, spacing } = useTheme();
-    const [isExpanded, setIsExpanded] = useState(defaultExpanded);
+    const [isExpanded, setIsExpanded] = useState<boolean | null>(null);
 
     useEffect(() => {
-        if (!storageKey) return;
-
+        if (!storageKey) {
+            setIsExpanded(defaultExpanded);
+            return;
+        }
         AsyncStorage.getItem(storageKey)
             .then((value) => {
-                if (value !== null) setIsExpanded(value === 'true');
+                setIsExpanded(value !== null ? value === 'true' : defaultExpanded);
             })
-            .catch(() => {});
-    }, [storageKey]);
+            .catch(() => setIsExpanded(defaultExpanded));
+    }, [storageKey, defaultExpanded]);
 
     const toggleExpand = useCallback(() => {
         LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-        const newState = !isExpanded;
+        const newState = isExpanded !== true;
         setIsExpanded(newState);
         if (storageKey) AsyncStorage.setItem(storageKey, String(newState)).catch(() => {});
         onToggle?.(newState);
@@ -66,7 +68,7 @@ export function CollapsibleCard({
                 activeOpacity={0.7}
             >
                 <MaterialIcons
-                    name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                    name={isExpanded === true ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
                     size={24}
                     color={colors.textSecondary}
                 />
@@ -85,7 +87,7 @@ export function CollapsibleCard({
                 {headerRight ? headerRight : <View style={{ width: 24 }} />}
             </TouchableOpacity>
 
-            {isExpanded && (
+            {isExpanded === true && (
                 <>
                     <View style={[styles.divider, { backgroundColor: colors.border }]} />
                     <View style={styles.content}>
