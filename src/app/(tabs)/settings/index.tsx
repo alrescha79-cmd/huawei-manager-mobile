@@ -191,8 +191,8 @@ export default function SettingsIndex() {
                     <SettingsSection title={t('settings.about')}>
                         <SettingsItem
                             icon="system-update"
-                            title={`${t('settings.appVersion')} v${Constants.expoConfig?.version}`}
-                            subtitle={t('settings.checkNow')}
+                            title={t('settings.checkUpdate')}
+                            subtitle={`${t('settings.appVersion')} v${Constants.expoConfig?.version}`}
                             onPress={() => router.push('/settings/update')}
                         />
                         <SettingsItem

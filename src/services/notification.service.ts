@@ -24,6 +24,7 @@ export interface NotificationSettings {
     ipChangeEnabled: boolean;
     smsEnabled: boolean;
     badgesEnabled: boolean;
+    preReleaseUpdateEnabled: boolean;
 }
 
 const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
@@ -32,6 +33,7 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     ipChangeEnabled: true,
     smsEnabled: true,
     badgesEnabled: true,
+    preReleaseUpdateEnabled: false,
 };
 
 Notifications.setNotificationHandler({

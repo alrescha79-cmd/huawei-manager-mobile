@@ -19,8 +19,6 @@ import {
     getNotificationSettings,
     saveNotificationSettings,
     NotificationSettings,
-    getLastIpChangeTime,
-    formatTimeAgo,
 } from '@/services/notification.service';
 import { showInterstitial } from '@/services/ad.service';
 
@@ -37,8 +35,8 @@ export default function NotificationSettingsScreen() {
         ipChangeEnabled: true,
         smsEnabled: true,
         badgesEnabled: true,
+        preReleaseUpdateEnabled: false,
     });
-    const [lastIpChangeTime, setLastIpChangeTime] = useState<number | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
@@ -49,8 +47,6 @@ export default function NotificationSettingsScreen() {
         setIsLoading(true);
         const stored = await getNotificationSettings();
         setSettings(stored);
-        const ipTime = await getLastIpChangeTime();
-        setLastIpChangeTime(ipTime);
         setIsLoading(false);
     };
 
@@ -73,15 +69,6 @@ export default function NotificationSettingsScreen() {
         if (key === 'badgesEnabled') {
             setBadgesEnabled(value);
         }
-    };
-
-    const getLastIpChangeText = () => {
-        if (!lastIpChangeTime) return null;
-        return formatTimeAgo(lastIpChangeTime, {
-            minutesAgo: t('notifications.minutesAgo'),
-            hoursAgo: t('notifications.hoursAgo'),
-            justNow: t('notifications.justNow'),
-        });
     };
 
     const usageLimitDisabled = !monthlySettings?.enabled;
@@ -177,11 +164,6 @@ export default function NotificationSettingsScreen() {
                                 <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
                                     {t('notifications.ipChangeHint')}
                                 </Text>
-                                {lastIpChangeTime && (
-                                    <Text style={[styles.lastChange, { color: colors.primary }]}>
-                                        {t('notifications.ipChangeTitle')}: {getLastIpChangeText()}
-                                    </Text>
-                                )}
                             </View>
                             <ThemedSwitch
                                 value={settings.ipChangeEnabled}
@@ -220,6 +202,28 @@ export default function NotificationSettingsScreen() {
                             <ThemedSwitch
                                 value={settings.badgesEnabled}
                                 onValueChange={(v) => updateSetting('badgesEnabled', v)}
+                            />
+                        </View>
+                    </View>
+
+                    {/* App Updates */}
+                    <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                        <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>
+                            {t('settings.appUpdates').toUpperCase()}
+                        </Text>
+
+                        <View style={styles.settingRow}>
+                            <View style={styles.settingInfo}>
+                                <Text style={[styles.settingLabel, { color: colors.text }]}>
+                                    {t('notifications.preReleaseUpdate')}
+                                </Text>
+                                <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
+                                    {t('notifications.preReleaseUpdateHint')}
+                                </Text>
+                            </View>
+                            <ThemedSwitch
+                                value={settings.preReleaseUpdateEnabled}
+                                onValueChange={(v) => updateSetting('preReleaseUpdateEnabled', v)}
                             />
                         </View>
                     </View>

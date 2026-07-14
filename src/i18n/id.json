@@ -418,7 +418,10 @@
     "title": "Notifikasi",
     "updateAvailableBody": "Versi {{version}} tersedia dengan fitur baru.",
     "updateAvailableTitle": "Update Tersedia!",
-    "usageLimitRequired": "Aktifkan Batas Penggunaan terlebih dahulu"
+    "usageLimitRequired": "Aktifkan Batas Penggunaan terlebih dahulu",
+    "preReleaseUpdate": "Update Pre-release",
+    "preReleaseUpdateHint": "Periksa juga versi beta/pre-release",
+    "preReleaseBadge": "Pre-release"
   },
   "parentalControl": {
     "activeDays": "Hari Aktif",
@@ -461,6 +464,7 @@
     "activeAntenna": "Antena Aktif",
     "activeProfile": "Aktif",
     "addProfileTitle": "Tambah Profil Baru",
+    "appUpdates": "Pembaruan Aplikasi",
     "addProfile": "Tambah Profil",
     "allBands": "Semua Frekuensi",
     "antennaAuto": "Otomatis",

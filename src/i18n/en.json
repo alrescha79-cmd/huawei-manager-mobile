@@ -418,7 +418,10 @@
     "title": "Notifications",
     "updateAvailableBody": "Version {{version}} is now available with new features.",
     "updateAvailableTitle": "Update Available!",
-    "usageLimitRequired": "Enable Usage Limit first"
+    "usageLimitRequired": "Enable Usage Limit first",
+    "preReleaseUpdate": "Pre-release Updates",
+    "preReleaseUpdateHint": "Also check for beta/pre-release versions",
+    "preReleaseBadge": "Pre-release"
   },
   "parentalControl": {
     "activeDays": "Active Days",
@@ -461,6 +464,7 @@
     "activeAntenna": "Active Antenna",
     "activeProfile": "Active",
     "addProfileTitle": "Add New Profile",
+    "appUpdates": "App Updates",
     "addProfile": "Add Profile",
     "allBands": "All Bands",
     "antennaAuto": "Auto",

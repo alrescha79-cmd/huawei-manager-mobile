@@ -14,12 +14,12 @@ import { useTranslation } from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-let updateListener: ((visible: boolean, version?: string) => void) | null = null;
+let updateListener: ((visible: boolean, version?: string, isPreRelease?: boolean) => void) | null = null;
 
 export const UpdateAvailableHelper = {
-    show: (version: string) => {
+    show: (version: string, isPreRelease?: boolean) => {
         if (updateListener) {
-            updateListener(true, version);
+            updateListener(true, version, isPreRelease);
         }
     },
     hide: () => {
@@ -36,15 +36,17 @@ interface UpdateAvailableModalProps {
 export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({ onDownload }) => {
     const [visible, setVisible] = useState(false);
     const [version, setVersion] = useState('');
+    const [isPreRelease, setIsPreRelease] = useState(false);
     const { colors, typography, isDark } = useTheme();
     const { t } = useTranslation();
     const [slideAnim] = useState(new Animated.Value(0));
     const insets = useSafeAreaInsets();
 
     useEffect(() => {
-        updateListener = (vis, ver) => {
+        updateListener = (vis, ver, preRelease) => {
             if (vis) {
                 setVersion(ver || '');
+                setIsPreRelease(preRelease || false);
                 setVisible(true);
                 Animated.timing(slideAnim, {
                     toValue: 1,
@@ -59,6 +61,7 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({ onDo
                 }).start(() => {
                     setVisible(false);
                     setVersion('');
+                    setIsPreRelease(false);
                 });
             }
         };
@@ -126,6 +129,15 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({ onDo
                     <Text style={[typography.headline, styles.title, { color: colors.text }]}>
                         {t('settings.updateAvailable')} {version ? `v${version}` : ''}
                     </Text>
+
+                    {isPreRelease && (
+                        <View style={[styles.preReleaseBadge, { backgroundColor: colors.warning + '20', borderColor: colors.warning + '40' }]}>
+                            <Ionicons name="flask-outline" size={13} color={colors.warning} />
+                            <Text style={[typography.caption1, { color: colors.warning, fontWeight: '600', marginLeft: 4 }]}>
+                                {t('notifications.preReleaseBadge')}
+                            </Text>
+                        </View>
+                    )}
 
                     <Text style={[typography.body, styles.description, { color: colors.textSecondary }]}>
                         {t('alerts.newVersionAvailable')}
@@ -200,7 +212,17 @@ const styles = StyleSheet.create({
     title: {
         textAlign: 'center',
         fontWeight: 'bold',
-        marginBottom: 8,
+        marginBottom: 4,
+    },
+    preReleaseBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        alignSelf: 'center',
+        paddingHorizontal: 12,
+        paddingVertical: 5,
+        borderRadius: 12,
+        borderWidth: 1,
+        marginBottom: 12,
     },
     description: {
         textAlign: 'center',
