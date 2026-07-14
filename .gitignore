@@ -6,7 +6,12 @@ node_modules/
 # others
 notes.txt
 .agent/
+.agents/
 /reports
+.kilo/
+.kilocode/
+.roo/
+skills-lock.json
 
 # Expo
 .expo/
@@ -54,5 +59,4 @@ GoogleService-Info.plist
 # Bruno 
 bruno-huawei-lte-api/
 
-# Kilo
-.kilo/
+
