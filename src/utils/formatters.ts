@@ -50,9 +50,10 @@ export function getSignalQuality(
     if (value === undefined || value === null || isNaN(value)) return 'unknown';
 
     if (reverseScale) {
-        if (value >= thresholds.excellent) return 'excellent';
-        if (value >= thresholds.good) return 'good';
-        if (value >= thresholds.fair) return 'fair';
+        // For metrics where lower (more negative) is better, e.g. RSRP, RSRQ
+        if (value <= thresholds.excellent) return 'excellent';
+        if (value <= thresholds.good) return 'good';
+        if (value <= thresholds.fair) return 'fair';
         return 'poor';
     } else {
         if (value >= thresholds.excellent) return 'excellent';

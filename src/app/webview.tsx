@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useLocalSearchParams } from 'expo-router';
 import { useTheme } from '@/theme';
 import { PageHeader } from '@/components/settings';
-import { AnimatedScreen } from '@/components';
+import { AnimatedScreen, WebViewSkeleton } from '@/components';
 
 export default function GenericWebViewScreen() {
     const { colors } = useTheme();
@@ -25,11 +25,7 @@ export default function GenericWebViewScreen() {
                         onLoadStart={() => setIsLoading(true)}
                         onLoadEnd={() => setIsLoading(false)}
                     />
-                    {isLoading && (
-                        <View style={[styles.loadingContainer, { backgroundColor: colors.background }]}>
-                            <ActivityIndicator size="large" color={colors.primary} />
-                        </View>
-                    )}
+                    {isLoading && <WebViewSkeleton />}
                 </View>
             </View>
         </AnimatedScreen>
@@ -46,10 +42,5 @@ const styles = StyleSheet.create({
     },
     webview: {
         flex: 1,
-    },
-    loadingContainer: {
-        ...StyleSheet.absoluteFillObject,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
 });

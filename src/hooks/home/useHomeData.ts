@@ -68,23 +68,30 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
       const [signal, network, traffic, status, wan, dataStatus, modemInfo] = await Promise.all([
         service.getSignalInfo().catch(() => null),
-        service.getNetworkInfo(),
-        service.getTrafficStats(),
-        service.getModemStatus(),
+        service.getNetworkInfo().catch(() => null),
+        service.getTrafficStats().catch(() => null),
+        service.getModemStatus().catch(() => null),
         service.getWanInfo().catch(() => null),
         service.getMobileDataStatus().catch(() => null),
         service.getModemInfo().catch(() => null),
       ]);
 
-      setSignalInfo(signal);
-      setNetworkInfo(network);
-      setTrafficStats(traffic);
-      setModemStatus(status);
+      if (signal) setSignalInfo(signal);
+      if (network) setNetworkInfo(network);
+      if (traffic) setTrafficStats(traffic);
+      if (status) setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
       if (modemInfo) setModemInfo(modemInfo);
 
-      const currentTotal = traffic.totalDownload + traffic.totalUpload;
+      const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
+
+      if (isDataEmpty) {
+        setSignalInfo(null);
+        setModemStatus(null);
+      }
+
+      const currentTotal = traffic ? traffic.totalDownload + traffic.totalUpload : 0;
       if (previousTotalTraffic > 1024 * 1024 * 100 && currentTotal < previousTotalTraffic * 0.1) {
         const now = new Date().toISOString();
         await AsyncStorage.setItem('lastClearedTrafficDate', now);
@@ -121,22 +128,23 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
           }
         );
 
-        const ipChanged = await checkIPChangeNotification(traffic.currentConnectTime || 0, {
+        const ipChangeDuration = await checkIPChangeNotification(traffic.currentConnectTime || 0, {
           title: t('notifications.ipChangeTitle'),
           body: (duration) => duration === '0'
             ? t('notifications.ipChangeBodyJustNow')
             : t('notifications.ipChangeBody', { duration }),
         });
 
-        if (ipChanged) {
+        if (ipChangeDuration !== null) {
+          const alertBody = ipChangeDuration === '0'
+            ? t('notifications.ipChangeBodyJustNow')
+            : t('notifications.ipChangeBody', { duration: ipChangeDuration });
           ThemedAlertHelper.alert(
             t('notifications.ipChangeTitle'),
-            t('notifications.ipChangeBodyAlert') || 'IP Address has changed successfully.'
+            alertBody
           );
         }
       }
-
-      const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
         requestRelogin();
@@ -176,23 +184,28 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
     try {
       const [signal, network, traffic, status, wan, dataStatus, modemInfo] = await Promise.all([
         service.getSignalInfo().catch(() => null),
-        service.getNetworkInfo(),
-        service.getTrafficStats(),
-        service.getModemStatus(),
+        service.getNetworkInfo().catch(() => null),
+        service.getTrafficStats().catch(() => null),
+        service.getModemStatus().catch(() => null),
         service.getWanInfo().catch(() => null),
         service.getMobileDataStatus().catch(() => null),
         service.getModemInfo().catch(() => null),
       ]);
 
-      setSignalInfo(signal);
-      setNetworkInfo(network);
-      setTrafficStats(traffic);
-      setModemStatus(status);
+      if (signal) setSignalInfo(signal);
+      if (network) setNetworkInfo(network);
+      if (traffic) setTrafficStats(traffic);
+      if (status) setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
       if (modemInfo) setModemInfo(modemInfo);
 
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
+
+      if (isDataEmpty) {
+        setSignalInfo(null);
+        setModemStatus(null);
+      }
 
       if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
         requestRelogin();

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     View,
     Text,
@@ -6,16 +6,22 @@ import {
     Modal,
     TouchableOpacity,
     Animated,
-    Easing,
     Platform,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
+import Svg, { Path, Line, Text as SvgText } from 'react-native-svg';
+import Reanimated, {
+    useSharedValue,
+    useAnimatedProps,
+    withSpring,
+    withTiming,
+} from 'react-native-reanimated';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ModalBackground } from '../ModalBackground';
-import { showInterstitial, showRewarded } from '@/services/ad.service';
-import { AdNative, ThemedAlertHelper } from '@/components';
+import { showInterstitial } from '@/services/ad.service';
+import { AdNative } from '@/components';
 
 interface SpeedTestModalProps {
     visible: boolean;
@@ -29,6 +35,44 @@ interface SpeedtestResult {
     jitter: number;
 }
 
+// ============================================================================
+// SVG GAUGE HELPERS
+// ============================================================================
+
+const AnimatedPath = Reanimated.createAnimatedComponent(Path);
+
+function polarToCartesian(cx: number, cy: number, r: number, angleDeg: number) {
+    const rad = (angleDeg * Math.PI) / 180;
+    return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+function describeArc(cx: number, cy: number, r: number, startAngle: number, sweepAngle: number) {
+    const s = polarToCartesian(cx, cy, r, startAngle);
+    const e = polarToCartesian(cx, cy, r, startAngle + sweepAngle);
+    const large = sweepAngle > 180 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${r} ${r} 0 ${large} 1 ${e.x} ${e.y}`;
+}
+
+function labelAnchor(angleDeg: number): 'start' | 'middle' | 'end' {
+    const a = ((angleDeg % 360) + 360) % 360;
+    if (a >= 135 && a <= 225) return 'end';
+    if (a > 225 && a < 315) return 'middle';
+    return 'start';
+}
+
+const ARC_CX = 120;
+const ARC_CY = 118;
+const ARC_R = 80;
+const ARC_START = 135;
+const ARC_SWEEP = 270;
+const ARC_LEN = (ARC_SWEEP / 360) * 2 * Math.PI * ARC_R;
+const VB_W = 240;
+const VB_H = 190;
+
+// ============================================================================
+// SPEEDOMETER GAUGE
+// ============================================================================
+
 const SpeedometerGauge: React.FC<{
     speed: number;
     maxSpeed: number;
@@ -36,155 +80,215 @@ const SpeedometerGauge: React.FC<{
     label: string;
     isActive: boolean;
 }> = ({ speed, maxSpeed, color, label, isActive }) => {
-    const { colors, typography, spacing, glassmorphism, isDark } = useTheme();
-    const needleAnim = useRef(new Animated.Value(0)).current;
-    const glowAnim = useRef(new Animated.Value(0)).current;
+    const { colors, isDark } = useTheme();
+    const progress = useSharedValue(0);
 
     useEffect(() => {
-        const targetValue = Math.min(speed / maxSpeed, 1);
-        Animated.spring(needleAnim, {
-            toValue: targetValue,
-            tension: 50,
-            friction: 8,
-            useNativeDriver: true,
-        }).start();
+        const target = Math.min(Math.max(speed / maxSpeed, 0), 1);
+        if (speed === 0) {
+            progress.value = withTiming(0, { duration: 300 });
+        } else {
+            progress.value = withSpring(target, {
+                damping: 18,
+                stiffness: 80,
+                mass: 0.6,
+            });
+        }
     }, [speed, maxSpeed]);
 
-    useEffect(() => {
-        if (isActive) {
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(glowAnim, {
-                        toValue: 1,
-                        duration: 800,
-                        useNativeDriver: false,
-                    }),
-                    Animated.timing(glowAnim, {
-                        toValue: 0.3,
-                        duration: 800,
-                        useNativeDriver: false,
-                    }),
-                ])
-            ).start();
-        } else {
-            glowAnim.setValue(0);
-        }
-    }, [isActive]);
+    const animatedProps = useAnimatedProps(() => ({
+        strokeDashoffset: ARC_LEN * (1 - progress.value),
+    }));
 
-    const needleRotation = needleAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: ['-135deg', '135deg'],
-    });
+    const arcPath = useMemo(
+        () => describeArc(ARC_CX, ARC_CY, ARC_R, ARC_START, ARC_SWEEP),
+        []
+    );
 
-    const glowOpacity = glowAnim.interpolate({
-        inputRange: [0, 1],
-        outputRange: [0.2, 0.6],
-    });
+    const ticks = useMemo(() => {
+        const count = 20;
+        return Array.from({ length: count + 1 }, (_, i) => {
+            const frac = i / count;
+            const angle = ARC_START + frac * ARC_SWEEP;
+            const isMajor = i % 5 === 0;
+            const value = Math.round(frac * maxSpeed);
+            const innerR = isMajor ? ARC_R - 10 : ARC_R - 5;
+            return {
+                inner: polarToCartesian(ARC_CX, ARC_CY, innerR, angle),
+                outer: polarToCartesian(ARC_CX, ARC_CY, ARC_R + 6, angle),
+                labelPos: polarToCartesian(ARC_CX, ARC_CY, ARC_R + 18, angle),
+                isMajor,
+                value,
+                angle,
+            };
+        });
+    }, [maxSpeed]);
 
-    const speedMarks = [0, 25, 50, 75, 100].map(percent => {
-        const displayValue = Math.round((percent / 100) * maxSpeed);
-        return displayValue;
-    });
+    const bgStroke = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+    const tickStroke = isDark ? 'rgba(255,255,255,0.18)' : 'rgba(0,0,0,0.12)';
+    const labelFill = isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.25)';
+
+    const isDownload = label.toLowerCase().includes('download') || label.toLowerCase().includes('unduh');
 
     return (
-        <View style={gaugeStyles.container}>
-            <Animated.View style={[
-                gaugeStyles.gaugeOuter,
-                {
-                    borderColor: isActive ? color : colors.border,
-                    shadowColor: color,
-                    shadowOpacity: isActive ? 0.5 : 0,
-                    shadowRadius: 10,
-                    elevation: isActive ? 8 : 0,
-                }
-            ]}>
-                <View style={[gaugeStyles.arcBackground, { borderColor: color + '30' }]} />
+        <View style={gaugeStyles.wrapper}>
+            <View style={{ width: '100%', aspectRatio: VB_W / VB_H }}>
+                <Svg viewBox={`0 0 ${VB_W} ${VB_H}`} width="100%" height="100%">
+                    <Path
+                        d={arcPath}
+                        stroke={bgStroke}
+                        strokeWidth={12}
+                        fill="none"
+                        strokeLinecap="round"
+                    />
 
-                <Animated.View
-                    style={[
-                        gaugeStyles.needleContainer,
-                        { transform: [{ rotate: needleRotation }] }
-                    ]}
-                >
-                    <View style={[gaugeStyles.needle, { backgroundColor: color }]} />
-                    <View style={[gaugeStyles.needleTip, {
-                        backgroundColor: color,
-                    }]} />
-                </Animated.View>
+                    <AnimatedPath
+                        d={arcPath}
+                        stroke={color}
+                        strokeWidth={22}
+                        fill="none"
+                        opacity={0.12}
+                        strokeLinecap="round"
+                        strokeDasharray={`${ARC_LEN} ${ARC_LEN}`}
+                        animatedProps={animatedProps}
+                    />
 
-                <View style={[gaugeStyles.centerCircle, { backgroundColor: colors.card }]}>
-                    <Text style={[typography.title1, { color: colors.text, fontWeight: '700', fontSize: 28 }]}>
-                        {speed.toFixed(1)}
-                    </Text>
-                    <Text style={[typography.caption2, { color: colors.textSecondary, marginTop: -2 }]}>
-                        Mbps
-                    </Text>
+                    <AnimatedPath
+                        d={arcPath}
+                        stroke={color}
+                        strokeWidth={12}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeDasharray={`${ARC_LEN} ${ARC_LEN}`}
+                        animatedProps={animatedProps}
+                    />
+
+                    {ticks.map((t, i) => (
+                        <Line
+                            key={i}
+                            x1={t.inner.x}
+                            y1={t.inner.y}
+                            x2={t.outer.x}
+                            y2={t.outer.y}
+                            stroke={tickStroke}
+                            strokeWidth={t.isMajor ? 2 : 1}
+                            strokeLinecap="round"
+                        />
+                    ))}
+
+                    {ticks
+                        .filter((t) => t.isMajor)
+                        .map((t, i) => (
+                            <SvgText
+                                key={`l${i}`}
+                                x={t.labelPos.x}
+                                y={t.labelPos.y + 4}
+                                textAnchor={labelAnchor(t.angle)}
+                                fontSize={10}
+                                fill={labelFill}
+                            >
+                                {t.value}
+                            </SvgText>
+                        ))}
+                </Svg>
+
+                <View style={gaugeStyles.centerOverlay} pointerEvents="none">
+                    {(() => {
+                        const useKbps = speed > 0 && speed < 1;
+                        const displayValue = useKbps
+                            ? Math.round(speed * 1000).toString()
+                            : isActive
+                                ? Math.round(speed).toString()
+                                : speed.toFixed(1);
+                        const displayUnit = useKbps ? 'Kbps' : 'Mbps';
+                        return (
+                            <>
+                                <Text
+                                    style={{
+                                        fontSize: useKbps ? 36 : 44,
+                                        fontWeight: '800',
+                                        color: isActive ? colors.text : colors.textSecondary,
+                                        letterSpacing: -1.5,
+                                        fontVariant: ['tabular-nums'],
+                                    }}
+                                >
+                                    {displayValue}
+                                </Text>
+                                <Text
+                                    style={{
+                                        fontSize: 13,
+                                        fontWeight: '500',
+                                        color: colors.textSecondary,
+                                        marginTop: -2,
+                                    }}
+                                >
+                                    {displayUnit}
+                                </Text>
+                            </>
+                        );
+                    })()}
                 </View>
-            </Animated.View>
+            </View>
 
-            <Text style={[typography.body, { color: colors.text, marginTop: spacing.sm, fontWeight: '600' }]}>
-                {label}
-            </Text>
+            <View
+                style={[
+                    gaugeStyles.phaseBadge,
+                    isActive && {
+                        backgroundColor: color + '18',
+                        borderColor: color + '40',
+                    },
+                ]}
+            >
+                <Ionicons
+                    name={isDownload ? 'arrow-down' : 'arrow-up'}
+                    size={14}
+                    color={isActive ? color : colors.textSecondary}
+                />
+                <Text
+                    style={{
+                        fontSize: 13,
+                        fontWeight: '600',
+                        color: isActive ? color : colors.textSecondary,
+                        marginLeft: 6,
+                    }}
+                >
+                    {label}
+                </Text>
+            </View>
         </View>
     );
 };
 
 const gaugeStyles = StyleSheet.create({
-    container: {
+    wrapper: {
         alignItems: 'center',
-        flex: 1,
+        paddingVertical: 4,
     },
-    gaugeOuter: {
-        width: 140,
-        height: 140,
-        borderRadius: 70,
-        borderWidth: 6,
-        justifyContent: 'center',
-        alignItems: 'center',
-        overflow: 'visible',
-    },
-    arcBackground: {
+    centerOverlay: {
         position: 'absolute',
-        width: 120,
-        height: 120,
-        borderRadius: 60,
-        borderWidth: 4,
-    },
-    needleContainer: {
-        position: 'absolute',
-        width: 4,
-        height: 70,
-        alignItems: 'center',
         top: 0,
-        transformOrigin: 'bottom center',
-    },
-    needle: {
-        width: 4,
-        height: 45,
-        borderRadius: 2,
-    },
-    needleTip: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
-        marginTop: -2,
-    },
-    centerHub: {
-        position: 'absolute',
-        width: 16,
-        height: 16,
-        borderRadius: 8,
-        zIndex: 10,
-    },
-    centerCircle: {
-        width: 80,
-        height: 80,
-        borderRadius: 40,
+        left: 0,
+        right: 0,
+        bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        position: 'absolute',
+        paddingTop: '24%',
+    },
+    phaseBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 6,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: 'transparent',
+        marginTop: 6,
     },
 });
+
+// ============================================================================
+// SPEED TEST LOGIC
+// ============================================================================
 
 const CF_DOWNLOAD_URL = 'https://speed.cloudflare.com/__down';
 const CF_UPLOAD_URL = 'https://speed.cloudflare.com/__up';
@@ -210,39 +314,30 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     const [ispInfo, setIspInfo] = useState<string>('');
     const [providerHostname, setProviderHostname] = useState<string>('');
 
+    const [dlMax, setDlMax] = useState(100);
+    const [ulMax, setUlMax] = useState(50);
+
     useEffect(() => {
         if (visible) {
             fetch('https://ipinfo.io/json')
                 .then(res => res.json())
                 .then(data => {
-                    if (data.ip) {
-                        setClientIp(data.ip);
-                    }
+                    if (data.ip) setClientIp(data.ip);
                     if (data.org) {
-                        const cleanIsp = data.org.replace(/^AS\d+\s+/, '');
-                        setIspInfo(cleanIsp);
+                        setIspInfo(data.org.replace(/^AS\d+\s+/, ''));
                     } else if (data.isp) {
                         setIspInfo(data.isp);
                     }
-                    if (data.hostname) {
-                        setProviderHostname(data.hostname);
-                    }
+                    if (data.hostname) setProviderHostname(data.hostname);
                 })
                 .catch(() => {
-                    // Fallback to speed.cloudflare.com
                     fetch('https://speed.cloudflare.com/meta')
                         .then(res => res.json())
                         .then(data => {
-                            if (data.clientIp) {
-                                setClientIp(data.clientIp);
-                            }
-                            if (data.clientIsp) {
-                                setIspInfo(data.clientIsp);
-                            }
+                            if (data.clientIp) setClientIp(data.clientIp);
+                            if (data.clientIsp) setIspInfo(data.clientIsp);
                         })
-                        .catch(() => {
-                            setClientIp('Unknown');
-                        });
+                        .catch(() => setClientIp('Unknown'));
                 });
         } else {
             setClientIp('');
@@ -259,16 +354,29 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
         }).start();
     }, [progress]);
 
+    useEffect(() => {
+        if (result.downloadSpeed > dlMax * 0.8) {
+            setDlMax(Math.ceil(result.downloadSpeed / 50) * 50 + 50);
+        }
+    }, [result.downloadSpeed]);
+
+    useEffect(() => {
+        if (result.uploadSpeed > ulMax * 0.8) {
+            setUlMax(Math.ceil(result.uploadSpeed / 25) * 25 + 25);
+        }
+    }, [result.uploadSpeed]);
+
     const runSpeedtest = async () => {
         setIsRunning(true);
         setProgress(0);
+        setDlMax(100);
+        setUlMax(50);
         setResult({ downloadSpeed: 0, uploadSpeed: 0, latency: 0, jitter: 0 });
 
         abortControllerRef.current = new AbortController();
         const signal = abortControllerRef.current.signal;
 
         try {
-            // 1. LATENCY & JITTER PHASE
             setPhase('latency');
             const latencyResults: number[] = [];
 
@@ -280,16 +388,10 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                 if (signal.aborted) throw new Error('Aborted');
                 const start = performance.now();
                 try {
-                    await fetch(`${CF_DOWNLOAD_URL}?bytes=0`, {
-                        cache: 'no-store',
-                        signal
-                    });
-                    const latency = performance.now() - start;
-                    latencyResults.push(latency);
+                    await fetch(`${CF_DOWNLOAD_URL}?bytes=0`, { cache: 'no-store', signal });
+                    latencyResults.push(performance.now() - start);
                 } catch (e: any) {
-                    if (e.name !== 'AbortError') {
-                        // ignore error and continue
-                    }
+                    if (e.name !== 'AbortError') { }
                 }
                 setProgress(Math.round(((i + 1) / 10) * 20));
             }
@@ -305,35 +407,29 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
 
             if (signal.aborted) throw new Error('Aborted');
 
-            // 2. DOWNLOAD SPEED PHASE
+            // DOWNLOAD
             setPhase('download');
 
-            // Set up smooth progress increment from 20 to 60
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
             progressIntervalRef.current = setInterval(() => {
                 setProgress(prev => Math.min(prev + 0.8, 59));
             }, 100);
 
-            const dlDurationMs = 6000; // 6 seconds test duration
+            const dlDurationMs = 6000;
             const dlStartTime = performance.now();
             let totalBytesDownloaded = 0;
-            const DL_CHUNK_SIZE = 1000000; // 1MB chunks
+            const DL_CHUNK_SIZE = 1000000;
 
             const downloadWorker = async () => {
                 while (performance.now() - dlStartTime < dlDurationMs && !signal.aborted) {
                     try {
-                        const res = await fetch(`${CF_DOWNLOAD_URL}?bytes=${DL_CHUNK_SIZE}`, {
-                            cache: 'no-store',
-                            signal
-                        });
+                        const res = await fetch(`${CF_DOWNLOAD_URL}?bytes=${DL_CHUNK_SIZE}`, { cache: 'no-store', signal });
                         const buffer = await res.arrayBuffer();
                         if (signal.aborted) break;
-
                         totalBytesDownloaded += buffer.byteLength;
                         const elapsed = (performance.now() - dlStartTime) / 1000;
                         if (elapsed > 0) {
-                            const speedMbps = ((totalBytesDownloaded * 8) / elapsed) / 1000000;
-                            setResult(prev => ({ ...prev, downloadSpeed: speedMbps }));
+                            setResult(prev => ({ ...prev, downloadSpeed: ((totalBytesDownloaded * 8) / elapsed) / 1000000 }));
                         }
                     } catch (err) {
                         if (signal.aborted) break;
@@ -341,7 +437,6 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                 }
             };
 
-            // Run 3 workers in parallel to saturate bandwidth
             await Promise.all([downloadWorker(), downloadWorker(), downloadWorker()]);
 
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
@@ -349,20 +444,18 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
 
             if (signal.aborted) throw new Error('Aborted');
 
-            // 3. UPLOAD SPEED PHASE
+            // UPLOAD
             setPhase('upload');
 
-            // Set up smooth progress increment from 60 to 95
             progressIntervalRef.current = setInterval(() => {
                 setProgress(prev => Math.min(prev + 0.6, 94));
             }, 100);
 
-            const ulDurationMs = 6000; // 6 seconds test duration
+            const ulDurationMs = 6000;
             const ulStartTime = performance.now();
             let totalBytesUploaded = 0;
-            const UL_CHUNK_SIZE = 500000; // 500KB chunks
+            const UL_CHUNK_SIZE = 500000;
 
-            // Pre-generate random payload once to save device CPU
             const uploadData = new Uint8Array(UL_CHUNK_SIZE);
             for (let i = 0; i < UL_CHUNK_SIZE; i++) {
                 uploadData[i] = Math.floor(Math.random() * 256);
@@ -378,12 +471,10 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                             signal,
                         });
                         if (signal.aborted) break;
-
                         totalBytesUploaded += UL_CHUNK_SIZE;
                         const elapsed = (performance.now() - ulStartTime) / 1000;
                         if (elapsed > 0) {
-                            const speedMbps = ((totalBytesUploaded * 8) / elapsed) / 1000000;
-                            setResult(prev => ({ ...prev, uploadSpeed: speedMbps }));
+                            setResult(prev => ({ ...prev, uploadSpeed: ((totalBytesUploaded * 8) / elapsed) / 1000000 }));
                         }
                     } catch (err) {
                         if (signal.aborted) break;
@@ -391,12 +482,10 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                 }
             };
 
-            // Run 3 workers in parallel to saturate upload bandwidth
             await Promise.all([uploadWorker(), uploadWorker(), uploadWorker()]);
 
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
             setProgress(100);
-
             setPhase('complete');
         } catch (error: any) {
             if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
@@ -411,35 +500,35 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     };
 
     const stopSpeedtest = () => {
-        if (progressIntervalRef.current) {
-            clearInterval(progressIntervalRef.current);
-        }
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
+        if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+        if (abortControllerRef.current) abortControllerRef.current.abort();
         setIsRunning(false);
         setPhase('idle');
     };
 
     const handleClose = () => {
         const wasComplete = phase === 'complete';
-        if (isRunning) {
-            stopSpeedtest();
-        }
+        if (isRunning) stopSpeedtest();
         setPhase('idle');
         setProgress(0);
+        setDlMax(100);
+        setUlMax(50);
         setResult({ downloadSpeed: 0, uploadSpeed: 0, latency: 0, jitter: 0 });
         setClientIp('');
         setIspInfo('');
         setProviderHostname('');
         if (wasComplete) {
-            showInterstitial(() => {
-                onClose();
-            });
+            showInterstitial(() => onClose());
         } else {
             onClose();
         }
     };
+
+    // Derived gauge state
+    const currentSpeed = phase === 'upload' ? result.uploadSpeed : result.downloadSpeed;
+    const currentMax = phase === 'upload' ? ulMax : dlMax;
+    const currentColor = phase === 'upload' ? '#3B82F6' : '#22C55E';
+    const currentLabel = phase === 'upload' ? t('home.upload') : t('home.download');
 
     const getPhaseText = () => {
         switch (phase) {
@@ -457,21 +546,18 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     });
 
     return (
-        <Modal
-            visible={visible}
-            transparent
-            animationType="fade"
-            onRequestClose={handleClose}
-        >
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
             <View style={styles.overlay}>
                 <BlurView
                     intensity={glassmorphism.blur.overlay}
                     tint={isDark ? 'dark' : 'light'}
-                    experimentalBlurMethod='dimezisBlurView'
+                    experimentalBlurMethod="dimezisBlurView"
                     style={styles.blurContainer}
                 >
                     <View style={[styles.modalContent, { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }]}>
                         <ModalBackground />
+
+                        {/* Header */}
                         <View style={styles.header}>
                             <Text style={[typography.title2, { color: colors.text, fontWeight: '700' }]}>
                                 {t('home.speedtestTitle')}
@@ -481,61 +567,78 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                             </TouchableOpacity>
                         </View>
 
-                        {(clientIp !== '' || ispInfo !== '' || providerHostname !== '') && (
-                            <View style={{ marginBottom: 16, alignItems: 'center', backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderRadius: 12, paddingVertical: 8, paddingHorizontal: 12, width: '100%' }}>
+                        {/* ISP Info */}
+                        {(clientIp || ispInfo || providerHostname) && (
+                            <View style={[styles.ispCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
                                 {ispInfo !== '' && (
                                     <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                                        <Ionicons name="earth" size={12} color={colors.textSecondary} /> <Text style={{ color: colors.text, fontWeight: '600' }}>{ispInfo}</Text>
+                                        <Ionicons name="earth" size={12} color={colors.textSecondary} />{' '}
+                                        <Text style={{ color: colors.text, fontWeight: '600' }}>{ispInfo}</Text>
                                     </Text>
                                 )}
                                 {clientIp !== '' && (
                                     <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
-                                        <MaterialIcons name="network-wifi" size={12} color={colors.textSecondary} /> <Text style={{ color: colors.text, fontWeight: '600' }}>{clientIp}</Text>
+                                        <MaterialIcons name="network-wifi" size={12} color={colors.textSecondary} />{' '}
+                                        <Text style={{ color: colors.text, fontWeight: '600' }}>{clientIp}</Text>
                                     </Text>
                                 )}
                                 {providerHostname !== '' && providerHostname !== clientIp && (
                                     <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2, textAlign: 'center' }]}>
-                                        <MaterialIcons name="computer" size={12} color={colors.textSecondary} /> <Text style={{ color: colors.text, fontWeight: '600' }}>{providerHostname}</Text>
+                                        <MaterialIcons name="computer" size={12} color={colors.textSecondary} />{' '}
+                                        <Text style={{ color: colors.text, fontWeight: '600' }}>{providerHostname}</Text>
                                     </Text>
                                 )}
                             </View>
                         )}
 
+                        {/* Gauge */}
+                        <SpeedometerGauge
+                            speed={currentSpeed}
+                            maxSpeed={currentMax}
+                            color={currentColor}
+                            label={currentLabel}
+                            isActive={isRunning}
+                        />
+
+                        {/* Progress bar */}
                         {isRunning && (
                             <View style={[styles.progressContainer, { backgroundColor: colors.border }]}>
                                 <Animated.View
-                                    style={[
-                                        styles.progressBar,
-                                        { width: progressWidth, backgroundColor: colors.primary },
-                                    ]}
+                                    style={[styles.progressBar, { width: progressWidth, backgroundColor: currentColor }]}
                                 />
                             </View>
                         )}
 
-                        <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginVertical: spacing.md }]}>
-                            {getPhaseText()}
-                        </Text>
-
-                        <View style={styles.gaugesContainer}>
-                            <SpeedometerGauge
-                                speed={result.downloadSpeed}
-                                maxSpeed={100}
-                                color="#22C55E"
-                                label={t('home.download')}
-                                isActive={phase === 'download'}
-                            />
-                            <SpeedometerGauge
-                                speed={result.uploadSpeed}
-                                maxSpeed={50}
-                                color="#3B82F6"
-                                label={t('home.upload')}
-                                isActive={phase === 'upload'}
-                            />
-                        </View>
-
-                        <View style={{ paddingHorizontal: 4 }}>
+                        {/* Ad */}
+                        <View style={{ paddingHorizontal: 4, marginTop: spacing.sm }}>
                             <AdNative />
                         </View>
+
+                        {/* Results */}
+                        {phase === 'complete' && result.latency > 0 && (
+                            <View style={[styles.resultsRow, { marginTop: spacing.sm }]}>
+                                <View style={[styles.resultItem, { backgroundColor: isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.06)' }]}>
+                                    <Ionicons name="arrow-down" size={16} color="#22C55E" />
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
+                                        {t('home.download')}
+                                    </Text>
+                                    <Text style={[typography.headline, { color: '#22C55E', fontWeight: '700', fontSize: 18 }]}>
+                                        {result.downloadSpeed.toFixed(1)}
+                                    </Text>
+                                    <Text style={[typography.caption2, { color: colors.textSecondary }]}>Mbps</Text>
+                                </View>
+                                <View style={[styles.resultItem, { backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.06)' }]}>
+                                    <Ionicons name="arrow-up" size={16} color="#3B82F6" />
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
+                                        {t('home.upload')}
+                                    </Text>
+                                    <Text style={[typography.headline, { color: '#3B82F6', fontWeight: '700', fontSize: 18 }]}>
+                                        {result.uploadSpeed.toFixed(1)}
+                                    </Text>
+                                    <Text style={[typography.caption2, { color: colors.textSecondary }]}>Mbps</Text>
+                                </View>
+                            </View>
+                        )}
 
                         <View style={[styles.statsRow, { marginTop: spacing.sm }]}>
                             <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
@@ -558,17 +661,13 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                             </View>
                         </View>
 
+                        {/* Action */}
                         <TouchableOpacity
-                            style={[
-                                styles.actionButton,
-                                {
-                                    backgroundColor: isRunning ? colors.error : colors.primary,
-                                },
-                            ]}
-                            onPress={isRunning ? stopSpeedtest : (phase === 'complete' ? handleClose : runSpeedtest)}
+                            style={[styles.actionButton, { backgroundColor: isRunning ? colors.error : colors.primary }]}
+                            onPress={isRunning ? stopSpeedtest : phase === 'complete' ? handleClose : runSpeedtest}
                         >
                             <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-                                {isRunning ? t('common.stop') : (phase === 'complete' ? t('common.ok') : t('home.startTest'))}
+                                {isRunning ? t('common.stop') : phase === 'complete' ? t('common.ok') : t('home.startTest')}
                             </Text>
                         </TouchableOpacity>
 
@@ -581,6 +680,10 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
         </Modal>
     );
 };
+
+// ============================================================================
+// STYLES
+// ============================================================================
 
 const styles = StyleSheet.create({
     overlay: {
@@ -604,25 +707,40 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 16,
+        marginBottom: 12,
     },
     closeButton: {
         padding: 4,
     },
+    ispCard: {
+        marginBottom: 8,
+        alignItems: 'center',
+        borderRadius: 12,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        width: '100%',
+    },
     progressContainer: {
-        height: 4,
+        height: 3,
         borderRadius: 2,
         overflow: 'hidden',
-        marginBottom: 8,
+        marginTop: 10,
+        marginHorizontal: 16,
     },
     progressBar: {
         height: '100%',
         borderRadius: 2,
     },
-    gaugesContainer: {
+    resultsRow: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
-        paddingVertical: 16,
+        gap: 10,
+    },
+    resultItem: {
+        flex: 1,
+        alignItems: 'center',
+        paddingVertical: 12,
+        paddingHorizontal: 8,
+        borderRadius: 12,
     },
     statsRow: {
         flexDirection: 'row',
@@ -632,7 +750,7 @@ const styles = StyleSheet.create({
     statItem: {
         flex: 1,
         alignItems: 'center',
-        paddingVertical: 16,
+        paddingVertical: 14,
         paddingHorizontal: 12,
         borderRadius: 12,
     },
@@ -642,7 +760,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingVertical: 16,
         borderRadius: 16,
-        marginTop: 24,
+        marginTop: 20,
     },
 });
 

@@ -97,7 +97,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             loadTime(service);
 
             const interval = setInterval(() => {
-                service.getCurrentTime().then(setTime => setCurrentTime(setTime)).catch(() => { });
+                service.getCurrentTime().then(time => setCurrentTime(time)).catch(() => { });
             }, 1000);
             return () => clearInterval(interval);
         }

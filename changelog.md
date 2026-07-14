@@ -3,6 +3,7 @@
 ## v1.1.65
 - **Signal Bubble Monitoring** Added a floating Signal Bubble for quick monitoring of signal quality and internet speed without leaving the current screen.
 - **Expanded Quick Actions** Added more shortcut buttons to Quick Actions, making common modem and network controls faster to access from the home dashboard.
+- **Redesigned SpeedTest Modal** Complete visual upgrade of SpeedTest modal with new layout elements and improved user experience.
 - **Settings Update Improvements** Improved the Settings > Update flow for a clearer update-checking experience, better release information display, and smoother navigation.
 - **GitHub WebView** Added a WebView screen for browsing GitHub links inside the app.
 - **Minor Bug Fixes** Fixed several minor bugs across the app for improved stability and a smoother experience.
@@ -24,6 +25,7 @@
 ## v1.1.65
 - **Monitoring Signal Bubble** Menambahkan Signal Bubble melayang untuk memantau kualitas sinyal dan kecepatan internet dengan cepat tanpa perlu berpindah dari layar yang sedang dibuka.
 - **Penambahan Tombol Quick Actions** Menambahkan lebih banyak tombol pintasan pada Quick Actions agar kontrol modem dan jaringan yang sering digunakan bisa diakses lebih cepat dari dashboard utama.
+- **SpeedTest Modal Redesign** Desain ulang SpeedTest modal dengan layout yang lebih baik dan user experience yang lebih baik.
 - **Perbaikan Settings > Update** Menyempurnakan alur Settings > Update agar proses pengecekan pembaruan lebih jelas, informasi rilis lebih mudah dibaca, dan navigasi terasa lebih lancar.
 - **WebView GitHub** Menambahkan layar WebView untuk membuka halaman GitHub di dalam aplikasi.
 - **Perbaikan Bug Minor** Memperbaiki beberapa bug minor di berbagai bagian aplikasi untuk meningkatkan stabilitas dan pengalaman yang lebih lancar.

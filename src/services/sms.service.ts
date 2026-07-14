@@ -294,6 +294,10 @@ export class SMSService {
 
   async sendSMS(phone: string, content: string): Promise<boolean> {
     try {
+      const escapedContent = content
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;');
       const smsData = `<?xml version="1.0" encoding="UTF-8"?>
         <request>
           <Index>-1</Index>
@@ -301,7 +305,7 @@ export class SMSService {
             <Phone>${phone}</Phone>
           </Phones>
           <Sca></Sca>
-          <Content>${content}</Content>
+          <Content>${escapedContent}</Content>
           <Length>${content.length}</Length>
           <Reserved>1</Reserved>
           <Date>${new Date().toISOString()}</Date>

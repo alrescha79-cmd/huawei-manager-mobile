@@ -144,7 +144,7 @@ export function useUpdateCheck() {
             if (preRelease) {
                 const info = parseRelease(preRelease, true);
                 setPreReleaseInfo(info);
-                const comparison = info.version ? compareVersions(info.version, currentVersion) : 1;
+                const comparison = info.version ? compareVersions(info.version, currentVersion) : 0;
                 setPreReleaseAvailable(comparison > 0);
             }
 

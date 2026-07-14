@@ -290,9 +290,9 @@ export async function getLastIpChangeTime(): Promise<number | null> {
 export async function checkIPChangeNotification(
     currentSessionDuration: number,
     translations: { title: string; body: (timeAgo: string) => string }
-): Promise<boolean> {
+): Promise<string | null> {
     const settings = await getNotificationSettings();
-    if (!settings.ipChangeEnabled) return false;
+    if (!settings.ipChangeEnabled) return null;
 
     const now = Date.now();
     if (now - lastIpChangeNotifyTimestamp < NOTIFICATION_COOLDOWN_MS) {
@@ -300,28 +300,30 @@ export async function checkIPChangeNotification(
             LAST_SESSION_DURATION_KEY,
             currentSessionDuration.toString()
         );
-        return false;
+        return null;
     }
 
     const lastDuration = await AsyncStorage.getItem(LAST_SESSION_DURATION_KEY);
     const previousDuration = lastDuration ? parseInt(lastDuration, 10) : 0;
     let ipChanged = false;
+    let durationResult: string | null = null;
 
     if (currentSessionDuration < previousDuration && previousDuration > 60) {
         lastIpChangeNotifyTimestamp = now;
         await AsyncStorage.setItem(LAST_IP_CHANGE_TIME_KEY, now.toString());
 
-        const prevMinutes = Math.floor(previousDuration / 60);
-        const prevHours = Math.floor(prevMinutes / 60);
-        const remainingMinutes = prevMinutes % 60;
+        const currentMinutes = Math.floor(currentSessionDuration / 60);
+        const currentHours = Math.floor(currentMinutes / 60);
+        const remainingMinutes = currentMinutes % 60;
 
         let durationText: string;
-        if (prevHours > 0) {
+        if (currentMinutes <= 0) durationText = '0';
+        else if (currentHours > 0) {
             durationText = remainingMinutes > 0
-                ? `${prevHours}h ${remainingMinutes}m`
-                : `${prevHours}h`;
+                ? `${currentHours}h ${remainingMinutes}m`
+                : `${currentHours}h`;
         } else {
-            durationText = `${prevMinutes}m`;
+            durationText = `${currentMinutes}m`;
         }
 
         await sendLocalNotification(
@@ -330,6 +332,7 @@ export async function checkIPChangeNotification(
             'ip-change'
         );
         ipChanged = true;
+        durationResult = durationText;
     }
 
     await AsyncStorage.setItem(
@@ -337,7 +340,7 @@ export async function checkIPChangeNotification(
         currentSessionDuration.toString()
     );
 
-    return ipChanged;
+    return durationResult;
 }
 
 // ============================================================================

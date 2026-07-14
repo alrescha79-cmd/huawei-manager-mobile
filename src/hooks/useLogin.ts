@@ -53,7 +53,7 @@ export function useLogin({ t }: UseLoginProps) {
             setUsername(credentials.username || 'admin');
             setPassword(credentials.password || '');
         }
-    }, [isAutoLoginReady, credentials]);
+    }, [isAutoLoginReady, credentials, profiles]);
 
     const selectProfile = async (profile: ModemProfile) => {
         setSelectedProfileId(profile.id);

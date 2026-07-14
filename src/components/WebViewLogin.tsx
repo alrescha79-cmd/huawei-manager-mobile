@@ -13,6 +13,7 @@ import { WebView, WebViewNavigation } from 'react-native-webview';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
+import { WebViewSkeleton } from './WebViewSkeleton';
 
 interface WebViewLoginProps {
     modemIp: string;
@@ -383,14 +384,7 @@ export function WebViewLogin({
                         cacheEnabled={true}
                         incognito={false}
                         startInLoadingState={true}
-                        renderLoading={() => (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="large" color={colors.primary} />
-                                <Text style={[typography.body, { color: colors.textSecondary, marginTop: spacing.md }]}>
-                                    {t('webViewLogin.loadingModem')}
-                                </Text>
-                            </View>
-                        )}
+                        renderLoading={() => <WebViewSkeleton />}
                         onError={(syntheticEvent) => {
                             const { nativeEvent } = syntheticEvent;
                             console.error('[WebViewLogin] WebView error:', nativeEvent);
@@ -402,11 +396,7 @@ export function WebViewLogin({
                         }}
                     />
 
-                    {loading && (
-                        <View style={styles.loadingOverlay}>
-                            <ActivityIndicator size="large" color={colors.primary} />
-                        </View>
-                    )}
+                    {loading && <WebViewSkeleton />}
 
                     {loginDetected && (
                         <View style={[styles.successOverlay, { backgroundColor: 'rgba(0,0,0,0.8)' }]}>

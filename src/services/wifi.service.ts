@@ -506,6 +506,12 @@ export class WiFiService {
       const guestOfftime = settings.duration !== undefined ? settings.duration : parseXMLValue(guestSsidXml, 'wifiguestofftime') || '0';
       const guestBasicEncrypt = guestAuthmode === 'OPEN' ? 'NONE' : '';
       const guestWpaEncrypt = guestAuthmode !== 'OPEN' ? 'AES' : '';
+
+      let encryptedGuestPsk = guestPassword;
+      if (settings.password !== undefined && guestPassword && guestAuthmode !== 'OPEN') {
+        encryptedGuestPsk = await this.encryptWifiPassword(guestPassword);
+      }
+
       const updateData = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
 <Ssids>
@@ -531,7 +537,7 @@ export class WiFiService {
 <WifiMac>${guestMac}</WifiMac>
 ${guestBasicEncrypt ? `<WifiBasicencryptionmodes>${guestBasicEncrypt}</WifiBasicencryptionmodes>` : ''}
 ${guestWpaEncrypt ? `<WifiWpaencryptionmodes>${guestWpaEncrypt}</WifiWpaencryptionmodes>` : ''}
-${guestPassword ? `<WifiWpapsk>${guestPassword}</WifiWpapsk>` : ''}
+${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
 <wifiisguestnetwork>1</wifiisguestnetwork>
 <wifiguestofftime>${guestOfftime}</wifiguestofftime>
 <ID>${guestId}</ID>

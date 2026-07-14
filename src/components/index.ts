@@ -14,6 +14,7 @@ export * from './ModalBackground';
 export * from './AnimatedScreen';
 export * from './ThemedSwitch';
 export * from './Skeleton';
+export * from './WebViewSkeleton';
 export * from './AnimatedSplashScreen';
 export * from './LoadingIndicators';
 export * from './RefreshIndicator';
