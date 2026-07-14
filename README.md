@@ -56,9 +56,10 @@
 
 ## 📸 App Preview
 
-<img width="1440" height="1024" alt="dark-en" src="https://github.com/user-attachments/assets/7f8d8a0c-a4ce-4a3a-aea3-461864265d64" />
+<img width="1440" height="1024" alt="dark-en" src="https://github.com/user-attachments/assets/b667d62b-d10b-4c8e-a2bb-bd357b52f4bd" />
 
-<img width="1440" height="1024" alt="light-id" src="https://github.com/user-attachments/assets/d3505361-dff5-411e-8e73-6ceffd70e4bf" />
+<img width="1440" height="1024" alt="light-id" src="https://github.com/user-attachments/assets/7d3ef5bc-3bf4-4788-9b0a-74d541efac4a" />
+
 
 ---
 
@@ -151,6 +152,18 @@ Jika tidak bisa login ke aplikasi, gunakan browser DevTools:
 
 > **Tip**: Sertakan file debug log untuk mempercepat proses investigasi bug!
 
+
+---
+
+## 🔒 Privasi & Keamanan
+
+Aplikasi ini dirancang dengan prinsip **privacy-first**. Kami menjamin:
+
+- **Tidak ada pengumpulan data pribadi**: Aplikasi tidak mengambil, menyimpan, atau mengirim data pengguna ke server manapun.
+- **Interaksi lokal**: Semua komunikasi hanya terjadi antara ponsel Anda dan modem Huawei di jaringan lokal (LAN/WiFi).
+- **Sumber Terbuka**: Kode sumber aplikasi ini terbuka dan dapat diudit oleh siapa saja.
+
+> **Mendukung Pengembang**: Untuk menjaga aplikasi tetap gratis dan aktif dikembangkan, aplikasi menampilkan iklan secara **random** (tidak setiap hari). Iklan hanya muncul sesekali untuk mendukung biaya pengembangan dan pemeliharaan server push notification.
 
 ---
 
