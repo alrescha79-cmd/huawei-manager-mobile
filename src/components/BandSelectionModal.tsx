@@ -13,6 +13,8 @@ import {
     Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { ModalButton } from './ModalButton';
+import { ModalHeader } from './ModalHeader';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
@@ -240,16 +242,11 @@ export function BandSelectionModal({
                 ]}
             >
                 <ModalBackground />
-                {/* Header */}
-                <View style={[styles.header, { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
-                    <View>
-                        <Text style={[styles.title, { color: colors.text }]}>{t('settings.lteBandSelection') || 'Select Bands'}</Text>
-                        <Text style={[styles.subtitle, { color: colors.textSecondary }]}>{t('settings.selectedCount', { count: selectedBandBits.length })}</Text>
-                    </View>
-                    <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                        <Ionicons name="close-circle" size={32} color={colors.primary} />
-                    </TouchableOpacity>
-                </View>
+                <ModalHeader
+                    title={t('settings.lteBandSelection') || 'Select Bands'}
+                    subtitle={t('settings.selectedCount', { count: selectedBandBits.length })}
+                    onClose={handleClose}
+                />
 
                 {/* Search Bar */}
                 <View style={styles.searchContainer}>
@@ -367,19 +364,12 @@ export function BandSelectionModal({
                         paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24
                     }]}
                 >
-                    <TouchableOpacity
-                        style={[styles.applyButton, { backgroundColor: hasChanges ? colors.primary : colors.textSecondary }, isSaving && { opacity: 0.7 }]}
+                    <ModalButton
+                        title={hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
+                        variant={hasChanges ? 'primary' : 'secondary'}
+                        loading={isSaving}
                         onPress={hasChanges ? handleSave : handleClose}
-                        disabled={isSaving}
-                    >
-                        {isSaving ? (
-                            <BouncingDots size="small" color="#FFFFFF" />
-                        ) : (
-                            <Text style={styles.applyButtonText}>
-                                {hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
-                            </Text>
-                        )}
-                    </TouchableOpacity>
+                    />
                 </BlurView>
             </BlurView>
         </Modal>
@@ -389,26 +379,6 @@ export function BandSelectionModal({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-        paddingBottom: 16,
-    },
-    title: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        color: '#FFF',
-    },
-    subtitle: {
-        fontSize: 14,
-        color: '#888',
-        marginTop: 2,
-    },
-    closeButton: {
-        padding: 4,
     },
     searchContainer: {
         paddingHorizontal: 20,
@@ -532,18 +502,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#121212',
         borderTopWidth: 1,
         borderTopColor: '#222',
-    },
-    applyButton: {
-        backgroundColor: '#007AFF',
-        borderRadius: 14,
-        height: 56,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    applyButtonText: {
-        color: '#FFF',
-        fontSize: 17,
-        fontWeight: 'bold',
     },
 });
 

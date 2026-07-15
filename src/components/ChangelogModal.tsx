@@ -18,6 +18,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { ModalButton } from './ModalButton';
 import CHANGELOG_MD from '../../changelog.md';
 
 interface ChangelogModalProps {
@@ -248,41 +249,29 @@ export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
                     </View>
 
                     <View style={styles.buttonGroup}>
-                        <TouchableOpacity
-                            style={[styles.primaryButton, { borderRadius: borderRadius.md, backgroundColor: colors.primary }]}
-                            activeOpacity={0.8}
+                        <ModalButton
+                            title={t('changelog.giveStar')}
+                            variant="primary"
                             onPress={() => {
                                 handleClose();
                                 router.push({ pathname: '/webview', params: { url: GITHUB_REPO_URL, title: t('changelog.giveStar') } });
                             }}
-                        >
-                            <Text style={styles.primaryButtonText}>
-                                {t('changelog.giveStar')}
-                            </Text>
-                        </TouchableOpacity>
+                        />
 
-                        <TouchableOpacity
-                            style={[styles.outlineButton, { borderRadius: borderRadius.md, borderColor: colors.border }]}
-                            activeOpacity={0.7}
+                        <ModalButton
+                            title={t('changelog.fullChangelog')}
+                            variant="outline"
                             onPress={() => {
                                 handleClose();
                                 router.push({ pathname: '/webview', params: { url: RELEASE_URL, title: t('changelog.fullChangelog') } });
                             }}
-                        >
-                            <Text style={[typography.body, styles.outlineButtonText, { color: colors.text }]}>
-                                {t('changelog.fullChangelog')}
-                            </Text>
-                        </TouchableOpacity>
+                        />
 
-                        <TouchableOpacity
-                            style={styles.closeButton}
-                            activeOpacity={0.7}
+                        <ModalButton
+                            title={t('changelog.continue')}
+                            variant="secondary"
                             onPress={handleClose}
-                        >
-                            <Text style={[typography.body, styles.closeButtonText, { color: colors.textSecondary }]}>
-                                {t('changelog.continue')}
-                            </Text>
-                        </TouchableOpacity>
+                        />
                     </View>
                 </Animated.View>
             </View>
@@ -365,40 +354,5 @@ const styles = StyleSheet.create({
     },
     buttonGroup: {
         gap: 8,
-    },
-    primaryButton: {
-        flexDirection: 'row',
-        paddingVertical: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-        elevation: 2,
-    },
-    primaryButtonText: {
-        color: '#ffffff',
-        fontSize: 15,
-        fontWeight: 'bold',
-    },
-    outlineButton: {
-        borderWidth: 1,
-        paddingVertical: 13,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    outlineButtonText: {
-        fontWeight: '600',
-        fontSize: 14,
-    },
-    closeButton: {
-        paddingVertical: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 4,
-    },
-    closeButtonText: {
-        fontWeight: '600',
-        fontSize: 14,
     },
 });

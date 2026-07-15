@@ -14,6 +14,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ModalBackground } from '../ModalBackground';
 import { showInterstitial } from '@/services/ad.service';
+import { ModalButton } from '../ModalButton';
 
 interface DiagnosisResultModalProps {
     visible: boolean;
@@ -107,14 +108,12 @@ export function DiagnosisResultModal({
                         </View>
                     )}
 
-                    <TouchableOpacity
-                        style={[styles.closeButton, { backgroundColor: colors.primary }]}
+                    <ModalButton
+                        title={t('common.ok')}
+                        variant="primary"
                         onPress={handleClose}
-                    >
-                        <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
-                            {t('common.ok')}
-                        </Text>
-                    </TouchableOpacity>
+                        style={{ margin: 16, marginTop: 0 }}
+                    />
                 </BlurView>
             </View>
         </Modal>
@@ -161,13 +160,6 @@ const styles = StyleSheet.create({
         marginBottom: 16,
         padding: 12,
         borderRadius: 8,
-    },
-    closeButton: {
-        margin: 16,
-        marginTop: 0,
-        paddingVertical: 14,
-        borderRadius: 10,
-        alignItems: 'center',
     },
 });
 

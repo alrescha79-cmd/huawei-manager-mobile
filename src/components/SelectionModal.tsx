@@ -12,6 +12,7 @@ import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ModalBackground } from './ModalBackground';
+import { ModalButton } from './ModalButton';
 
 
 export interface SelectionOption {
@@ -109,12 +110,11 @@ export function SelectionModal({
                     </ScrollView>
 
                     <View style={{ padding: 16 }}>
-                        <TouchableOpacity
-                            style={[styles.closeButton, { backgroundColor: colors.error }]}
+                        <ModalButton
+                            title={t('common.cancel')}
+                            variant="danger"
                             onPress={onClose}
-                        >
-                            <Text style={styles.buttonText}>{t('common.cancel')}</Text>
-                        </TouchableOpacity>
+                        />
                     </View>
                 </BlurView>
             </View>
@@ -172,15 +172,4 @@ const styles = StyleSheet.create({
         height: 16,
         borderRadius: 8,
     },
-    closeButton: {
-        borderRadius: 12,
-        paddingVertical: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    buttonText: {
-        color: '#FFFFFF',
-        fontSize: 16,
-        fontWeight: 'bold',
-    }
 });

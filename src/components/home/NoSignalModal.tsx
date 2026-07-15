@@ -12,7 +12,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BouncingDots } from '../LoadingIndicators';
+import { ModalButton } from '../ModalButton';
 
 interface NoSignalModalProps {
     visible: boolean;
@@ -183,35 +183,13 @@ export const NoSignalModal: React.FC<NoSignalModalProps> = ({
                     </View>
 
                     {/* Action Button */}
-                    <TouchableOpacity
-                        style={[
-                            styles.primaryButton,
-                            {
-                                borderRadius: 24,
-                                backgroundColor: colors.primary,
-                                shadowColor: colors.primary,
-                                marginTop: 12,
-                            }
-                        ]}
-                        activeOpacity={0.8}
+                    <ModalButton
+                        title={isRetrying ? t('common.retrying') : t('common.retryConnection')}
+                        variant="primary"
+                        loading={isRetrying}
                         onPress={onRetry}
-                        disabled={isRetrying}
-                    >
-                        {isRetrying ? (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <Text style={styles.primaryButtonText}>
-                                    {t('common.retrying')}
-                                </Text>
-                                <BouncingDots size="small" color="#FFFFFF" />
-                            </View>
-                        ) : (
-                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                                <Text style={styles.primaryButtonText}>
-                                    {t('common.retryConnection')}
-                                </Text>
-                            </View>
-                        )}
-                    </TouchableOpacity>
+                        style={{ borderRadius: 24, marginTop: 12 }}
+                    />
                 </Animated.View>
             </View>
         </Modal>
@@ -306,19 +284,5 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    primaryButton: {
-        paddingVertical: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.25,
-        shadowRadius: 8,
-        elevation: 6,
-    },
-    primaryButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
 });

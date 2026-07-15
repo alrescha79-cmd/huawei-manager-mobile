@@ -18,7 +18,7 @@ import { Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ConnectedDevice } from '@/types';
-import { MeshGradientBackground, AdNative, BouncingDots } from '@/components';
+import { MeshGradientBackground, AdNative, BouncingDots, ModalHeader } from '@/components';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
@@ -140,14 +140,7 @@ export function DeviceDetailModal({
             onRequestClose={onClose}
         >
             <MeshGradientBackground style={styles.modalContainer}>
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
-                    <Text style={[styles.title, { color: colors.text }]}>
-                        {t('wifi.deviceDetails')}
-                    </Text>
-                    <TouchableOpacity onPress={onClose}>
-                        <Ionicons name="close-circle" size={32} color={colors.primary} />
-                    </TouchableOpacity>
-                </View>
+                <ModalHeader title={t('wifi.deviceDetails')} onClose={onClose} />
 
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

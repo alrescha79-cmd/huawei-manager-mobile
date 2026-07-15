@@ -18,6 +18,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedAlertHelper } from '../ThemedAlert';
+import { ModalHeader } from '../ModalHeader';
 import { ThemedSwitch } from '../ThemedSwitch';
 import { BouncingDots } from '../LoadingIndicators';
 
@@ -134,15 +135,11 @@ export function ApnModal({
             presentationStyle="pageSheet"
             onRequestClose={handleClose}
         >
-            <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                    <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
-                        {profile ? t('networkSettings.editApn') : t('networkSettings.addApn')}
-                    </Text>
-                    <TouchableOpacity onPress={handleClose}>
-                        <MaterialIcons name="close" size={28} color={colors.primary} />
-                    </TouchableOpacity>
-                </View>
+            <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                <ModalHeader
+                    title={profile ? t('networkSettings.editApn') : t('networkSettings.addApn')}
+                    onClose={handleClose}
+                />
 
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -7,14 +7,11 @@ import {
     TouchableOpacity,
     TextInput,
     ScrollView,
-    ActivityIndicator,
     KeyboardAvoidingView,
     Platform,
     Keyboard,
-    StatusBar,
-    Pressable,
 } from 'react-native';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { MeshGradientBackground } from './MeshGradientBackground';
@@ -23,7 +20,8 @@ import { ThemedAlertHelper } from './ThemedAlert';
 import { showInterstitial } from '@/services/ad.service';
 import { AdNative } from './AdBanner';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BouncingDots } from './LoadingIndicators';
+import { ModalButton } from './ModalButton';
+import { ModalHeader } from './ModalHeader';
 
 
 
@@ -54,7 +52,7 @@ export function MonthlySettingsModal({
     onSave,
     initialSettings,
 }: MonthlySettingsModalProps) {
-    const { colors, isDark } = useTheme();
+    const { colors, isDark, typography, borderRadius, glassmorphism } = useTheme();
     const { t } = useTranslation();
     const insets = useSafeAreaInsets();
 
@@ -66,21 +64,6 @@ export function MonthlySettingsModal({
     const [isSaving, setIsSaving] = useState(false);
     const [showUnitDropdown, setShowUnitDropdown] = useState(false);
     const [hasChanges, setHasChanges] = useState(false);
-    const [keyboardVisible, setKeyboardVisible] = useState(false);
-
-    useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
-            setKeyboardVisible(true);
-        });
-        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-            setTimeout(() => setKeyboardVisible(false), 100);
-        });
-
-        return () => {
-            keyboardDidShowListener.remove();
-            keyboardDidHideListener.remove();
-        };
-    }, []);
 
     useEffect(() => {
         if (visible && initialSettings) {
@@ -126,8 +109,6 @@ export function MonthlySettingsModal({
         }
     };
 
-    const [sliderWidth, setSliderWidth] = useState(0);
-
     const handleClose = () => {
         if (hasChanges) {
             ThemedAlertHelper.alert(
@@ -143,6 +124,25 @@ export function MonthlySettingsModal({
         }
     };
 
+    const numericLimit = parseInt(dataLimit) || 0;
+    const thresholdResult = Math.round((numericLimit * monthThreshold) / 100);
+
+    const getThresholdDescription = () => {
+        if (numericLimit > 0) {
+            return t('home.thresholdDescWithLimit')
+                .replace('{{percent}}', monthThreshold.toString())
+                .replace('{{limit}}', numericLimit.toString())
+                .replace(/\{\{unit\}\}/g, dataLimitUnit)
+                .replace('{{result}}', thresholdResult.toString());
+        }
+        return t('home.thresholdDesc').replace('{{value}}', monthThreshold.toString());
+    };
+
+    const cardBg = isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card;
+    const innerBg = isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light;
+    const cardBorder = isDark ? glassmorphism.border.dark : glassmorphism.border.light;
+    const disabledOpacity = 0.4;
+
     return (
         <Modal
             visible={visible}
@@ -151,211 +151,301 @@ export function MonthlySettingsModal({
             onRequestClose={handleClose}
         >
             <MeshGradientBackground style={styles.modalContainer}>
-                {/* Header */}
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
-                    <Text style={[styles.title, { color: colors.text }]}>
-                        {t('home.monthlySettings') || 'Usage Limit'}
-                    </Text>
-                    <TouchableOpacity onPress={handleClose}>
-                        <Ionicons name="close-circle" size={32} color={colors.primary} />
-                    </TouchableOpacity>
-                </View>
+                <ModalHeader title={t('home.monthlySettings') || 'Usage Limit'} onClose={handleClose} />
 
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                     style={{ flex: 1 }}
-                    keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
                 >
-                    <ScrollView style={styles.modalContent} contentContainerStyle={{ paddingBottom: 20 }} keyboardShouldPersistTaps="handled">
-
-                        <View style={[styles.toggleBox, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
-                            <Text style={[styles.label, { color: colors.text, fontSize: 16 }]}>
-                                {t('home.enableMonthlyLimit')}
-                            </Text>
-                            <ThemedSwitch
-                                value={enabled}
-                                onValueChange={setEnabled}
-                            />
+                    <ScrollView
+                        style={styles.modalContent}
+                        contentContainerStyle={{ paddingBottom: 20 }}
+                        keyboardShouldPersistTaps="handled"
+                        showsVerticalScrollIndicator={false}
+                    >
+                        {/* Toggle Section */}
+                        <View style={[styles.toggleCard, {
+                            backgroundColor: cardBg,
+                            borderColor: enabled ? colors.primary + '40' : cardBorder,
+                            borderWidth: 1,
+                        }]}>
+                            <View style={styles.toggleLeft}>
+                                <View style={[styles.toggleIcon, {
+                                    backgroundColor: enabled ? colors.primary + '18' : innerBg,
+                                }]}>
+                                    <MaterialIcons
+                                        name={enabled ? 'notifications-active' : 'notifications-off'}
+                                        size={20}
+                                        color={enabled ? colors.primary : colors.textSecondary}
+                                    />
+                                </View>
+                                <View style={{ flex: 1 }}>
+                                    <Text style={[typography.headline, { color: colors.text, fontSize: 15 }]}>
+                                        {t('home.enableMonthlyLimit')}
+                                    </Text>
+                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
+                                        {enabled ? t('common.enabled') || 'Active' : t('common.disabled')}
+                                    </Text>
+                                </View>
+                            </View>
+                            <ThemedSwitch value={enabled} onValueChange={setEnabled} />
                         </View>
 
+                        {/* Form Sections */}
+                        <View style={{ opacity: enabled ? 1 : disabledOpacity }} pointerEvents={enabled ? 'auto' : 'none'}>
 
+                            {/* Cycle Start Date */}
+                            <View style={[styles.sectionCard, {
+                                backgroundColor: cardBg,
+                                borderColor: cardBorder,
+                            }]}>
+                                <View style={styles.sectionHeader}>
+                                    <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '15' }]}>
+                                        <MaterialIcons name="calendar-today" size={16} color={colors.primary} />
+                                    </View>
+                                    <Text style={[typography.headline, { color: colors.text, fontSize: 14 }]}>
+                                        {t('home.startDate')}
+                                    </Text>
+                                </View>
+                                <View style={[styles.dateCard, { backgroundColor: innerBg, borderColor: cardBorder }]}>
+                                    <Text style={[typography.subheadline, { color: colors.text, textAlign: 'center', marginBottom: 12 }]}>
+                                        {t('home.everyDate')}{' '}
+                                        <Text style={[styles.startDay, { color: colors.primary, backgroundColor: colors.primary + '15', borderColor: colors.primary + '30' }]}>
+                                            {startDay}
+                                        </Text>
+                                    </Text>
+                                    <ScrollView
+                                        horizontal
+                                        showsHorizontalScrollIndicator={false}
+                                        contentContainerStyle={styles.dateScrollContainer}
+                                    >
+                                        {DAYS.map((day) => {
+                                            const isSelected = startDay === day;
+                                            return (
+                                                <TouchableOpacity
+                                                    key={day}
+                                                    style={[
+                                                        styles.dateScrollItem,
+                                                        isSelected && {
+                                                            backgroundColor: colors.primary,
+                                                            width: 48,
+                                                            height: 48,
+                                                            borderRadius: 24,
+                                                            transform: [{ scale: 1.05 }],
+                                                        },
+                                                        !isSelected && {
+                                                            backgroundColor: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+                                                        }
+                                                    ]}
+                                                    onPress={() => setStartDay(day)}
+                                                    activeOpacity={0.7}
+                                                >
+                                                    <Text style={[
+                                                        typography.subheadline,
+                                                        {
+                                                            color: isSelected ? '#FFF' : colors.textSecondary,
+                                                            fontWeight: isSelected ? 'bold' : '500',
+                                                            fontSize: isSelected ? 16 : 14,
+                                                        }
+                                                    ]}>
+                                                        {day}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </ScrollView>
+                                </View>
+                            </View>
 
-                        <View style={styles.section}>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.startDate')}</Text>
-                            <View style={[styles.dateCard, { borderColor: colors.border, backgroundColor: colors.background }]}>
-                                <Text style={[styles.dateHeaderStr, { color: colors.text }]}>
-                                    {t('home.everyDate')} <Text style={{ color: colors.primary, fontWeight: 'bold', fontSize: 18 }}>{startDay}</Text>
-                                </Text>
+                            <AdNative />
 
-                                <ScrollView
-                                    horizontal
-                                    showsHorizontalScrollIndicator={false}
-                                    contentContainerStyle={styles.dateScrollContainer}
-                                >
-                                    {DAYS.map((day) => {
-                                        const isSelected = startDay === day;
+                            {/* Monthly Data Plan */}
+                            <View style={[styles.sectionCard, {
+                                backgroundColor: cardBg,
+                                borderColor: cardBorder,
+                            }]}>
+                                <View style={styles.sectionHeader}>
+                                    <View style={[styles.sectionIcon, { backgroundColor: colors.primary + '15' }]}>
+                                        <MaterialIcons name="data-usage" size={16} color={colors.primary} />
+                                    </View>
+                                    <Text style={[typography.headline, { color: colors.text, fontSize: 14 }]}>
+                                        {t('home.monthlyDataPlan')}
+                                    </Text>
+                                </View>
+                                <View style={styles.inputRow}>
+                                    <TextInput
+                                        style={[styles.limitInput, {
+                                            backgroundColor: innerBg,
+                                            borderColor: cardBorder,
+                                            color: colors.text,
+                                        }]}
+                                        value={dataLimit}
+                                        onChangeText={setDataLimit}
+                                        placeholder="0"
+                                        placeholderTextColor={colors.textSecondary}
+                                        keyboardType="numeric"
+                                    />
+                                    <TouchableOpacity
+                                        style={[styles.unitButton, {
+                                            backgroundColor: innerBg,
+                                            borderColor: cardBorder,
+                                        }]}
+                                        onPress={() => setShowUnitDropdown(!showUnitDropdown)}
+                                    >
+                                        <Text style={[typography.headline, { color: colors.text, fontSize: 15 }]}>{dataLimitUnit}</Text>
+                                        <MaterialIcons
+                                            name={showUnitDropdown ? 'arrow-drop-up' : 'arrow-drop-down'}
+                                            size={20}
+                                            color={colors.textSecondary}
+                                        />
+                                    </TouchableOpacity>
+                                </View>
+                                {showUnitDropdown && (
+                                    <View style={[styles.dropdownMenu, {
+                                        backgroundColor: colors.card,
+                                        borderColor: cardBorder,
+                                    }]}>
+                                        {(['MB', 'GB'] as const).map((unit) => (
+                                            <TouchableOpacity
+                                                key={unit}
+                                                style={[
+                                                    styles.dropdownItem,
+                                                    dataLimitUnit === unit && { backgroundColor: colors.primary + '20' }
+                                                ]}
+                                                onPress={() => {
+                                                    setDataLimitUnit(unit);
+                                                    setShowUnitDropdown(false);
+                                                }}
+                                            >
+                                                <Text style={[
+                                                    typography.subheadline,
+                                                    { color: dataLimitUnit === unit ? colors.primary : colors.text, fontWeight: dataLimitUnit === unit ? '600' : '400' }
+                                                ]}>{unit}</Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                )}
+                            </View>
+
+                            {/* Threshold */}
+                            <View style={[styles.sectionCard, {
+                                backgroundColor: cardBg,
+                                borderColor: cardBorder,
+                            }]}>
+                                <View style={styles.sectionHeader}>
+                                    <View style={[styles.sectionIcon, { backgroundColor: colors.warning + '18' }]}>
+                                        <MaterialIcons name="warning-amber" size={16} color={colors.warning} />
+                                    </View>
+                                    <Text style={[typography.headline, { color: colors.text, fontSize: 14 }]}>
+                                        {t('home.threshold').replace(' (%)', '')}
+                                    </Text>
+                                </View>
+
+                                <View style={styles.presetContainer}>
+                                    {[50, 70, 80, 90, 95].map((preset) => {
+                                        const isSelected = monthThreshold === preset;
                                         return (
                                             <TouchableOpacity
-                                                key={day}
+                                                key={preset}
                                                 style={[
-                                                    styles.dateScrollItem,
-                                                    isSelected && styles.dateScrollItemSelected,
-                                                    isSelected && { backgroundColor: colors.primary },
-                                                    !isSelected && { backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+                                                    styles.presetButton,
+                                                    isSelected && {
+                                                        backgroundColor: colors.primary,
+                                                        borderColor: colors.primary,
+                                                    },
+                                                    !isSelected && {
+                                                        backgroundColor: innerBg,
+                                                        borderColor: cardBorder,
+                                                    }
                                                 ]}
-                                                onPress={() => setStartDay(day)}
+                                                onPress={() => setMonthThreshold(preset)}
                                                 activeOpacity={0.7}
                                             >
                                                 <Text style={[
-                                                    styles.dateScrollText,
-                                                    isSelected && styles.dateScrollTextSelected,
-                                                    { color: isSelected ? '#FFF' : colors.textSecondary }
+                                                    typography.subheadline,
+                                                    {
+                                                        color: isSelected ? '#FFF' : colors.textSecondary,
+                                                        fontWeight: isSelected ? '700' : '500',
+                                                    }
                                                 ]}>
-                                                    {day}
+                                                    {preset}%
                                                 </Text>
                                             </TouchableOpacity>
                                         );
                                     })}
-                                </ScrollView>
-                            </View>
-                        </View>
+                                </View>
 
-                        <AdNative />
-
-                        <View style={styles.section}>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.monthlyDataPlan')}</Text>
-                            <View style={{ flexDirection: 'row', gap: 12 }}>
-                                <TextInput
-                                    style={[styles.input, { backgroundColor: colors.card, borderColor: colors.border, color: colors.text, flex: 1 }]}
-                                    value={dataLimit}
-                                    onChangeText={setDataLimit}
-                                    placeholder="0"
-                                    placeholderTextColor={colors.textSecondary}
-                                    keyboardType="numeric"
-                                />
-                                <TouchableOpacity
-                                    style={[styles.unitDropdown, { backgroundColor: colors.card, borderColor: colors.border }]}
-                                    onPress={() => setShowUnitDropdown(!showUnitDropdown)}
-                                >
-                                    <Text style={[styles.unitText, { color: colors.text }]}>{dataLimitUnit}</Text>
-                                    <MaterialIcons name="arrow-drop-down" size={24} color={colors.text} />
-                                </TouchableOpacity>
-                            </View>
-                            {showUnitDropdown && (
-                                <View style={[styles.dropdownMenu, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                                    {(['MB', 'GB'] as const).map((unit) => (
-                                        <TouchableOpacity
-                                            key={unit}
-                                            style={[styles.dropdownItem, dataLimitUnit === unit && { backgroundColor: colors.primary + '30' }]}
-                                            onPress={() => {
-                                                setDataLimitUnit(unit);
-                                                setShowUnitDropdown(false);
+                                <View style={[styles.customRow, {
+                                    backgroundColor: innerBg,
+                                    borderColor: cardBorder,
+                                }]}>
+                                    <Text style={[typography.subheadline, { color: colors.textSecondary }]}>
+                                        {t('common.custom')}
+                                    </Text>
+                                    <View style={styles.customInputWrapper}>
+                                        <TextInput
+                                            style={[styles.customInput, { color: colors.text, borderColor: colors.primary }]}
+                                            value={monthThreshold.toString()}
+                                            onChangeText={(text) => {
+                                                const num = parseInt(text) || 0;
+                                                setMonthThreshold(Math.min(100, Math.max(0, num)));
                                             }}
-                                        >
-                                            <Text style={{ color: colors.text }}>{unit}</Text>
-                                        </TouchableOpacity>
-                                    ))}
+                                            keyboardType="numeric"
+                                            maxLength={3}
+                                            selectTextOnFocus
+                                        />
+                                        <Text style={[typography.headline, { color: colors.textSecondary }]}>%</Text>
+                                    </View>
                                 </View>
-                            )}
-                        </View>
 
-
-
-                        <View style={styles.section}>
-                            <Text style={[styles.sectionTitle, { color: colors.text }]}>{t('home.threshold').replace(' (%)', '')}</Text>
-
-                            <View style={styles.presetContainer}>
-                                {[50, 70, 80, 90, 95].map((preset) => {
-                                    const isSelected = monthThreshold === preset;
-                                    return (
-                                        <TouchableOpacity
-                                            key={preset}
-                                            style={[
-                                                styles.presetButton,
-                                                isSelected && { backgroundColor: colors.primary, borderColor: colors.primary },
-                                                !isSelected && { backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', borderColor: colors.border }
-                                            ]}
-                                            onPress={() => setMonthThreshold(preset)}
-                                            activeOpacity={0.7}
-                                        >
-                                            <Text style={[
-                                                styles.presetText,
-                                                { color: isSelected ? '#FFF' : colors.textSecondary }
-                                            ]}>
-                                                {preset}%
-                                            </Text>
-                                        </TouchableOpacity>
-                                    );
-                                })}
-                            </View>
-
-                            <View style={[styles.customInputRow, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)', borderColor: colors.border }]}>
-                                <Text style={[styles.customLabel, { color: colors.textSecondary }]}>
-                                    {t('common.custom') || 'Custom'}
-                                </Text>
-                                <View style={styles.customInputWrapper}>
-                                    <TextInput
-                                        style={[styles.customTextInput, { color: colors.text, borderColor: colors.primary }]}
-                                        value={monthThreshold.toString()}
-                                        onChangeText={(text) => {
-                                            const num = parseInt(text) || 0;
-                                            setMonthThreshold(Math.min(100, Math.max(0, num)));
-                                        }}
-                                        keyboardType="numeric"
-                                        maxLength={3}
-                                        selectTextOnFocus
+                                {/* Dynamic Threshold Description */}
+                                <View style={[styles.thresholdResult, {
+                                    backgroundColor: numericLimit > 0 ? colors.primary + '10' : innerBg,
+                                    borderColor: numericLimit > 0 ? colors.primary + '25' : cardBorder,
+                                }]}>
+                                    <MaterialIcons
+                                        name={numericLimit > 0 ? 'check-circle' : 'info-outline'}
+                                        size={14}
+                                        color={numericLimit > 0 ? colors.primary : colors.textSecondary}
                                     />
-                                    <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>%</Text>
+                                    <Text style={[typography.caption1, {
+                                        color: numericLimit > 0 ? colors.text : colors.textSecondary,
+                                        flex: 1,
+                                    }]}>
+                                        {getThresholdDescription()}
+                                    </Text>
                                 </View>
                             </View>
 
-                            <Text style={[styles.description, { color: colors.textSecondary }]}>
-                                {t('home.thresholdDesc').replace('{{value}}', monthThreshold.toString())}
-                            </Text>
-                        </View>
-
-                        <View style={{ paddingHorizontal: 16, marginTop: 16, marginBottom: 16 }}>
+                            <View style={{ height: 16 }} />
                         </View>
                     </ScrollView>
 
-                    <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border, paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24 }]}>
+                    {/* Footer */}
+                    <View style={[styles.footer, {
+                        backgroundColor: isDark ? 'rgba(17,17,17,0.95)' : 'rgba(240,242,245,0.95)',
+                        borderTopColor: cardBorder,
+                        paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24,
+                    }]}>
                         {hasChanges ? (
-                            <TouchableOpacity
-                                style={[
-                                    styles.applyButton,
-                                    { backgroundColor: colors.primary }
-                                ]}
+                            <ModalButton
+                                title={t('settings.applyConfiguration')}
+                                variant="primary"
+                                loading={isSaving}
                                 onPress={() => {
                                     Keyboard.dismiss();
                                     handleSave();
                                 }}
-                                disabled={isSaving}
-                                activeOpacity={0.8}
-                            >
-                                {isSaving ? (
-                                    <BouncingDots size="small" color="#FFFFFF" />
-                                ) : (
-                                    <Text style={styles.applyButtonText}>
-                                        {t('settings.applyConfiguration')}
-                                    </Text>
-                                )}
-                            </TouchableOpacity>
+                            />
                         ) : (
-                            <TouchableOpacity
-                                style={[
-                                    styles.applyButton,
-                                    { backgroundColor: colors.textSecondary }
-                                ]}
+                            <ModalButton
+                                title={t('common.cancel')}
+                                variant="secondary"
                                 onPress={() => {
                                     Keyboard.dismiss();
                                     setTimeout(() => onClose(), 150);
                                 }}
-                                activeOpacity={0.8}
-                            >
-                                <Text style={styles.applyButtonText}>
-                                    {t('common.cancel')}
-                                </Text>
-                            </TouchableOpacity>
+                            />
                         )}
                     </View>
                 </KeyboardAvoidingView>
@@ -368,235 +458,158 @@ const styles = StyleSheet.create({
     modalContainer: {
         flex: 1,
     },
-    modalHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingHorizontal: 20,
-        paddingBottom: 16,
-        borderBottomWidth: 1,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
     modalContent: {
         flex: 1,
-        padding: 20,
+        padding: 16,
     },
-    toggleBox: {
+    toggleCard: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: 16,
+        borderRadius: 16,
+        marginBottom: 16,
+    },
+    toggleLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+        gap: 12,
+    },
+    toggleIcon: {
+        width: 40,
+        height: 40,
         borderRadius: 12,
-        marginBottom: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
-    label: {
-        fontWeight: '600',
-    },
-    section: {
-        marginBottom: 24,
-    },
-    sectionTitle: {
-        fontSize: 16,
-        fontWeight: '600',
+    sectionCard: {
+        borderRadius: 16,
+        borderWidth: 1,
+        padding: 16,
         marginBottom: 12,
+    },
+    sectionHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        marginBottom: 14,
+    },
+    sectionIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     dateCard: {
         borderWidth: 1,
         borderRadius: 12,
-        padding: 16,
-    },
-    dateHeaderStr: {
-        textAlign: 'center',
-        fontSize: 14,
-        marginBottom: 12,
-    },
-    daysGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 8,
-        justifyContent: 'center',
-    },
-    dayItem: {
-        width: 36,
-        height: 36,
-        borderRadius: 8,
-        borderWidth: 1,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    dayText: {
-        fontSize: 14,
-        fontWeight: '500',
+        padding: 14,
     },
     dateScrollContainer: {
-        paddingVertical: 8,
-        paddingHorizontal: 4,
-        gap: 8,
+        paddingVertical: 4,
+        paddingHorizontal: 2,
+        gap: 6,
     },
     dateScrollItem: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 40,
+        height: 40,
+        borderRadius: 20,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    dateScrollItemSelected: {
-        width: 52,
-        height: 52,
-        borderRadius: 26,
-        transform: [{ scale: 1.1 }],
-    },
-    dateScrollText: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    dateScrollTextSelected: {
-        fontSize: 16,
+    startDay: {
         fontWeight: 'bold',
+        fontSize: 16,
+        borderWidth: 1,
+        paddingHorizontal: 10,
+        paddingVertical: 2,
+        borderRadius: 8,
+        overflow: 'hidden',
     },
-    input: {
-        height: 50,
+    inputRow: {
+        flexDirection: 'row',
+        gap: 10,
+    },
+    limitInput: {
+        flex: 1,
+        height: 48,
         borderRadius: 12,
         paddingHorizontal: 16,
         borderWidth: 1,
         fontSize: 16,
+        fontWeight: '600',
     },
-    unitDropdown: {
-        height: 50,
-        width: 100,
+    unitButton: {
+        height: 48,
+        width: 88,
         borderRadius: 12,
         borderWidth: 1,
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    unitText: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        marginRight: 4,
     },
     dropdownMenu: {
-        marginTop: 8,
+        marginTop: 6,
         borderRadius: 12,
         borderWidth: 1,
-        alignSelf: 'flex-end',
-        width: 100,
-        position: 'absolute',
-        top: 60,
-        right: 0,
-        zIndex: 100,
+        overflow: 'hidden',
     },
     dropdownItem: {
-        padding: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
         alignItems: 'center',
-    },
-    badge: {
-        paddingHorizontal: 8,
-        paddingVertical: 4,
-        borderRadius: 6,
-        borderWidth: 1,
-    },
-    thresholdInputContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 8,
-        borderWidth: 1,
-        gap: 4,
-    },
-    thresholdInput: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        minWidth: 40,
-        textAlign: 'right',
-        padding: 0,
-    },
-    sliderTrack: {
-        height: 32,
-        borderRadius: 8,
-        overflow: 'hidden',
-        marginBottom: 8,
-    },
-    sliderFill: {
-        height: '100%',
-        alignItems: 'flex-end',
-        justifyContent: 'center',
-    },
-    sliderKnob: {
-        width: 4,
-        height: 20,
-        backgroundColor: '#FFF',
-        borderRadius: 2,
-        marginRight: 6,
-    },
-    description: {
-        fontSize: 12,
-        marginTop: 8,
-    },
-    footer: {
-        padding: 20,
-        paddingBottom: 40,
-        borderTopWidth: 1,
-    },
-    applyButton: {
-        height: 50,
-        borderRadius: 12,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    applyButtonText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: 'bold',
     },
     presetContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
-        gap: 8,
-        marginBottom: 16,
+        gap: 6,
+        marginBottom: 12,
     },
     presetButton: {
         flex: 1,
-        paddingVertical: 14,
-        borderRadius: 12,
+        paddingVertical: 12,
+        borderRadius: 10,
         borderWidth: 1,
         alignItems: 'center',
         justifyContent: 'center',
     },
-    presetText: {
-        fontSize: 15,
-        fontWeight: '600',
-    },
-    customInputRow: {
+    customRow: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: 16,
+        padding: 14,
         borderRadius: 12,
         borderWidth: 1,
-    },
-    customLabel: {
-        fontSize: 14,
-        fontWeight: '500',
     },
     customInputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
+        gap: 4,
     },
-    customTextInput: {
-        fontSize: 24,
+    customInput: {
+        fontSize: 22,
         fontWeight: 'bold',
         textAlign: 'center',
-        minWidth: 60,
-        paddingVertical: 4,
-        paddingHorizontal: 12,
+        minWidth: 52,
+        paddingVertical: 2,
+        paddingHorizontal: 8,
         borderWidth: 2,
         borderRadius: 8,
+    },
+    thresholdResult: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginTop: 12,
+        padding: 12,
+        borderRadius: 10,
+        borderWidth: 1,
+    },
+    footer: {
+        padding: 16,
+        paddingBottom: 40,
+        borderTopWidth: StyleSheet.hairlineWidth,
     },
 });
 
