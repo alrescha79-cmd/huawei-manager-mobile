@@ -140,8 +140,7 @@ export default function SystemSettingsScreen() {
                                 <Button
                                     title={t('settings.addProfile')}
                                     onPress={handleOpenAddProfile}
-                                    icon={<MaterialIcons name="add" size={16} color={colors.primary} />}
-                                    variant="outline"
+                                    variant="secondary"
                                 />
                             </View>
                         </View>

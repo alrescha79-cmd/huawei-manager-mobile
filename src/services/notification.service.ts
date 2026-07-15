@@ -104,7 +104,29 @@ async function registerForPushNotifications(): Promise<string | null> {
             importance: Notifications.AndroidImportance.HIGH,
         });
 
-        console.log('📱 Subscribed to all_users topic for broadcast notifications');
+        // Subscribe to all_users topic for broadcast notifications (updates, announcements)
+        // Uses Expo Push API topic subscription (expo-notifications doesn't have client-side topic API)
+        try {
+            const projectId = Constants.expoConfig?.extra?.eas?.projectId ||
+                Constants.easConfig?.projectId;
+            if (projectId && pushToken) {
+                const response = await fetch(
+                    `https://exp.host/--/api/v2/projects/${projectId}/topics/all_users/subscribe`,
+                    {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: pushToken }),
+                    }
+                );
+                if (response.ok) {
+                    console.log('📱 Subscribed to all_users topic for broadcast notifications');
+                } else {
+                    console.warn('Topic subscription response:', response.status);
+                }
+            }
+        } catch (topicError) {
+            console.warn('Failed to subscribe to all_users topic:', topicError);
+        }
 
         return pushToken;
     } catch (error) {
