@@ -552,9 +552,28 @@ export class ModemAPIClient {
         this.sessionToken = '';
         this.sessionCookie = '';
         this.tokenExpiry = 0;
-        markSessionUnhealthy();
-        const errorCode = responseData.includes('125003') ? '125003' : '125002';
-        throw new Error(`Session expired (${errorCode}). Please re-login.`);
+
+        // Auto-retry GET once with a fresh session
+        try {
+          await this.getToken(true);
+          const retryResponse = await this.client.get(endpoint, {
+            headers: {
+              'Cookie': this.sessionCookie || '',
+            },
+          });
+          const retryData = typeof retryResponse.data === 'string' ? retryResponse.data : JSON.stringify(retryResponse.data);
+          if (retryData.includes('<code>125003</code>') || retryData.includes('<code>125002</code>')) {
+            markSessionUnhealthy();
+            const errorCode = retryData.includes('125003') ? '125003' : '125002';
+            throw new Error(`Session expired (${errorCode}). Please re-login.`);
+          }
+          updateSessionActivity();
+          return retryResponse.data;
+        } catch (retryError) {
+          markSessionUnhealthy();
+          const errorCode = responseData.includes('125003') ? '125003' : '125002';
+          throw new Error(`Session expired (${errorCode}). Please re-login.`);
+        }
       }
 
       updateSessionActivity();
@@ -602,12 +621,18 @@ export class ModemAPIClient {
       const responseData = typeof response.data === 'string' ? response.data : '';
 
       if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
+        // Auto-retry POST once with a fresh session
+        if (retryCount < 1) {
+          this.sessionToken = '';
+          this.sessionCookie = '';
+          this.tokenExpiry = 0;
+          return this.post(endpoint, data, retryCount + 1);
+        }
+
         this.sessionToken = '';
         this.sessionCookie = '';
         this.tokenExpiry = 0;
-
         markSessionUnhealthy();
-
         const errorCode = responseData.includes('125003') ? '125003' : '125002';
         throw new Error(`Session expired (${errorCode}). Please re-login.`);
       }

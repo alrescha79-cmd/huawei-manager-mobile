@@ -15,6 +15,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ModalButton } from './ModalButton';
 
 interface AdBlockAlertModalProps {
     visible?: boolean;
@@ -215,33 +216,19 @@ export const AdBlockAlertModal: React.FC<AdBlockAlertModalProps> = () => {
                         </View>
                     </View>
 
-                    <TouchableOpacity
-                        style={[
-                            styles.primaryButton,
-                            {
-                                borderRadius: 24,
-                                backgroundColor: colors.error,
-                                shadowColor: colors.error,
-                                marginTop: 12,
-                            }
-                        ]}
-                        activeOpacity={0.8}
+                    <ModalButton
+                        title={t('ads.btnIHaveDisabled')}
+                        variant="danger"
                         onPress={handleClose}
-                    >
-                        <Text style={styles.primaryButtonText}>
-                            {t('ads.btnIHaveDisabled')}
-                        </Text>
-                    </TouchableOpacity>
+                        style={{ borderRadius: 24, marginTop: 12 }}
+                    />
 
-                    <TouchableOpacity
-                        style={styles.secondaryButton}
-                        activeOpacity={0.7}
+                    <ModalButton
+                        title={t('ads.btnLater')}
+                        variant="secondary"
                         onPress={handleClose}
-                    >
-                        <Text style={[typography.body, styles.secondaryButtonText, { color: colors.textSecondary }]}>
-                            {t('ads.btnLater')}
-                        </Text>
-                    </TouchableOpacity>
+                        style={{ marginTop: 4, marginBottom: 12 }}
+                    />
                     <Text style={[styles.guaranteeText, { color: colors.textSecondary }]}>
                         {t('ads.guaranteeNotice')}
                     </Text>
@@ -341,30 +328,6 @@ const styles = StyleSheet.create({
         borderRadius: 18,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    primaryButton: {
-        paddingVertical: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    primaryButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    secondaryButton: {
-        paddingVertical: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 4,
-        marginBottom: 12,
-    },
-    secondaryButtonText: {
-        fontWeight: '600',
     },
     guaranteeText: {
         textAlign: 'center',

@@ -13,6 +13,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ModalButton } from './ModalButton';
 
 let updateListener: ((visible: boolean, version?: string, isPreRelease?: boolean) => void) | null = null;
 
@@ -143,28 +144,19 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({ onDo
                         {t('alerts.newVersionAvailable')}
                     </Text>
 
-                    <TouchableOpacity
-                        style={[
-                            styles.primaryButton,
-                            { borderRadius: 24, backgroundColor: colors.primary }
-                        ]}
-                        activeOpacity={0.8}
+                    <ModalButton
+                        title={t('settings.downloadUpdate')}
+                        variant="primary"
                         onPress={handleDownload}
-                    >
-                        <Text style={styles.primaryButtonText}>
-                            {t('settings.downloadUpdate')}
-                        </Text>
-                    </TouchableOpacity>
+                        style={{ borderRadius: 24 }}
+                    />
 
-                    <TouchableOpacity
-                        style={styles.secondaryButton}
-                        activeOpacity={0.7}
+                    <ModalButton
+                        title={t('ads.btnLater')}
+                        variant="secondary"
                         onPress={handleClose}
-                    >
-                        <Text style={[typography.body, styles.secondaryButtonText, { color: colors.textSecondary }]}>
-                            {t('ads.btnLater')}
-                        </Text>
-                    </TouchableOpacity>
+                        style={{ marginTop: 4 }}
+                    />
                 </Animated.View>
             </View>
         </Modal>
@@ -229,28 +221,5 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         lineHeight: 20,
         marginBottom: 24,
-    },
-    primaryButton: {
-        paddingVertical: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 4,
-    },
-    primaryButtonText: {
-        color: '#ffffff',
-        fontSize: 16,
-        fontWeight: 'bold',
-    },
-    secondaryButton: {
-        paddingVertical: 14,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: 4,
-    },
-    secondaryButtonText: {
-        fontWeight: '600',
     },
 });

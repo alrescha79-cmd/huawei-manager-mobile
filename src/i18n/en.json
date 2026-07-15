@@ -90,6 +90,7 @@
     "done": "Done",
     "download": "Download",
     "enable": "Enable",
+    "enabled": "Enabled",
     "error": "Error",
     "fetching": "Fetching",
     "goToLogin": "Go to Login",
@@ -239,7 +240,8 @@
     "testAgain": "Test Again",
     "thisMonth": "This Month",
     "threshold": "Threshold",
-    "thresholdDesc": "Usage limit will be set to {{value}}% of total quota.",
+    "thresholdDesc": "Alert when usage reaches {{value}}% of quota.",
+    "thresholdDescWithLimit": "You'll be notified when data usage reaches {{result}}{{unit}}, which is {{percent}}% of your {{limit}}{{unit}} monthly quota.",
     "tipExternalCable": "Use quality coaxial cable with minimal length",
     "tipExternalConnector": "Ensure connectors are tightly secured (TS9/SMA)",
     "tipExternalDirection": "Point antenna towards the nearest cell tower",
@@ -455,7 +457,11 @@
     "timeRange": "Time Range",
     "title": "Parental Control",
     "tuesday": "Tuesday",
-    "wednesday": "Wednesday"
+    "wednesday": "Wednesday",
+    "profileActive": "Profile Active",
+    "enterProfileName": "Enter profile name",
+    "noConnectedDevices": "No connected devices",
+    "saveProfile": "Save Profile"
   },
   "settings": {
     "about": "About",

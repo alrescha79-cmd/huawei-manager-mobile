@@ -90,6 +90,7 @@
     "done": "Selesai",
     "download": "Unduh",
     "enable": "Aktifkan",
+    "enabled": "Aktif",
     "error": "Kesalahan",
     "fetching": "Mengambil",
     "goToLogin": "Ke Halaman Login",
@@ -239,7 +240,8 @@
     "testAgain": "Tes Lagi",
     "thisMonth": "Bulan Ini",
     "threshold": "Ambang Batas",
-    "thresholdDesc": "Batas penggunaan akan di-set ke {{value}}% dari total kuota.",
+    "thresholdDesc": "Peringatan saat penggunaan mencapai {{value}}% dari kuota.",
+    "thresholdDescWithLimit": "Anda akan mendapat notifikasi ketika penggunaan data mencapai {{result}}{{unit}}, yaitu {{percent}}% dari kuota bulanan {{limit}}{{unit}}.",
     "tipExternalCable": "Gunakan kabel koaksial berkualitas dengan panjang minimal",
     "tipExternalConnector": "Pastikan konektor terpasang erat (TS9/SMA)",
     "tipExternalDirection": "Arahkan antena ke tower terdekat",
@@ -455,7 +457,11 @@
     "timeRange": "Rentang Waktu",
     "title": "Kontrol Orang Tua",
     "tuesday": "Selasa",
-    "wednesday": "Rabu"
+    "wednesday": "Rabu",
+    "profileActive": "Profil Aktif",
+    "enterProfileName": "Masukkan nama profil",
+    "noConnectedDevices": "Tidak ada perangkat terhubung",
+    "saveProfile": "Simpan Profil"
   },
   "settings": {
     "about": "Tentang",

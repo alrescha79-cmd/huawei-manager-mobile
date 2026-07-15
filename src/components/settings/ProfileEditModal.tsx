@@ -10,7 +10,6 @@ import {
     Keyboard,
     KeyboardAvoidingView,
     Platform,
-    StatusBar,
     ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -18,6 +17,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ThemedAlertHelper } from '../ThemedAlert';
+import { ModalHeader } from '../ModalHeader';
 import { BouncingDots } from '../LoadingIndicators';
 
 interface ProfileData {
@@ -130,15 +130,11 @@ export function ProfileEditModal({
             presentationStyle="pageSheet"
             onRequestClose={handleClose}
         >
-            <View style={[styles.modalContainer, { backgroundColor: colors.background, paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16 }]}>
-                <View style={[styles.modalHeader, { borderBottomColor: colors.border }]}>
-                    <Text style={[typography.headline, { color: colors.text, fontSize: 18, fontWeight: 'bold' }]}>
-                        {profile ? t('settings.editProfileTitle') : t('settings.addProfileTitle')}
-                    </Text>
-                    <TouchableOpacity onPress={handleClose}>
-                        <MaterialIcons name="close" size={28} color={colors.primary} />
-                    </TouchableOpacity>
-                </View>
+            <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>
+                <ModalHeader
+                    title={profile ? t('settings.editProfileTitle') : t('settings.addProfileTitle')}
+                    onClose={handleClose}
+                />
 
                 <KeyboardAvoidingView
                     behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -246,10 +242,6 @@ export function ProfileEditModal({
 
 const styles = StyleSheet.create({
     modalContainer: { flex: 1 },
-    modalHeader: {
-        flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-        paddingHorizontal: 20, paddingBottom: 16, borderBottomWidth: 1
-    },
     input: {
         height: 50, borderRadius: 12, paddingHorizontal: 16, borderWidth: 1, fontSize: 16
     },
