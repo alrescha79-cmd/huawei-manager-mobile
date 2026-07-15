@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 import { useTheme } from '@/theme';
@@ -22,6 +22,15 @@ export default function UpdateScreen() {
     const { downloading, downloadProgress, handleDownloadAndInstall, handleCancelDownload } = useUpdateDownload({ t });
 
     const [selectedNotes, setSelectedNotes] = useState<{ version: string; notes: string } | null>(null);
+    const { autoDownload } = useLocalSearchParams<{ autoDownload?: string }>();
+    const autoDownloadTriggered = useRef(false);
+
+    useEffect(() => {
+        if (autoDownload === 'true' && releaseInfo?.downloadUrl && !downloading && !autoDownloadTriggered.current) {
+            autoDownloadTriggered.current = true;
+            handleDownloadAndInstall(releaseInfo.downloadUrl, releaseInfo.version);
+        }
+    }, [autoDownload, releaseInfo, downloading]);
 
     return (
         <AnimatedScreen noAnimation>

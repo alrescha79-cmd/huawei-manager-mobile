@@ -481,7 +481,7 @@ export default function RootLayout() {
                 />
 
                 <AdBlockAlertModal />
-                <UpdateAvailableModal onDownload={() => router.push('/settings/update')} />
+                <UpdateAvailableModal onDownload={() => router.push('/settings/update?autoDownload=true')} />
 <ChangelogModal />
                 {isAuthenticated && signalBubbleEnabled && <SignalBubble />}
             </KeyboardProvider>

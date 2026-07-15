@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, SignalPointingModal, AdBanner, AdNative } from '@/components';
-import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, homeStyles as styles, DiagnosisResultModal, SpeedTestModal, NoSignalModal } from '@/components/home';
+import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, SignalInfoSkeleton, homeStyles as styles, DiagnosisResultModal, SpeedTestModal, NoSignalModal } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -186,6 +186,9 @@ export default function HomeScreen() {
             wanInfo={wanInfo}
             trafficStats={trafficStats}
             selectedBands={homeData.selectedBands}
+            lazy
+            loading={!hasValidData}
+            skeleton={<ConnectionStatusSkeleton />}
           />
 
           <AdNative />
@@ -194,6 +197,9 @@ export default function HomeScreen() {
             t={t}
             signalInfo={signalInfo}
             modemStatus={modemStatus}
+            lazy
+            loading={!hasValidData}
+            skeleton={<SignalInfoSkeleton />}
           />
 
           {trafficStats && (

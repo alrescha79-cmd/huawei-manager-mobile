@@ -52,6 +52,9 @@ interface ConnectionStatusCardProps {
         currentUploadRate?: number;
     };
     selectedBands?: string[];
+    lazy?: boolean;
+    loading?: boolean;
+    skeleton?: React.ReactNode;
 }
 
 /**
@@ -65,6 +68,9 @@ export function ConnectionStatusCard({
     wanInfo,
     trafficStats,
     selectedBands,
+    lazy,
+    loading,
+    skeleton,
 }: ConnectionStatusCardProps) {
     const { colors, typography, isDark } = useTheme();
 
@@ -168,6 +174,9 @@ export function ConnectionStatusCard({
             title={t('home.connectionStatus')}
             storageKey="home.connectionStatus.expanded"
             headerRight={headerRightBadge}
+            lazy={lazy}
+            loading={loading}
+            skeleton={skeleton}
         >
             <View style={styles.topRow}>
                 <View style={styles.providerSection}>

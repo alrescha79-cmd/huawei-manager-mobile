@@ -52,6 +52,15 @@ export function useUpdateDownload({ t }: UseUpdateDownloadProps) {
             setDownloadResumable(resumable);
 
             const result = await resumable.downloadAsync();
+
+            if (isCancelledRef.current) {
+                isCancelledRef.current = false;
+                setDownloading(false);
+                setDownloadProgress(0);
+                setDownloadResumable(null);
+                return;
+            }
+
             setDownloading(false);
             setDownloadResumable(null);
 
@@ -83,12 +92,22 @@ export function useUpdateDownload({ t }: UseUpdateDownloadProps) {
                         ]
                     );
                 }
-            } else {
-                throw new Error('Download failed: result is empty');
+            } else if (!isCancelledRef.current) {
+                ThemedAlertHelper.alert(
+                    t('common.error') || 'Error',
+                    t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.',
+                    [
+                        { text: t('common.ok') || 'OK', style: 'cancel' },
+                        { text: t('settings.downloadUpdate') || 'Open Browser', onPress: () => Linking.openURL(url) }
+                    ]
+                );
             }
         } catch (err: any) {
             if (isCancelledRef.current) {
                 isCancelledRef.current = false;
+                setDownloading(false);
+                setDownloadProgress(0);
+                setDownloadResumable(null);
                 return;
             }
             console.error('Download/Install failed:', err);
@@ -109,27 +128,28 @@ export function useUpdateDownload({ t }: UseUpdateDownloadProps) {
 
     const handleCancelDownload = async () => {
         if (downloadResumable) {
-            try {
-                isCancelledRef.current = true;
-                await downloadResumable.cancelAsync();
-                setDownloading(false);
-                setDownloadProgress(0);
-                setDownloadResumable(null);
-                ThemedAlertHelper.alert(
-                    t('settings.downloadCancelledTitle') || 'Cancelled',
-                    t('settings.downloadCancelledMessage') || 'Download cancelled.',
-                    [{ text: t('common.ok') || 'OK', style: 'default' }]
-                );
-            } catch (e) {
-                console.error('Error cancelling download:', e);
-                isCancelledRef.current = false;
-                const message = e instanceof Error ? e.message : String(e);
-                ThemedAlertHelper.alert(
-                    t('common.error') || 'Error',
-                    `${t('settings.downloadFailed') || 'Failed to download or install update. Please try again or download manually.'}\n\n${message}`,
-                    [{ text: t('common.ok') || 'OK', style: 'default' }]
-                );
-            }
+            ThemedAlertHelper.alert(
+                t('common.confirm') || 'Confirm',
+                t('settings.downloadCancelledConfirm') || 'Are you sure you want to cancel the download?',
+                [
+                    { text: t('common.no') || 'No', style: 'destructive' },
+                    {
+                        text: t('common.yes') || 'Yes',
+                        style: 'cancel',
+                        onPress: async () => {
+                            isCancelledRef.current = true;
+                            try {
+                                await downloadResumable.cancelAsync();
+                            } catch (e) {
+                                // cancelAsync may throw if download already finished — ignore
+                            }
+                            setDownloading(false);
+                            setDownloadProgress(0);
+                            setDownloadResumable(null);
+                        }
+                    }
+                ]
+            );
         }
     };
 

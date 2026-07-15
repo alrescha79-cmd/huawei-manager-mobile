@@ -178,4 +178,42 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
     },
+    signalGrid: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+        justifyContent: 'space-between',
+    },
+    signalItem: {
+        width: '48.5%',
+        padding: 14,
+        borderRadius: 12,
+        marginBottom: 10,
+    },
 });
+
+/**
+ * Skeleton for Signal Info card
+ */
+export function SignalInfoSkeleton() {
+    const { glassmorphism, isDark } = useTheme();
+
+    return (
+        <View style={[styles.card, {
+            backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
+            borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+        }]}>
+            <Skeleton width="40%" height={20} style={{ marginBottom: 14 }} />
+            <View style={styles.signalGrid}>
+                {[1, 2, 3, 4].map((i) => (
+                    <View key={i} style={[styles.signalItem, {
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)',
+                    }]}>
+                        <Skeleton width="60%" height={10} style={{ marginBottom: 6 }} />
+                        <Skeleton width="50%" height={18} style={{ marginBottom: 4 }} />
+                        <Skeleton width="100%" height={8} borderRadius={4} />
+                    </View>
+                ))}
+            </View>
+        </View>
+    );
+}

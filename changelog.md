@@ -5,6 +5,7 @@
 - **Expanded Quick Actions** Added more shortcut buttons to Quick Actions, making common modem and network controls faster to access from the home dashboard.
 - **Redesigned SpeedTest Modal** Complete visual upgrade of SpeedTest modal with new layout elements and improved user experience.
 - **Settings Update Improvements** Improved the Settings > Update flow for a clearer update-checking experience, better release information display, and smoother navigation.
+- **Unified Modal Design System** Introduced consistent design across all modals: shared ModalHeader for uniform title/close button, ModalButton with primary/secondary/danger/outline variants, and glassmorphism card layout for settings modals. Applied to MonthlySettings, Parental Profile, Band Selection, Device Detail, APN, Profile Edit, Changelog, and Update modals.
 - **GitHub WebView** Added a WebView screen for browsing GitHub links inside the app.
 - **Minor Bug Fixes** Fixed several minor bugs across the app for improved stability and a smoother experience.
 
@@ -27,6 +28,7 @@
 - **Penambahan Tombol Quick Actions** Menambahkan lebih banyak tombol pintasan pada Quick Actions agar kontrol modem dan jaringan yang sering digunakan bisa diakses lebih cepat dari dashboard utama.
 - **SpeedTest Modal Redesign** Desain ulang SpeedTest modal dengan layout yang lebih baik dan user experience yang lebih baik.
 - **Perbaikan Settings > Update** Menyempurnakan alur Settings > Update agar proses pengecekan pembaruan lebih jelas, informasi rilis lebih mudah dibaca, dan navigasi terasa lebih lancar.
+- **Sistem Desain Modal Konsisten** Perancangan ulang seluruh modal dengan desain yang konsisten: ModalHeader bersama untuk judul/tombol close yang seragam, ModalButton dengan varian primary/secondary/danger/outline, dan tata letak kartu glassmorphism untuk modal pengaturan. Diterapkan pada modal MonthlySettings, Profil Parental, Pemilihan Band, Detail Perangkat, APN, Edit Profil, Changelog, dan Pembaruan.
 - **WebView GitHub** Menambahkan layar WebView untuk membuka halaman GitHub di dalam aplikasi.
 - **Perbaikan Bug Minor** Memperbaiki beberapa bug minor di berbagai bagian aplikasi untuk meningkatkan stabilitas dan pengalaman yang lebih lancar.
 
