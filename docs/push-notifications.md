@@ -6,7 +6,8 @@ This app supports remote push notifications via Expo Push Notification service.
 
 1. When the app starts and notification permissions are granted, an **Expo Push Token** is generated
 2. The token is stored locally and logged to the console
-3. You can use this token to send notifications from any server or tool
+3. The device automatically subscribes to the `all_users` topic for broadcast notifications
+4. You can use this token to send notifications from any server or tool
 
 ## Getting the Push Token
 
@@ -155,7 +156,42 @@ Notifications.addNotificationResponseReceivedListener(response => {
 
 ## Sending to All Users
 
-For mass notifications, you'll need to:
+### Option 1: Topic-Based (Recommended)
+
+The app automatically subscribes all users to the `all_users` topic. You can send to all users with a single request:
+
+```bash
+curl -X POST "https://exp.host/--/api/v2/push/send" \
+  -H "Authorization: Bearer YOUR_EXPO_ACCESS_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "to": "Topic(all_users)",
+    "title": "🔄 Update v1.1.66 Sudah Tersedia!",
+    "body": "Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.",
+    "channelId": "app-updates",
+    "sound": "default",
+    "data": {
+      "route": "/(tabs)/home"
+    }
+  }'
+```
+
+> [!NOTE]
+> You need an **Expo Access Token** from [expo.dev](https://expo.dev) → Account Settings → Access Tokens.
+
+### Option 2: Automatic via GitHub Actions
+
+The release workflow (`.github/workflows/build-release.yml`) automatically sends a push notification when a new version is published. The notification includes:
+
+- **Title**: `🔄 Update vX.Y.Z Sudah Tersedia!`
+- **Body**: `Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.`
+- **Data**: Deep link to home screen + release URL
+
+**Setup**: Add `EXPO_ACCESS_TOKEN` to your GitHub repository secrets.
+
+### Option 3: Manual (Per-Token)
+
+For mass notifications without topics, you'll need to:
 1. Set up a database (Firebase, Supabase, etc.)
 2. Store each user's push token when they install the app
 3. Query all tokens and send notifications in batches
