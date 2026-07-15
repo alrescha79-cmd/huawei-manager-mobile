@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import {
     View,
     Text,
@@ -19,26 +19,36 @@ interface CollapsibleCardProps {
     children: React.ReactNode;
     defaultExpanded?: boolean;
     onToggle?: (expanded: boolean) => void;
+    onExpanded?: () => void;
     storageKey?: string;
     headerRight?: React.ReactNode;
     titleStyle?: StyleProp<TextStyle>;
+    lazy?: boolean;
+    loading?: boolean;
+    skeleton?: React.ReactNode;
 }
 
 /**
  * A card component that can be collapsed/expanded.
  * Shows only the title when collapsed, full content when expanded.
+ * With lazy={true}, children only render when expanded and loading is handled.
  */
 export function CollapsibleCard({
     title,
     children,
     defaultExpanded = true,
     onToggle,
+    onExpanded,
     storageKey,
     headerRight,
     titleStyle,
+    lazy = false,
+    loading = false,
+    skeleton,
 }: CollapsibleCardProps) {
     const { colors, typography, spacing } = useTheme();
     const [isExpanded, setIsExpanded] = useState<boolean | null>(null);
+    const hasBeenExpanded = useRef(false);
 
     useEffect(() => {
         if (!storageKey) {
@@ -47,7 +57,12 @@ export function CollapsibleCard({
         }
         AsyncStorage.getItem(storageKey)
             .then((value) => {
-                setIsExpanded(value !== null ? value === 'true' : defaultExpanded);
+                const expanded = value !== null ? value === 'true' : defaultExpanded;
+                setIsExpanded(expanded);
+                if (expanded && lazy && !hasBeenExpanded.current) {
+                    hasBeenExpanded.current = true;
+                    onExpanded?.();
+                }
             })
             .catch(() => setIsExpanded(defaultExpanded));
     }, [storageKey, defaultExpanded]);
@@ -58,7 +73,14 @@ export function CollapsibleCard({
         setIsExpanded(newState);
         if (storageKey) AsyncStorage.setItem(storageKey, String(newState)).catch(() => {});
         onToggle?.(newState);
-    }, [isExpanded, onToggle, storageKey]);
+        if (newState && lazy) {
+            hasBeenExpanded.current = true;
+            onExpanded?.();
+        }
+    }, [isExpanded, onToggle, storageKey, lazy, onExpanded]);
+
+    const showContent = isExpanded === true && (!lazy || hasBeenExpanded.current);
+    const showSkeleton = showContent && lazy && loading && skeleton;
 
     return (
         <Card style={{ marginBottom: spacing.md }}>
@@ -91,7 +113,7 @@ export function CollapsibleCard({
                 <>
                     <View style={[styles.divider, { backgroundColor: colors.border }]} />
                     <View style={styles.content}>
-                        {children}
+                        {showSkeleton ? skeleton : children}
                     </View>
                 </>
             )}

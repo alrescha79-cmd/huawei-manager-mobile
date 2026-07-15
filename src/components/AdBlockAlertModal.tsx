@@ -220,7 +220,7 @@ export const AdBlockAlertModal: React.FC<AdBlockAlertModalProps> = () => {
                         title={t('ads.btnIHaveDisabled')}
                         variant="danger"
                         onPress={handleClose}
-                        style={{ borderRadius: 24, marginTop: 12 }}
+                        style={{ borderRadius: 14, marginTop: 12 }}
                     />
 
                     <ModalButton

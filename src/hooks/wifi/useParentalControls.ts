@@ -55,6 +55,10 @@ export function useParentalControls({
 
   const handleToggleParentalControl = async (enabled: boolean) => {
     if (!wifiService || isTogglingParental) return;
+    if (enabled && parentalProfiles.length === 0) {
+      ThemedAlertHelper.alert(t('common.error'), t('parentalControl.noProfiles'));
+      return;
+    }
     setIsTogglingParental(true);
     try {
       await wifiService.toggleParentalControl(enabled);

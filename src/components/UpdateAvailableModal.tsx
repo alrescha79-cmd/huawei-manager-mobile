@@ -148,7 +148,7 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({ onDo
                         title={t('settings.downloadUpdate')}
                         variant="primary"
                         onPress={handleDownload}
-                        style={{ borderRadius: 24 }}
+                        style={{ borderRadius: 14 }}
                     />
 
                     <ModalButton

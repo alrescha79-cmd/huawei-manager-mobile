@@ -524,6 +524,7 @@
     "disableDebugConfirm": "Disable Debug Mode?",
     "disableDebugMessage": "Disabling debug mode will delete all recorded API logs. This action cannot be undone.",
     "downloadCancelledMessage": "Download cancelled.",
+    "downloadCancelledConfirm": "Are you sure you want to cancel the download?",
     "downloadCancelledTitle": "Cancelled",
     "downloadComplete": "Update downloaded successfully. Please open and install the APK file manually, or open the link in your browser.",
     "downloadDebugLog": "Download Debug Log",

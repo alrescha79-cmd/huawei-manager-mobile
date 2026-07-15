@@ -21,6 +21,9 @@ interface SignalInfoCardProps {
     modemStatus?: {
         signalIcon?: string | number;
     };
+    lazy?: boolean;
+    loading?: boolean;
+    skeleton?: React.ReactNode;
 }
 
 const getSignalQuality = (
@@ -42,14 +45,19 @@ const getSignalQuality = (
     }
 };
 
-export function SignalInfoCard({ t, signalInfo, modemStatus }: SignalInfoCardProps) {
+export function SignalInfoCard({ t, signalInfo, modemStatus, lazy, loading, skeleton }: SignalInfoCardProps) {
     const { colors, typography, spacing, isDark } = useTheme();
 
     const hasSignalData = (signalInfo && (signalInfo.rssi || signalInfo.rsrp)) || modemStatus?.signalIcon;
 
     if (!hasSignalData) {
         return (
-            <CollapsibleCard title={t('home.signalInfo')}>
+            <CollapsibleCard
+                title={t('home.signalInfo')}
+                lazy={lazy}
+                loading={loading}
+                skeleton={skeleton}
+            >
                 <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', padding: spacing.lg }]}>
                     {t('home.noSignalAvailable')}{'\n'}
                     {t('home.checkLogin')}
@@ -184,6 +192,9 @@ export function SignalInfoCard({ t, signalInfo, modemStatus }: SignalInfoCardPro
             title={t('home.signalInfo')}
             storageKey="home.signalInfo.expanded"
             headerRight={headerRightBadge}
+            lazy={lazy}
+            loading={loading}
+            skeleton={skeleton}
         >
             <View style={styles.gridContainer}>
                 {metrics.map((metric, index) => {
