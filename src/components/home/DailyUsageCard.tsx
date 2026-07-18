@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, StyleProp, ViewStyle, Platform } from 'react-native';
+import { View, Text, StyleSheet, StyleProp, ViewStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
@@ -14,6 +14,7 @@ import { Card } from '../Card';
 interface DailyUsageCardProps {
     usage: number;
     duration: number;
+    dailyLimit?: number;
     style?: StyleProp<ViewStyle>;
 }
 
@@ -28,28 +29,38 @@ const formatBytesWithUnit = (bytes: number): { value: string; unit: string } => 
     };
 };
 
-export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) {
+export function DailyUsageCard({ usage, duration, dailyLimit, style }: DailyUsageCardProps) {
     const { colors, typography, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
     const formattedUsage = formatBytesWithUnit(usage);
-
+    const formattedDailyLimit = dailyLimit && dailyLimit > 0 ? formatBytesWithUnit(dailyLimit) : null;
     const hours = Math.floor(duration / 3600);
     const minutes = Math.floor((duration % 3600) / 60);
-
     const hh = hours.toString().padStart(2, '0');
     const mm = minutes.toString().padStart(2, '0');
-
     const primaryColor = colors.primary;
+    const dailyPercent = dailyLimit && dailyLimit > 0
+        ? Math.min(Math.round((usage / dailyLimit) * 100), 100)
+        : 0;
+    const progressColor = dailyPercent >= 90
+        ? '#ef4444'
+        : dailyPercent >= 75
+            ? '#f97316'
+            : dailyPercent >= 50
+                ? '#eab308'
+                : '#22c55e';
 
     return (
         <Card style={[styles.container, style]}>
             <View style={styles.content}>
                 <View style={styles.leftSide}>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 8, overflow: 'hidden' }}>
-                        <MaterialIcons name="today" size={18} color={primaryColor} style={{ marginRight: 8 }} />
+                    <View style={styles.titleRow}>
+                        <View style={[styles.titleIcon, { backgroundColor: `${primaryColor}1F` }]}>
+                            <MaterialIcons name="today" size={16} color={primaryColor} />
+                        </View>
                         <TextTicker
-                            style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16 }]}
+                            style={[typography.headline, { color: colors.text, fontWeight: '700', fontSize: 16, flex: 1 }]}
                             duration={4000}
                             loop
                             bounce
@@ -60,13 +71,21 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
                         </TextTicker>
                     </View>
                     <View style={styles.usageRow}>
-                        <Text style={[styles.usageValue, { color: primaryColor }]}>
-                            {formattedUsage.value}
-                        </Text>
-                        <Text style={[styles.usageUnit, { color: colors.textSecondary }]}>
-                            {formattedUsage.unit}
-                        </Text>
+                        <Text style={[styles.usageValue, { color: primaryColor }]}>{formattedUsage.value}</Text>
+                        <Text style={[styles.usageUnit, { color: colors.textSecondary }]}>{formattedUsage.unit}</Text>
                     </View>
+                    {formattedDailyLimit && (
+                        <View style={styles.limitSection}>
+                            <View style={styles.limitLabelRow}>
+                                <Text style={[styles.dailyLimit, { color: colors.textSecondary }]}>{t('home.dailyLimit')}</Text>
+                                <Text style={[styles.percentLabel, { color: progressColor }]}>{dailyPercent}%</Text>
+                            </View>
+                            <View style={[styles.progressTrack, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
+                                <View style={[styles.progressFill, { width: `${dailyPercent}%`, backgroundColor: progressColor }]} />
+                            </View>
+                            <Text style={[styles.limitValue, { color: colors.primary }]}>{formattedDailyLimit.value} {formattedDailyLimit.unit}</Text>
+                        </View>
+                    )}
                 </View>
 
                 <View style={[styles.timeBox, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light }]}>
@@ -87,15 +106,29 @@ export function DailyUsageCard({ usage, duration, style }: DailyUsageCardProps) 
 const styles = StyleSheet.create({
     container: {
         padding: 20,
-        borderRadius: 24,
+        borderRadius: 20,
     },
     content: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        gap: 16,
     },
     leftSide: {
         flex: 1,
+        minWidth: 0,
+    },
+    titleRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        marginBottom: 6,
+    },
+    titleIcon: {
+        width: 28,
+        height: 28,
+        borderRadius: 8,
+        alignItems: 'center',
         justifyContent: 'center',
     },
     usageRow: {
@@ -103,22 +136,53 @@ const styles = StyleSheet.create({
         alignItems: 'baseline',
     },
     usageValue: {
-        fontSize: 48,
+        fontSize: 42,
         fontWeight: 'bold',
-        letterSpacing: -1,
-        lineHeight: 56,
+        letterSpacing: 0,
+        lineHeight: 48,
     },
     usageUnit: {
-        fontSize: 18,
+        fontSize: 16,
+        fontWeight: '700',
+        marginLeft: 6,
+    },
+    limitSection: {
+        marginTop: 8,
+    },
+    limitLabelRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 4,
+    },
+    dailyLimit: {
+        fontSize: 11,
         fontWeight: '600',
-        marginLeft: 8,
+    },
+    percentLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+    },
+    progressTrack: {
+        height: 6,
+        borderRadius: 3,
+        overflow: 'hidden',
+    },
+    progressFill: {
+        height: '100%',
+        borderRadius: 3,
+    },
+    limitValue: {
+        fontSize: 11,
+        fontWeight: '600',
+        marginTop: 4,
     },
     timeBox: {
-        minWidth: 110,
-        height: 90,
-        borderRadius: 18,
+        minWidth: 106,
+        height: 94,
+        borderRadius: 14,
         justifyContent: 'center',
-        paddingHorizontal: 14,
+        paddingHorizontal: 12,
         paddingVertical: 10,
         borderWidth: 1,
     },
@@ -129,14 +193,14 @@ const styles = StyleSheet.create({
         marginBottom: 2,
     },
     digitalText: {
-        fontSize: 28,
+        fontSize: 26,
         fontWeight: '700',
         fontFamily: 'Doto_700Bold',
         fontVariant: ['tabular-nums'],
-        letterSpacing: 2,
+        letterSpacing: 1,
     },
     digitalLabel: {
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: '600',
         marginLeft: 4,
     }

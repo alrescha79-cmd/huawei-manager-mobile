@@ -48,6 +48,7 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
     const { colors, typography, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState<TabType>('monthly');
+    const [showRemaining, setShowRemaining] = useState(false);
 
     const primaryColor = colors.primary;
     const greenColor = '#22c55e';
@@ -81,20 +82,19 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
 
     const currentStats = getActiveStats();
     const totalBytes = currentStats.download + currentStats.upload;
-    const totalFormatted = formatBytesWithUnit(totalBytes);
+    const showProgress = activeTab === 'monthly' && !!dataLimit && dataLimit > 0;
+    const remaining = showProgress ? Math.max(dataLimit - totalBytes, 0) : 0;
+    const displayedTotal = showRemaining && showProgress ? remaining : totalBytes;
+    const totalFormatted = formatBytesWithUnit(displayedTotal);
     const dlFormatted = formatBytesWithUnit(currentStats.download);
     const ulFormatted = formatBytesWithUnit(currentStats.upload);
 
     const durationText = currentStats.duration ? formatDuration(currentStats.duration) : '0s';
-
-    let percent = 0;
-    let limitFormatted = { value: '0', unit: 'GB' };
-    const showProgress = activeTab === 'monthly' && dataLimit && dataLimit > 0;
-
-    if (showProgress) {
-        percent = Math.min(Math.round((totalBytes / dataLimit) * 100), 100);
-        limitFormatted = formatBytesWithUnit(dataLimit);
-    }
+    // Progress always answers "how much of quota is used"; toggle changes displayed amount only.
+    const percent = showProgress
+        ? Math.min(Math.round((totalBytes / dataLimit) * 100), 100)
+        : 0;
+    const limitFormatted = showProgress ? formatBytesWithUnit(dataLimit) : { value: '0', unit: 'GB' };
 
     const getProgressColor = (pct: number): string => {
         if (pct >= 90) return '#ef4444';
@@ -168,29 +168,48 @@ export function CompactUsageCard({ stats, dataLimit, style }: CompactUsageCardPr
                 {/* Main stats with flex wrap */}
                 <View style={styles.mainStatsRow}>
                     <View style={styles.leftStatsGroup}>
-                        <Text
-                            style={[styles.mainValue, { color: primaryColor }]}
-                            adjustsFontSizeToFit
-                            numberOfLines={1}
-                        >
-                            {totalFormatted.value}
-                        </Text>
-
-                        <View style={styles.unitLabelContainer}>
-                            <Text
-                                style={[styles.mainUnitLabel, { color: colors.textSecondary }]}
-                                numberOfLines={1}
-                                adjustsFontSizeToFit
-                                minimumFontScale={0.6}
-                            >
-                                {totalFormatted.unit} {currentStats.label}
+                        {showProgress && (
+                            <Text style={[styles.quotaLabel, { color: colors.textSecondary }]}>
+                                {showRemaining ? t('home.remainingQuota') : t('home.usageAmount')}
                             </Text>
+                        )}
+                        <View style={styles.mainValueRow}>
+                            <Text
+                                style={[styles.mainValue, { color: primaryColor }]}
+                                adjustsFontSizeToFit
+                                numberOfLines={1}
+                            >
+                                {totalFormatted.value}
+                            </Text>
+
+                            <View style={styles.unitLabelContainer}>
+                                <Text
+                                    style={[styles.mainUnitLabel, { color: colors.textSecondary }]}
+                                    numberOfLines={1}
+                                    adjustsFontSizeToFit
+                                    minimumFontScale={0.6}
+                                >
+                                    {totalFormatted.unit} {currentStats.label}
+                                </Text>
+                            </View>
                         </View>
                     </View>
 
                     <View style={styles.rightStatsGroup}>
                         {showProgress ? (
                             <>
+                                <TouchableOpacity
+                                    accessibilityRole="button"
+                                    accessibilityLabel={showRemaining ? t('home.showUsedQuota') : t('home.showRemainingQuota')}
+                                    onPress={() => setShowRemaining((current) => !current)}
+                                    style={[styles.toggleButton, { borderColor: colors.border }]}
+                                >
+                                    <MaterialIcons
+                                        name={showRemaining ? 'data-usage' : 'pie-chart-outline'}
+                                        size={16}
+                                        color={primaryColor}
+                                    />
+                                </TouchableOpacity>
                                 <View style={[styles.percentBadge, { borderColor: progressColor }]}>
                                     <Text style={[typography.caption2, { color: progressColor, fontWeight: 'bold' }]}>
                                         {percent}%
@@ -317,6 +336,16 @@ const styles = StyleSheet.create({
         marginBottom: 10,
     },
     leftStatsGroup: {
+        flex: 1,
+        minWidth: 0,
+    },
+    quotaLabel: {
+        fontSize: 10,
+        fontWeight: '700',
+        textTransform: 'uppercase',
+        marginBottom: 2,
+    },
+    mainValueRow: {
         flexDirection: 'row',
         alignItems: 'center',
     },
@@ -326,6 +355,15 @@ const styles = StyleSheet.create({
     },
     rightStatsGroup: {
         alignItems: 'flex-end',
+    },
+    toggleButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: 4,
     },
     mainValue: {
         fontSize: 42,

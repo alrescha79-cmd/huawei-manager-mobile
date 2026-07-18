@@ -1,5 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, LayoutAnimation } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import {
@@ -12,6 +13,8 @@ import { UsageCard } from './UsageCard';
 import { CompactUsageCard } from './CompactUsageCard';
 import { MonthlyComparisonCard } from './MonthlyComparisonCard';
 import { formatDuration, DurationUnits } from '@/utils/helpers';
+
+const SPEED_GAUGE_STORAGE_KEY = 'trafficStats_speedGaugeExpanded';
 
 interface TrafficStats {
     currentDownloadRate: number;
@@ -57,32 +60,66 @@ export function TrafficStatsCard({
     onClearHistory,
 }: TrafficStatsCardProps) {
     const { colors, typography, spacing } = useTheme();
+    const [isSpeedGaugeVisible, setIsSpeedGaugeVisible] = useState<boolean | null>(null);
+
+    useEffect(() => {
+        AsyncStorage.getItem(SPEED_GAUGE_STORAGE_KEY)
+            .then((value) => {
+                const expanded = value !== null ? value === 'true' : true;
+                setIsSpeedGaugeVisible(expanded);
+            })
+            .catch(() => setIsSpeedGaugeVisible(true));
+    }, []);
+
+    const toggleSpeedGauge = () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        const newState = !isSpeedGaugeVisible;
+        setIsSpeedGaugeVisible(newState);
+        AsyncStorage.setItem(SPEED_GAUGE_STORAGE_KEY, String(newState)).catch(() => {});
+    };
 
     const dataLimitBytes = monthlySettings?.enabled
         ? monthlySettings.dataLimit * (monthlySettings.dataLimitUnit === 'GB' ? 1073741824 : 1048576)
         : undefined;
+    const daysInMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+    const dailyLimitBytes = dataLimitBytes ? dataLimitBytes / daysInMonth : undefined;
 
     return (
         <Card style={{ marginBottom: spacing.md }}>
-            <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', marginBottom: spacing.sm }}>
-                <Text style={[typography.headline, { color: colors.text, textAlign: 'center' }]}>{t('home.trafficStats')}</Text>
-            </View>
+            <TouchableOpacity
+                accessibilityRole="button"
+                accessibilityLabel={isSpeedGaugeVisible ? t('home.hideSpeedGauge') : t('home.showSpeedGauge')}
+                accessibilityState={{ expanded: isSpeedGaugeVisible === true }}
+                onPress={toggleSpeedGauge}
+                style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: spacing.sm }}
+            >
+                <Text style={[typography.headline, { color: colors.text }]}>{t('home.trafficStats')}</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                    <Text style={[typography.caption2, { color: colors.textSecondary }]}>{t('home.speed')}</Text>
+                    <MaterialIcons
+                        name={isSpeedGaugeVisible === true ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+                        size={22}
+                        color={colors.textSecondary}
+                    />
+                </View>
+            </TouchableOpacity>
 
-            <View style={{ height: 1, backgroundColor: colors.border, marginBottom: spacing.md }} />
+            {isSpeedGaugeVisible === true && (
+                <>
+                    <View style={{ height: 1, backgroundColor: colors.border, marginBottom: spacing.md }} />
+                    <SpeedGauge
+                        downloadSpeed={trafficStats.currentDownloadRate}
+                        uploadSpeed={trafficStats.currentUploadRate}
+                    />
+                    <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
+                </>
+            )}
 
-            <SpeedGauge
-                downloadSpeed={trafficStats.currentDownloadRate}
-                uploadSpeed={trafficStats.currentUploadRate}
-            />
-
-            <View style={{ height: 1, backgroundColor: colors.border, marginVertical: spacing.md }} />
-
-
-
-            {trafficStats.dayUsed > 0 && (
+            {(trafficStats.dayUsed > 0 || dailyLimitBytes) && (
                 <DailyUsageCard
                     usage={trafficStats.dayUsed}
                     duration={trafficStats.dayDuration}
+                    dailyLimit={dailyLimitBytes}
                     style={{ marginBottom: spacing.md }}
                 />
             )}
