@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModemService } from '@/services/modem.service';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
 
 interface UseHomeActionsProps {
@@ -47,11 +47,11 @@ export function useHomeActions({
         await modemService.toggleMobileData(newState);
         const dataStatus = await modemService.getMobileDataStatus();
         setMobileDataStatus(dataStatus);
-        ThemedAlertHelper.alert(t('common.success'), newState ? t('home.dataEnabled') : t('home.dataDisabled'));
+        ToastHelper.success(newState ? t('home.dataEnabled') : t('home.dataDisabled'));
         showInterstitial(() => { });
       } catch (error) {
         console.error('Error toggling mobile data:', error);
-        ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
+        ToastHelper.error(t('alerts.failedToggleData'));
       } finally {
         setIsTogglingData(false);
       }
@@ -86,11 +86,7 @@ export function useHomeActions({
               async () => {
                 setIsChangingIp(true);
 
-                ThemedAlertHelper.alert(
-                  t('alerts.ipChangeStartedTitle'),
-                  t('alerts.ipChangeStartedMessage'),
-                  [{ text: t('common.ok') }]
-                );
+                ToastHelper.info(t('alerts.ipChangeStartedMessage'));
 
                 modemService.triggerPlmnScan().catch((error) => {
                 });
@@ -105,7 +101,7 @@ export function useHomeActions({
                   }
                 }, 45000);
               },
-              () => ThemedAlertHelper.alert(t('ads.rewardRequired'), t('ads.watchAdToAccess'))
+              () => ToastHelper.warning(t('ads.watchAdToAccess'))
             );
           },
         },
@@ -117,10 +113,7 @@ export function useHomeActions({
     if (!modemService || isRunningDiagnosis) return;
 
     if (!mobileDataStatus?.isEnabled) {
-      ThemedAlertHelper.alert(
-        t('common.error'),
-        t('alerts.mobileDataRequired')
-      );
+      ToastHelper.error(t('alerts.mobileDataRequired'));
       return;
     }
 
@@ -141,9 +134,9 @@ export function useHomeActions({
     } catch (error: any) {
       console.error('Error running diagnosis ping:', error);
       if (error?.message?.includes('Network Error') || error?.code === 'ERR_NETWORK') {
-        ThemedAlertHelper.alert(t('common.error'), t('alerts.networkError'));
+        ToastHelper.error(t('alerts.networkError'));
       } else {
-        ThemedAlertHelper.alert(t('common.error'), t('alerts.diagnosisFailed'));
+        ToastHelper.error(t('alerts.diagnosisFailed'));
       }
     } finally {
       setIsRunningDiagnosis(false);
@@ -154,10 +147,7 @@ export function useHomeActions({
     if (!modemService || isRunningCheck) return;
 
     if (!mobileDataStatus?.isEnabled) {
-      ThemedAlertHelper.alert(
-        t('common.error'),
-        t('alerts.mobileDataRequired')
-      );
+      ToastHelper.error(t('alerts.mobileDataRequired'));
       return;
     }
 
@@ -177,9 +167,9 @@ export function useHomeActions({
     } catch (error: any) {
       console.error('Error running one click check:', error);
       if (error?.message?.includes('Network Error') || error?.code === 'ERR_NETWORK') {
-        ThemedAlertHelper.alert(t('common.error'), t('alerts.networkError'));
+        ToastHelper.error(t('alerts.networkError'));
       } else {
-        ThemedAlertHelper.alert(t('common.error'), t('alerts.checkFailed'));
+        ToastHelper.error(t('alerts.checkFailed'));
       }
     } finally {
       setIsRunningCheck(false);
@@ -207,12 +197,12 @@ export function useHomeActions({
                 setPreviousTotalTraffic(0);
                 await AsyncStorage.setItem('previousTotalTraffic', '0');
                 loadData(modemService);
-                ThemedAlertHelper.alert(t('common.success'), t('home.historyClearedSuccess'));
+                ToastHelper.success(t('home.historyClearedSuccess'));
               } else {
-                ThemedAlertHelper.alert(t('common.error'), t('home.clearHistoryFailed'));
+                ToastHelper.error(t('home.clearHistoryFailed'));
               }
             } catch (error) {
-              ThemedAlertHelper.alert(t('common.error'), t('home.clearHistoryFailed'));
+              ToastHelper.error(t('home.clearHistoryFailed'));
             } finally {
               setIsClearingHistory(false);
             }
@@ -233,10 +223,10 @@ export function useHomeActions({
 
     try {
       await modemService.setMonthlyDataSettings(settings);
-      ThemedAlertHelper.alert(t('common.success'), t('home.monthlySettingsSaved'));
+      ToastHelper.success(t('home.monthlySettingsSaved'));
       loadMonthlySettings(modemService);
     } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('home.failedSaveMonthlySettings'));
+      ToastHelper.error(t('home.failedSaveMonthlySettings'));
       throw error;
     }
   };

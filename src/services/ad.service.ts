@@ -10,6 +10,7 @@ import mobileAds, {
 } from 'react-native-google-mobile-ads';
 import Constants from 'expo-constants';
 import { ThemedAlertHelper } from '@/components/ThemedAlert';
+import { ToastHelper } from '@/components/Toast';
 import { AdBlockAlertHelper } from '@/components/AdBlockAlertModal';
 import { useThemeStore } from '@/stores/theme.store';
 import en from '@/i18n/en.json';
@@ -417,8 +418,7 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
 }
 
 function showLoadErrorAlert() {
-    ThemedAlertHelper.alert(
-        getTranslation('common.error') || 'Error',
+    ToastHelper.error(
         getTranslation('ads.failedToLoad') || 'Failed to load advertisement. Please check your internet connection or disable your ad blocker.'
     );
 }

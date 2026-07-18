@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { SMSService } from '@/services/sms.service';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 import { SMSMessage } from '@/types';
 
 interface UseSMSActionsProps {
@@ -50,9 +50,9 @@ export function useSMSActions({
                         try {
                             await smsService.deleteSMS(index);
                             removeMessage(index);
-                            ThemedAlertHelper.alert(t('common.success'), t('sms.messageDeleted'));
+                            ToastHelper.success(t('sms.messageDeleted'));
                         } catch (error) {
-                            ThemedAlertHelper.alert(t('common.error'), t('alerts.failedDeleteSms'));
+                            ToastHelper.error(t('alerts.failedDeleteSms'));
                         }
                     },
                 },
@@ -113,13 +113,10 @@ export function useSMSActions({
                                 await smsService.deleteSMS(index);
                                 removeMessage(index);
                             }
-                            ThemedAlertHelper.alert(
-                                t('common.success'),
-                                t('sms.messagesDeleted', { count: idsToDelete.length })
-                            );
+                            ToastHelper.success(t('sms.messagesDeleted', { count: idsToDelete.length }));
                             exitSelectionMode();
                         } catch (error) {
-                            ThemedAlertHelper.alert(t('common.error'), t('alerts.failedDeleteSms'));
+                            ToastHelper.error(t('alerts.failedDeleteSms'));
                         }
                     },
                 },
@@ -129,20 +126,20 @@ export function useSMSActions({
 
     const handleSend = async () => {
         if (!smsService || !newPhone || !newMessage) {
-            ThemedAlertHelper.alert(t('common.error'), t('sms.fillAllFields'));
+            ToastHelper.error(t('sms.fillAllFields'));
             return;
         }
 
         setIsSending(true);
         try {
             await smsService.sendSMS(newPhone, newMessage);
-            ThemedAlertHelper.alert(t('common.success'), t('sms.messageSent'));
+            ToastHelper.success(t('sms.messageSent'));
             setShowCompose(false);
             setNewPhone('');
             setNewMessage('');
             handleRefresh();
         } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSendSms'));
+            ToastHelper.error(t('alerts.failedSendSms'));
         } finally {
             setIsSending(false);
         }
@@ -164,20 +161,20 @@ export function useSMSActions({
 
     const handleReply = async () => {
         if (!smsService || !selectedMessage || !replyMessage) {
-            ThemedAlertHelper.alert(t('common.error'), t('sms.fillAllFields'));
+            ToastHelper.error(t('sms.fillAllFields'));
             return;
         }
 
         setIsSending(true);
         try {
             await smsService.sendSMS(selectedMessage.phone, replyMessage);
-            ThemedAlertHelper.alert(t('common.success'), t('sms.messageSent'));
+            ToastHelper.success(t('sms.messageSent'));
             setReplyMessage('');
             setShowDetail(false);
             setSelectedMessage(null);
             handleRefresh();
         } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSendSms'));
+            ToastHelper.error(t('alerts.failedSendSms'));
         } finally {
             setIsSending(false);
         }

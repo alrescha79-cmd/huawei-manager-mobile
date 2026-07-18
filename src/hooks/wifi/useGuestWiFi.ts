@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { WiFiService } from '@/services/wifi.service';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 
 interface UseGuestWiFiProps {
   wifiService: WiFiService | null;
@@ -46,13 +46,13 @@ export function useGuestWiFi({ wifiService, t, handleRefresh }: UseGuestWiFiProp
     try {
       await wifiService.toggleGuestWiFi(enabled);
       setGuestWifiEnabled(enabled);
-      ThemedAlertHelper.alert(t('common.success'), enabled ? t('wifi.guestWifiEnabled') : t('wifi.guestWifiDisabled'));
+      ToastHelper.success(enabled ? t('wifi.guestWifiEnabled') : t('wifi.guestWifiDisabled'));
       // Refresh data to update time remaining display
       if (enabled) {
         setTimeout(() => handleRefresh(), 500);
       }
     } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleGuestWifi'));
+      ToastHelper.error(t('alerts.failedToggleGuestWifi'));
     } finally {
       setIsTogglingGuest(false);
     }
@@ -70,10 +70,10 @@ export function useGuestWiFi({ wifiService, t, handleRefresh }: UseGuestWiFiProp
         securityMode: guestWifiSecurity,
         duration: guestWifiDuration,
       });
-      ThemedAlertHelper.alert(t('common.success'), t('wifi.guestSettingsSaved'));
+      ToastHelper.success(t('wifi.guestSettingsSaved'));
       handleRefresh();
     } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveGuestWifi'));
+      ToastHelper.error(t('alerts.failedSaveGuestWifi'));
     } finally {
       setIsSavingGuestSettings(false);
     }

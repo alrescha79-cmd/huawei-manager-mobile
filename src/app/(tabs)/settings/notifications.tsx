@@ -14,7 +14,7 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
-import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ThemedSwitch, AdNative } from '@/components';
+import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ToastHelper, ThemedSwitch, AdNative } from '@/components';
 import {
     getNotificationSettings,
     saveNotificationSettings,
@@ -53,10 +53,7 @@ export default function NotificationSettingsScreen() {
     const updateSetting = async (key: keyof NotificationSettings, value: boolean) => {
         if ((key === 'dailyUsageEnabled' || key === 'monthlyUsageEnabled') && value) {
             if (!monthlySettings?.enabled) {
-                ThemedAlertHelper.alert(
-                    t('home.monthlySettings'),
-                    t('notifications.usageLimitRequired')
-                );
+                ToastHelper.warning(t('notifications.usageLimitRequired'));
                 return;
             }
         }

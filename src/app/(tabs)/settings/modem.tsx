@@ -10,7 +10,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, SelectionModal, MeshGradientBackground, BouncingDots, AnimatedScreen, AdNative } from '@/components';
+import { ThemedAlertHelper, ToastHelper, SelectionModal, MeshGradientBackground, BouncingDots, AnimatedScreen, AdNative } from '@/components';
 import { SettingsSection, SettingsItem, PageHeader } from '@/components/settings';
 import { MaterialIcons } from '@expo/vector-icons';
 import { showInterstitial } from '@/services/ad.service';
@@ -88,18 +88,12 @@ export default function ModemSettingsScreen() {
         try {
             const updateInfo = await modemService.checkFirmwareUpdate();
             if (updateInfo.isUpdateAvailable) {
-                ThemedAlertHelper.alert(
-                    t('settings.firmwareUpdateAvailable'),
-                    `${t('settings.currentVersion')}: ${updateInfo.currentVersion || modemInfo?.softwareVersion}\n${t('settings.newVersion')}: ${updateInfo.newVersion}\n\n${updateInfo.description}`
-                );
+                ToastHelper.info(`${t('settings.newVersion')}: ${updateInfo.newVersion}`);
             } else {
-                ThemedAlertHelper.alert(
-                    t('settings.checkFirmwareUpdate'),
-                    t('settings.firmwareUpToDate')
-                );
+                ToastHelper.success(t('settings.firmwareUpToDate'));
             }
         } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('alerts.failedCheckFirmware'));
+            ToastHelper.error(t('alerts.failedCheckFirmware'));
         } finally {
             setIsCheckingFirmware(false);
         }
@@ -114,12 +108,12 @@ export default function ModemSettingsScreen() {
         try {
             await modemService.setAntennaMode(mode);
             setAntennaMode(mode);
-            ThemedAlertHelper.alert(t('common.success'), t('settings.antennaModeChanged'));
+            ToastHelper.success(t('settings.antennaModeChanged'));
             if (changed) {
                 showInterstitial(() => { });
             }
         } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeAntenna'));
+            ToastHelper.error(t('alerts.failedChangeAntenna'));
         } finally {
             setIsChangingAntenna(false);
         }

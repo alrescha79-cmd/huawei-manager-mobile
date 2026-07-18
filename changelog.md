@@ -1,6 +1,7 @@
 # EN
 
 ## v1.1.65
+- **Global Toast Notifications** Replaced most native alerts with a custom global toast notification system for non-blocking success/error/info feedback.
 - **Signal Bubble Monitoring** Added a floating Signal Bubble for quick monitoring of signal quality and internet speed without leaving the current screen.
 - **Expanded Quick Actions** Added more shortcut buttons to Quick Actions, making common modem and network controls faster to access from the home dashboard.
 - **Redesigned SpeedTest Modal** Complete visual upgrade of SpeedTest modal with new layout elements and improved user experience.
@@ -25,6 +26,7 @@
 # ID
 
 ## v1.1.65
+- **Notifikasi Toast Global** Mengganti sebagian besar alert bawaan dengan sistem notifikasi toast global kustom untuk feedback sukses/error/info yang tidak memblokir.
 - **Monitoring Signal Bubble** Menambahkan Signal Bubble melayang untuk memantau kualitas sinyal dan kecepatan internet dengan cepat tanpa perlu berpindah dari layar yang sedang dibuka.
 - **Penambahan Tombol Quick Actions** Menambahkan lebih banyak tombol pintasan pada Quick Actions agar kontrol modem dan jaringan yang sering digunakan bisa diakses lebih cepat dari dashboard utama.
 - **SpeedTest Modal Redesign** Desain ulang SpeedTest modal dengan layout yang lebih baik dan user experience yang lebih baik.

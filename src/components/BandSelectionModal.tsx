@@ -20,6 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
+import { ToastHelper } from './Toast';
 import { ModemService } from '@/services/modem.service';
 import { ModalBackground } from './ModalBackground';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
@@ -139,7 +140,7 @@ export function BandSelectionModal({
 
         // Validate at least one band is selected
         if (selectedBandBits.length === 0) {
-            ThemedAlertHelper.alert(t('common.error'), t('settings.selectAtLeastOneBand'));
+            ToastHelper.error(t('settings.selectAtLeastOneBand'));
             return;
         }
 
@@ -157,7 +158,7 @@ export function BandSelectionModal({
                         const lteBandHex = lteBandValue.toString(16).toUpperCase();
 
                         await modemService.setBandSettings('3FFFFFFF', lteBandHex);
-                         ThemedAlertHelper.alert(t('common.success'), t('settings.bandSettingsSaved'));
+                         ToastHelper.success(t('settings.bandSettingsSaved'));
                         onClose();
                         onSaved?.();
                     } catch (error: any) {
@@ -171,22 +172,21 @@ export function BandSelectionModal({
                                               
                         if (error?.huaweiErrorCode === '100003') {
                             errorMessage = t('alerts.bandNotSupported') || 'LTE Band selection is not supported on this modem model.';
-                            ThemedAlertHelper.alert(t('common.error'), errorMessage);
+                            ToastHelper.error(errorMessage);
                         } else if (isNetworkDrop) {
-                            ThemedAlertHelper.alert(
-                                t('common.info'), 
+                            ToastHelper.info(
                                 t('settings.bandAppliedNetworkRestarting') || 'Band selection sent. The modem may be restarting its network connection.'
                             );
                             onClose();
                             onSaved?.();
                         } else {
-                            ThemedAlertHelper.alert(t('common.error'), errorMessage);
+                            ToastHelper.error(errorMessage);
                         }
                     } finally {
                         setIsSaving(false);
                     }
                 },
-                () => ThemedAlertHelper.alert(t('ads.rewardRequired'), t('ads.watchAdToAccess'))
+                () => ToastHelper.warning(t('ads.watchAdToAccess'))
             );
         } else {
             // If no changes, just close the modal

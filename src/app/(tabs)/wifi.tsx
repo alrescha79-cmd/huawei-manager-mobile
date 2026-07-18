@@ -14,7 +14,7 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card, CardHeader, ThemedAlertHelper, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, RefreshIndicator, AdBanner, AdNative } from '@/components';
+import { Card, CardHeader, ThemedAlertHelper, ToastHelper, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, RefreshIndicator, AdBanner, AdNative } from '@/components';
 import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, WiFiSettingsSkeleton, ConnectedDevicesSkeleton, GuestWiFiSkeleton, ParentalControlSkeleton, wifiStyles as styles, DeviceDetailModal, ParentalProfileModal } from '@/components/wifi';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
@@ -114,7 +114,7 @@ export default function WiFiScreen() {
       wifiDevicesHook.setBlockedDevices(blocked);
     } catch (error) {
       console.error('Error loading WiFi data:', error);
-      ThemedAlertHelper.alert('Error', 'Failed to load WiFi data');
+      ToastHelper.error('Failed to load WiFi data');
     } finally {
       setIsRefreshing(false);
     }
