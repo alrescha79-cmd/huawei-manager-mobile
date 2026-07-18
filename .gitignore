@@ -5,13 +5,6 @@ node_modules/
 
 # others
 notes.txt
-.agent/
-.agents/
-/reports
-.kilo/
-.kilocode/
-.roo/
-skills-lock.json
 
 # Expo
 .expo/

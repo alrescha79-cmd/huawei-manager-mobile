@@ -1,10 +1,10 @@
-import React from 'react';
-import { View, Text, StyleSheet, ViewStyle, StyleProp } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ViewStyle, StyleProp, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
+import { useTranslation } from '@/i18n';
 import { DurationUnits, formatDuration } from '@/utils/helpers';
 import { Card } from '../Card';
-import { LinearGradient } from 'expo-linear-gradient';
 
 interface UsageCardProps {
     title: string;
@@ -46,17 +46,21 @@ export function UsageCard({
     totalOnly = false
 }: UsageCardProps) {
     const { colors, typography, glassmorphism, isDark } = useTheme();
+    const { t } = useTranslation();
+    const [showRemaining, setShowRemaining] = useState(false);
 
     const total = download + upload;
-    const totalFormatted = formatBytesWithUnit(total);
+    const canShowRemaining = variant === 'monthly' && !!dataLimit && dataLimit > 0;
+    const remaining = canShowRemaining ? Math.max(dataLimit - total, 0) : 0;
+    const displayedTotal = showRemaining && canShowRemaining ? remaining : total;
+    const totalFormatted = formatBytesWithUnit(displayedTotal);
     const dlFormatted = formatBytesWithUnit(download);
     const ulFormatted = formatBytesWithUnit(upload);
-    let percent = 0;
-    let limitFormatted = { value: '0', unit: 'GB' };
-    if (variant === 'monthly' && dataLimit && dataLimit > 0) {
-        percent = Math.min(Math.round((total / dataLimit) * 100), 100);
-        limitFormatted = formatBytesWithUnit(dataLimit);
-    }
+    // Progress always answers "how much of quota is used"; toggle changes displayed amount only.
+    const percent = canShowRemaining
+        ? Math.min(Math.round((total / dataLimit) * 100), 100)
+        : 0;
+    const limitFormatted = canShowRemaining ? formatBytesWithUnit(dataLimit) : { value: '0', unit: 'GB' };
 
     const badgeText = badge || (duration ? formatDuration(duration, durationUnits) : '');
 
@@ -85,22 +89,43 @@ export function UsageCard({
                         {title}
                     </Text>
                 </View>
-                {badgeText ? (
-                    <View style={[styles.badgeContainer, { borderColor: colors.border }]}>
-                        <Text style={[typography.caption1, { color: colors.textSecondary, fontFamily: 'monospace' }]}>
-                            {badgeText}
-                        </Text>
-                    </View>
-                ) : null}
+                <View style={styles.headerActions}>
+                    {canShowRemaining && (
+                        <TouchableOpacity
+                            accessibilityRole="button"
+                            accessibilityLabel={showRemaining ? t('home.showUsedQuota') : t('home.showRemainingQuota')}
+                            onPress={() => setShowRemaining((current) => !current)}
+                            style={[styles.toggleButton, { borderColor: colors.border }]}
+                        >
+                            <MaterialIcons
+                                name={showRemaining ? 'data-usage' : 'pie-chart-outline'}
+                                size={16}
+                                color={primaryColor}
+                            />
+                        </TouchableOpacity>
+                    )}
+                    {badgeText ? (
+                        <View style={[styles.badgeContainer, { borderColor: colors.border }]}>
+                            <Text style={[typography.caption1, { color: colors.textSecondary, fontFamily: 'monospace' }]}>
+                                {badgeText}
+                            </Text>
+                        </View>
+                    ) : null}
+                </View>
             </View>
 
             <View style={styles.mainStatContainer}>
-                <Text style={[styles.mainValue, { color: primaryColor }]}>
-                    {totalFormatted.value}
+                <Text style={[styles.mainLabel, { color: colors.textSecondary }]}>
+                    {showRemaining ? t('home.remainingQuota') : t('home.usageAmount')}
                 </Text>
-                <Text style={[styles.mainUnit, { color: colors.textSecondary }]}>
-                    {totalFormatted.unit}
-                </Text>
+                <View style={styles.mainValueRow}>
+                    <Text style={[styles.mainValue, { color: primaryColor }]}>
+                        {totalFormatted.value}
+                    </Text>
+                    <Text style={[styles.mainUnit, { color: colors.textSecondary }]}>
+                        {totalFormatted.unit}
+                    </Text>
+                </View>
             </View>
 
             {variant === 'monthly' && (
@@ -172,6 +197,19 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginBottom: 12,
     },
+    headerActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+    },
+    toggleButton: {
+        width: 28,
+        height: 28,
+        borderRadius: 14,
+        borderWidth: 1,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
     badgeContainer: {
         paddingHorizontal: 10,
         paddingVertical: 4,
@@ -179,9 +217,17 @@ const styles = StyleSheet.create({
         borderWidth: 1,
     },
     mainStatContainer: {
+        marginBottom: 20,
+    },
+    mainLabel: {
+        fontSize: 11,
+        fontWeight: '700',
+        marginBottom: 2,
+        textTransform: 'uppercase',
+    },
+    mainValueRow: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        marginBottom: 20,
     },
     mainValue: {
         fontSize: 48,
