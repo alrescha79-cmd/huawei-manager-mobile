@@ -1,6 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import { WiFiService } from '@/services/wifi.service';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 
 interface UseWiFiSettingsProps {
   wifiSettings: any;
@@ -48,18 +48,15 @@ export function useWiFiSettings({ wifiSettings, wifiService, t, handleRefresh }:
 
     try {
       await wifiService.toggleWiFi(enabled);
-      ThemedAlertHelper.alert(t('common.success'), enabled ? t('wifi.wifiEnabled') : t('wifi.wifiDisabled'));
+      ToastHelper.success(enabled ? t('wifi.wifiEnabled') : t('wifi.wifiDisabled'));
       handleRefresh();
     } catch (error) {
       console.error('[WiFi] toggleWiFi error:', error);
 
       if (!enabled) {
-        ThemedAlertHelper.alert(
-          t('common.success'),
-          t('wifi.wifiDisabledConnectionLost')
-        );
+        ToastHelper.success(t('wifi.wifiDisabledConnectionLost'));
       } else {
-        ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleWifi'));
+        ToastHelper.error(t('alerts.failedToggleWifi'));
       }
     }
   };
@@ -101,12 +98,9 @@ export function useWiFiSettings({ wifiSettings, wifiService, t, handleRefresh }:
       });
 
       if (isPasswordChange) {
-        ThemedAlertHelper.alert(
-          t('common.success'),
-          t('wifi.passwordChangeSuccess')
-        );
+        ToastHelper.success(t('wifi.passwordChangeSuccess'));
       } else {
-        ThemedAlertHelper.alert(t('common.success'), t('wifi.settingsSaved'));
+        ToastHelper.success(t('wifi.settingsSaved'));
         handleRefresh();
       }
     } catch (error: any) {
@@ -118,12 +112,9 @@ export function useWiFiSettings({ wifiSettings, wifiService, t, handleRefresh }:
         errorMessage.includes('timeout') ||
         errorMessage.includes('Failed to fetch')
       )) {
-        ThemedAlertHelper.alert(
-          t('wifi.passwordChanged'),
-          t('wifi.reconnectWithNewPassword')
-        );
+        ToastHelper.info(t('wifi.reconnectWithNewPassword'));
       } else {
-        ThemedAlertHelper.alert(t('common.error'), t('alerts.failedSaveWifi'));
+        ToastHelper.error(t('alerts.failedSaveWifi'));
       }
     } finally {
       setIsSaving(false);

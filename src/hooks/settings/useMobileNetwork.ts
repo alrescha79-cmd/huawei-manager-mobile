@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth.store';
 import { ModemService } from '@/services/modem.service';
-import { ThemedAlertHelper, getSelectedBandsDisplay } from '@/components';
+import { ThemedAlertHelper, ToastHelper, getSelectedBandsDisplay } from '@/components';
 import { showInterstitial } from '@/services/ad.service';
 
 interface UseMobileNetworkProps {
@@ -83,11 +83,10 @@ export function useMobileNetwork({ t }: UseMobileNetworkProps) {
         try {
             await modemService.setMonthlyDataSettings(settings);
             setMonthlySettings(settings);
-            showInterstitial(() => {
-                ThemedAlertHelper.alert(t('common.success'), t('home.monthlySettingsSaved'));
-            });
+            showInterstitial(() => {});
+            ToastHelper.success(t('home.monthlySettingsSaved'));
         } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('home.failedSaveMonthlySettings'));
+            ToastHelper.error(t('home.failedSaveMonthlySettings'));
         }
     };
 
@@ -150,7 +149,7 @@ export function useMobileNetwork({ t }: UseMobileNetworkProps) {
             setAutoNetworkEnabled(value);
             showInterstitial(() => { });
         } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+            ToastHelper.error(t('common.error'));
             setAutoNetworkEnabled(!value);
         } finally {
             setIsTogglingAutoNetwork(false);
@@ -167,7 +166,7 @@ export function useMobileNetwork({ t }: UseMobileNetworkProps) {
         try {
             await modemService.setNetworkMode(mode);
             setNetworkMode(mode);
-            ThemedAlertHelper.alert(t('common.success'), t('settings.networkModeChanged'));
+            ToastHelper.success(t('settings.networkModeChanged'));
             if (changed) {
                 showInterstitial(() => { });
             }
@@ -176,7 +175,7 @@ export function useMobileNetwork({ t }: UseMobileNetworkProps) {
             if (error?.huaweiErrorCode === '100003') {
                 errorMessage = t('alerts.networkModeNotSupported') || 'Preferred network mode selection is not supported on this modem.';
             }
-            ThemedAlertHelper.alert(t('common.error'), errorMessage);
+            ToastHelper.error(errorMessage);
         } finally {
             setIsChangingNetwork(false);
         }

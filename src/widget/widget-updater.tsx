@@ -6,8 +6,8 @@ import { ModemStatusWidget } from './ModemStatusWidget';
 import { fetchWidgetData, fetchSpeedData, WidgetData } from './widget-data.service';
 
 const WIDGET_NAME = 'ModemStatus';
-const SPEED_UPDATE_INTERVAL = 2000;
-const FULL_UPDATE_INTERVAL = 30000;
+const SPEED_UPDATE_INTERVAL = 8000;
+const FULL_UPDATE_INTERVAL = 120000;
 
 let speedIntervalId: ReturnType<typeof setInterval> | null = null;
 let fullDataIntervalId: ReturnType<typeof setInterval> | null = null;

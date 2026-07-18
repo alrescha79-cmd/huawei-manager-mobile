@@ -4,7 +4,7 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useModemProfileStore } from '@/stores/modem-profile.store';
 import { ModemService } from '@/services/modem.service';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 import { showInterstitial } from '@/services/ad.service';
 import { getModemProfilePassword } from '@/utils/storage';
 
@@ -148,12 +148,11 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                 username: modemUsername,
                 password: modemPassword,
             });
-            showInterstitial(() => {
-                ThemedAlertHelper.alert(t('common.success'), t('settings.credentialsSaved'));
-                router.replace('/settings');
-            });
+            showInterstitial(() => {});
+            ToastHelper.success(t('settings.credentialsSaved'));
+            router.replace('/settings');
         } catch (error) {
-            ThemedAlertHelper.alert(t('common.error'), t('settings.failedSaveCredentials'));
+            ToastHelper.error(t('settings.failedSaveCredentials'));
         } finally {
             setIsSavingCredentials(false);
         }
@@ -172,11 +171,10 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                         if (modemService) {
                             try {
                                 await modemService.reboot();
-                                showInterstitial(() => {
-                                    ThemedAlertHelper.alert(t('common.success'), t('settings.rebootSuccess'));
-                                });
+                                showInterstitial(() => {});
+                                ToastHelper.success(t('settings.rebootSuccess'));
                             } catch (e) {
-                                ThemedAlertHelper.alert(t('common.error'), t('alerts.failedReboot'));
+                                ToastHelper.error(t('alerts.failedReboot'));
                             }
                         }
                     }
@@ -219,11 +217,10 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                         if (modemService) {
                             try {
                                 await modemService.resetFactorySettings();
-                                showInterstitial(() => {
-                                    ThemedAlertHelper.alert(t('common.success'), t('settings.resetSuccess'));
-                                });
+                                showInterstitial(() => {});
+                                ToastHelper.success(t('settings.resetSuccess'));
                             } catch (e) {
-                                ThemedAlertHelper.alert(t('common.error'), t('alerts.failedReset'));
+                                ToastHelper.error(t('alerts.failedReset'));
                             }
                         }
                     }
@@ -260,17 +257,11 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                     onPress: async () => {
                         const success = await switchProfile(profile.id);
                         if (success) {
-                            ThemedAlertHelper.alert(
-                                t('common.success'),
-                                t('settings.switchSuccess').replace('{{name}}', profile.name)
-                            );
+                            ToastHelper.success(t('settings.switchSuccess').replace('{{name}}', profile.name));
                         } else {
                             const err = useModemProfileStore.getState().switchError;
                             const details = err ? `\n\nError: ${err}` : '';
-                            ThemedAlertHelper.alert(
-                                t('common.error'),
-                                t('settings.switchFailed') + details
-                            );
+                            ToastHelper.error(t('settings.switchFailed') + details);
                         }
                     }
                 },

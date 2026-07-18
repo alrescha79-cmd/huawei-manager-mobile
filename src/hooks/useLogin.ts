@@ -9,7 +9,7 @@ import { useModemProfileStore } from '@/stores/modem-profile.store';
 import { getModemProfilePassword } from '@/utils/storage';
 import { networkService } from '@/services/network.service';
 import { ModemAPIClient } from '@/services/api.service';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 import { ModemProfile } from '@/types';
 
 interface UseLoginProps {
@@ -67,11 +67,11 @@ export function useLogin({ t }: UseLoginProps) {
 
     const handleSaveProfile = async () => {
         if (!newProfileName.trim()) {
-            ThemedAlertHelper.alert(t('common.error'), t('settings.profileName') + ' ' + t('common.error').toLowerCase());
+            ToastHelper.error(t('settings.profileName') + ' ' + t('common.error').toLowerCase());
             return;
         }
         if (profiles.length >= 5) {
-            ThemedAlertHelper.alert(t('common.error'), t('settings.profileLimitReached'));
+            ToastHelper.error(t('settings.profileLimitReached'));
             return;
         }
         setIsSavingProfile(true);
@@ -95,10 +95,7 @@ export function useLogin({ t }: UseLoginProps) {
             const isWiFi = await networkService.isConnectedToWiFi();
 
             if (!isWiFi) {
-                ThemedAlertHelper.alert(
-                    t('login.wifiRequired'),
-                    t('login.wifiRequiredMessage')
-                );
+                ToastHelper.info(t('login.wifiRequiredMessage'));
                 setIsDetecting(false);
                 return;
             }
@@ -117,7 +114,7 @@ export function useLogin({ t }: UseLoginProps) {
         setShowWebViewOption(false);
 
         if (!modemIp) {
-            ThemedAlertHelper.alert(t('common.error'), t('login.enterModemIp'));
+            ToastHelper.error(t('login.enterModemIp'));
             return;
         }
 
@@ -175,16 +172,12 @@ export function useLogin({ t }: UseLoginProps) {
             });
             await ensureProfile({ modemIp, username, password });
 
-            ThemedAlertHelper.alert(t('common.success'), t('login.loginSuccess'), [
-                {
-                    text: t('common.ok'),
-                    onPress: () => router.replace('/(tabs)/home'),
-                },
-            ]);
+            ToastHelper.success(t('login.loginSuccess'));
+            router.replace('/(tabs)/home');
         } catch (err) {
             console.error('[Login] Error saving credentials:', err);
             const errorMessage = err instanceof Error ? err.message : t('login.loginFailed');
-            ThemedAlertHelper.alert(t('common.error'), errorMessage);
+            ToastHelper.error(errorMessage);
             setError(errorMessage);
         }
     };
@@ -230,7 +223,7 @@ export function useLogin({ t }: UseLoginProps) {
                     text: 'GitHub Issue',
                     onPress: () => {
                         Linking.openURL(githubUrl).catch(() => {
-                            ThemedAlertHelper.alert(t('common.error'), 'Could not open GitHub');
+                            ToastHelper.error('Could not open GitHub');
                         });
                     }
                 },
@@ -247,7 +240,7 @@ export function useLogin({ t }: UseLoginProps) {
                         } else {
                             const mailtoUrl = `mailto:anggun@cakson.my.id?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(reportTemplate)}`;
                             Linking.openURL(mailtoUrl).catch(() => {
-                                ThemedAlertHelper.alert(t('common.error'), 'Could not open email client');
+                                ToastHelper.error('Could not open email client');
                             });
                         }
                     }

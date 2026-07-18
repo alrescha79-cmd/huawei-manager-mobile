@@ -10,7 +10,7 @@ import { useDebugStore } from '@/stores/debug.store';
 import { SMSService } from '@/services/sms.service';
 import { WiFiService } from '@/services/wifi.service';
 import { checkDailyUsageNotification, checkMonthlyUsageNotification, checkIPChangeNotification, sendDebugModeReminder, saveLastActiveTime } from '@/services/notification.service';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 import { getSelectedBandsDisplay } from '@/components';
 
 interface UseHomeDataProps {
@@ -139,10 +139,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
           const alertBody = ipChangeDuration === '0'
             ? t('notifications.ipChangeBodyJustNow')
             : t('notifications.ipChangeBody', { duration: ipChangeDuration });
-          ThemedAlertHelper.alert(
-            t('notifications.ipChangeTitle'),
-            alertBody
-          );
+          ToastHelper.warning(alertBody);
         }
       }
 
@@ -310,21 +307,21 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       };
       checkDebugReminder();
 
-      const fastIntervalId = setInterval(() => {
+      const trafficIntervalId = setInterval(() => {
         if (AppState.currentState === 'active') {
           loadTrafficOnly(service);
         }
-      }, 1000);
+      }, 5000);
 
-      const slowIntervalId = setInterval(() => {
+      const fullDataIntervalId = setInterval(() => {
         if (AppState.currentState === 'active') {
           loadDataSilent(service);
         }
-      }, 5000);
+      }, 15000);
 
       return () => {
-        clearInterval(fastIntervalId);
-        clearInterval(slowIntervalId);
+        clearInterval(trafficIntervalId);
+        clearInterval(fullDataIntervalId);
       };
     }
   }, [credentials]);

@@ -11,7 +11,7 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, ThemedAlertHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, SignalPointingModal, AdBanner, AdNative } from '@/components';
+import { Card, ThemedAlertHelper, ToastHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, SignalPointingModal, AdBanner, AdNative } from '@/components';
 import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, SignalInfoSkeleton, homeStyles as styles, DiagnosisResultModal, SpeedTestModal, NoSignalModal } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
@@ -226,7 +226,7 @@ export default function HomeScreen() {
             onClose={() => {
               homeAuth.setShowReloginWebView(false);
               if (authSessionExpired) {
-                ThemedAlertHelper.alert(t('common.error'), t('alerts.sessionExpired'));
+                ToastHelper.error(t('alerts.sessionExpired'));
               }
             }}
             onLoginSuccess={homeAuth.handleReloginSuccess}

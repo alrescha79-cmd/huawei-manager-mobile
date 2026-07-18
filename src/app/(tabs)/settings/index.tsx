@@ -13,7 +13,7 @@ import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme, ACCENT_PRESETS } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, ThemedAlertHelper, BouncingDots, AdBanner, AdNative } from '@/components';
+import { SelectionModal, MeshGradientBackground, AnimatedScreen, ThemedSwitch, ThemedAlertHelper, ToastHelper, BouncingDots, AdBanner, AdNative } from '@/components';
 import { SettingsSection, SettingsItem, PageHeader } from '@/components/settings';
 import { useThemeStore } from '@/stores/theme.store';
 import { useDebugStore } from '@/stores/debug.store';
@@ -282,7 +282,7 @@ export default function SettingsIndex() {
                                                                     style: 'destructive',
                                                                     onPress: () => {
                                                                         clearLogs();
-                                                                        ThemedAlertHelper.alert(t('common.success'), t('settings.debugLogsCleared'));
+                                                                        ToastHelper.success(t('settings.debugLogsCleared'));
                                                                     }
                                                                 }
                                                             ]
@@ -301,10 +301,7 @@ export default function SettingsIndex() {
                                     subtitle={t('settings.sendDebugLogHint')}
                                     onPress={async () => {
                                         if (apiLogs.length === 0) {
-                                            ThemedAlertHelper.alert(
-                                                t('settings.noDebugLogs'),
-                                                t('settings.noDebugLogsHint')
-                                            );
+                                            ToastHelper.info(t('settings.noDebugLogsHint'));
                                             return;
                                         }
                                         setIsSendingDebugLog(true);
@@ -329,7 +326,7 @@ export default function SettingsIndex() {
                                                 );
                                             }
                                         } catch (e) {
-                                            ThemedAlertHelper.alert(t('common.error'), t('settings.emailClientError'));
+                                        ToastHelper.error(t('settings.emailClientError'));
                                         } finally {
                                             setIsSendingDebugLog(false);
                                         }

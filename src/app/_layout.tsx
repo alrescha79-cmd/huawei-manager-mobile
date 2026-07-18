@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdBlockAlertModal, ChangelogModal, ChangelogHelper, SignalBubble } from '@/components';
+import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdBlockAlertModal, ChangelogModal, ChangelogHelper, SignalBubble, ToastContainer, setToastListener } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -122,6 +122,13 @@ export default function RootLayout() {
         buttons: [],
     });
 
+    const [toastConfig, setToastConfig] = useState<{
+        visible: boolean;
+        type: 'success' | 'error' | 'info' | 'warning';
+        message: string;
+        duration?: number;
+    } | null>(null);
+
     const checkForUpdates = async () => {
         try {
             const notifSettings = await getNotificationSettings();
@@ -204,13 +211,10 @@ export default function RootLayout() {
         const initializeApp = async () => {
             initAdMob();
             initializeLanguage();
-            // simulasi changelog
-            // await AsyncStorage.removeItem('changelog_shown_version');
 
-            checkForUpdates();
-            requestNotificationPermissions();
             await loadCredentials();
             const credentials = useAuthStore.getState().credentials;
+
             if (credentials) {
                 // Auto-migrate legacy credentials to multi-profile store on app update
                 try {
@@ -242,9 +246,18 @@ export default function RootLayout() {
                         await autoLogin();
                     }
                 }
-                checkAndShowChangelog();
+                // Defer non-critical operations to reduce startup CPU spike
+                setTimeout(() => {
+                    checkForUpdates();
+                    requestNotificationPermissions();
+                    checkAndShowChangelog();
+                }, 3000);
             } else {
-                checkAndShowChangelog();
+                setTimeout(() => {
+                    checkForUpdates();
+                    requestNotificationPermissions();
+                    checkAndShowChangelog();
+                }, 3000);
             }
             setAuthReady(true);
         };
@@ -376,6 +389,9 @@ export default function RootLayout() {
         setAlertListener((config) => {
             setAlertState(config);
         });
+        setToastListener((config) => {
+            setToastConfig(config);
+        });
     }, []);
 
     useEffect(() => {
@@ -478,6 +494,11 @@ export default function RootLayout() {
                     message={alertState.message}
                     buttons={alertState.buttons}
                     onDismiss={dismissAlert}
+                />
+
+                <ToastContainer
+                    config={toastConfig}
+                    onDismiss={() => setToastConfig(null)}
                 />
 
                 <AdBlockAlertModal />

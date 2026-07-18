@@ -21,8 +21,6 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.9.2-3178C6?logo=typescript&logoColor=white)
 
 ![Android](https://img.shields.io/badge/Android-Supported-3DDC84?logo=android&logoColor=white)
-![iOS](https://img.shields.io/badge/iOS-Supported-000000?logo=apple&logoColor=white)
-![Web](https://img.shields.io/badge/Web-Supported-4285F4?logo=googlechrome&logoColor=white)
 
 </div>
 

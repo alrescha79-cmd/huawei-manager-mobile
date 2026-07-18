@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { WiFiService } from '@/services/wifi.service';
 import { ConnectedDevice } from '@/types';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 
 interface UseWiFiDevicesProps {
   wifiService: WiFiService | null;
@@ -21,14 +21,14 @@ export function useWiFiDevices({ wifiService, t, handleRefresh }: UseWiFiDevices
 
     try {
       await wifiService.changeDeviceName(deviceId, newName);
-      ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceNameSaved'));
+      ToastHelper.success(t('wifi.deviceNameSaved'));
       handleRefresh();
     } catch (error: any) {
       let errorMessage = t('wifi.failedSaveDeviceName');
       if (error?.huaweiErrorCode === '100002') {
         errorMessage = t('alerts.renameNotSupported') || 'Changing device name is not supported on this modem model.';
       }
-      ThemedAlertHelper.alert(t('common.error'), errorMessage);
+      ToastHelper.error(errorMessage);
       throw error;
     }
   };
@@ -39,11 +39,11 @@ export function useWiFiDevices({ wifiService, t, handleRefresh }: UseWiFiDevices
     setIsUnblocking(macAddress);
     try {
       await wifiService.unblockDevice(macAddress);
-      ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceUnblocked'));
+      ToastHelper.success(t('wifi.deviceUnblocked'));
       const blocked = await wifiService.getBlockedDevices();
       setBlockedDevices(blocked);
     } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('wifi.failedUnblockDevice'));
+      ToastHelper.error(t('wifi.failedUnblockDevice'));
     } finally {
       setIsUnblocking(null);
     }
@@ -63,10 +63,10 @@ export function useWiFiDevices({ wifiService, t, handleRefresh }: UseWiFiDevices
           onPress: async () => {
             try {
               await wifiService.kickDevice(macAddress);
-              ThemedAlertHelper.alert(t('common.success'), t('wifi.deviceBlocked'));
+              ToastHelper.success(t('wifi.deviceBlocked'));
               handleRefresh();
             } catch (error) {
-              ThemedAlertHelper.alert(t('common.error'), t('alerts.failedKickDevice'));
+              ToastHelper.error(t('alerts.failedKickDevice'));
             }
           },
         },

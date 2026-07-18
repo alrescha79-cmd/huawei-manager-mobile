@@ -99,9 +99,7 @@ export function MonthlySettingsModal({
                 dataLimitUnit,
                 monthThreshold,
             });
-            showInterstitial(() => {
-                onClose();
-            });
+            onClose();
         } catch (error) {
             // Error handled by parent
         } finally {

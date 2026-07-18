@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { WiFiService } from '@/services/wifi.service';
-import { ThemedAlertHelper } from '@/components';
+import { ThemedAlertHelper, ToastHelper } from '@/components';
 
 interface UseParentalControlsProps {
   wifiService: WiFiService | null;
@@ -56,7 +56,7 @@ export function useParentalControls({
   const handleToggleParentalControl = async (enabled: boolean) => {
     if (!wifiService || isTogglingParental) return;
     if (enabled && parentalProfiles.length === 0) {
-      ThemedAlertHelper.alert(t('common.error'), t('parentalControl.noProfiles'));
+      ToastHelper.error(t('parentalControl.noProfiles'));
       return;
     }
     setIsTogglingParental(true);
@@ -64,7 +64,7 @@ export function useParentalControls({
       await wifiService.toggleParentalControl(enabled);
       setParentalControlEnabled(enabled);
     } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+      ToastHelper.error(t('common.error'));
     } finally {
       setIsTogglingParental(false);
     }
@@ -157,12 +157,12 @@ export function useParentalControls({
     if (!wifiService || isSavingProfile) return;
 
     if (!profileName.trim()) {
-      ThemedAlertHelper.alert(t('common.error'), t('parentalControl.profileNameRequired'));
+      ToastHelper.error(t('parentalControl.profileNameRequired'));
       return;
     }
 
     if (profileDays.length === 0) {
-      ThemedAlertHelper.alert(t('common.error'), t('parentalControl.selectAtLeastOneDay'));
+      ToastHelper.error(t('parentalControl.selectAtLeastOneDay'));
       return;
     }
 
@@ -183,11 +183,11 @@ export function useParentalControls({
         await wifiService.createParentalControlProfile(profileData);
       }
 
-      ThemedAlertHelper.alert(t('common.success'), t('parentalControl.profileSaved'));
+      ToastHelper.success(t('parentalControl.profileSaved'));
       setShowProfileModal(false);
       handleRefresh();
     } catch (error) {
-      ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+      ToastHelper.error(t('common.error'));
     } finally {
       setIsSavingProfile(false);
     }
@@ -205,10 +205,10 @@ export function useParentalControls({
           onPress: async () => {
             try {
               await wifiService?.deleteParentalControlProfile(profileId);
-              ThemedAlertHelper.alert(t('common.success'), t('parentalControl.profileDeleted'));
+              ToastHelper.success(t('parentalControl.profileDeleted'));
               handleRefresh();
             } catch (error) {
-              ThemedAlertHelper.alert(t('common.error'), t('common.error'));
+              ToastHelper.error(t('common.error'));
             }
           },
         },
