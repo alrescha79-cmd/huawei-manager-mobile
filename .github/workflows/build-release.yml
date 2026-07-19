@@ -338,7 +338,7 @@ jobs:
           node-version: '20'
 
       - name: Install firebase-admin
-        run: npm install -g firebase-admin@latest
+        run: npm install firebase-admin@latest
 
       - name: Send push notification via FCM topic
         env:
