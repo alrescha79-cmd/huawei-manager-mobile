@@ -80,6 +80,9 @@ export const Button: React.FC<ButtonProps> = ({
               fontWeight: '600',
             },
           ]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
         >
           {title}
         </Text>

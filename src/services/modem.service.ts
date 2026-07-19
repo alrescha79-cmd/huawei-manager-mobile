@@ -222,6 +222,39 @@ export class ModemService {
     }
   }
 
+  /**
+   * Fast traffic stats for realtime polling - uses getFast, skips month stats
+   * ponytail: month stats only fetched on full data interval, not every poll
+   */
+  async getTrafficStatsFast(): Promise<TrafficStats> {
+    try {
+      const safeParseInt = (value: string): number => {
+        const parsed = parseInt(value);
+        return isNaN(parsed) ? 0 : parsed;
+      };
+
+      const response = await this.apiClient.getFast('/api/monitoring/traffic-statistics');
+
+      return {
+        currentConnectTime: safeParseInt(parseXMLValue(response, 'CurrentConnectTime')),
+        currentUpload: safeParseInt(parseXMLValue(response, 'CurrentUpload')),
+        currentDownload: safeParseInt(parseXMLValue(response, 'CurrentDownload')),
+        currentDownloadRate: safeParseInt(parseXMLValue(response, 'CurrentDownloadRate')),
+        currentUploadRate: safeParseInt(parseXMLValue(response, 'CurrentUploadRate')),
+        totalUpload: safeParseInt(parseXMLValue(response, 'TotalUpload')),
+        totalDownload: safeParseInt(parseXMLValue(response, 'TotalDownload')),
+        totalConnectTime: safeParseInt(parseXMLValue(response, 'TotalConnectTime')),
+        monthDownload: 0,
+        monthUpload: 0,
+        monthDuration: 0,
+        dayUsed: 0,
+        dayDuration: 0,
+      };
+    } catch (error) {
+      throw error;
+    }
+  }
+
   async getModemStatus(): Promise<ModemStatus> {
     try {
       const response = await this.apiClient.get('/api/monitoring/status');

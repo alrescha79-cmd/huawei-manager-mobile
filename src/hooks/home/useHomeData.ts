@@ -180,9 +180,9 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
   const loadDataSilent = async (service: ModemService) => {
     try {
       const [signal, network, traffic, status, wan, dataStatus, modemInfo] = await Promise.all([
-        service.getSignalInfo().catch(() => null),
+        service.getSignalInfoFast().catch(() => null),
         service.getNetworkInfo().catch(() => null),
-        service.getTrafficStats().catch(() => null),
+        service.getTrafficStatsFast().catch(() => null),
         service.getModemStatus().catch(() => null),
         service.getWanInfo().catch(() => null),
         service.getMobileDataStatus().catch(() => null),
@@ -191,7 +191,18 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
       if (signal) setSignalInfo(signal);
       if (network) setNetworkInfo(network);
-      if (traffic) setTrafficStats(traffic);
+      if (traffic) {
+        // Preserve month/day stats from last full fetch
+        const prev = useModemStore.getState().trafficStats;
+        if (prev) {
+          traffic.monthDownload = prev.monthDownload;
+          traffic.monthUpload = prev.monthUpload;
+          traffic.monthDuration = prev.monthDuration;
+          traffic.dayUsed = prev.dayUsed;
+          traffic.dayDuration = prev.dayDuration;
+        }
+        setTrafficStats(traffic);
+      }
       if (status) setModemStatus(status);
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
@@ -233,8 +244,17 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
   const loadTrafficOnly = async (service: ModemService) => {
     try {
-      const traffic = await service.getTrafficStats();
-      setTrafficStats(traffic);
+      const fast = await service.getTrafficStatsFast();
+      // Preserve month/day stats from last full fetch
+      const prev = useModemStore.getState().trafficStats;
+      if (prev) {
+        fast.monthDownload = prev.monthDownload;
+        fast.monthUpload = prev.monthUpload;
+        fast.monthDuration = prev.monthDuration;
+        fast.dayUsed = prev.dayUsed;
+        fast.dayDuration = prev.dayDuration;
+      }
+      setTrafficStats(fast);
     } catch (error) {
       console.error('Error loading traffic data:', error);
     }
@@ -311,13 +331,13 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
         if (AppState.currentState === 'active') {
           loadTrafficOnly(service);
         }
-      }, 5000);
+      }, 3000);
 
       const fullDataIntervalId = setInterval(() => {
         if (AppState.currentState === 'active') {
           loadDataSilent(service);
         }
-      }, 15000);
+      }, 10000);
 
       return () => {
         clearInterval(trafficIntervalId);

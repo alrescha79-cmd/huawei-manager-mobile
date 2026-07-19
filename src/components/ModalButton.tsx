@@ -62,15 +62,20 @@ export function ModalButton({
             {loading ? (
                 <BouncingDots size="small" color={getTextColor()} />
             ) : (
-                <Text style={[
-                    typography.headline,
-                    {
-                        color: getTextColor(),
-                        fontWeight: variant === 'secondary' ? '600' : 'bold',
-                        textAlign: 'center',
-                    },
-                    styles.text,
-                ]}>
+                <Text
+                    style={[
+                        typography.headline,
+                        {
+                            color: getTextColor(),
+                            fontWeight: variant === 'secondary' ? '600' : 'bold',
+                            textAlign: 'center',
+                        },
+                        styles.text,
+                    ]}
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.8}
+                >
                     {title}
                 </Text>
             )}
