@@ -120,11 +120,12 @@ export function useLogin({ t }: UseLoginProps) {
 
         setIsDirectLogging(true);
 
-        const apiClient = new ModemAPIClient(modemIp);
         let success = false;
 
         for (let attempt = 1; attempt <= 3; attempt++) {
             try {
+                // Fresh client per attempt — stale session/token from prior failure must not leak
+                const apiClient = new ModemAPIClient(modemIp);
                 console.log(`[Login Page] Attempt ${attempt}/3...`);
                 success = await apiClient.login(username, password);
 

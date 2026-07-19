@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
     timeRow: {
         flexDirection: 'row',
         alignItems: 'baseline',
-        justifyContent: 'space-between',
+        gap: 6,
         marginBottom: 2,
     },
     digitalText: {

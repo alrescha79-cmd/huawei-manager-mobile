@@ -12,6 +12,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { AdBlockAlertHelper } from './AdBlockAlertModal';
+import { useAuthStore } from '@/stores/auth.store';
 import {
     initAdMob,
     isAdMobInitialized,
@@ -24,6 +25,8 @@ import {
 
 function triggerAdblockAlert(error: any) {
     if (!error) return;
+    // Only surface adblock prompt when user is authenticated — never on login page
+    if (!useAuthStore.getState().isAuthenticated) return;
     const errMsg = error?.message || String(error);
     if (errMsg.includes('doubleclick') || errMsg.includes('ad server') || errMsg.includes('Failed to connect') || errMsg.includes('Timeout')) {
         AdBlockAlertHelper.show();

@@ -13,6 +13,7 @@ import { ThemedAlertHelper } from '@/components/ThemedAlert';
 import { ToastHelper } from '@/components/Toast';
 import { AdBlockAlertHelper } from '@/components/AdBlockAlertModal';
 import { useThemeStore } from '@/stores/theme.store';
+import { useAuthStore } from '@/stores/auth.store';
 import en from '@/i18n/en.json';
 import id from '@/i18n/id.json';
 
@@ -124,6 +125,8 @@ export function activateAdRequestCooldown(): void {
 
 function handleAdError(error: any) {
     if (!error) return;
+    // Only surface adblock prompt when user is authenticated — never on login page
+    if (!useAuthStore.getState().isAuthenticated) return;
     const errMsg = error?.message || String(error);
     if (errMsg.includes('doubleclick') || errMsg.includes('ad server') || errMsg.includes('Failed to connect')) {
         AdBlockAlertHelper.show();

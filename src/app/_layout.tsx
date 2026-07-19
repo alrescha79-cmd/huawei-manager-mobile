@@ -193,6 +193,9 @@ export default function RootLayout() {
 
     const checkAndShowChangelog = async () => {
         try {
+            // Only show changelog after user is authenticated — never on login page
+            if (!useAuthStore.getState().isAuthenticated) return;
+
             const currentVersion = Constants.expoConfig?.version || '1.1.55';
             const shownVersion = await AsyncStorage.getItem(CHANGELOG_SHOWN_VERSION_KEY);
 
