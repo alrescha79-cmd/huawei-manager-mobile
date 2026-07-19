@@ -1,0 +1,150 @@
+name: Test Push Notification
+
+on:
+  workflow_dispatch:
+    inputs:
+      expo_push_token:
+        description: 'Expo Push Token (ExponentPushToken[xxx])'
+        required: true
+      title:
+        description: 'Notification title'
+        required: false
+        default: 'Test Notification'
+      body:
+        description: 'Notification body'
+        required: false
+        default: 'Push notification test from GitHub Actions'
+      channel_id:
+        description: 'Android channel ID'
+        required: false
+        default: 'app-updates'
+        type: choice
+        options:
+          - app-updates
+          - usage-alerts
+          - ip-change
+          - debug-reminder
+          - inactivity-reminder
+      test_topic:
+        description: 'Also test topic broadcast (all_users)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  EXPO_PROJECT_ID: '930db156-f012-4b37-809c-d023a044d3b3'
+
+jobs:
+  send-notification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Send push notification via Expo API
+        run: |
+          TOKEN="${{ github.event.inputs.expo_push_token }}"
+          TITLE="${{ github.event.inputs.title }}"
+          BODY="${{ github.event.inputs.body }}"
+          CHANNEL="${{ github.event.inputs.channel_id }}"
+
+          echo "📱 Sending push notification..."
+          echo "  Token: ${TOKEN:0:30}..."
+          echo "  Title: $TITLE"
+          echo "  Body: $BODY"
+          echo "  Channel: $CHANNEL"
+
+          RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://exp.host/--/api/v2/push/send" \
+            -H "Content-Type: application/json" \
+            -d "{
+              \"to\": \"$TOKEN\",
+              \"title\": \"$TITLE\",
+              \"body\": \"$BODY\",
+              \"sound\": \"default\",
+              \"channelId\": \"$CHANNEL\",
+              \"data\": {
+                \"source\": \"github-actions-test\",
+                \"timestamp\": \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"
+              }
+            }")
+
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY_RESP=$(echo "$RESPONSE" | sed '$d')
+
+          echo ""
+          echo "📤 Response (HTTP $HTTP_CODE):"
+          echo "$BODY_RESP" | jq . 2>/dev/null || echo "$BODY_RESP"
+
+          if [ "$HTTP_CODE" -ne 200 ]; then
+            echo "::error::Expo API returned HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+          # Check for errors in response body
+          if echo "$BODY_RESP" | jq -e '.data[0].status' | grep -q "error"; then
+            ERROR_MSG=$(echo "$BODY_RESP" | jq -r '.data[0].message')
+            echo "::error::Push failed: $ERROR_MSG"
+            exit 1
+          fi
+
+          TICKET=$(echo "$BODY_RESP" | jq -r '.data[0].id // "unknown"')
+          STATUS=$(echo "$RESPONSE" | jq -r '.data[0].status // "unknown"')
+          echo ""
+          echo "✅ Notification sent!"
+          echo "  Ticket ID: $TICKET"
+          echo "  Status: $STATUS"
+
+      - name: Check ticket receipt
+        if: success()
+        run: |
+          # Wait a moment for delivery
+          sleep 3
+
+          echo "🔍 Note: To verify delivery, check ticket receipt manually:"
+          echo ""
+          echo "curl -s https://exp.host/--/api/v2/push/getReceipts \\"
+          echo "  -H 'Content-Type: application/json' \\"
+          echo "  -d '{\"ids\": [\"<TICKET_ID>\"]}'"
+          echo ""
+          echo "Or visit: https://expo.dev/notifications"
+
+      - name: Test topic broadcast
+        if: github.event.inputs.test_topic == 'true'
+        run: |
+          TOKEN="${{ github.event.inputs.expo_push_token }}"
+          PROJECT_ID="${{ env.EXPO_PROJECT_ID }}"
+
+          echo ""
+          echo "📡 Testing topic subscription (all_users)..."
+          SUB_RESP=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://exp.host/--/api/v2/projects/${PROJECT_ID}/topics/all_users/subscribe" \
+            -H "Content-Type: application/json" \
+            -d "{\"token\": \"$TOKEN\"}")
+
+          SUB_CODE=$(echo "$SUB_RESP" | tail -1)
+          SUB_BODY=$(echo "$SUB_RESP" | sed '$d')
+
+          echo "Response (HTTP $SUB_CODE): $SUB_BODY"
+
+          if [ "$SUB_CODE" -eq 200 ]; then
+            echo "✅ Topic subscription OK"
+
+            echo ""
+            echo "📡 Sending broadcast to all_users topic..."
+            BCAST_RESP=$(curl -s -w "\n%{http_code}" -X POST \
+              "https://exp.host/--/api/v2/push/send" \
+              -H "Content-Type: application/json" \
+              -d "{
+                \"to\": \"@${PROJECT_ID}/all_users\",
+                \"title\": \"Broadcast Test\",
+                \"body\": \"Topic broadcast from GitHub Actions\",
+                \"sound\": \"default\",
+                \"channelId\": \"app-updates\"
+              }")
+
+            BCAST_CODE=$(echo "$BCAST_RESP" | tail -1)
+            BCAST_BODY=$(echo "$BCAST_RESP" | sed '$d')
+
+            echo "Broadcast response (HTTP $BCAST_CODE):"
+            echo "$BCAST_BODY" | jq . 2>/dev/null || echo "$BCAST_BODY"
+          else
+            echo "::warning::Topic subscription returned HTTP $SUB_CODE"
+          fi
