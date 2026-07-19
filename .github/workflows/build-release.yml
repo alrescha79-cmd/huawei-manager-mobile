@@ -332,49 +332,55 @@ jobs:
     runs-on: ubuntu-latest
     needs: [resolve-version, release]
     steps:
-      - name: Send push notification to all users
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install -g firebase-admin@latest
+
+      - name: Send push notification via FCM topic
         env:
-          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          RELEASE_VERSION: ${{ needs.resolve-version.outputs.version }}
+          RELEASE_TAG: ${{ needs.resolve-version.outputs.tag_name }}
+          RELEASE_REPO: ${{ github.repository }}
         run: |
-          VERSION="${{ needs.resolve-version.outputs.version }}"
-          TAG="${{ needs.resolve-version.outputs.tag_name }}"
-          REPO="${{ github.repository }}"
-          RELEASE_URL="https://github.com/${REPO}/releases/tag/${TAG}"
-
-          if [ -z "$EXPO_ACCESS_TOKEN" ]; then
-            echo "::error::EXPO_ACCESS_TOKEN secret is not set! Add it at https://github.com/${REPO}/settings/secrets"
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set! Add JSON content at https://github.com/${RELEASE_REPO}/settings/secrets/actions"
             exit 1
           fi
 
-          echo "📱 Sending update notification for v${VERSION}..."
+          RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
 
-          RESPONSE=$(curl -sf -w "\n%{http_code}" -X POST "https://exp.host/--/api/v2/push/send" \
-            -H "Authorization: Bearer ${EXPO_ACCESS_TOKEN}" \
-            -H "Content-Type: application/json" \
-            -d "{
-              \"to\": \"Topic(all_users)\",
-              \"title\": \"✨ Update v${VERSION} Sudah Tersedia!\",
-              \"body\": \"Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.\",
-              \"channelId\": \"app-updates\",
-              \"sound\": \"default\",
-              \"data\": {
-                \"route\": \"/(tabs)/home\",
-                \"url\": \"${RELEASE_URL}\",
-                \"version\": \"${VERSION}\"
-              }
-            }") || {
-            echo "::error::Push notification request failed (network error)"
-            exit 1
-          }
+          node -e "
+            const admin = require('firebase-admin');
 
-          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
-          BODY=$(echo "$RESPONSE" | sed '$d')
+            const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+            admin.initializeApp({ credential: admin.credential.cert(sa) });
 
-          echo "Response ($HTTP_CODE): $BODY"
+            const message = {
+              topic: 'all_users',
+              notification: {
+                title: '✨ Update v' + process.env.RELEASE_VERSION + ' Sudah Tersedia!',
+                body: 'Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.',
+              },
+              android: {
+                priority: 'high',
+                notification: {
+                  channelId: 'app-updates',
+                  sound: 'default',
+                },
+              },
+              data: {
+                route: '/(tabs)/home',
+                url: process.env.RELEASE_URL,
+                version: process.env.RELEASE_VERSION,
+              },
+            };
 
-          if [ "$HTTP_CODE" -ge 400 ]; then
-            echo "::error::Push notification failed with HTTP $HTTP_CODE"
-            exit 1
-          fi
-
-          echo "✅ Push notification sent successfully!"
+            admin.messaging().send(message)
+              .then(id => { console.log('✅ FCM message sent, id:', id); process.exit(0); })
+              .catch(err => { console.error('❌ FCM send failed:', err.message); process.exit(1); });
+          "

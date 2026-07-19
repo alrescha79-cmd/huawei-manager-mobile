@@ -156,43 +156,35 @@ Notifications.addNotificationResponseReceivedListener(response => {
 
 ## Sending to All Users
 
-### Option 1: Topic-Based (Recommended)
+### Option 1: FCM Topic-Based (Recommended)
 
-The app automatically subscribes all users to the `all_users` topic. You can send to all users with a single request:
+The app automatically subscribes all users to the `all_users` FCM topic via `@react-native-firebase/messaging`. Send to all users using Firebase Admin SDK:
 
-```bash
-curl -X POST "https://exp.host/--/api/v2/push/send" \
-  -H "Authorization: Bearer YOUR_EXPO_ACCESS_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "to": "Topic(all_users)",
-    "title": "🔄 Update v1.1.66 Sudah Tersedia!",
-    "body": "Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.",
-    "channelId": "app-updates",
-    "sound": "default",
-    "data": {
-      "route": "/(tabs)/home"
-    }
-  }'
+```javascript
+const admin = require('firebase-admin');
+admin.initializeApp({ credential: admin.credential.cert(require('./service-account.json')) });
+
+admin.messaging().send({
+  topic: 'all_users',
+  notification: { title: 'Update Tersedia!', body: 'Versi baru sudah rilis.' },
+  android: { notification: { channelId: 'app-updates', sound: 'default' } },
+  data: { route: '/(tabs)/home', version: '1.2.0' },
+});
 ```
 
 > [!NOTE]
-> You need an **Expo Access Token** from [expo.dev](https://expo.dev) → Account Settings → Access Tokens.
+> You need a **Firebase Service Account JSON** from Firebase Console → Project Settings → Service Accounts → Generate New Private Key.
 
 ### Option 2: Automatic via GitHub Actions
 
-The release workflow (`.github/workflows/build-release.yml`) automatically sends a push notification when a new version is published. The notification includes:
+The release workflow (`.github/workflows/build-release.yml`) automatically sends a push notification via FCM when a new version is published.
 
-- **Title**: `🔄 Update vX.Y.Z Sudah Tersedia!`
-- **Body**: `Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.`
-- **Data**: Deep link to home screen + release URL
-
-**Setup**: Add these secrets to your GitHub repository ([Settings → Secrets → Actions](https://github.com/alrescha79-cmd/huawei-manager-mobile/settings/secrets/actions)):
+**Setup**: Add this secret to your GitHub repository ([Settings → Secrets → Actions](https://github.com/alrescha79-cmd/huawei-manager-mobile/settings/secrets/actions)):
 
 | Secret | Purpose | Where to get |
 |--------|---------|-------------|
+| `FIREBASE_SERVICE_ACCOUNT` | FCM topic push delivery | Firebase Console → Project Settings → Service Accounts → Generate New Private Key → paste full JSON content |
 | `EXPO_TOKEN` | Expo CLI auth (prebuild, EAS) | [expo.dev](https://expo.dev) → Account Settings → Access Tokens |
-| `EXPO_ACCESS_TOKEN` | Push notification delivery | Same token as above, or create a separate one |
 
 ### Option 3: Manual (Per-Token)
 
