@@ -666,7 +666,12 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                             style={[styles.actionButton, { backgroundColor: isRunning ? colors.error : colors.primary }]}
                             onPress={isRunning ? stopSpeedtest : phase === 'complete' ? handleClose : runSpeedtest}
                         >
-                            <Text style={[typography.body, { color: '#FFFFFF', fontWeight: '600' }]}>
+                            <Text
+                                style={[typography.body, { color: '#FFFFFF', fontWeight: '600', textAlign: 'center' }]}
+                                numberOfLines={1}
+                                adjustsFontSizeToFit
+                                minimumFontScale={0.8}
+                            >
                                 {isRunning ? t('common.stop') : phase === 'complete' ? t('common.ok') : t('home.startTest')}
                             </Text>
                         </TouchableOpacity>
