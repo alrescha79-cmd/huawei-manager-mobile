@@ -348,40 +348,42 @@ jobs:
           RELEASE_REPO: ${{ github.repository }}
         run: |
           if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set! Add JSON content at https://github.com/${RELEASE_REPO}/settings/secrets/actions"
+            echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set!"
             exit 1
           fi
 
-          RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
+          export RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
 
-          node -e "
-            const { initializeApp, cert } = require('firebase-admin/app');
-            const { getMessaging } = require('firebase-admin/messaging');
+          cat > /tmp/send-fcm.js << 'NODESCRIPT'
+          const { initializeApp, cert } = require('firebase-admin/app');
+          const { getMessaging } = require('firebase-admin/messaging');
 
-            const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-            initializeApp({ credential: cert(sa) });
+          const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          initializeApp({ credential: cert(sa) });
 
-            const message = {
-              topic: 'all_users',
-              notification: {
-                title: '✨ Update v' + process.env.RELEASE_VERSION + ' Sudah Tersedia!',
-                body: 'Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.',
-              },
-              android: {
-                priority: 'high',
-                notification: {
-                  channelId: 'app-updates',
-                  sound: 'default',
-                },
-              },
-              data: {
-                route: '/(tabs)/home',
-                url: process.env.RELEASE_URL,
-                version: process.env.RELEASE_VERSION,
-              },
-            };
+          const ver = process.env.RELEASE_VERSION;
+          const url = process.env.RELEASE_URL;
 
-            getMessaging().send(message)
-              .then(id => { console.log('✅ FCM message sent, id:', id); process.exit(0); })
-              .catch(err => { console.error('❌ FCM send failed:', err.message); process.exit(1); });
-          "
+          const message = {
+            topic: 'all_users',
+            notification: {
+              title: '✨ Update v' + ver + ' Sudah Tersedia!',
+              body: 'Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.',
+            },
+            android: {
+              priority: 'high',
+              notification: { channelId: 'app-updates', sound: 'default' },
+            },
+            data: {
+              route: '/(tabs)/home',
+              url: url,
+              version: ver,
+            },
+          };
+
+          getMessaging().send(message)
+            .then(id => { console.log('✅ FCM message sent, id:', id); process.exit(0); })
+            .catch(err => { console.error('❌ FCM send failed:', err.message); process.exit(1); });
+          NODESCRIPT
+
+          node /tmp/send-fcm.js
