@@ -169,8 +169,8 @@ export const ToastContainer: React.FC<ToastContainerProps> = ({ config, onDismis
 const styles = StyleSheet.create({
     toastWrapper: {
         position: 'absolute',
-        left: 24,
-        right: 24,
+        left: 0,
+        right: 0,
         zIndex: 99999,
         elevation: 99999,
         alignItems: 'center',
@@ -180,7 +180,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 12,
         paddingVertical: 10,
-        borderRadius: 12,
+        borderRadius: 28,
         borderWidth: 1,
         maxWidth: SCREEN_WIDTH - 80,
         shadowOffset: { width: 0, height: 4 },
@@ -197,10 +197,10 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     message: {
-        flex: 1,
         fontSize: 14,
         lineHeight: 19,
         fontWeight: '500',
+        textAlign: 'center',
     },
 });
 

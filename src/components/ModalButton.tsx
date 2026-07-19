@@ -64,7 +64,12 @@ export function ModalButton({
             ) : (
                 <Text style={[
                     typography.headline,
-                    { color: getTextColor(), fontWeight: variant === 'secondary' ? '600' : 'bold' },
+                    {
+                        color: getTextColor(),
+                        fontWeight: variant === 'secondary' ? '600' : 'bold',
+                        textAlign: 'center',
+                    },
+                    styles.text,
                 ]}>
                     {title}
                 </Text>
@@ -78,5 +83,9 @@ const styles = StyleSheet.create({
         height: 52,
         alignItems: 'center',
         justifyContent: 'center',
+    },
+    text: {
+        flexShrink: 1,
+        textAlign: 'center',
     },
 });
