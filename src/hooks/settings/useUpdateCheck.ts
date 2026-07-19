@@ -19,6 +19,7 @@ export interface ReleaseInfo {
     releaseNotes: string;
     publishedAt: string;
     isPreRelease: boolean;
+    isLatestStable: boolean;
 }
 
 /**
@@ -45,6 +46,7 @@ export function useUpdateCheck() {
     const [releaseInfo, setReleaseInfo] = useState<ReleaseInfo | null>(null);
     const [preReleaseInfo, setPreReleaseInfo] = useState<ReleaseInfo | null>(null);
     const [preReleaseAvailable, setPreReleaseAvailable] = useState(false);
+    const [availableReleases, setAvailableReleases] = useState<ReleaseInfo[]>([]);
     const [error, setError] = useState<string | null>(null);
     const [hasChecked, setHasChecked] = useState(false);
 
@@ -80,6 +82,7 @@ export function useUpdateCheck() {
         setPreReleaseAvailable(false);
         setReleaseInfo(null);
         setPreReleaseInfo(null);
+        setAvailableReleases([]);
 
         try {
             const response = await fetch(
@@ -98,10 +101,7 @@ export function useUpdateCheck() {
             const releases = await response.json();
             const currentVersion = Constants.expoConfig?.version || '0.0.0';
 
-            const stableRelease = releases.find((r: any) => !r.prerelease && !r.draft);
-            const preRelease = releases.find((r: any) => r.prerelease && !r.draft);
-
-            const parseRelease = (data: any, isPreRelease: boolean): ReleaseInfo => {
+            const parseRelease = (data: any, isPreRelease: boolean, isLatestStable = false): ReleaseInfo => {
                 const apkAsset = data.assets?.find((asset: any) =>
                     asset.name?.endsWith('.apk') || asset.name?.includes('universal')
                 );
@@ -109,15 +109,15 @@ export function useUpdateCheck() {
                 let version = '';
                 const tagName = data.tag_name || '';
 
-                const semverMatch = tagName.match(/v?(\d+\.\d+\.\d+)/);
+                const semverMatch = tagName.match(/v?(\d+\.\d+\.\d+(?:-[\w.]+)?)/);
                 if (semverMatch) {
                     version = semverMatch[1];
                 } else {
-                    const nameMatch = (data.name || '').match(/v?(\d+\.\d+\.\d+)/);
+                    const nameMatch = (data.name || '').match(/v?(\d+\.\d+\.\d+(?:-[\w.]+)?)/);
                     if (nameMatch) {
                         version = nameMatch[1];
                     } else if (apkAsset?.name) {
-                        const assetMatch = apkAsset.name.match(/v?(\d+\.\d+\.\d+)/);
+                        const assetMatch = apkAsset.name.match(/v?(\d+\.\d+\.\d+(?:-[\w.]+)?)/);
                         if (assetMatch) {
                             version = assetMatch[1];
                         }
@@ -125,29 +125,45 @@ export function useUpdateCheck() {
                 }
 
                 return {
-                    tagName: tagName,
-                    version: version,
+                    tagName,
+                    version,
                     downloadUrl: apkAsset?.browser_download_url || data.html_url || '',
                     releaseNotes: data.body || '',
                     publishedAt: data.published_at || '',
                     isPreRelease,
+                    isLatestStable,
                 };
             };
 
-            if (stableRelease) {
-                const info = parseRelease(stableRelease, false);
-                setReleaseInfo(info);
-                const comparison = compareVersions(info.version, currentVersion);
-                setUpdateAvailable(comparison > 0);
+            // GitHub returns newest first
+            const parsed: ReleaseInfo[] = (Array.isArray(releases) ? releases : [])
+                .filter((r: any) => !r.draft)
+                .map((r: any) => parseRelease(r, !!r.prerelease));
+
+            const newer = parsed.filter((r) => r.version && compareVersions(r.version, currentVersion) > 0);
+
+            // Pin latest stable (non-prerelease) to top even if pre-release is newer
+            const latestStableIdx = newer.findIndex((r) => !r.isPreRelease);
+            const ordered: ReleaseInfo[] = [];
+
+            if (latestStableIdx >= 0) {
+                ordered.push({ ...newer[latestStableIdx], isLatestStable: true });
+                newer.forEach((r, i) => {
+                    if (i !== latestStableIdx) ordered.push({ ...r, isLatestStable: false });
+                });
+            } else {
+                newer.forEach((r) => ordered.push({ ...r, isLatestStable: false }));
             }
 
-            if (preRelease) {
-                const info = parseRelease(preRelease, true);
-                setPreReleaseInfo(info);
-                const comparison = info.version ? compareVersions(info.version, currentVersion) : 0;
-                setPreReleaseAvailable(comparison > 0);
-            }
+            setAvailableReleases(ordered);
 
+            const stable = ordered.find((r) => !r.isPreRelease) || null;
+            const pre = ordered.find((r) => r.isPreRelease) || null;
+
+            setReleaseInfo(stable);
+            setUpdateAvailable(!!stable);
+            setPreReleaseInfo(pre);
+            setPreReleaseAvailable(!!pre);
             setHasChecked(true);
         } catch (err) {
             console.error('Update check failed:', err);
@@ -158,7 +174,7 @@ export function useUpdateCheck() {
         }
     }, []);
 
-    const availableCount = (updateAvailable ? 1 : 0) + (preReleaseAvailable ? 1 : 0);
+    const availableCount = availableReleases.length;
 
     return {
         checking,
@@ -166,6 +182,7 @@ export function useUpdateCheck() {
         releaseInfo,
         preReleaseInfo,
         preReleaseAvailable,
+        availableReleases,
         error,
         hasChecked,
         animatedStyle,

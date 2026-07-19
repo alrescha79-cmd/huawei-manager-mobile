@@ -89,13 +89,15 @@ export function DailyUsageCard({ usage, duration, dailyLimit, style }: DailyUsag
                 </View>
 
                 <View style={[styles.timeBox, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light, borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light }]}>
-                    <View style={styles.timeRow}>
-                        <Text style={[styles.digitalText, { color: primaryColor }]}>{hh}</Text>
-                        <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.hoursFull')}</Text>
-                    </View>
-                    <View style={styles.timeRow}>
-                        <Text style={[styles.digitalText, { color: primaryColor }]}>{mm}</Text>
-                        <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.minutesFull')}</Text>
+                    <View style={styles.timeGrid}>
+                        <View style={styles.digitsCol}>
+                            <Text style={[styles.digitalText, { color: primaryColor }]}>{hh}</Text>
+                            <Text style={[styles.digitalText, { color: primaryColor }]}>{mm}</Text>
+                        </View>
+                        <View style={styles.labelsCol}>
+                            <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.hoursFull')}</Text>
+                            <Text style={[styles.digitalLabel, { color: colors.textSecondary }]}>{t('common.minutesFull')}</Text>
+                        </View>
                     </View>
                 </View>
             </View>
@@ -186,11 +188,18 @@ const styles = StyleSheet.create({
         paddingVertical: 10,
         borderWidth: 1,
     },
-    timeRow: {
+    timeGrid: {
         flexDirection: 'row',
-        alignItems: 'baseline',
-        gap: 6,
-        marginBottom: 2,
+        alignItems: 'center',
+        gap: 8,
+    },
+    digitsCol: {
+        alignItems: 'flex-end',
+        gap: 2,
+    },
+    labelsCol: {
+        justifyContent: 'center',
+        gap: 2,
     },
     digitalText: {
         fontSize: 26,
@@ -198,10 +207,13 @@ const styles = StyleSheet.create({
         fontFamily: 'Doto_700Bold',
         fontVariant: ['tabular-nums'],
         letterSpacing: 1,
+        lineHeight: 30,
+        textAlign: 'right',
     },
     digitalLabel: {
         fontSize: 11,
         fontWeight: '600',
-        marginLeft: 4,
+        lineHeight: 30,
+        textAlignVertical: 'center',
     }
 });
