@@ -355,10 +355,11 @@ jobs:
           RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
 
           node -e "
-            const admin = require('firebase-admin');
+            const { initializeApp, cert } = require('firebase-admin/app');
+            const { getMessaging } = require('firebase-admin/messaging');
 
             const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-            admin.initializeApp({ credential: admin.credential.cert(sa) });
+            initializeApp({ credential: cert(sa) });
 
             const message = {
               topic: 'all_users',
@@ -380,7 +381,7 @@ jobs:
               },
             };
 
-            admin.messaging().send(message)
+            getMessaging().send(message)
               .then(id => { console.log('✅ FCM message sent, id:', id); process.exit(0); })
               .catch(err => { console.error('❌ FCM send failed:', err.message); process.exit(1); });
           "
