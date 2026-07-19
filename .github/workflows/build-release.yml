@@ -333,16 +333,23 @@ jobs:
     needs: [resolve-version, release]
     steps:
       - name: Send push notification to all users
+        env:
+          EXPO_ACCESS_TOKEN: ${{ secrets.EXPO_ACCESS_TOKEN }}
         run: |
           VERSION="${{ needs.resolve-version.outputs.version }}"
           TAG="${{ needs.resolve-version.outputs.tag_name }}"
           REPO="${{ github.repository }}"
           RELEASE_URL="https://github.com/${REPO}/releases/tag/${TAG}"
 
+          if [ -z "$EXPO_ACCESS_TOKEN" ]; then
+            echo "::error::EXPO_ACCESS_TOKEN secret is not set! Add it at https://github.com/${REPO}/settings/secrets"
+            exit 1
+          fi
+
           echo "📱 Sending update notification for v${VERSION}..."
 
-          curl -X POST "https://exp.host/--/api/v2/push/send" \
-            -H "Authorization: Bearer ${{ secrets.EXPO_ACCESS_TOKEN }}" \
+          RESPONSE=$(curl -sf -w "\n%{http_code}" -X POST "https://exp.host/--/api/v2/push/send" \
+            -H "Authorization: Bearer ${EXPO_ACCESS_TOKEN}" \
             -H "Content-Type: application/json" \
             -d "{
               \"to\": \"Topic(all_users)\",
@@ -355,6 +362,19 @@ jobs:
                 \"url\": \"${RELEASE_URL}\",
                 \"version\": \"${VERSION}\"
               }
-            }"
+            }") || {
+            echo "::error::Push notification request failed (network error)"
+            exit 1
+          }
 
-          echo "✅ Push notification sent!"
+          HTTP_CODE=$(echo "$RESPONSE" | tail -1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+
+          echo "Response ($HTTP_CODE): $BODY"
+
+          if [ "$HTTP_CODE" -ge 400 ]; then
+            echo "::error::Push notification failed with HTTP $HTTP_CODE"
+            exit 1
+          fi
+
+          echo "✅ Push notification sent successfully!"

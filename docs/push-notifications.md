@@ -187,7 +187,12 @@ The release workflow (`.github/workflows/build-release.yml`) automatically sends
 - **Body**: `Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.`
 - **Data**: Deep link to home screen + release URL
 
-**Setup**: Add `EXPO_ACCESS_TOKEN` to your GitHub repository secrets.
+**Setup**: Add these secrets to your GitHub repository ([Settings → Secrets → Actions](https://github.com/alrescha79-cmd/huawei-manager-mobile/settings/secrets/actions)):
+
+| Secret | Purpose | Where to get |
+|--------|---------|-------------|
+| `EXPO_TOKEN` | Expo CLI auth (prebuild, EAS) | [expo.dev](https://expo.dev) → Account Settings → Access Tokens |
+| `EXPO_ACCESS_TOKEN` | Push notification delivery | Same token as above, or create a separate one |
 
 ### Option 3: Manual (Per-Token)
 
