@@ -15,7 +15,7 @@ export default function UpdateScreen() {
     const { t } = useTranslation();
 
     const {
-        checking, updateAvailable, releaseInfo, preReleaseInfo, preReleaseAvailable,
+        checking, releaseInfo, availableReleases,
         error, hasChecked, animatedStyle, availableCount, checkUpdate,
     } = useUpdateCheck();
 
@@ -68,7 +68,7 @@ export default function UpdateScreen() {
                                     </Text>
                                 </View>
                             </View>
-                            {hasChecked && !updateAvailable && !preReleaseAvailable && (
+                            {hasChecked && availableReleases.length === 0 && (
                                 <View style={[styles.upToDateBadge, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.08)', borderColor: 'rgba(16, 185, 129, 0.25)', borderWidth: 1, marginTop: 12 }]}>
                                     <MaterialCommunityIcons name="check-circle" size={14} color="#10B981" style={{ marginRight: 6 }} />
                                     <Text style={[typography.caption2, { color: '#10B981', fontWeight: '700' }]}>
@@ -113,7 +113,7 @@ export default function UpdateScreen() {
                                     </Text>
                                 </TouchableOpacity>
                             </View>
-                        ) : updateAvailable || preReleaseAvailable ? (
+                        ) : availableReleases.length > 0 ? (
                             <View style={{ width: '100%' }}>
                                 <View style={styles.sectionHeaderRow}>
                                     <Text style={[typography.subheadline, { color: colors.textSecondary, fontWeight: '700', letterSpacing: 0.5 }]}>
@@ -121,8 +121,8 @@ export default function UpdateScreen() {
                                     </Text>
                                     <View style={[styles.versionsCountBadge, { backgroundColor: 'rgba(16, 185, 129, 0.12)' }]}>
                                         <Text style={[typography.caption2, { color: colors.success, fontWeight: '700' }]}>
-                                            {availableCount === 2
-                                                ? t('settings.newVersionsBadge', { count: 2 })
+                                            {availableCount > 1
+                                                ? t('settings.newVersionsBadge', { count: availableCount })
                                                 : t('settings.newVersionBadge')}
                                         </Text>
                                     </View>
@@ -151,26 +151,63 @@ export default function UpdateScreen() {
                                         </View>
                                     </View>
                                 ) : (
-                                    <>
-                                        {/* Stable Release Section */}
-                                        {updateAvailable && releaseInfo && (
-                                            <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1 }]}>
+                                    availableReleases.map((release, index) => {
+                                        const isPre = release.isPreRelease;
+                                        const isLatest = release.isLatestStable;
+                                        const badgeColor = isPre ? colors.warning : colors.success;
+                                        const badgeBg = isPre ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)';
+                                        const badgeBorder = isPre ? 'rgba(245, 158, 11, 0.2)' : 'rgba(16, 185, 129, 0.2)';
+                                        const badgeIcon = isPre ? 'flask' : 'shield-check';
+                                        const infoText = isPre
+                                            ? t('settings.preReleaseBadgeText')
+                                            : t('settings.stableBadgeText');
+                                        const btnColor = isPre ? '#F59E0B' : '#10B981';
+                                        const btnIcon = isPre ? 'lightning-bolt' : 'download';
+                                        const versionLabel = release.version ? `v${release.version}` : release.tagName;
+
+                                        return (
+                                            <View
+                                                key={release.tagName || `${release.version}-${index}`}
+                                                style={[
+                                                    styles.releaseCard,
+                                                    {
+                                                        backgroundColor: colors.card,
+                                                        borderColor: 'rgba(255, 255, 255, 0.05)',
+                                                        borderWidth: 1,
+                                                        marginTop: index > 0 ? 16 : 0,
+                                                    },
+                                                ]}
+                                            >
                                                 <View style={styles.releaseHeader}>
-                                                    <Text style={[typography.headline, { color: colors.text, fontSize: 20, fontWeight: '700' }]}>
-                                                        v{releaseInfo.version}
+                                                    <Text style={[typography.headline, { color: colors.text, fontSize: 20, fontWeight: '700', flexShrink: 1 }]}>
+                                                        {versionLabel}
                                                     </Text>
-                                                    <View style={[styles.badge, { backgroundColor: 'rgba(16, 185, 129, 0.1)', borderColor: 'rgba(16, 185, 129, 0.2)', borderWidth: 1 }]}>
-                                                        <MaterialCommunityIcons name="shield-check" size={14} color={colors.success} style={{ marginRight: 4 }} />
-                                                        <Text style={[typography.caption2, { color: colors.success, fontWeight: '700', letterSpacing: 0.5 }]}>
-                                                            {t('settings.stableBadge').toUpperCase()}
-                                                        </Text>
+                                                    <View style={styles.badgeRow}>
+                                                        {isLatest && (
+                                                            <View style={[styles.badge, { backgroundColor: 'rgba(59, 130, 246, 0.12)', borderColor: 'rgba(59, 130, 246, 0.25)', borderWidth: 1 }]}>
+                                                                <MaterialCommunityIcons name="star-circle" size={14} color="#3B82F6" style={{ marginRight: 4 }} />
+                                                                <Text style={[typography.caption2, { color: '#3B82F6', fontWeight: '700', letterSpacing: 0.5 }]}>
+                                                                    {t('settings.latestBadge').toUpperCase()}
+                                                                </Text>
+                                                            </View>
+                                                        )}
+                                                        <View style={[styles.badge, { backgroundColor: badgeBg, borderColor: badgeBorder, borderWidth: 1 }]}>
+                                                            <MaterialCommunityIcons name={badgeIcon as any} size={14} color={badgeColor} style={{ marginRight: 4 }} />
+                                                            <Text style={[typography.caption2, { color: badgeColor, fontWeight: '700', letterSpacing: 0.5 }]}>
+                                                                {(isPre ? t('settings.preReleaseBadge') : t('settings.stableBadge')).toUpperCase()}
+                                                            </Text>
+                                                        </View>
                                                     </View>
                                                 </View>
 
                                                 <View style={styles.infoRow}>
-                                                    <MaterialCommunityIcons name="information-outline" size={16} color={colors.success} />
+                                                    <MaterialCommunityIcons
+                                                        name={isPre ? 'alert-outline' : 'information-outline'}
+                                                        size={16}
+                                                        color={badgeColor}
+                                                    />
                                                     <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 6, flex: 1 }]}>
-                                                        {t('settings.stableBadgeText')}
+                                                        {infoText}
                                                     </Text>
                                                 </View>
 
@@ -178,81 +215,34 @@ export default function UpdateScreen() {
 
                                                 <View style={styles.releaseActions}>
                                                     <TouchableOpacity
-                                                        style={[styles.downloadBtn, { backgroundColor: '#10B981' }]}
-                                                        onPress={() => releaseInfo.downloadUrl && handleDownloadAndInstall(releaseInfo.downloadUrl, releaseInfo.version)}
+                                                        style={[styles.downloadBtn, { backgroundColor: btnColor }]}
+                                                        onPress={() => release.downloadUrl && handleDownloadAndInstall(release.downloadUrl, release.version || release.tagName)}
                                                     >
-                                                        <MaterialCommunityIcons name="download" size={18} color="#FFF" />
-                                                        <Text style={[typography.body, { color: '#FFF', fontWeight: '700', marginLeft: 6 }]}>
+                                                        <MaterialCommunityIcons name={btnIcon as any} size={18} color="#FFF" />
+                                                        <Text style={[typography.body, { color: '#FFF', fontWeight: '700', marginLeft: 6 }]} numberOfLines={1}>
                                                             {t('settings.downloadUpdate')}
                                                         </Text>
                                                     </TouchableOpacity>
                                                     <TouchableOpacity
                                                         style={[styles.notesBtn, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}
-                                                        onPress={() => setSelectedNotes({ version: releaseInfo.version || releaseInfo.tagName, notes: releaseInfo.releaseNotes })}
+                                                        onPress={() => setSelectedNotes({ version: release.version || release.tagName, notes: release.releaseNotes })}
                                                     >
                                                         <MaterialCommunityIcons name="file-document-outline" size={18} color={colors.text} />
-                                                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 6 }]}>
+                                                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 6 }]} numberOfLines={1}>
                                                             Notes
                                                         </Text>
                                                     </TouchableOpacity>
                                                 </View>
                                             </View>
-                                        )}
-
-                                        {/* Pre-release Section */}
-                                        {preReleaseAvailable && preReleaseInfo && (
-                                            <View style={[styles.releaseCard, { backgroundColor: colors.card, borderColor: 'rgba(255, 255, 255, 0.05)', borderWidth: 1, marginTop: updateAvailable ? 16 : 0 }]}>
-                                                <View style={styles.releaseHeader}>
-                                                    <Text style={[typography.headline, { color: colors.text, fontSize: 20, fontWeight: '700' }]}>
-                                                        {preReleaseInfo.version ? `v${preReleaseInfo.version}` : preReleaseInfo.tagName}
-                                                    </Text>
-                                                    <View style={[styles.badge, { backgroundColor: 'rgba(245, 158, 11, 0.1)', borderColor: 'rgba(245, 158, 11, 0.2)', borderWidth: 1 }]}>
-                                                        <MaterialCommunityIcons name="flask" size={14} color={colors.warning} style={{ marginRight: 4 }} />
-                                                        <Text style={[typography.caption2, { color: colors.warning, fontWeight: '700', letterSpacing: 0.5 }]}>
-                                                            {t('settings.preReleaseBadge').toUpperCase()}
-                                                        </Text>
-                                                    </View>
-                                                </View>
-
-                                                <View style={styles.infoRow}>
-                                                    <MaterialCommunityIcons name="alert-outline" size={16} color={colors.warning} />
-                                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginLeft: 6, flex: 1 }]}>
-                                                        {t('settings.preReleaseBadgeText')}
-                                                    </Text>
-                                                </View>
-
-                                                <View style={styles.divider} />
-
-                                                <View style={styles.releaseActions}>
-                                                    <TouchableOpacity
-                                                        style={[styles.downloadBtn, { backgroundColor: '#F59E0B' }]}
-                                                        onPress={() => preReleaseInfo.downloadUrl && handleDownloadAndInstall(preReleaseInfo.downloadUrl, preReleaseInfo.version || preReleaseInfo.tagName)}
-                                                    >
-                                                        <MaterialCommunityIcons name="lightning-bolt" size={18} color="#FFF" />
-                                                        <Text style={[typography.body, { color: '#FFF', fontWeight: '700', marginLeft: 6 }]}>
-                                                            {t('settings.downloadUpdate')}
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                    <TouchableOpacity
-                                                        style={[styles.notesBtn, { borderColor: colors.border, backgroundColor: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)' }]}
-                                                        onPress={() => setSelectedNotes({ version: preReleaseInfo.version || preReleaseInfo.tagName, notes: preReleaseInfo.releaseNotes })}
-                                                    >
-                                                        <MaterialCommunityIcons name="file-document-outline" size={18} color={colors.text} />
-                                                        <Text style={[typography.body, { color: colors.text, fontWeight: '600', marginLeft: 6 }]}>
-                                                            Notes
-                                                        </Text>
-                                                    </TouchableOpacity>
-                                                </View>
-                                            </View>
-                                        )}
-                                    </>
+                                        );
+                                    })
                                 )}
 
                                 <View style={{ paddingHorizontal: 0, marginTop: 24, marginBottom: 12 }}>
                                     <AdNative />
                                 </View>
 
-                                {(updateAvailable || preReleaseAvailable) && !downloading && (
+                                {!downloading && (
                                     <TouchableOpacity
                                         style={[styles.checkAgainBtn, { borderColor: colors.border }]}
                                         onPress={checkUpdate}
@@ -356,6 +346,15 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 12,
+    },
+    badgeRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        justifyContent: 'flex-end',
+        gap: 6,
+        flexShrink: 1,
+        marginLeft: 8,
     },
     badge: {
         flexDirection: 'row',
