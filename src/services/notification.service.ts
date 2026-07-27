@@ -25,6 +25,9 @@ export interface NotificationSettings {
     smsEnabled: boolean;
     badgesEnabled: boolean;
     preReleaseUpdateEnabled: boolean;
+    clearHistoryReminderEnabled: boolean;
+    clearHistoryReminderDay: number; // 1-31
+    clearHistoryReminderHour: number; // 0-23
 }
 
 const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
@@ -34,6 +37,9 @@ const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
     smsEnabled: true,
     badgesEnabled: true,
     preReleaseUpdateEnabled: false,
+    clearHistoryReminderEnabled: true,
+    clearHistoryReminderDay: 31,
+    clearHistoryReminderHour: 18,
 };
 
 Notifications.setNotificationHandler({
@@ -189,6 +195,13 @@ export async function requestNotificationPermissions(): Promise<boolean> {
             importance: Notifications.AndroidImportance.HIGH,
             vibrationPattern: [0, 250, 250, 250],
             lightColor: '#6C63FF',
+        });
+
+        await Notifications.setNotificationChannelAsync('clear-history-reminder', {
+            name: 'Clear History Reminder',
+            importance: Notifications.AndroidImportance.DEFAULT,
+            vibrationPattern: [0, 250],
+            lightColor: '#4ECDC4',
         });
     }
 
@@ -486,4 +499,98 @@ export async function checkInactivityReminder(translations: {
     }
 
     return false;
+}
+
+// ============================================================================
+// CLEAR HISTORY REMINDER NOTIFICATION
+// ============================================================================
+
+const CLEAR_HISTORY_REMINDER_ID = 'clear-history-reminder';
+
+/**
+ * Get next scheduled date for clear history reminder
+ * Clamps day to month length (e.g., day 31 in Feb → 28/29)
+ */
+export function getNextClearHistoryReminderDate(day: number, hour: number): Date {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth();
+
+    // Get days in current month
+    const daysInCurrentMonth = new Date(year, month + 1, 0).getDate();
+    const clampedDay = Math.min(day, daysInCurrentMonth);
+
+    // Create candidate date for current month
+    const candidate = new Date(year, month, clampedDay, hour, 0, 0, 0);
+
+    // If candidate is in the past, roll to next month
+    if (candidate <= now) {
+        const nextMonth = month === 11 ? 0 : month + 1;
+        const nextYear = month === 11 ? year + 1 : year;
+        const daysInNextMonth = new Date(nextYear, nextMonth + 1, 0).getDate();
+        const nextClampedDay = Math.min(day, daysInNextMonth);
+        return new Date(nextYear, nextMonth, nextClampedDay, hour, 0, 0, 0);
+    }
+
+    return candidate;
+}
+
+/**
+ * Schedule or cancel clear history reminder based on settings
+ */
+export async function scheduleClearHistoryReminder(
+    settings: NotificationSettings,
+    translations: { title: string; body: string }
+): Promise<void> {
+    // Cancel existing first
+    await cancelClearHistoryReminder();
+
+    if (!settings.clearHistoryReminderEnabled) {
+        return;
+    }
+
+    const nextDate = getNextClearHistoryReminderDate(
+        settings.clearHistoryReminderDay,
+        settings.clearHistoryReminderHour
+    );
+
+    await Notifications.scheduleNotificationAsync({
+        identifier: CLEAR_HISTORY_REMINDER_ID,
+        content: {
+            title: translations.title,
+            body: translations.body,
+            sound: true,
+            data: {
+                route: '/(tabs)/home',
+                type: 'clear-history-reminder',
+            },
+        },
+        trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
+            date: nextDate,
+        },
+    });
+}
+
+/**
+ * Cancel scheduled clear history reminder
+ */
+export async function cancelClearHistoryReminder(): Promise<void> {
+    try {
+        await Notifications.cancelScheduledNotificationAsync(CLEAR_HISTORY_REMINDER_ID);
+    } catch {
+        // Ignore if not found
+    }
+}
+
+/**
+ * Sync clear history reminder with current settings and translations
+ * Call on app start, settings change, and language change
+ */
+export async function syncClearHistoryReminder(translations: {
+    title: string;
+    body: string;
+}): Promise<void> {
+    const settings = await getNotificationSettings();
+    await scheduleClearHistoryReminder(settings, translations);
 }

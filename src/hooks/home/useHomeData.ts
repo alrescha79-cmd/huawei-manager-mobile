@@ -118,6 +118,15 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
           }
         );
 
+        // Toast warning if daily usage >= 99%
+        const dailyLimitBytes = (dataLimitInGB * 1073741824) / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        if (dailyLimitBytes > 0) {
+          const dailyPercent = Math.min((traffic.dayUsed || 0) / dailyLimitBytes * 100, 100);
+          if (dailyPercent >= 99) {
+            ToastHelper.warning(t('notifications.dailyUsageWarning') || 'Daily usage has reached 99%!');
+          }
+        }
+
         checkMonthlyUsageNotification(
           traffic.monthDownload + traffic.monthUpload,
           dataLimitInGB,

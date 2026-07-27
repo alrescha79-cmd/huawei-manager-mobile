@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useSegments } from 'expo-router';
-import { Linking, AppState, Platform, Animated } from 'react-native';
+import { AppState, Platform, Animated } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -10,11 +10,11 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, AdBlockAlertModal, ChangelogModal, ChangelogHelper, SignalBubble, ToastContainer, setToastListener } from '@/components';
+import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, ChangelogModal, ChangelogHelper, SignalBubble, ToastContainer, setToastListener, ToastHelper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
-import { requestNotificationPermissions, getNotificationSettings } from '@/services/notification.service';
+import { requestNotificationPermissions, getNotificationSettings, syncClearHistoryReminder } from '@/services/notification.service';
 import * as Notifications from 'expo-notifications';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
@@ -88,6 +88,7 @@ export default function RootLayout() {
     const [authReady, setAuthReady] = useState(false);
     const pendingNotificationRoute = useRef<string | null>(null);
     const pendingNotificationUrl = useRef<string | null>(null);
+    const pendingClearHistoryReminderToast = useRef<boolean>(false);
 
     const onLayoutRootView = useCallback(async () => {
         if (fontsLoaded) {
@@ -254,12 +255,22 @@ export default function RootLayout() {
                     checkForUpdates();
                     requestNotificationPermissions();
                     checkAndShowChangelog();
+                    // Sync clear history reminder
+                    syncClearHistoryReminder({
+                        title: t('notifications.clearHistoryReminderTitle'),
+                        body: t('notifications.clearHistoryReminderBody'),
+                    });
                 }, 3000);
             } else {
                 setTimeout(() => {
                     checkForUpdates();
                     requestNotificationPermissions();
                     checkAndShowChangelog();
+                    // Sync clear history reminder
+                    syncClearHistoryReminder({
+                        title: t('notifications.clearHistoryReminderTitle'),
+                        body: t('notifications.clearHistoryReminderBody'),
+                    });
                 }, 3000);
             }
             setAuthReady(true);
@@ -285,12 +296,14 @@ export default function RootLayout() {
 
     const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
         const rawData = response.notification.request.content.data;
-        const data = rawData as { route?: string; url?: string; body?: { route?: string; url?: string } } | undefined;
+        const notificationTitle = response.notification.request.content.title;
+        const data = rawData as { route?: string; url?: string; type?: string; body?: { route?: string; url?: string } } | undefined;
 
         console.log('📱 Notification data received:', JSON.stringify(data, null, 2));
 
         let route = data?.route;
         let url = data?.url;
+        const notificationType = data?.type;
 
         if (!route && data?.body?.route) {
             route = data.body.route;
@@ -299,20 +312,38 @@ export default function RootLayout() {
             url = data.body.url;
         }
 
+        const openWebView = (targetUrl: string) => {
+            router.push({ pathname: '/webview', params: { url: targetUrl, title: notificationTitle || 'Link' } });
+        };
+
+        // Handle clear-history-reminder: show toast if not logged in
+        const handleClearHistoryReminderToast = () => {
+            const { isAuthenticated, credentials } = useAuthStore.getState();
+            if (!isAuthenticated || !credentials) {
+                setTimeout(() => {
+                    ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
+                }, 1000);
+            }
+        };
+
         if (authReady) {
             if (route && typeof route === 'string') {
                 console.log('📱 Navigating to route immediately:', route);
                 router.push(route as any);
+                if (notificationType === 'clear-history-reminder') {
+                    handleClearHistoryReminderToast();
+                }
             } else if (url && typeof url === 'string') {
-                console.log('📱 Opening URL immediately:', url);
-                Linking.openURL(url).catch(err => {
-                    console.log('Failed to open URL from notification:', err);
-                });
+                console.log('📱 Opening URL in WebView immediately:', url);
+                openWebView(url);
             }
         } else {
             if (route && typeof route === 'string') {
                 console.log('📱 Queued notification route:', route);
                 pendingNotificationRoute.current = route;
+                if (notificationType === 'clear-history-reminder') {
+                    pendingClearHistoryReminderToast.current = true;
+                }
             } else if (url && typeof url === 'string') {
                 console.log('📱 Queued notification URL:', url);
                 pendingNotificationUrl.current = url;
@@ -332,12 +363,21 @@ export default function RootLayout() {
             } else if (pendingNotificationUrl.current) {
                 const url = pendingNotificationUrl.current;
                 pendingNotificationUrl.current = null;
-                console.log('📱 Executing queued notification URL:', url);
+                console.log('📱 Executing queued notification URL in WebView:', url);
                 setTimeout(() => {
-                    Linking.openURL(url).catch(err => {
-                        console.log('Failed to open URL from notification:', err);
-                    });
+                    router.push({ pathname: '/webview', params: { url, title: 'Link' } });
                 }, 800);
+            }
+
+            // Handle pending clear-history-reminder toast
+            if (pendingClearHistoryReminderToast.current) {
+                pendingClearHistoryReminderToast.current = null;
+                const { isAuthenticated, credentials } = useAuthStore.getState();
+                if (!isAuthenticated || !credentials) {
+                    setTimeout(() => {
+                        ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
+                    }, 1500);
+                }
             }
         }
     }, [authReady, router]);
@@ -504,7 +544,6 @@ export default function RootLayout() {
                     onDismiss={() => setToastConfig(null)}
                 />
 
-                <AdBlockAlertModal />
                 <UpdateAvailableModal onDownload={() => {
                     router.navigate('/settings');
                     router.push('/settings/update?autoDownload=true');

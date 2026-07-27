@@ -10,8 +10,11 @@ import {
 } from 'react-native-google-mobile-ads';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
+import { useThemeStore } from '@/stores/theme.store';
 import { useTranslation } from '@/i18n';
-import { AdBlockAlertHelper } from './AdBlockAlertModal';
+import en from '@/i18n/en.json';
+import id from '@/i18n/id.json';
+import { ToastHelper } from './Toast';
 import { useAuthStore } from '@/stores/auth.store';
 import {
     initAdMob,
@@ -23,13 +26,38 @@ import {
     NATIVE_AD_UNIT_ID,
 } from '@/services/ad.service';
 
+const translations: Record<string, any> = { en, id };
+
+function getTranslation(key: string): string {
+    const language = useThemeStore.getState().language || 'en';
+    const keys = key.split('.');
+    let result: any = translations[language] || translations.en;
+    for (const k of keys) {
+        if (result && typeof result === 'object' && k in result) {
+            result = result[k];
+        } else {
+            result = translations.en;
+            for (const fallbackKey of keys) {
+                if (result && typeof result === 'object' && fallbackKey in result) {
+                    result = result[fallbackKey];
+                } else {
+                    return key;
+                }
+            }
+            break;
+        }
+    }
+    return typeof result === 'string' ? result : key;
+}
+
 function triggerAdblockAlert(error: any) {
     if (!error) return;
     // Only surface adblock prompt when user is authenticated — never on login page
     if (!useAuthStore.getState().isAuthenticated) return;
     const errMsg = error?.message || String(error);
     if (errMsg.includes('doubleclick') || errMsg.includes('ad server') || errMsg.includes('Failed to connect') || errMsg.includes('Timeout')) {
-        AdBlockAlertHelper.show();
+        // Show toast instead of modal for less intrusive notification
+        ToastHelper.warning(getTranslation('ads.toastAdBlockDetected') || 'Ad blocker detected. Please disable it for this app.');
     }
 }
 

@@ -186,7 +186,10 @@ export function useHomeActions({
           text: t('common.confirm'),
           style: 'destructive',
           onPress: async () => {
-            if (!modemService) return;
+            if (!modemService) {
+              ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
+              return;
+            }
             setIsClearingHistory(true);
             try {
               const success = await modemService.clearTrafficHistory();

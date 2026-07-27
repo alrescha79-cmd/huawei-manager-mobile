@@ -14,11 +14,13 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
-import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ToastHelper, ThemedSwitch, AdNative } from '@/components';
+import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ToastHelper, ThemedSwitch, AdNative, SelectionModal } from '@/components';
 import {
     getNotificationSettings,
     saveNotificationSettings,
     NotificationSettings,
+    scheduleClearHistoryReminder,
+    getNextClearHistoryReminderDate,
 } from '@/services/notification.service';
 import { showInterstitial } from '@/services/ad.service';
 
@@ -36,8 +38,13 @@ export default function NotificationSettingsScreen() {
         smsEnabled: true,
         badgesEnabled: true,
         preReleaseUpdateEnabled: false,
+        clearHistoryReminderEnabled: true,
+        clearHistoryReminderDay: 31,
+        clearHistoryReminderHour: 18,
     });
     const [isLoading, setIsLoading] = useState(true);
+    const [showDayModal, setShowDayModal] = useState(false);
+    const [showHourModal, setShowHourModal] = useState(false);
 
     useEffect(() => {
         loadSettings();
@@ -66,6 +73,27 @@ export default function NotificationSettingsScreen() {
         if (key === 'badgesEnabled') {
             setBadgesEnabled(value);
         }
+
+        // Reschedule reminder on enable/disable
+        if (key === 'clearHistoryReminderEnabled') {
+            await scheduleClearHistoryReminder(newSettings, {
+                title: t('notifications.clearHistoryReminderTitle'),
+                body: t('notifications.clearHistoryReminderBody'),
+            });
+        }
+    };
+
+    const updateDayHourSetting = async (
+        key: 'clearHistoryReminderDay' | 'clearHistoryReminderHour',
+        value: number
+    ) => {
+        const newSettings = { ...settings, [key]: value };
+        setSettings(newSettings);
+        await saveNotificationSettings(newSettings);
+        await scheduleClearHistoryReminder(newSettings, {
+            title: t('notifications.clearHistoryReminderTitle'),
+            body: t('notifications.clearHistoryReminderBody'),
+        });
     };
 
     const usageLimitDisabled = !monthlySettings?.enabled;
@@ -204,29 +232,102 @@ export default function NotificationSettingsScreen() {
                     </View>
 
                     {/* App Updates */}
+                    {/* Clear History Reminder */}
                     <View style={[styles.section, { backgroundColor: colors.card, borderColor: colors.border }]}>
                         <Text style={[styles.sectionHeader, { color: colors.textSecondary }]}>
-                            {t('settings.appUpdates').toUpperCase()}
+                            {t('notifications.clearHistoryReminder').toUpperCase()}
                         </Text>
 
-                        <View style={styles.settingRow}>
+                        <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
                             <View style={styles.settingInfo}>
                                 <Text style={[styles.settingLabel, { color: colors.text }]}>
-                                    {t('notifications.preReleaseUpdate')}
+                                    {t('notifications.clearHistoryReminder')}
                                 </Text>
                                 <Text style={[styles.settingHint, { color: colors.textSecondary }]}>
-                                    {t('notifications.preReleaseUpdateHint')}
+                                    {t('notifications.clearHistoryReminderHint')}
                                 </Text>
                             </View>
                             <ThemedSwitch
-                                value={settings.preReleaseUpdateEnabled}
-                                onValueChange={(v) => updateSetting('preReleaseUpdateEnabled', v)}
+                                value={settings.clearHistoryReminderEnabled}
+                                onValueChange={(v) => updateSetting('clearHistoryReminderEnabled', v)}
                             />
                         </View>
+
+                        {settings.clearHistoryReminderEnabled && (
+                            <>
+                                {/* Day of Month */}
+                                <TouchableOpacity
+                                    style={[styles.settingRow, { borderBottomColor: colors.border }]}
+                                    onPress={() => setShowDayModal(true)}
+                                >
+                                    <View style={styles.settingInfo}>
+                                        <Text style={[styles.settingLabel, { color: colors.text }]}>
+                                            {t('notifications.clearHistoryReminderDay')}
+                                        </Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={[styles.settingLabel, { color: colors.primary }]}>
+                                            {settings.clearHistoryReminderDay}
+                                        </Text>
+                                        <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                                    </View>
+                                </TouchableOpacity>
+
+                                {/* Hour */}
+                                <TouchableOpacity
+                                    style={styles.settingRow}
+                                    onPress={() => setShowHourModal(true)}
+                                >
+                                    <View style={styles.settingInfo}>
+                                        <Text style={[styles.settingLabel, { color: colors.text }]}>
+                                            {t('notifications.clearHistoryReminderHour')}
+                                        </Text>
+                                    </View>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                        <Text style={[styles.settingLabel, { color: colors.primary }]}>
+                                            {String(settings.clearHistoryReminderHour).padStart(2, '0')}:00
+                                        </Text>
+                                        <MaterialIcons name="chevron-right" size={20} color={colors.textSecondary} />
+                                    </View>
+                                </TouchableOpacity>
+                            </>
+                        )}
                     </View>
 
                 </ScrollView>
             </AnimatedScreen>
+
+            {/* Day Selection Modal */}
+            <SelectionModal
+                visible={showDayModal}
+                title={t('notifications.clearHistoryReminderDay')}
+                options={Array.from({ length: 31 }, (_, i) => ({
+                    label: String(i + 1),
+                    value: i + 1,
+                }))}
+                selectedValue={settings.clearHistoryReminderDay}
+                onSelect={(value) => {
+                    updateDayHourSetting('clearHistoryReminderDay', value as number);
+                    setShowDayModal(false);
+                }}
+                onClose={() => setShowDayModal(false)}
+            />
+
+            {/* Hour Selection Modal */}
+            <SelectionModal
+                visible={showHourModal}
+                title={t('notifications.clearHistoryReminderHour')}
+                options={Array.from({ length: 24 }, (_, i) => ({
+                    label: `${String(i).padStart(2, '0')}:00`,
+                    value: i,
+                }))}
+                selectedValue={settings.clearHistoryReminderHour}
+                onSelect={(value) => {
+                    updateDayHourSetting('clearHistoryReminderHour', value as number);
+                    setShowHourModal(false);
+                }}
+                onClose={() => setShowHourModal(false)}
+            />
         </MeshGradientBackground>
     );
 }

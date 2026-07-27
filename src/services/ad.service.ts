@@ -11,7 +11,6 @@ import mobileAds, {
 import Constants from 'expo-constants';
 import { ThemedAlertHelper } from '@/components/ThemedAlert';
 import { ToastHelper } from '@/components/Toast';
-import { AdBlockAlertHelper } from '@/components/AdBlockAlertModal';
 import { useThemeStore } from '@/stores/theme.store';
 import { useAuthStore } from '@/stores/auth.store';
 import en from '@/i18n/en.json';
@@ -129,7 +128,8 @@ function handleAdError(error: any) {
     if (!useAuthStore.getState().isAuthenticated) return;
     const errMsg = error?.message || String(error);
     if (errMsg.includes('doubleclick') || errMsg.includes('ad server') || errMsg.includes('Failed to connect')) {
-        AdBlockAlertHelper.show();
+        // Show toast instead of modal for ad load failures
+        ToastHelper.warning(getTranslation('ads.toastAdBlockDetected') || 'Ad blocked detected. Please disable ad blocker for this app.');
     }
 }
 

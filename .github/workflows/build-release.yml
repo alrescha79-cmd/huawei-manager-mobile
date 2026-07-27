@@ -119,8 +119,14 @@ jobs:
       - name: Create google-services.json from secret
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
 
-      - name: Prebuild Android
-        run: npx expo prebuild --platform android --clean
+      - name: Prebuild Android (skip if android/ exists)
+        run: |
+          if [ -d android ]; then
+            echo "android/ directory exists — skipping expo prebuild to preserve manual native changes"
+          else
+            echo "android/ not found — running expo prebuild"
+            npx expo prebuild --platform android
+          fi
 
       - name: Ensure debug keystore exists
         run: |

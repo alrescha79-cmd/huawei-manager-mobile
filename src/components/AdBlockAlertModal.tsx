@@ -23,7 +23,7 @@ interface AdBlockAlertModalProps {
 }
 
 const ADBLOCK_ALERT_KEY = 'last_adblock_alert_time';
-const COOLDOWN_MS = 1 * 60 * 60 * 1000; // 1 hours
+const COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours (once per day)
 
 let adblockListener: ((visible: boolean) => void) | null = null;
 let hasShownAdblockAlert = false;

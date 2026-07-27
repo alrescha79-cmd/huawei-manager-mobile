@@ -86,6 +86,7 @@ export function BandSelectionModal({
     const [filterType, setFilterType] = useState<'ALL' | 'INDONESIA' | 'TDD' | 'FDD'>('ALL');
 
     const hasChanges = JSON.stringify([...selectedBandBits].sort()) !== JSON.stringify([...initialBandBits].sort());
+    const isSaveDisabled = selectedBandBits.length === 0;
 
     const handleClose = () => {
         if (hasChanges) {
@@ -368,6 +369,7 @@ export function BandSelectionModal({
                         title={hasChanges ? t('settings.applyConfiguration') : t('common.cancel')}
                         variant={hasChanges ? 'primary' : 'secondary'}
                         loading={isSaving}
+                        disabled={hasChanges && isSaveDisabled}
                         onPress={hasChanges ? handleSave : handleClose}
                     />
                 </BlurView>
