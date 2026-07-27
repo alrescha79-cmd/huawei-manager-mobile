@@ -1,5 +1,15 @@
 # EN
 
+## v1.1.70
+- **Clear History Reminder Notification** Monthly reminder to clear usage history with customizable day and time. Toggle in Settings > Notifications. Toast alert if user is not connected to modem when opening the reminder.
+- **FCM Notification WebView** Push notification links now open in an in-app WebView instead of the system browser for a seamless experience.
+- **Daily Usage 99% Warning** Toast alert when daily data usage reaches 99% or higher, helping users avoid overage.
+- **Login Screenshot Fix** Removed FLAG_SECURE on login screen so users can take screenshots for troubleshooting.
+- **Default Modem Profile** New profiles default to "Modem 1" with a hint to rename, improving first-time setup UX.
+- **AdBlock UX Improvements** AdBlock modal shows max once per day; ad load failures show a toast instead of a modal.
+- **Toast Text Overflow Fix** Fixed toast message text exceeding container width for cleaner display.
+- **Professional Copywriting Rewrite** Complete EN/ID translation overhaul with concise, user-friendly language across all screens.
+
 ## v1.1.65
 - **Global Toast Notifications** Replaced most native alerts with a custom global toast notification system for non-blocking success/error/info feedback.
 - **Signal Bubble Monitoring** Added a floating Signal Bubble for quick monitoring of signal quality and internet speed without leaving the current screen.
@@ -24,6 +34,16 @@
 - **Background Resource & Ad Optimization** Suspends background updates and widget polling to save battery when backgrounded, with capped App Open ad frequency and improved interstitial flow.
 
 # ID
+
+## v1.1.70
+- **Notifikasi Pengingat Hapus Riwayat** Pengingat bulanan untuk hapus riwayat penggunaan dengan tanggal dan waktu yang bisa diatur. Toggle di Settings > Notifications. Toast muncul jika pengguna tidak terhubung ke modem saat membuka pengingat.
+- **WebView Notifikasi FCM** Link notifikasi push kini dibuka di WebView dalam aplikasi, bukan browser sistem.
+- **Peringatan Penggunaan Harian 99%** Toast muncul saat penggunaan data harian mencapai 99%+, membantu hindari kelebihan kuota.
+- **Perbaikan Screenshot Login** Menghapus FLAG_SECURE di layar login agar pengguna bisa screenshot untuk troubleshooting.
+- **Profil Modem Default** Profil baru otomatis bernama "Modem 1" dengan petunjuk rename, memperbaiki UX setup pertama.
+- **Perbaikan UX AdBlock** Modal AdBlock maksimal sekali sehari; gagal muat iklan cukup tampilkan toast.
+- **Perbaikan Teks Toast Overflow** Teks toast tidak lagi melebihi lebar container.
+- **Rewrite Copywriting Profesional** Seluruh teks EN/ID ditulis ulang ringkas, ramah, dan konsisten di semua layar.
 
 ## v1.1.65
 - **Notifikasi Toast Global** Mengganti sebagian besar alert bawaan dengan sistem notifikasi toast global kustom untuk feedback sukses/error/info yang tidak memblokir.

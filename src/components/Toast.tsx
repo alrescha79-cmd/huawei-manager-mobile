@@ -29,24 +29,44 @@ interface ToastConfig {
 
 let toastListener: ((config: ToastConfig) => void) | null = null;
 
+// Deduplication: suppress identical messages within this window
+let lastToastMessage = '';
+let lastToastTime = 0;
+const DEDUP_WINDOW_MS = 2 * 60 * 1000; // 2 minutes — prevents repeated ad/toast spam
+
+function isDuplicateToast(message: string): boolean {
+    const now = Date.now();
+    if (message === lastToastMessage && now - lastToastTime < DEDUP_WINDOW_MS) {
+        return true;
+    }
+    lastToastMessage = message;
+    lastToastTime = now;
+    return false;
+}
+
 export const setToastListener = (listener: (config: ToastConfig) => void) => {
     toastListener = listener;
 };
 
 export const ToastHelper = {
     show: (type: ToastType, message: string, duration = 3000) => {
+        if (isDuplicateToast(message)) return;
         toastListener?.({ visible: true, type, message, duration });
     },
     success: (message: string, duration?: number) => {
+        if (isDuplicateToast(message)) return;
         toastListener?.({ visible: true, type: 'success', message, duration: duration ?? 3500 });
     },
     error: (message: string, duration?: number) => {
+        if (isDuplicateToast(message)) return;
         toastListener?.({ visible: true, type: 'error', message, duration: duration ?? 4000 });
     },
     info: (message: string, duration?: number) => {
+        if (isDuplicateToast(message)) return;
         toastListener?.({ visible: true, type: 'info', message, duration: duration ?? 3500 });
     },
     warning: (message: string, duration?: number) => {
+        if (isDuplicateToast(message)) return;
         toastListener?.({ visible: true, type: 'warning', message, duration: duration ?? 3500 });
     },
 };
@@ -201,6 +221,9 @@ const styles = StyleSheet.create({
         lineHeight: 19,
         fontWeight: '500',
         textAlign: 'center',
+        flex: 1,
+        flexShrink: 1,
+        maxWidth: '100%',
     },
 });
 

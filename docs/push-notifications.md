@@ -131,6 +131,7 @@ When sending from **Firebase Console**:
 For external URLs:
 - Key: `url`
 - Value: `https://example.com`
+- Opens in an in-app WebView (not the system browser)
 
 ### How It Works
 
@@ -138,11 +139,13 @@ The app listens for notification taps in `_layout.tsx`:
 ```typescript
 Notifications.addNotificationResponseReceivedListener(response => {
   const data = response.notification.request.content.data;
+  const title = response.notification.request.content.title;
   
   if (data?.route) {
     router.push(data.route); // Navigate to internal screen
   } else if (data?.url) {
-    Linking.openURL(data.url); // Open external URL
+    // Open URL in in-app WebView
+    router.push({ pathname: '/webview', params: { url: data.url, title: title || 'Link' } });
   }
 });
 ```

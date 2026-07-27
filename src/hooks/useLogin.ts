@@ -43,6 +43,13 @@ export function useLogin({ t }: UseLoginProps) {
         initCredentials();
     }, []);
 
+    // Set default profile name when opening add profile modal
+    useEffect(() => {
+        if (showAddProfile && !newProfileName) {
+            setNewProfileName(t('login.defaultProfileName'));
+        }
+    }, [showAddProfile, t]);
+
     useEffect(() => {
         if (isAutoLoginReady && credentials) {
             const active = profiles.find((p) => p.isActive);

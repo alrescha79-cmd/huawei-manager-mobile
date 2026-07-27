@@ -238,6 +238,9 @@ export default function LoginScreen() {
           <Text style={[{ color: '#888', fontSize: 12 }]}>
             IP: {modemIp} · User: {username}
           </Text>
+          <Text style={[{ color: colors.primary, fontSize: 12, fontStyle: 'italic' }]}>
+            {t('login.profileRenameHint')}
+          </Text>
           <Button
             title={isSavingProfile ? t('common.saving') : t('common.save')}
             onPress={handleSaveProfile}
