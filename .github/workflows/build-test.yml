@@ -35,6 +35,8 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.get_info.outputs.version }}
     
     steps:
       - name: Checkout repository
@@ -203,17 +205,26 @@ jobs:
           tag_name: test-${{ github.run_number }}
           name: "🧪 Test Build #${{ github.run_number }} (${{ github.event.inputs.branch }})"
           body: |
-            ## 🧪 Test Build
-            
+            ## 🧪 Test Build (Beta)
+
             | Info | Value |
             |------|-------|
             | **Branch** | `${{ github.event.inputs.branch }}` |
             | **Architecture** | `${{ github.event.inputs.architecture }}` |
             | **Version** | `${{ steps.get_info.outputs.version }}` |
             | **Commit** | `${{ steps.get_info.outputs.short_sha }}` |
-            
-            > ⚠️ This is a test build, not for production use.
-            > Silakan unduh jika ingin mencoba versi terbaru sebelum rilis resmi.
+
+            > [!CAUTION]
+            > Ini adalah **versi testing/beta**, bukan rilis resmi.
+            > Mungkin mengandung bug, crash, atau fitur yang belum stabil.
+            > Gunakan hanya untuk pengujian — **tidak disarankan untuk penggunaan sehari-hari.**
+
+            ### 📥 Cara Install
+            1. Download APK sesuai arsitektur perangkat Anda
+            2. Buka **Pengaturan → Keamanan → Aktifkan "Instal dari sumber tidak dikenal"**
+            3. Buka file APK yang sudah diunduh
+
+            > 💡 Tidak tahu arsitektur HP? Coba **arm64-v8a** dulu (kebanyakan HP modern).
           prerelease: true
           files: ${{ steps.rename_apk.outputs.apk_filename }}
         env:
@@ -242,3 +253,78 @@ jobs:
             echo "> You MUST **extract/unzip** the downloaded file to get the `.apk`." >> $GITHUB_STEP_SUMMARY
             echo "> Do not just rename the `.zip` to `.apk`, or it will say *\"package appears to be invalid\"*." >> $GITHUB_STEP_SUMMARY
           fi
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: ${{ github.event.inputs.upload_to_release == 'true' }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin@latest
+
+      - name: Send test build notification via FCM
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          BUILD_BRANCH: ${{ github.event.inputs.branch }}
+          BUILD_ARCH: ${{ github.event.inputs.architecture }}
+          BUILD_VERSION: ${{ needs.build.outputs.version }}
+          RELEASE_REPO: ${{ github.repository }}
+          RELEASE_TAG: test-${{ github.run_number }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT not set - skipping notification"
+            exit 0
+          fi
+
+          export RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
+
+          cat > send-fcm.js << 'NODESCRIPT'
+          const { initializeApp, cert } = require('firebase-admin/app');
+          const { getMessaging } = require('firebase-admin/messaging');
+
+          let sa;
+          try {
+            sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT.trim());
+          } catch (e) {
+            console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
+            process.exit(1);
+          }
+          initializeApp({ credential: cert(sa) });
+
+          const branch = process.env.BUILD_BRANCH;
+          const arch = process.env.BUILD_ARCH;
+          const ver = process.env.BUILD_VERSION;
+          const url = process.env.RELEASE_URL;
+
+          const message = {
+            topic: 'all_users',
+            notification: {
+              title: 'Test Build v' + ver + ' Tersedia',
+              body: 'Versi beta dari branch ' + branch + ' (' + arch + ') sudah bisa diunduh untuk pengujian.',
+            },
+            android: {
+              priority: 'high',
+              notification: { channelId: 'app-updates', sound: 'default' },
+            },
+            data: {
+              route: '/(tabs)/home',
+              url: url,
+              version: ver,
+              type: 'test-build',
+            },
+          };
+
+          getMessaging().send(message)
+            .then(id => { console.log('FCM message sent, id:', id); process.exit(0); })
+            .catch(err => { console.error('FCM send failed:', err.message); process.exit(1); });
+          NODESCRIPT
+
+          node send-fcm.js
