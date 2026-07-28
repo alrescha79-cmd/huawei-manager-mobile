@@ -5,6 +5,7 @@ node_modules/
 
 # others
 notes.txt
+graphify-out/
 
 # Expo
 .expo/

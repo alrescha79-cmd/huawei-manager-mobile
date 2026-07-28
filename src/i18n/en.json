@@ -442,7 +442,8 @@
     "clearHistoryReminderDay": "Day of Month",
     "clearHistoryReminderHour": "Time",
     "clearHistoryReminderNeedLogin": "Connect to your modem to clear history.",
-    "clearHistoryReminderNext": "Next: {{date}}"
+    "clearHistoryReminderNext": "Next: {{date}}",
+    "quotaAlmostExhausted": "Sisa kuota anda tinggal {{remaining}}"
   },
   "parentalControl": {
     "activeDays": "Active Days",

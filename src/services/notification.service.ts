@@ -101,7 +101,7 @@ async function registerForPushNotifications(): Promise<string | null> {
 
         // Log for easy copying during development
         console.log('===========================================');
-        console.log('📱 EXPO PUSH TOKEN:');
+        console.log('EXPO PUSH TOKEN:');
         console.log(pushToken);
         console.log('===========================================');
 
@@ -125,7 +125,7 @@ async function registerForPushNotifications(): Promise<string | null> {
                     }
                 );
                 if (response.ok) {
-                    console.log('📱 Subscribed to all_users topic for broadcast notifications');
+                    console.log('Subscribed to all_users topic for broadcast notifications');
                 } else {
                     console.warn('Topic subscription response:', response.status);
                 }
