@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, ChangelogModal, ChangelogHelper, SignalBubble, ToastContainer, setToastListener, ToastHelper } from '@/components';
+import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, ChangelogModal, ChangelogHelper, SignalBubble, ToastContainer, setToastListener, showNextFromQueue, ToastHelper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -20,12 +20,14 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initAdMob, showAppOpenAd } from '@/services/ad.service';
+import { useModemStore } from '@/stores/modem.store';
+import { formatBytes } from '@/utils/formatters';
 
 
 // const getFcmToken = async () => {
 //   try {
 //     const deviceToken = await Notifications.getDevicePushTokenAsync();
-//     console.log("🔥 FCM REGISTRATION TOKEN ANDROID:");
+
 //     console.log(deviceToken.data);
 //   } catch (error) {
 //     console.error("Gagal mengambil token:", error);
@@ -299,7 +301,7 @@ export default function RootLayout() {
         const notificationTitle = response.notification.request.content.title;
         const data = rawData as { route?: string; url?: string; type?: string; body?: { route?: string; url?: string } } | undefined;
 
-        console.log('📱 Notification data received:', JSON.stringify(data, null, 2));
+
 
         let route = data?.route;
         let url = data?.url;
@@ -316,36 +318,55 @@ export default function RootLayout() {
             router.push({ pathname: '/webview', params: { url: targetUrl, title: notificationTitle || 'Link' } });
         };
 
-        // Handle clear-history-reminder: show toast if not logged in
-        const handleClearHistoryReminderToast = () => {
+        // Handle clear-history-reminder: show toast if not logged in, or remind once if history not cleared
+        const CLEAR_HISTORY_TOAST_SHOWN_KEY = 'clearHistoryReminderToastShown';
+        const handleClearHistoryReminderToast = async () => {
             const { isAuthenticated, credentials } = useAuthStore.getState();
             if (!isAuthenticated || !credentials) {
                 setTimeout(() => {
                     ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
                 }, 1000);
+                return;
             }
+            // Already cleared this month → no toast
+            const now = new Date();
+            const lastCleared = await AsyncStorage.getItem('lastClearedTrafficDate');
+            if (lastCleared) {
+                const cleared = new Date(lastCleared);
+                if (cleared.getMonth() === now.getMonth() && cleared.getFullYear() === now.getFullYear()) {
+                    return;
+                }
+            }
+            // Already shown for this reminder cycle → no spam
+            const alreadyShown = await AsyncStorage.getItem(CLEAR_HISTORY_TOAST_SHOWN_KEY);
+            const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+            if (alreadyShown === monthKey) return;
+            await AsyncStorage.setItem(CLEAR_HISTORY_TOAST_SHOWN_KEY, monthKey);
+            setTimeout(() => {
+                ToastHelper.info(t('notifications.clearHistoryReminderBody'));
+            }, 1000);
         };
 
         if (authReady) {
             if (route && typeof route === 'string') {
-                console.log('📱 Navigating to route immediately:', route);
+
                 router.push(route as any);
                 if (notificationType === 'clear-history-reminder') {
                     handleClearHistoryReminderToast();
                 }
             } else if (url && typeof url === 'string') {
-                console.log('📱 Opening URL in WebView immediately:', url);
+
                 openWebView(url);
             }
         } else {
             if (route && typeof route === 'string') {
-                console.log('📱 Queued notification route:', route);
+
                 pendingNotificationRoute.current = route;
                 if (notificationType === 'clear-history-reminder') {
                     pendingClearHistoryReminderToast.current = true;
                 }
             } else if (url && typeof url === 'string') {
-                console.log('📱 Queued notification URL:', url);
+
                 pendingNotificationUrl.current = url;
             }
         }
@@ -356,14 +377,14 @@ export default function RootLayout() {
             if (pendingNotificationRoute.current) {
                 const route = pendingNotificationRoute.current;
                 pendingNotificationRoute.current = null;
-                console.log('📱 Executing queued notification route:', route);
+
                 setTimeout(() => {
                     router.push(route as any);
                 }, 800);
             } else if (pendingNotificationUrl.current) {
                 const url = pendingNotificationUrl.current;
                 pendingNotificationUrl.current = null;
-                console.log('📱 Executing queued notification URL in WebView:', url);
+
                 setTimeout(() => {
                     router.push({ pathname: '/webview', params: { url, title: 'Link' } });
                 }, 800);
@@ -377,6 +398,24 @@ export default function RootLayout() {
                     setTimeout(() => {
                         ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
                     }, 1500);
+                } else {
+                    // Same check as handleClearHistoryReminderToast: cleared this month? already shown?
+                    const CLEAR_HISTORY_TOAST_SHOWN_KEY = 'clearHistoryReminderToastShown';
+                    (async () => {
+                        const lastCleared = await AsyncStorage.getItem('lastClearedTrafficDate');
+                        const now = new Date();
+                        if (lastCleared) {
+                            const cleared = new Date(lastCleared);
+                            if (cleared.getMonth() === now.getMonth() && cleared.getFullYear() === now.getFullYear()) return;
+                        }
+                        const alreadyShown = await AsyncStorage.getItem(CLEAR_HISTORY_TOAST_SHOWN_KEY);
+                        const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
+                        if (alreadyShown === monthKey) return;
+                        await AsyncStorage.setItem(CLEAR_HISTORY_TOAST_SHOWN_KEY, monthKey);
+                        setTimeout(() => {
+                            ToastHelper.info(t('notifications.clearHistoryReminderBody'));
+                        }, 1500);
+                    })();
                 }
             }
         }
@@ -435,7 +474,35 @@ export default function RootLayout() {
         setToastListener((config) => {
             setToastConfig(config);
         });
+        // queue trigger — called from onDismiss below
     }, []);
+
+    // 95% usage warning — once per app open, fires when traffic data arrives
+    const usageWarningShownRef = useRef(false);
+    const trafficStats = useModemStore((s) => s.trafficStats);
+    const monthlySettings = useModemStore((s) => s.monthlySettings);
+    useEffect(() => {
+        if (!authReady || !isAuthenticated) return;
+        if (usageWarningShownRef.current) return;
+        if (!trafficStats || !monthlySettings?.enabled || !monthlySettings?.dataLimit) return;
+
+        const monthUsed = (trafficStats.monthDownload ?? 0) + (trafficStats.monthUpload ?? 0);
+        const limitBytes = monthlySettings.dataLimitUnit === 'GB'
+            ? monthlySettings.dataLimit * 1073741824
+            : monthlySettings.dataLimit * 1048576;
+        if (limitBytes <= 0) return;
+
+        const percent = (monthUsed / limitBytes) * 100;
+        if (percent > 95) {
+            usageWarningShownRef.current = true;
+            const remaining = Math.max(0, limitBytes - monthUsed);
+            setTimeout(() => {
+                ToastHelper.warning(
+                    t('notifications.quotaAlmostExhausted', { remaining: formatBytes(remaining) })
+                );
+            }, 2000);
+        }
+    }, [authReady, isAuthenticated, trafficStats, monthlySettings]);
 
     useEffect(() => {
         if (Platform.OS !== 'android') return;
@@ -541,7 +608,10 @@ export default function RootLayout() {
 
                 <ToastContainer
                     config={toastConfig}
-                    onDismiss={() => setToastConfig(null)}
+                    onDismiss={() => {
+                        setToastConfig(null);
+                        showNextFromQueue();
+                    }}
                 />
 
                 <UpdateAvailableModal onDownload={() => {

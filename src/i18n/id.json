@@ -442,7 +442,8 @@
     "clearHistoryReminderDay": "Tanggal",
     "clearHistoryReminderHour": "Waktu",
     "clearHistoryReminderNeedLogin": "Hubungkan ke modem untuk hapus riwayat.",
-    "clearHistoryReminderNext": "Berikutnya: {{date}}"
+    "clearHistoryReminderNext": "Berikutnya: {{date}}",
+    "quotaAlmostExhausted": "Sisa kuota anda tinggal {{remaining}}"
   },
   "parentalControl": {
     "activeDays": "Hari Aktif",

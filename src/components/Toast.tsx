@@ -25,9 +25,11 @@ interface ToastConfig {
     type: ToastType;
     message: string;
     duration?: number;
+    _id?: number;
 }
 
 let toastListener: ((config: ToastConfig) => void) | null = null;
+let toastIdCounter = 0;
 
 // Deduplication: suppress identical messages within this window
 let lastToastMessage = '';
@@ -44,30 +46,55 @@ function isDuplicateToast(message: string): boolean {
     return false;
 }
 
-export const setToastListener = (listener: (config: ToastConfig) => void) => {
+// --- Toast queue (prevents overlapping toasts) ---
+let toastQueue: ToastConfig[] = [];
+let activeToastId: number | null = null;
+
+function processQueue() {
+    if (activeToastId !== null) return;
+    const next = toastQueue.shift();
+    if (next) {
+        activeToastId = next._id ?? null;
+        toastListener?.(next);
+    } else {
+        toastListener?.(null as any);
+    }
+}
+
+export const showNextFromQueue = () => {
+    activeToastId = null;
+    processQueue();
+};
+
+export const setToastListener = (listener: (config: ToastConfig | null) => void) => {
     toastListener = listener;
 };
 
 export const ToastHelper = {
     show: (type: ToastType, message: string, duration = 3000) => {
         if (isDuplicateToast(message)) return;
-        toastListener?.({ visible: true, type, message, duration });
+        toastQueue.push({ visible: true, type, message, duration, _id: ++toastIdCounter });
+        processQueue();
     },
     success: (message: string, duration?: number) => {
         if (isDuplicateToast(message)) return;
-        toastListener?.({ visible: true, type: 'success', message, duration: duration ?? 3500 });
+        toastQueue.push({ visible: true, type: 'success', message, duration: duration ?? 3500, _id: ++toastIdCounter });
+        processQueue();
     },
     error: (message: string, duration?: number) => {
         if (isDuplicateToast(message)) return;
-        toastListener?.({ visible: true, type: 'error', message, duration: duration ?? 4000 });
+        toastQueue.push({ visible: true, type: 'error', message, duration: duration ?? 4000, _id: ++toastIdCounter });
+        processQueue();
     },
     info: (message: string, duration?: number) => {
         if (isDuplicateToast(message)) return;
-        toastListener?.({ visible: true, type: 'info', message, duration: duration ?? 3500 });
+        toastQueue.push({ visible: true, type: 'info', message, duration: duration ?? 3500, _id: ++toastIdCounter });
+        processQueue();
     },
     warning: (message: string, duration?: number) => {
         if (isDuplicateToast(message)) return;
-        toastListener?.({ visible: true, type: 'warning', message, duration: duration ?? 3500 });
+        toastQueue.push({ visible: true, type: 'warning', message, duration: duration ?? 3500, _id: ++toastIdCounter });
+        processQueue();
     },
 };
 
@@ -183,7 +210,7 @@ interface ToastContainerProps {
 
 export const ToastContainer: React.FC<ToastContainerProps> = ({ config, onDismiss }) => {
     if (!config || !config.visible) return null;
-    return <ToastItem key={Date.now()} config={config} onDismiss={onDismiss} />;
+    return <ToastItem key={config._id ?? 0} config={config} onDismiss={onDismiss} />;
 };
 
 const styles = StyleSheet.create({

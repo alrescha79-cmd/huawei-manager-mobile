@@ -160,7 +160,7 @@ export function initAdMob(): Promise<void> {
             preloadRewarded();
             preloadAppOpenAd();
         } catch (error) {
-            console.error('❌ AdMob initialization failed:', error);
+            console.error('AdMob initialization failed:', error);
         }
     })();
 
