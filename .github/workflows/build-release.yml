@@ -338,6 +338,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: [resolve-version, release]
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
@@ -360,11 +363,17 @@ jobs:
 
           export RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
 
-          cat > /tmp/send-fcm.js << 'NODESCRIPT'
+          cat > send-fcm.js << 'NODESCRIPT'
           const { initializeApp, cert } = require('firebase-admin/app');
           const { getMessaging } = require('firebase-admin/messaging');
 
-          const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+          let sa;
+          try {
+            sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT.trim());
+          } catch (e) {
+            console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
+            process.exit(1);
+          }
           initializeApp({ credential: cert(sa) });
 
           const ver = process.env.RELEASE_VERSION;
@@ -373,7 +382,7 @@ jobs:
           const message = {
             topic: 'all_users',
             notification: {
-              title: '✨ Update v' + ver + ' Sudah Tersedia!',
+              title: 'Update v' + ver + ' Sudah Tersedia!',
               body: 'Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.',
             },
             android: {
@@ -384,12 +393,13 @@ jobs:
               route: '/(tabs)/home',
               url: url,
               version: ver,
+              type: 'update-available',
             },
           };
 
           getMessaging().send(message)
-            .then(id => { console.log('✅ FCM message sent, id:', id); process.exit(0); })
-            .catch(err => { console.error('❌ FCM send failed:', err.message); process.exit(1); });
+            .then(id => { console.log('FCM message sent, id:', id); process.exit(0); })
+            .catch(err => { console.error('FCM send failed:', err.message); process.exit(1); });
           NODESCRIPT
 
-          node /tmp/send-fcm.js
+          node send-fcm.js
