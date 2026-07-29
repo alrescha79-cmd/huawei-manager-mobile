@@ -15,7 +15,6 @@ import Animated, {
     runOnJS,
 } from 'react-native-reanimated';
 import { useTheme } from '@/theme';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ToastType = 'success' | 'error' | 'info' | 'warning';
@@ -98,13 +97,6 @@ export const ToastHelper = {
     },
 };
 
-const ICON_MAP: Record<ToastType, keyof typeof MaterialIcons.glyphMap> = {
-    success: 'check-circle',
-    error: 'error',
-    info: 'info',
-    warning: 'warning',
-};
-
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 interface ToastProps {
@@ -173,27 +165,15 @@ const ToastItem: React.FC<ToastProps> = ({ config, onDismiss }) => {
             ]}
             pointerEvents="none"
         >
-            <View style={[
-                styles.toastContainer,
-                {
+            <View style={[styles.toastContainer, {
                     backgroundColor: isDark ? 'rgba(28, 28, 30, 0.95)' : 'rgba(255, 255, 255, 0.97)',
+                    borderLeftColor: tintColor,
+                    borderLeftWidth: 3,
                     borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)',
                     shadowColor: tintColor,
-                },
-            ]}>
-                <View style={[styles.iconContainer, { backgroundColor: tintColor + '18' }]}>
-                    <MaterialIcons
-                        name={ICON_MAP[config.type]}
-                        size={20}
-                        color={tintColor}
-                    />
-                </View>
+                }]}>
                 <Text
-                    style={[
-                        typography.body,
-                        styles.message,
-                        { color: colors.text },
-                    ]}
+                    style={[typography.body, styles.message, { color: tintColor }]}
                     numberOfLines={3}
                 >
                     {config.message}
@@ -223,25 +203,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     toastContainer: {
-        flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 12,
-        paddingVertical: 10,
-        borderRadius: 28,
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
         borderWidth: 1,
-        maxWidth: SCREEN_WIDTH - 80,
+        maxWidth: SCREEN_WIDTH - 48,
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.15,
         shadowRadius: 12,
         elevation: 8,
-    },
-    iconContainer: {
-        width: 28,
-        height: 28,
-        borderRadius: 8,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 8,
     },
     message: {
         fontSize: 14,
