@@ -33,47 +33,96 @@ on:
           - ip-change
 
 jobs:
-  send-notification:
+  send-topic:
+    if: ${{ github.event.inputs.mode == 'topic' }}
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Send push notification
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install firebase-admin
+        run: npm install firebase-admin@latest
+
+      - name: Send topic broadcast via Firebase Admin
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TITLE: ${{ github.event.inputs.title }}
+          BODY: ${{ github.event.inputs.body }}
+          CHANNEL: ${{ github.event.inputs.channel_id }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set"
+            exit 1
+          fi
+
+          cat > send-topic.js << 'NODESCRIPT'
+          const { initializeApp, cert } = require('firebase-admin/app');
+          const { getMessaging } = require('firebase-admin/messaging');
+
+          let sa;
+          try {
+            sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT.trim());
+          } catch (e) {
+            console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
+            process.exit(1);
+          }
+          initializeApp({ credential: cert(sa) });
+
+          const title = process.env.TITLE;
+          const body = process.env.BODY;
+          const channel = process.env.CHANNEL;
+
+          const message = {
+            topic: 'all_users',
+            notification: { title, body },
+            android: {
+              priority: 'high',
+              notification: { channelId: channel, sound: 'default' },
+            },
+            data: {
+              route: '/(tabs)/home',
+              type: 'test-notification',
+            },
+          };
+
+          getMessaging().send(message)
+            .then(id => { console.log('FCM message sent, id:', id); })
+            .catch(err => { console.error('FCM send failed:', err.message); process.exit(1); });
+          NODESCRIPT
+
+          node send-topic.js
+
+  send-single:
+    if: ${{ github.event.inputs.mode == 'single-device' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Send push to single device via Expo API
         env:
           EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
         run: |
           if [ -z "$EXPO_TOKEN" ]; then
-            echo "::error::EXPO_TOKEN secret is not set in GitHub repository secrets"
+            echo "::error::EXPO_TOKEN secret is not set"
             exit 1
           fi
 
-          # Read projectId from app.config.ts
-          PROJECT_ID=$(grep -oP "projectId:\s*\'\K[^']+" app.config.ts)
-          if [ -z "$PROJECT_ID" ]; then
-            echo "::error::Could not read projectId from app.config.ts"
+          TARGET="${{ github.event.inputs.expo_push_token }}"
+          if [ -z "$TARGET" ]; then
+            echo "::error::expo_push_token is required for single-device mode"
             exit 1
           fi
-          echo "Expo Project ID: $PROJECT_ID"
 
-          MODE="${{ github.event.inputs.mode }}"
           TITLE="${{ github.event.inputs.title }}"
           BODY="${{ github.event.inputs.body }}"
           CHANNEL="${{ github.event.inputs.channel_id }}"
 
-          if [ "$MODE" = "topic" ]; then
-            echo "Sending topic broadcast to @${PROJECT_ID}/all_users..."
-            TARGET="@${PROJECT_ID}/all_users"
-          else
-            TOKEN="${{ github.event.inputs.expo_push_token }}"
-            if [ -z "$TOKEN" ]; then
-              echo "::error::expo_push_token is required for single-device mode"
-              exit 1
-            fi
-            echo "Sending to single device: ${TOKEN:0:30}..."
-            TARGET="$TOKEN"
-          fi
+          echo "Sending to: ${TARGET:0:30}..."
 
           RESPONSE=$(curl -s -w "\n%{http_code}" -X POST \
             "https://exp.host/--/api/v2/push/send" \
@@ -87,8 +136,7 @@ jobs:
               \"channelId\": \"$CHANNEL\",
               \"data\": {
                 \"route\": \"/(tabs)/home\",
-                \"type\": \"test-notification\",
-                \"source\": \"github-actions-test\"
+                \"type\": \"test-notification\"
               }
             }")
 
@@ -104,15 +152,14 @@ jobs:
             exit 1
           fi
 
-          if echo "$RESP_BODY" | jq -e '.data[0].status' 2>/dev/null | grep -q "error"; then
-            ERROR_MSG=$(echo "$RESP_BODY" | jq -r '.data[0].message')
+          STATUS=$(echo "$RESP_BODY" | jq -r '.data.status // "unknown"')
+          if [ "$STATUS" = "error" ]; then
+            ERROR_MSG=$(echo "$RESP_BODY" | jq -r '.data.message // "unknown error"')
             echo "::error::Push failed: $ERROR_MSG"
             exit 1
           fi
 
-          TICKET=$(echo "$RESP_BODY" | jq -r '.data[0].id // "unknown"')
+          TICKET=$(echo "$RESP_BODY" | jq -r '.data.id // "unknown"')
           echo ""
           echo "Notification sent!"
           echo "  Ticket ID: $TICKET"
-          echo "  Mode: $MODE"
-          echo "  Target: $TARGET"
