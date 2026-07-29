@@ -366,13 +366,18 @@ jobs:
 
           export RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
 
+          # Read projectId from app.config.ts for Expo topic format
+          export PROJECT_ID=$(grep -oP "projectId:\s*\'\K[^']+" app.config.ts)
+          echo "Expo Project ID: $PROJECT_ID"
+
           cat > send-push.js << 'NODESCRIPT'
           const url = process.env.RELEASE_URL;
           const ver = process.env.RELEASE_VERSION;
           const token = process.env.EXPO_TOKEN;
+          const projectId = process.env.PROJECT_ID;
 
           const message = {
-            to: '/topics/all_users',
+            to: '@' + projectId + '/all_users',
             title: 'Update v' + ver + ' Tersedia!',
             body: 'Silakan update Huawei Manager ke versi terbaru untuk fitur baru dan perbaikan bug.',
             data: {
