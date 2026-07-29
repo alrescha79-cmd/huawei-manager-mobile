@@ -202,6 +202,10 @@ jobs:
   release:
     runs-on: ubuntu-latest
     needs: [resolve-version, build]
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
 
     steps:
       - name: Checkout repository
@@ -280,6 +284,11 @@ jobs:
       - name: List APKs
         run: ls -la apks/
 
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: 'apks/*.apk'
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -338,68 +347,66 @@ jobs:
     runs-on: ubuntu-latest
     needs: [resolve-version, release]
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install firebase-admin
-        run: npm install firebase-admin@latest
-
-      - name: Send push notification via FCM topic
+      - name: Send push notification via Expo Push API
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           RELEASE_VERSION: ${{ needs.resolve-version.outputs.version }}
           RELEASE_TAG: ${{ needs.resolve-version.outputs.tag_name }}
           RELEASE_REPO: ${{ github.repository }}
         run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::error::FIREBASE_SERVICE_ACCOUNT secret is not set!"
-            exit 1
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::warning::EXPO_TOKEN secret is not set — skipping notification"
+            exit 0
           fi
 
           export RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
 
-          cat > send-fcm.js << 'NODESCRIPT'
-          const { initializeApp, cert } = require('firebase-admin/app');
-          const { getMessaging } = require('firebase-admin/messaging');
-
-          let sa;
-          try {
-            sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT.trim());
-          } catch (e) {
-            console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
-            process.exit(1);
-          }
-          initializeApp({ credential: cert(sa) });
-
-          const ver = process.env.RELEASE_VERSION;
+          cat > send-push.js << 'NODESCRIPT'
           const url = process.env.RELEASE_URL;
+          const ver = process.env.RELEASE_VERSION;
+          const token = process.env.EXPO_TOKEN;
 
           const message = {
-            topic: 'all_users',
-            notification: {
-              title: 'Update v' + ver + ' Sudah Tersedia!',
-              body: 'Silakan update Huawei Manager ke versi terbaru untuk mendapatkan fitur baru dan perbaikan bug.',
-            },
-            android: {
-              priority: 'high',
-              notification: { channelId: 'app-updates', sound: 'default' },
-            },
+            to: '/topics/all_users',
+            title: 'Update v' + ver + ' Tersedia!',
+            body: 'Silakan update Huawei Manager ke versi terbaru untuk fitur baru dan perbaikan bug.',
             data: {
               route: '/(tabs)/home',
               url: url,
               version: ver,
               type: 'update-available',
             },
+            channelId: 'app-updates',
+            sound: 'default',
+            priority: 'high',
           };
 
-          getMessaging().send(message)
-            .then(id => { console.log('FCM message sent, id:', id); process.exit(0); })
-            .catch(err => { console.error('FCM send failed:', err.message); process.exit(1); });
+          fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token,
+            },
+            body: JSON.stringify(message),
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log('Expo Push response:', JSON.stringify(data));
+            if (data.errors && data.errors.length > 0) {
+              console.error('Push errors:', JSON.stringify(data.errors));
+              process.exit(1);
+            }
+            console.log('Push notification sent successfully');
+          })
+          .catch(err => {
+            console.error('Push failed:', err.message);
+            process.exit(1);
+          });
           NODESCRIPT
 
-          node send-fcm.js
+          node send-push.js

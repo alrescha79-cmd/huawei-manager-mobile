@@ -259,72 +259,70 @@ jobs:
     needs: [build]
     if: ${{ github.event.inputs.upload_to_release == 'true' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install firebase-admin
-        run: npm install firebase-admin@latest
-
-      - name: Send test build notification via FCM
+      - name: Send test build notification via Expo Push API
         env:
-          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
           BUILD_BRANCH: ${{ github.event.inputs.branch }}
           BUILD_ARCH: ${{ github.event.inputs.architecture }}
           BUILD_VERSION: ${{ needs.build.outputs.version }}
           RELEASE_REPO: ${{ github.repository }}
           RELEASE_TAG: test-${{ github.run_number }}
         run: |
-          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
-            echo "::warning::FIREBASE_SERVICE_ACCOUNT not set - skipping notification"
+          if [ -z "$EXPO_TOKEN" ]; then
+            echo "::warning::EXPO_TOKEN secret is not set — skipping notification"
             exit 0
           fi
 
           export RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
 
-          cat > send-fcm.js << 'NODESCRIPT'
-          const { initializeApp, cert } = require('firebase-admin/app');
-          const { getMessaging } = require('firebase-admin/messaging');
-
-          let sa;
-          try {
-            sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT.trim());
-          } catch (e) {
-            console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
-            process.exit(1);
-          }
-          initializeApp({ credential: cert(sa) });
-
+          cat > send-push.js << 'NODESCRIPT'
+          const url = process.env.RELEASE_URL;
           const branch = process.env.BUILD_BRANCH;
           const arch = process.env.BUILD_ARCH;
           const ver = process.env.BUILD_VERSION;
-          const url = process.env.RELEASE_URL;
+          const token = process.env.EXPO_TOKEN;
 
           const message = {
-            topic: 'all_users',
-            notification: {
-              title: 'Test Build v' + ver + ' Tersedia',
-              body: 'Versi beta dari branch ' + branch + ' (' + arch + ') sudah bisa diunduh untuk pengujian.',
-            },
-            android: {
-              priority: 'high',
-              notification: { channelId: 'app-updates', sound: 'default' },
-            },
+            to: '/topics/all_users',
+            title: 'Test Build v' + ver + ' Tersedia',
+            body: 'Versi beta dari branch ' + branch + ' (' + arch + ') sudah bisa diunduh untuk pengujian.',
             data: {
               route: '/(tabs)/home',
               url: url,
               version: ver,
               type: 'test-build',
             },
+            channelId: 'app-updates',
+            sound: 'default',
+            priority: 'high',
           };
 
-          getMessaging().send(message)
-            .then(id => { console.log('FCM message sent, id:', id); process.exit(0); })
-            .catch(err => { console.error('FCM send failed:', err.message); process.exit(1); });
+          fetch('https://exp.host/--/api/v2/push/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token,
+            },
+            body: JSON.stringify(message),
+          })
+          .then(res => res.json())
+          .then(data => {
+            console.log('Expo Push response:', JSON.stringify(data));
+            if (data.errors && data.errors.length > 0) {
+              console.error('Push errors:', JSON.stringify(data.errors));
+              process.exit(1);
+            }
+            console.log('Push notification sent successfully');
+          })
+          .catch(err => {
+            console.error('Push failed:', err.message);
+            process.exit(1);
+          });
           NODESCRIPT
 
-          node send-fcm.js
+          node send-push.js
