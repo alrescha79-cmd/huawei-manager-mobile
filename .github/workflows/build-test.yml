@@ -259,18 +259,7 @@ jobs:
     needs: [build]
     if: ${{ github.event.inputs.upload_to_release == 'true' }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-
-      - name: Install firebase-admin
-        run: npm install firebase-admin@latest
-
-      - name: Send test build notification via FCM topic
+      - name: Send test build notification via FCM HTTP v1 API
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           BUILD_BRANCH: ${{ github.event.inputs.branch }}
@@ -286,45 +275,60 @@ jobs:
 
           export RELEASE_URL="https://github.com/${RELEASE_REPO}/releases/tag/${RELEASE_TAG}"
 
-          cat > send-fcm.js << 'NODESCRIPT'
-          const { initializeApp, cert } = require('firebase-admin/app');
-          const { getMessaging } = require('firebase-admin/messaging');
+          node << 'EOF'
+          const crypto = require('crypto');
+          const https = require('https');
 
-          let sa;
-          try {
-            sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT.trim());
-          } catch (e) {
-            console.error('Failed to parse FIREBASE_SERVICE_ACCOUNT:', e.message);
-            process.exit(1);
-          }
-          initializeApp({ credential: cert(sa) });
-
+          const sa = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT.trim());
+          const { client_email, private_key, project_id } = sa;
           const branch = process.env.BUILD_BRANCH;
           const arch = process.env.BUILD_ARCH;
           const ver = process.env.BUILD_VERSION;
           const url = process.env.RELEASE_URL;
 
-          const message = {
-            topic: 'all_users',
-            notification: {
-              title: 'Test Build v' + ver + ' Tersedia',
-              body: 'Versi beta dari branch ' + branch + ' (' + arch + ') sudah bisa diunduh untuk pengujian.',
-            },
-            android: {
-              priority: 'high',
-              notification: { channelId: 'app-updates', sound: 'default' },
-            },
-            data: {
-              route: '/(tabs)/home',
-              url: url,
-              version: ver,
-              type: 'test-build',
-            },
-          };
+          console.log('Project:', project_id);
 
-          getMessaging().send(message)
-            .then(id => { console.log('FCM message sent, id:', id); })
-            .catch(err => { console.error('FCM send failed:', err.message); process.exit(1); });
-          NODESCRIPT
+          const now = Math.floor(Date.now() / 1000);
+          const header = Buffer.from(JSON.stringify({ alg: 'RS256', typ: 'JWT' })).toString('base64url');
+          const payload = Buffer.from(JSON.stringify({
+            iss: client_email,
+            scope: 'https://www.googleapis.com/auth/firebase.messaging',
+            aud: 'https://oauth2.googleapis.com/token',
+            iat: now, exp: now + 3600,
+          })).toString('base64url');
+          const unsigned = header + '.' + payload;
+          const jwt = unsigned + '.' + crypto.createSign('RSA-SHA256').update(unsigned).sign(private_key).toString('base64url');
 
-          node send-fcm.js
+          function post(url, headers, body) {
+            return new Promise((resolve, reject) => {
+              const u = new URL(url);
+              const req = https.request({ hostname: u.hostname, path: u.pathname + u.search, method: 'POST',
+                headers: Object.assign({ 'Content-Length': Buffer.byteLength(body) }, headers) },
+                res => { let d = ''; res.on('data', c => d += c); res.on('end', () => resolve({ status: res.statusCode, body: d })); });
+              req.on('error', reject); req.write(body); req.end();
+            });
+          }
+
+          (async () => {
+            const tok = await post('https://oauth2.googleapis.com/token',
+              { 'Content-Type': 'application/x-www-form-urlencoded' },
+              'grant_type=' + encodeURIComponent('urn:ietf:params:oauth:grant-type:jwt-bearer') + '&assertion=' + jwt);
+            if (tok.status !== 200) { console.error('Token exchange failed:', tok.body); process.exit(1); }
+            const at = JSON.parse(tok.body).access_token;
+            console.log('Access token obtained');
+
+            const res = await post('https://fcm.googleapis.com/v1/projects/' + project_id + '/messages:send',
+              { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + at },
+              JSON.stringify({ message: {
+                topic: 'all_users',
+                notification: { title: 'Test Build v' + ver + ' Tersedia', body: 'Versi beta dari branch ' + branch + ' (' + arch + ') sudah bisa diunduh untuk pengujian.' },
+                android: { priority: 'high', notification: { channelId: 'app-updates', sound: 'default' } },
+                data: { route: '/(tabs)/home', url: url, version: ver, type: 'test-build' },
+              }}));
+
+            console.log('\nResponse (HTTP ' + res.status + '):');
+            try { console.log(JSON.stringify(JSON.parse(res.body), null, 2)); } catch(e) { console.log(res.body); }
+            if (res.status !== 200) { console.error('FCM HTTP v1 failed'); process.exit(1); }
+            console.log('FCM notification sent successfully via HTTP v1 API');
+          })().catch(e => { console.error(e); process.exit(1); });
+          EOF
