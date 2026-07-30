@@ -443,7 +443,7 @@
     "clearHistoryReminderHour": "Time",
     "clearHistoryReminderNeedLogin": "Connect to your modem to clear history.",
     "clearHistoryReminderNext": "Next: {{date}}",
-    "quotaAlmostExhausted": "Sisa kuota anda tinggal {{remaining}}"
+    "quotaAlmostExhausted": "You have {{remaining}} left"
   },
   "parentalControl": {
     "activeDays": "Active Days",

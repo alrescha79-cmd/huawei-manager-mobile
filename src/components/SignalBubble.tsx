@@ -11,7 +11,7 @@ import {
 } from '@/utils/helpers';
 
 const BUBBLE_POSITION_KEY = '@signal_bubble_position';
-const BUBBLE_SIZE = 80;
+const BUBBLE_SIZE = 64;
 const BUBBLE_PADDING = 10;
 
 interface Position {
@@ -21,12 +21,12 @@ interface Position {
 
 const getSignalColor = (level: number): string => {
   switch (level) {
-    case 5: return '#10B981'; // Excellent - Green
-    case 4: return '#34D399'; // Good - Light Green
-    case 3: return '#F59E0B'; // Fair - Yellow
-    case 2: return '#F97316'; // Poor - Orange
-    case 1: return '#EF4444'; // Very Poor - Red
-    default: return '#6B7280'; // No Signal - Gray
+    case 5: return '#10B981';
+    case 4: return '#34D399';
+    case 3: return '#F59E0B';
+    case 2: return '#F97316';
+    case 1: return '#EF4444';
+    default: return '#6B7280';
   }
 };
 
@@ -85,7 +85,7 @@ export const SignalBubble: React.FC = () => {
     
     if (state === State.BEGAN) {
       setIsDragging(true);
-      Animated.spring(bubbleScale, { toValue: 1.1, useNativeDriver: true }).start();
+      Animated.spring(bubbleScale, { toValue: 1.4, useNativeDriver: true }).start();
     }
     
     if (state === State.END || state === State.CANCELLED) {
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   speedText: {
-    fontSize: 10,
+    fontSize: 8,
     fontWeight: '600',
     marginTop: 1,
   },
