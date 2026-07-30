@@ -82,11 +82,11 @@ export function useHomeActions({
         {
           text: t('common.continue'),
           onPress: () => {
+            ToastHelper.info(t('alerts.ipChangeStartedMessage'));
+
             showRewarded(
               async () => {
                 setIsChangingIp(true);
-
-                ToastHelper.info(t('alerts.ipChangeStartedMessage'));
 
                 modemService.triggerPlmnScan().catch((error) => {
                 });

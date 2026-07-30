@@ -240,6 +240,11 @@ export const getRoamingStatusText = (code: string | undefined): string => {
 export const getLteBandInfo = (band: string | undefined): string => {
   if (!band) return '-';
 
+  const normalizedBand = band.toString().trim().toUpperCase();
+  if (normalizedBand === '85' || normalizedBand === 'B85') {
+    return 'LTE B85';
+  }
+
   const bandMap: Record<string, string> = {
     // ===== 2G GSM Bands =====
     'GSM850': 'GSM 850 MHz',
@@ -552,6 +557,9 @@ export const estimateLteBandwidth = (band: string | undefined): { dl: string; ul
   }
   if (normalizedBand === 'B5' || normalizedBand === '5') {
     return { dl: '10 MHz', ul: '10 MHz' };
+  }
+  if (normalizedBand === 'B85' || normalizedBand === '85') {
+    return { dl: '20 MHz', ul: '20 MHz' };
   }
   return undefined;
 };

@@ -9,7 +9,7 @@ import {
   MobileDataStatus,
   FirmwareUpdateInfo
 } from '@/types';
-import { parseXMLValue } from '@/utils/helpers';
+import { estimateLteBandwidth, parseXMLValue } from '@/utils/helpers';
 
 export class ModemService {
   private apiClient: ModemAPIClient;
@@ -58,6 +58,41 @@ export class ModemService {
     }
   }
 
+  private normalizeBandValue(value?: string): string | undefined {
+    if (!value) return undefined;
+
+    const normalized = value.toString().trim();
+    if (!normalized) return undefined;
+
+    const numericBand = normalized.replace(/^B/i, '');
+    if (/^\d+$/.test(numericBand)) {
+      return `B${numericBand}`;
+    }
+
+    return normalized;
+  }
+
+  private async getSignalFallbackInfo(): Promise<{ band: string; dlbandwidth: string; ulbandwidth: string }> {
+    try {
+      const response = await this.apiClient.get('/api/net/net-mode');
+      const lteBand = parseXMLValue(response, 'LTEBand') || parseXMLValue(response, 'LteBand') || parseXMLValue(response, 'lteBand') || '';
+      const band = this.normalizeBandValue(lteBand) || '';
+      const bandwidth = band ? estimateLteBandwidth(band) : undefined;
+
+      return {
+        band,
+        dlbandwidth: bandwidth?.dl || '',
+        ulbandwidth: bandwidth?.ul || '',
+      };
+    } catch {
+      return {
+        band: '',
+        dlbandwidth: '',
+        ulbandwidth: '',
+      };
+    }
+  }
+
   async getSignalInfo(): Promise<SignalInfo> {
     try {
       const response = await this.apiClient.get('/api/device/signal');
@@ -71,6 +106,10 @@ export class ModemService {
       }
 
       const lteBandwidth = parseXMLValue(response, 'lte_bandwidth');
+      const fallback = await this.getSignalFallbackInfo();
+      const band = parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo') || (response.match(/<earfcn>([\s\S]*?)<\/band>/)?.[1]?.trim() || fallback.band);
+      const dlbandwidth = parseXMLValue(response, 'dlbandwidth') || lteBandwidth || fallback.dlbandwidth;
+      const ulbandwidth = parseXMLValue(response, 'ulbandwidth') || lteBandwidth || fallback.ulbandwidth;
 
       return {
         rssi: parseXMLValue(response, 'rssi'),
@@ -82,13 +121,27 @@ export class ModemService {
         mode: parseXMLValue(response, 'mode'),
         pci: parseXMLValue(response, 'pci'),
         cellId: parseXMLValue(response, 'cell_id'),
-        band: parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo') || (response.match(/<earfcn>([\s\S]*?)<\/band>/)?.[1]?.trim() || ''),
-        dlbandwidth: parseXMLValue(response, 'dlbandwidth') || lteBandwidth,
-        ulbandwidth: parseXMLValue(response, 'ulbandwidth') || lteBandwidth,
+        band,
+        dlbandwidth,
+        ulbandwidth,
       };
     } catch (error) {
       console.error('Error getting signal info:', error);
-      throw error;
+      const fallback = await this.getSignalFallbackInfo();
+      return {
+        rssi: '',
+        rsrp: '',
+        rsrq: '',
+        sinr: '',
+        rscp: '',
+        ecio: '',
+        mode: '',
+        pci: '',
+        cellId: '',
+        band: fallback.band,
+        dlbandwidth: fallback.dlbandwidth,
+        ulbandwidth: fallback.ulbandwidth,
+      };
     }
   }
 
@@ -108,6 +161,10 @@ export class ModemService {
       }
 
       const lteBandwidth = parseXMLValue(response, 'lte_bandwidth');
+      const fallback = await this.getSignalFallbackInfo();
+      const band = parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo') || (response.match(/<earfcn>([\s\S]*?)<\/band>/)?.[1]?.trim() || fallback.band);
+      const dlbandwidth = parseXMLValue(response, 'dlbandwidth') || lteBandwidth || fallback.dlbandwidth;
+      const ulbandwidth = parseXMLValue(response, 'ulbandwidth') || lteBandwidth || fallback.ulbandwidth;
 
       return {
         rssi: parseXMLValue(response, 'rssi'),
@@ -119,12 +176,26 @@ export class ModemService {
         mode: parseXMLValue(response, 'mode'),
         pci: parseXMLValue(response, 'pci'),
         cellId: parseXMLValue(response, 'cell_id'),
-        band: parseXMLValue(response, 'band') || parseXMLValue(response, 'lte_bandinfo') || (response.match(/<earfcn>([\s\S]*?)<\/band>/)?.[1]?.trim() || ''),
-        dlbandwidth: parseXMLValue(response, 'dlbandwidth') || lteBandwidth,
-        ulbandwidth: parseXMLValue(response, 'ulbandwidth') || lteBandwidth,
+        band,
+        dlbandwidth,
+        ulbandwidth,
       };
     } catch (error) {
-      throw error;
+      const fallback = await this.getSignalFallbackInfo();
+      return {
+        rssi: '',
+        rsrp: '',
+        rsrq: '',
+        sinr: '',
+        rscp: '',
+        ecio: '',
+        mode: '',
+        pci: '',
+        cellId: '',
+        band: fallback.band,
+        dlbandwidth: fallback.dlbandwidth,
+        ulbandwidth: fallback.ulbandwidth,
+      };
     }
   }
 
@@ -389,28 +460,50 @@ export class ModemService {
     }
   }
 
+  private normalizeAntennaModeValue(value?: string): string | undefined {
+    if (!value) return undefined;
+
+    const normalized = value.toString().trim().toLowerCase();
+    const modeMap: Record<string, string> = {
+      '0': 'auto',
+      '1': 'external',
+      '2': 'internal',
+      'auto': 'auto',
+      'internal': 'internal',
+      'external': 'external',
+      'auto/disable': 'auto',
+      'internal/disable': 'internal',
+      'external/disable': 'external',
+      'enable': 'auto',
+    };
+
+    return modeMap[normalized];
+  }
+
   async getAntennaMode(): Promise<string> {
-    try {
-      const response = await this.apiClient.get('/api/device/antenna_set_type');
+    const candidates = [
+      { path: '/api/device/antenna_set_type', tags: ['antennasettype', 'AntennaSetType', 'antenna_set_type'] },
+      { path: '/api/device/antenna_type', tags: ['antennatype', 'AntennaType', 'antenna_type'] },
+      { path: '/api/device/antenna_settings', tags: ['antenna_type', 'AntennaType', 'antenna_type'] },
+      { path: '/api/device/antenna_status', tags: ['antenna_status', 'AntennaStatus'] },
+    ];
 
-      const antennaValue = parseXMLValue(response, 'antennasettype') ||
-        parseXMLValue(response, 'AntennaSetType') ||
-        parseXMLValue(response, 'antenna_set_type');
-
-      const modeMap: Record<string, string> = {
-        '0': 'auto',
-        '1': 'external',
-        '2': 'internal',
-        'auto': 'auto',
-        'internal': 'internal',
-        'external': 'external',
-      };
-
-      return modeMap[antennaValue] || 'auto';
-    } catch (error) {
-      console.error('Error getting antenna mode:', error);
-      return 'auto';
+    for (const candidate of candidates) {
+      try {
+        const response = await this.apiClient.get(candidate.path);
+        for (const tag of candidate.tags) {
+          const antennaValue = parseXMLValue(response, tag);
+          const normalizedMode = this.normalizeAntennaModeValue(antennaValue);
+          if (normalizedMode) {
+            return normalizedMode;
+          }
+        }
+      } catch (error) {
+        console.error(`Error getting antenna mode from ${candidate.path}:`, error);
+      }
     }
+
+    return 'auto';
   }
 
   async setAntennaMode(mode: 'auto' | 'internal' | 'external'): Promise<boolean> {
@@ -422,26 +515,30 @@ export class ModemService {
       };
 
       const modeValue = modeMap[mode];
+      const payloads = [
+        {
+          path: '/api/device/antenna_settings',
+          data: `<?xml version="1.0" encoding="UTF-8"?><request><antenna_type>${mode.toUpperCase()}</antenna_type></request>`,
+        },
+        {
+          path: '/api/device/antenna_set_type',
+          data: `<?xml version="1.0" encoding="UTF-8"?><request><antennasettype>${modeValue}</antennasettype></request>`,
+        },
+        {
+          path: '/api/device/antenna_type',
+          data: `<?xml version="1.0" encoding="UTF-8"?><request><antennatype>${modeValue}</antennatype></request>`,
+        },
+      ];
 
-      const data1 = `<?xml version="1.0" encoding="UTF-8"?><request><antennasettype>${modeValue}</antennasettype></request>`;
-
-      try {
-        const response = await this.apiClient.post('/api/device/antenna_set_type', data1);
-        if (!response.includes('<error>')) {
-          return true;
+      for (const payload of payloads) {
+        try {
+          const response = await this.apiClient.post(payload.path, payload.data);
+          if (!response.includes('<error>')) {
+            return true;
+          }
+        } catch {
+          // Try the next supported endpoint
         }
-      } catch {
-        // Fallback to antenna_type endpoint
-      }
-
-      const data2 = `<?xml version="1.0" encoding="UTF-8"?><request><antennatype>${modeValue}</antennatype></request>`;
-
-      try {
-        const response = await this.apiClient.post('/api/device/antenna_type', data2);
-        if (!response.includes('<error>')) {
-          return true;
-        }
-      } catch {
       }
 
       throw new Error('Antenna mode change not supported on this modem');

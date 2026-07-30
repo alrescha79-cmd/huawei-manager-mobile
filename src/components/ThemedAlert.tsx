@@ -40,12 +40,12 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
 
     const getButtonColor = (style?: string) => {
         switch (style) {
+            case 'cancel':
+                return colors.primary;
             case 'destructive':
                 return colors.error;
-            case 'cancel':
-                return colors.textSecondary;
             default:
-                return colors.primary;
+                return buttons.length > 1 ? colors.error : colors.primary;
         }
     };
 
