@@ -82,6 +82,7 @@ export async function saveNotificationSettings(settings: NotificationSettings): 
 /**
  * Register for push notifications and get Expo Push Token
  * Token is stored locally and logged to console for easy copying
+ * Also subscribes to FCM topic all_users for broadcast via FCM HTTP v1
  */
 async function registerForPushNotifications(): Promise<string | null> {
     try {
@@ -110,12 +111,16 @@ async function registerForPushNotifications(): Promise<string | null> {
             importance: Notifications.AndroidImportance.HIGH,
         });
 
-        // Subscribe to all_users topic for broadcast notifications (updates, announcements)
-        // Uses Expo Push API topic subscription (expo-notifications doesn't have client-side topic API)
+        // Subscribe to FCM topic all_users for broadcast via FCM HTTP v1
+        // ponytail: uses @react-native-firebase/messaging, requires prebuild. Upgrade path: if removing firebase, fallback to IID API or Expo topic.
         try {
-            const projectId = Constants.expoConfig?.extra?.eas?.projectId ||
-                Constants.easConfig?.projectId;
-            if (projectId && pushToken) {
+            const messaging = require('@react-native-firebase/messaging').default;
+            await messaging().subscribeToTopic('all_users');
+            console.log('Subscribed to FCM topic all_users via firebase messaging');
+        } catch (fcmError) {
+            console.warn('FCM topic subscribe failed, trying Expo topic fallback:', fcmError);
+            // Fallback: Expo topic subscription (legacy, doesn't support FCM broadcast but keep for compat)
+            try {
                 const response = await fetch(
                     `https://exp.host/--/api/v2/projects/${projectId}/topics/all_users/subscribe`,
                     {
@@ -125,14 +130,20 @@ async function registerForPushNotifications(): Promise<string | null> {
                     }
                 );
                 if (response.ok) {
-                    console.log('Subscribed to all_users topic for broadcast notifications');
+                    console.log('Subscribed to Expo topic all_users (fallback)');
                 } else {
-                    console.warn('Topic subscription response:', response.status);
+                    console.warn('Expo topic subscription response:', response.status);
                 }
+            } catch (topicError) {
+                console.warn('Failed to subscribe to Expo topic:', topicError);
             }
-        } catch (topicError) {
-            console.warn('Failed to subscribe to all_users topic:', topicError);
         }
+
+        // Also log FCM token for debugging
+        try {
+            const deviceToken = await Notifications.getDevicePushTokenAsync();
+            console.log('FCM Device Token:', deviceToken.data);
+        } catch {}
 
         return pushToken;
     } catch (error) {

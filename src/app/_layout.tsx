@@ -21,6 +21,8 @@ import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initAdMob, showAppOpenAd } from '@/services/ad.service';
 import { useModemStore } from '@/stores/modem.store';
+import { useDebugStore } from '@/stores/debug.store';
+import { installConsoleInterceptor, uninstallConsoleInterceptor } from '@/utils/debug-logger';
 import { formatBytes } from '@/utils/formatters';
 
 
@@ -293,7 +295,37 @@ export default function RootLayout() {
             handleNotificationResponse(response);
         });
 
-        return () => subscription.remove();
+        // FCM foreground message listener (for topic messages)
+        let fcmUnsubscribe: (() => void) | null = null;
+        try {
+            const messaging = require('@react-native-firebase/messaging').default;
+            fcmUnsubscribe = messaging().onMessage(async (remoteMessage: any) => {
+                console.log('FCM foreground message:', remoteMessage);
+                // FCM data messages with notification payload are auto-displayed by system
+                // For data-only messages, show local notification
+                if (remoteMessage?.data && !remoteMessage?.notification) {
+                    const { title, body, route, url } = remoteMessage.data;
+                    if (title && body) {
+                        await Notifications.scheduleNotificationAsync({
+                            content: {
+                                title: title as string,
+                                body: body as string,
+                                data: { route, url, ...remoteMessage.data },
+                                sound: true,
+                            },
+                            trigger: null,
+                        });
+                    }
+                }
+            });
+        } catch (e) {
+            console.log('FCM onMessage not available:', e);
+        }
+
+        return () => {
+            subscription.remove();
+            if (fcmUnsubscribe) fcmUnsubscribe();
+        };
     }, [router]);
 
     const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
@@ -537,6 +569,20 @@ export default function RootLayout() {
     const dismissAlert = () => {
         setAlertState({ ...alertState, visible: false });
     };
+
+    // Debug console capture wiring
+    const debugEnabled = useDebugStore((s) => s.debugEnabled);
+    const addConsoleLog = useDebugStore((s) => s.addConsoleLog);
+    useEffect(() => {
+        if (debugEnabled) {
+            installConsoleInterceptor(addConsoleLog);
+        } else {
+            uninstallConsoleInterceptor();
+        }
+        return () => {
+            uninstallConsoleInterceptor();
+        };
+    }, [debugEnabled, addConsoleLog]);
 
     useEffect(() => {
         if (!fontsLoaded || !authReady) return;
