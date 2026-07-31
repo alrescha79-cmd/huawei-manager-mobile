@@ -35,7 +35,7 @@ export default function SettingsIndex() {
     const [isSendingDebugLog, setIsSendingDebugLog] = React.useState(false);
 
     // Debug store
-    const { debugEnabled, setDebugEnabled, apiLogs, sendDebugEmail, clearLogs, shareDebugLog } = useDebugStore();
+    const { debugEnabled, setDebugEnabled, apiLogs, consoleLogs, sendDebugEmail, clearLogs, shareDebugLog } = useDebugStore();
 
     const handleOpenGitHub = () => {
         router.push({ pathname: '/webview', params: { url: 'https://github.com/alrescha79-cmd', title: t('settings.developer') || 'Developer' } });
@@ -253,16 +253,19 @@ export default function SettingsIndex() {
                                 <SettingsItem
                                     icon="list-alt"
                                     title={t('settings.debugLogCount')}
-                                    subtitle={`${apiLogs.length} ${t('settings.entries')}`}
+                                    subtitle={`${apiLogs.length + (consoleLogs?.length || 0)} ${t('settings.entries')} (${apiLogs.length} API, ${consoleLogs?.length || 0} console)`}
                                     showChevron={false}
                                     rightElement={
-                                        apiLogs.length > 0 ? (
+                                        (apiLogs.length + (consoleLogs?.length || 0)) > 0 ? (
                                             <View style={styles.iconButtonRow}>
                                                 <TouchableOpacity
                                                     style={[styles.iconButton, { backgroundColor: colors.primary + '20' }]}
                                                     onPress={async () => {
                                                         try {
                                                             await shareDebugLog();
+                                                            setTimeout(() => {
+                                                                ToastHelper.warning(t('settings.disableDebugReminder'));
+                                                            }, 600);
                                                         } catch (e) {
                                                         }
                                                     }}
@@ -300,14 +303,18 @@ export default function SettingsIndex() {
                                     title={t('settings.sendDebugLog')}
                                     subtitle={t('settings.sendDebugLogHint')}
                                     onPress={async () => {
-                                        if (apiLogs.length === 0) {
+                                        if (apiLogs.length === 0 && (consoleLogs?.length || 0) === 0) {
                                             ToastHelper.info(t('settings.noDebugLogsHint'));
                                             return;
                                         }
                                         setIsSendingDebugLog(true);
                                         try {
                                             const emailOpened = await sendDebugEmail();
-                                            if (!emailOpened) {
+                                            if (emailOpened) {
+                                                setTimeout(() => {
+                                                    ToastHelper.warning(t('settings.disableDebugReminder'));
+                                                }, 600);
+                                            } else {
                                                 ThemedAlertHelper.alert(
                                                     t('settings.emailClientError'),
                                                     t('settings.sendDebugLogHint'),
@@ -318,6 +325,9 @@ export default function SettingsIndex() {
                                                             onPress: async () => {
                                                                 try {
                                                                     await shareDebugLog();
+                                                                    setTimeout(() => {
+                                                                        ToastHelper.warning(t('settings.disableDebugReminder'));
+                                                                    }, 600);
                                                                 } catch (e) {
                                                                 }
                                                             }

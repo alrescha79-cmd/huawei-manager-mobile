@@ -16,6 +16,13 @@ export interface ApiLog {
     duration: number;
 }
 
+export interface ConsoleLog {
+    timestamp: number;
+    level: 'log' | 'warn' | 'error' | 'info' | 'debug';
+    message: string;
+    data?: string;
+}
+
 export interface ModemDebugInfo {
     modemIp?: string;
     modemModel?: string;
@@ -29,11 +36,13 @@ export interface ModemDebugInfo {
 interface DebugState {
     debugEnabled: boolean;
     apiLogs: ApiLog[];
+    consoleLogs: ConsoleLog[];
     modemInfo: ModemDebugInfo;
 
     setDebugEnabled: (enabled: boolean) => void;
     setModemInfo: (info: ModemDebugInfo) => void;
     addLog: (log: Omit<ApiLog, 'timestamp'>) => void;
+    addConsoleLog: (log: Omit<ConsoleLog, 'timestamp'>) => void;
     clearLogs: () => void;
     exportLogsAsText: () => string;
     createDebugFile: () => Promise<string>;
@@ -42,12 +51,14 @@ interface DebugState {
 }
 
 const MAX_LOGS = 500;
+const MAX_CONSOLE_LOGS = 500;
 
 export const useDebugStore = create<DebugState>()(
     persist(
         (set, get) => ({
             debugEnabled: false,
             apiLogs: [],
+            consoleLogs: [],
             modemInfo: {},
 
             setDebugEnabled: (enabled: boolean) => {
@@ -80,7 +91,7 @@ export const useDebugStore = create<DebugState>()(
                         // Silent fail if stores not available
                     }
                 } else {
-                    set({ apiLogs: [], modemInfo: {} });
+                    set({ apiLogs: [], consoleLogs: [], modemInfo: {} });
                 }
             },
 
@@ -101,12 +112,25 @@ export const useDebugStore = create<DebugState>()(
                 set({ apiLogs: updatedLogs });
             },
 
+            addConsoleLog: (log: Omit<ConsoleLog, 'timestamp'>) => {
+                const { debugEnabled, consoleLogs } = get();
+                if (!debugEnabled) return;
+
+                const newLog: ConsoleLog = {
+                    ...log,
+                    timestamp: Date.now(),
+                };
+
+                const updated = [...consoleLogs, newLog].slice(-MAX_CONSOLE_LOGS);
+                set({ consoleLogs: updated });
+            },
+
             clearLogs: () => {
-                set({ apiLogs: [] });
+                set({ apiLogs: [], consoleLogs: [] });
             },
 
             exportLogsAsText: () => {
-                const { apiLogs, modemInfo } = get();
+                const { apiLogs, consoleLogs, modemInfo } = get();
 
                 const deviceString = `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
                 const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
@@ -152,7 +176,22 @@ ${log.error ? `Error: ${log.error}` : ''}
 `;
                 }).join('\n');
 
-                return header + logsText;
+                const consoleHeader = `
+========================================
+CONSOLE LOGS (${consoleLogs.length} entries)
+========================================
+
+`;
+
+                const consoleText = consoleLogs.map((log, index) => {
+                    const date = new Date(log.timestamp).toISOString();
+                    const lvl = log.level.toUpperCase().padEnd(5);
+                    return `[${index + 1}] ${date} [${lvl}] ${log.message}${log.data ? `\n  Data: ${log.data}` : ''}
+----------------------------------------
+`;
+                }).join('\n');
+
+                return header + logsText + consoleHeader + consoleText;
             },
 
             createDebugFile: async () => {

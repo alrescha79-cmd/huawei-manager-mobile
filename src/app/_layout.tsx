@@ -21,6 +21,8 @@ import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
 import { initAdMob, showAppOpenAd } from '@/services/ad.service';
 import { useModemStore } from '@/stores/modem.store';
+import { useDebugStore } from '@/stores/debug.store';
+import { installConsoleInterceptor, uninstallConsoleInterceptor } from '@/utils/debug-logger';
 import { formatBytes } from '@/utils/formatters';
 
 
@@ -567,6 +569,20 @@ export default function RootLayout() {
     const dismissAlert = () => {
         setAlertState({ ...alertState, visible: false });
     };
+
+    // Debug console capture wiring
+    const debugEnabled = useDebugStore((s) => s.debugEnabled);
+    const addConsoleLog = useDebugStore((s) => s.addConsoleLog);
+    useEffect(() => {
+        if (debugEnabled) {
+            installConsoleInterceptor(addConsoleLog);
+        } else {
+            uninstallConsoleInterceptor();
+        }
+        return () => {
+            uninstallConsoleInterceptor();
+        };
+    }, [debugEnabled, addConsoleLog]);
 
     useEffect(() => {
         if (!fontsLoaded || !authReady) return;
