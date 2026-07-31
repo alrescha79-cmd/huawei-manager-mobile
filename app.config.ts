@@ -73,6 +73,8 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                     backgroundColor: '#ffffff',
                 },
             ],
+            '@react-native-firebase/app',
+            '@react-native-firebase/messaging',
         ],
         ios: {
             supportsTablet: true,

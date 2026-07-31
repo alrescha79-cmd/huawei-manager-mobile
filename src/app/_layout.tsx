@@ -293,7 +293,37 @@ export default function RootLayout() {
             handleNotificationResponse(response);
         });
 
-        return () => subscription.remove();
+        // FCM foreground message listener (for topic messages)
+        let fcmUnsubscribe: (() => void) | null = null;
+        try {
+            const messaging = require('@react-native-firebase/messaging').default;
+            fcmUnsubscribe = messaging().onMessage(async (remoteMessage: any) => {
+                console.log('FCM foreground message:', remoteMessage);
+                // FCM data messages with notification payload are auto-displayed by system
+                // For data-only messages, show local notification
+                if (remoteMessage?.data && !remoteMessage?.notification) {
+                    const { title, body, route, url } = remoteMessage.data;
+                    if (title && body) {
+                        await Notifications.scheduleNotificationAsync({
+                            content: {
+                                title: title as string,
+                                body: body as string,
+                                data: { route, url, ...remoteMessage.data },
+                                sound: true,
+                            },
+                            trigger: null,
+                        });
+                    }
+                }
+            });
+        } catch (e) {
+            console.log('FCM onMessage not available:', e);
+        }
+
+        return () => {
+            subscription.remove();
+            if (fcmUnsubscribe) fcmUnsubscribe();
+        };
     }, [router]);
 
     const handleNotificationResponse = (response: Notifications.NotificationResponse) => {

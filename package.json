@@ -19,6 +19,8 @@
   "dependencies": {
     "@expo-google-fonts/doto": "^0.4.1",
     "@react-native-async-storage/async-storage": "^2.2.0",
+    "@react-native-firebase/app": "^26.0.0",
+    "@react-native-firebase/messaging": "^26.0.0",
     "@types/crypto-js": "^4.2.2",
     "axios": "^1.13.2",
     "base-64": "^1.0.0",
