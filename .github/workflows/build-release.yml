@@ -103,18 +103,6 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v3
 
-      - name: Cache Gradle
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-            android/.gradle
-          key: ${{ runner.os }}-gradle-opt-${{ hashFiles('**/*.gradle*', '**/gradle-wrapper.properties', 'package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-gradle-opt-
-            ${{ runner.os }}-gradle-
-
       - name: Install dependencies
         run: npm ci
 
@@ -131,43 +119,14 @@ jobs:
       - name: Create google-services.json from secret
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
 
-      - name: Prebuild Android (clean for optimized build)
+      - name: Prebuild Android (skip if android/ exists)
         run: |
-          echo "Force clean prebuild to apply size optimizations from app.config.ts"
-          rm -rf android
-          npx expo prebuild --platform android --clean
-
-      - name: Patch gradle.properties for smallest APK
-        run: |
-          GRADLE_PROPS="android/gradle.properties"
-          sed -i 's/^reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a,armeabi-v7a/' "$GRADLE_PROPS"
-          sed -i '/enableMinifyInReleaseBuilds/d' "$GRADLE_PROPS"
-          sed -i '/enableShrinkResourcesInReleaseBuilds/d' "$GRADLE_PROPS"
-          sed -i '/enableBundleCompression/d' "$GRADLE_PROPS"
-          sed -i '/enablePngCrunchInReleaseBuilds/d' "$GRADLE_PROPS"
-          sed -i '/enableR8.fullMode/d' "$GRADLE_PROPS"
-          sed -i '/useLegacyPackaging/d' "$GRADLE_PROPS"
-          cat >> "$GRADLE_PROPS" <<'EOF'
-          android.enableMinifyInReleaseBuilds=true
-          android.enableShrinkResourcesInReleaseBuilds=true
-          android.enableBundleCompression=true
-          android.enablePngCrunchInReleaseBuilds=true
-          android.enableR8.fullMode=true
-          expo.useLegacyPackaging=true
-          org.gradle.caching=true
-          org.gradle.configureondemand=true
-          EOF
-          cat "$GRADLE_PROPS"
-
-      - name: Patch build.gradle locale stripping
-        run: |
-          FILE="android/app/build.gradle"
-          if ! grep -q "resConfigs" "$FILE"; then
-            sed -i '/applicationId /a \        resConfigs "en", "in", "id"' "$FILE"
+          if [ -d android ]; then
+            echo "android/ directory exists — skipping expo prebuild to preserve manual native changes"
+          else
+            echo "android/ not found — running expo prebuild"
+            npx expo prebuild --platform android
           fi
-          sed -i 's/minifyEnabled.*/            minifyEnabled true/' "$FILE" || true
-          sed -i 's/shrinkResources.*/            shrinkResources true/' "$FILE" || true
-          grep -A 12 "buildTypes" "$FILE" | head -30
 
       - name: Ensure debug keystore exists
         run: |
@@ -227,16 +186,6 @@ jobs:
           RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
           RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
           RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
-
-      - name: Analyze and compare APK size
-        run: |
-          ls -lh android/app/build/outputs/apk/release/*.apk
-          for f in android/app/build/outputs/apk/release/*.apk; do
-            SIZE=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f")
-            MB=$(awk "BEGIN {printf \"%.2f\", $SIZE/1024/1024}")
-            echo "$f : ${MB} MB ($SIZE bytes)"
-          done
-          echo "Old sizes were: 88MB universal, 38MB arm64, 33MB v7a - should now be ~40-50% smaller"
 
       - name: Rename APK
         run: |

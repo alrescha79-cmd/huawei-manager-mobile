@@ -8,9 +8,7 @@ config.transformer = {
   babelTransformerPath: require.resolve('./metro.transformer.js'),
 };
 
-if (process.env.NODE_ENV !== 'production') {
-    config.resolver.sourceExts = [...config.resolver.sourceExts, 'md'];
-}
+config.resolver.sourceExts = [...config.resolver.sourceExts, 'md'];
 
 config.resolver.alias = {
   '@': path.resolve(__dirname, 'src'),
