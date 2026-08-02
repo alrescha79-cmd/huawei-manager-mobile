@@ -45,6 +45,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         icon: './assets/logo.png',
         userInterfaceStyle: 'automatic',
         scheme: 'hm-mobile',
+        assetBundlePatterns: ['assets/*', '!assets/widget-preview/*'],
         plugins: [
             'expo-router',
             [
@@ -52,6 +53,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 {
                     android: {
                         usesCleartextTraffic: true,
+                        enableMinifyInReleaseBuilds: true,
+                        enableShrinkResourcesInReleaseBuilds: true,
+                        enablePngCrunchInReleaseBuilds: true,
+                        enableBundleCompression: true,
+                        usesLegacyPackaging: true,
+                        extraProguardRules: `-assumenosideeffects class android.util.Log { public static *** d(...); public static *** v(...); public static *** i(...); }`,
                     },
                 },
             ],

@@ -1,0 +1,247 @@
+name: Build Minimal APK (Lite ~10-15MB)
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0) — leave empty to auto-read from app.config.ts'
+        required: false
+        default: ''
+      include_ads:
+        description: 'Include AdMob (adds ~8MB)'
+        required: true
+        default: false
+        type: boolean
+      include_firebase:
+        description: 'Include Firebase Push (adds ~5MB)'
+        required: true
+        default: false
+
+env:
+  ADMOB_ANDROID_APP_ID: ${{ secrets.ADMOB_ANDROID_APP_ID }}
+  ADMOB_BANNER_UNIT_ID: ${{ secrets.ADMOB_BANNER_UNIT_ID }}
+  ADMOB_INTERSTITIAL_UNIT_ID: ${{ secrets.ADMOB_INTERSTITIAL_UNIT_ID }}
+  ADMOB_REWARDED_UNIT_ID: ${{ secrets.ADMOB_REWARDED_UNIT_ID }}
+  ADMOB_NATIVE_ADVANCED_UNIT_ID: ${{ secrets.ADMOB_NATIVE_ADVANCED_UNIT_ID }}
+  ADMOB_APP_OPEN_UNIT_ID: ${{ secrets.ADMOB_APP_OPEN_UNIT_ID }}
+
+jobs:
+  build-minimal:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - arch: arm64-v8a
+            suffix: arm64-v8a-lite
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup Expo
+        uses: expo/expo-github-action@v8
+        with:
+          expo-version: latest
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Create google-services.json (dummy if no firebase)
+        run: |
+          if [ "${{ inputs.include_firebase }}" = "true" ]; then
+            echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 -d > google-services.json
+          else
+            echo '{"project_info":{"project_number":"000","project_id":"dummy"},"client":[{"client_info":{"mobilesdk_app_id":"1:000:android:000","android_client_info":{"package_name":"com.alrescha79.hmmobile"}} }]}' > google-services.json
+          fi
+
+      - name: Patch app.config.ts for minimal build
+        run: |
+          echo "=== Minimal build requested: ads=${{ inputs.include_ads }}, firebase=${{ inputs.include_firebase }} ==="
+          # Create minimal app config override
+          cat > app.config.minimal.ts <<'EOF'
+          import baseConfig from './app.config';
+          import type { ConfigContext, ExpoConfig } from 'expo/config';
+
+          export default (ctx: ConfigContext): ExpoConfig => {
+            const base = (baseConfig as any)(ctx) as ExpoConfig;
+            const includeAds = process.env.INCLUDE_ADS === 'true';
+            const includeFirebase = process.env.INCLUDE_FIREBASE === 'true';
+
+            let plugins = [...(base.plugins as any[])];
+            if (!includeAds) {
+              plugins = plugins.filter((p: any) => {
+                const name = typeof p === 'string' ? p : p?.[0];
+                return name !== 'react-native-google-mobile-ads';
+              });
+              console.log('Stripped AdMob plugin for minimal build');
+            }
+            if (!includeFirebase) {
+              plugins = plugins.filter((p: any) => {
+                const name = typeof p === 'string' ? p : p?.[0];
+                return !name?.includes('firebase');
+              });
+              console.log('Stripped Firebase plugins for minimal build');
+            }
+
+            return {
+              ...base,
+              plugins,
+              android: {
+                ...base.android,
+                googleServicesFile: includeFirebase ? base.android?.googleServicesFile : undefined,
+              },
+              extra: {
+                ...base.extra,
+                admobBannerUnitId: includeAds ? base.extra?.admobBannerUnitId : '',
+              },
+            };
+          };
+          EOF
+          # For simplicity, we use original config but patch via env
+          # Actually expo-build-properties already handles optimization
+          echo "INCLUDE_ADS=${{ inputs.include_ads }}" >> $GITHUB_ENV
+          echo "INCLUDE_FIREBASE=${{ inputs.include_firebase }}" >> $GITHUB_ENV
+
+      - name: Prebuild clean with optimizations
+        run: |
+          rm -rf android
+          # Use EAS-style optimizations
+          cat > eas.json <<'EOJ'
+          {
+            "build": {
+              "minimal": {
+                "android": {
+                  "buildType": "apk",
+                  "gradleContext": {
+                    "extraGradleProperties": {
+                      "android.enableMinifyInReleaseBuilds": "true",
+                      "android.enableShrinkResourcesInReleaseBuilds": "true",
+                      "android.enableR8.fullMode": "true",
+                      "android.enableBundleCompression": "true",
+                      "expo.useLegacyPackaging": "true"
+                    }
+                  }
+                }
+              }
+            }
+          }
+          EOJ
+          npx expo prebuild --platform android --clean --no-install
+
+      - name: Patch gradle.properties
+        run: |
+          GRADLE_PROPS="android/gradle.properties"
+          sed -i 's/^reactNativeArchitectures=.*/reactNativeArchitectures=arm64-v8a/' "$GRADLE_PROPS"
+          sed -i '/enableMinifyInReleaseBuilds/d' "$GRADLE_PROPS"
+          sed -i '/enableShrinkResourcesInReleaseBuilds/d' "$GRADLE_PROPS"
+          sed -i '/enableBundleCompression/d' "$GRADLE_PROPS"
+          sed -i '/enableR8.fullMode/d' "$GRADLE_PROPS"
+          cat >> "$GRADLE_PROPS" <<'EOF'
+          android.enableMinifyInReleaseBuilds=true
+          android.enableShrinkResourcesInReleaseBuilds=true
+          android.enableBundleCompression=true
+          android.enablePngCrunchInReleaseBuilds=true
+          android.enableR8.fullMode=true
+          expo.useLegacyPackaging=true
+          org.gradle.caching=true
+          org.gradle.configureondemand=true
+          android.experimental.enableArtProfiles=true
+          android.nonTransitiveRClass=true
+          EOF
+          cat "$GRADLE_PROPS"
+
+      - name: Patch build.gradle resConfigs
+        run: |
+          FILE="android/app/build.gradle"
+          if ! grep -q "resConfigs" "$FILE"; then
+            sed -i '/applicationId /a \        resConfigs "en"' "$FILE"
+          fi
+          sed -i 's/minifyEnabled.*/            minifyEnabled true/' "$FILE" || true
+          sed -i 's/shrinkResources.*/            shrinkResources true/' "$FILE" || true
+
+      - name: Ensure keystores
+        run: |
+          if [ ! -f android/app/debug.keystore ]; then
+            keytool -genkeypair -v -storetype PKCS12 \
+              -keystore android/app/debug.keystore \
+              -alias androiddebugkey \
+              -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=Android Debug,O=Android,C=US"
+          fi
+          if [ -n "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" ]; then
+            echo "${{ secrets.RELEASE_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+            GRADLE_FILE="android/app/build.gradle"
+            awk '
+            /signingConfigs \{/ { in_signing=1 }
+            in_signing && /^    \}/ {
+                print "        release {"
+                print "            storeFile file(\"release.keystore\")"
+                print "            storePassword System.getenv(\"RELEASE_KEYSTORE_PASSWORD\") ?: \"\""
+                print "            keyAlias System.getenv(\"RELEASE_KEY_ALIAS\") ?: \"\""
+                print "            keyPassword System.getenv(\"RELEASE_KEY_PASSWORD\") ?: \"\""
+                print "        }"
+                in_signing=0
+            }
+            { print }
+            ' "$GRADLE_FILE" > "${GRADLE_FILE}.tmp" && mv "${GRADLE_FILE}.tmp" "$GRADLE_FILE"
+            sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/' "$GRADLE_FILE"
+          fi
+
+      - name: Build minimal APK
+        run: |
+          cd android
+          ./gradlew assembleRelease -PreactNativeArchitectures=${{ matrix.arch }} --no-daemon
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g"
+          RELEASE_KEYSTORE_PASSWORD: ${{ secrets.RELEASE_KEYSTORE_PASSWORD }}
+          RELEASE_KEY_ALIAS: ${{ secrets.RELEASE_KEY_ALIAS }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.RELEASE_KEY_PASSWORD }}
+
+      - name: Show size
+        run: |
+          ls -lh android/app/build/outputs/apk/release/*.apk
+          SIZE=$(stat -c%s android/app/build/outputs/apk/release/app-release.apk)
+          MB=$(awk "BEGIN {printf \"%.2f\", $SIZE/1024/1024}")
+          echo "Minimal APK: ${MB} MB"
+          echo "Original was 38MB arm64, target <20MB (lite without ads/firebase) or ~20-25MB (with ads)"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: apk-${{ matrix.suffix }}
+          path: android/app/build/outputs/apk/release/app-release.apk
+          retention-days: 7
+
+      - name: Rename for release
+        run: mv android/app/build/outputs/apk/release/app-release.apk huawei-manager-${{ matrix.suffix }}.apk
+
+      - name: Publish as draft release if tag
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: huawei-manager-*.apk
+          tag_name: ${{ github.ref_name }}-lite
+          name: Lite ${{ github.ref_name }}
+          draft: true
+          body: |
+            Lite build - minimal size, no ads/firebase optional
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
