@@ -297,12 +297,3 @@ export class DirectAuthService {
         this.sessionCookie = '';
     }
 }
-
-export function getDirectAuthService(modemIp: string): DirectAuthService {
-    return new DirectAuthService(modemIp);
-}
-
-export function clearDirectAuthService(): void {
-    cachedSession = null;
-    isLoginInProgress = false;
-}

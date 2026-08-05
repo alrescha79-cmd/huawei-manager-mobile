@@ -59,7 +59,7 @@ const formatModemTime = (time: string) => {
 
 export function useSystemSettings({ t }: UseSystemSettingsProps) {
     const router = useRouter();
-    const { credentials, login, logout } = useAuthStore();
+    const { credentials, logout } = useAuthStore();
     const { profiles, loadProfiles, addProfile, deleteProfile, updateProfile, switchProfile, isSwitching } = useModemProfileStore();
 
     // Profile edit state
@@ -77,18 +77,6 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
     const [timezone, setTimezone] = useState('UTC+7');
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
     const [isTogglingSntp, setIsTogglingSntp] = useState(false);
-
-    // Credentials
-    const [modemIp, setModemIp] = useState(credentials?.modemIp || '192.168.8.1');
-    const [modemUsername, setModemUsername] = useState(credentials?.username || 'admin');
-    const [modemPassword, setModemPassword] = useState(credentials?.password || '');
-    const [showPassword, setShowPassword] = useState(false);
-    const [isSavingCredentials, setIsSavingCredentials] = useState(false);
-
-    const hasCredentialsChanges =
-        modemIp !== (credentials?.modemIp || '192.168.8.1') ||
-        modemUsername !== (credentials?.username || 'admin') ||
-        modemPassword !== (credentials?.password || '');
 
     useEffect(() => {
         if (credentials?.modemIp) {
@@ -136,25 +124,6 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             showInterstitial(() => {});
         } catch (error) {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
-        }
-    };
-
-    const handleSaveCredentials = async () => {
-        if (isSavingCredentials) return;
-        setIsSavingCredentials(true);
-        try {
-            await login({
-                modemIp,
-                username: modemUsername,
-                password: modemPassword,
-            });
-            showInterstitial(() => {});
-            ToastHelper.success(t('settings.credentialsSaved'));
-            router.replace('/settings');
-        } catch (error) {
-            ToastHelper.error(t('settings.failedSaveCredentials'));
-        } finally {
-            setIsSavingCredentials(false);
         }
     };
 
