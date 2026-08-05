@@ -310,6 +310,13 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     const abortControllerRef = useRef<AbortController | null>(null);
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+    useEffect(() => {
+        return () => {
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+            abortControllerRef.current?.abort();
+        };
+    }, []);
+
     const [clientIp, setClientIp] = useState<string>('');
     const [ispInfo, setIspInfo] = useState<string>('');
     const [providerHostname, setProviderHostname] = useState<string>('');
@@ -318,8 +325,14 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     const [ulMax, setUlMax] = useState(50);
 
     useEffect(() => {
+        let infoController: AbortController | null = null;
+        let infoTimeout: NodeJS.Timeout | null = null;
+
         if (visible) {
-            fetch('https://ipinfo.io/json')
+            infoController = new AbortController();
+            infoTimeout = setTimeout(() => infoController?.abort(), 5000);
+
+            fetch('https://ipinfo.io/json', { signal: infoController.signal })
                 .then(res => res.json())
                 .then(data => {
                     if (data.ip) setClientIp(data.ip);
@@ -331,7 +344,7 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                     if (data.hostname) setProviderHostname(data.hostname);
                 })
                 .catch(() => {
-                    fetch('https://speed.cloudflare.com/meta')
+                    fetch('https://speed.cloudflare.com/meta', { signal: infoController?.signal })
                         .then(res => res.json())
                         .then(data => {
                             if (data.clientIp) setClientIp(data.clientIp);
@@ -344,6 +357,11 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
             setIspInfo('');
             setProviderHostname('');
         }
+
+        return () => {
+            if (infoTimeout) clearTimeout(infoTimeout);
+            infoController?.abort();
+        };
     }, [visible]);
 
     useEffect(() => {
