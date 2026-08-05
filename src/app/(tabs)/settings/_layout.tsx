@@ -1,11 +1,9 @@
 import { Stack } from 'expo-router';
 import { useTheme } from '@/theme';
-import { useTranslation } from '@/i18n';
 import { View, StyleSheet } from 'react-native';
 
 export default function SettingsLayout() {
     const { colors } = useTheme();
-    const { t } = useTranslation();
 
     return (
         <View style={[styles.container, { backgroundColor: colors.background }]}>

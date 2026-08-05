@@ -14,13 +14,12 @@ import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
-import { MeshGradientBackground, AnimatedScreen, ThemedAlertHelper, ToastHelper, ThemedSwitch, AdNative, SelectionModal } from '@/components';
+import { MeshGradientBackground, AnimatedScreen, ToastHelper, ThemedSwitch, AdNative, SelectionModal } from '@/components';
 import {
     getNotificationSettings,
     saveNotificationSettings,
     NotificationSettings,
     scheduleClearHistoryReminder,
-    getNextClearHistoryReminderDate,
 } from '@/services/notification.service';
 import { showInterstitial } from '@/services/ad.service';
 
@@ -42,7 +41,6 @@ export default function NotificationSettingsScreen() {
         clearHistoryReminderDay: 31,
         clearHistoryReminderHour: 18,
     });
-    const [isLoading, setIsLoading] = useState(true);
     const [showDayModal, setShowDayModal] = useState(false);
     const [showHourModal, setShowHourModal] = useState(false);
 
@@ -51,10 +49,8 @@ export default function NotificationSettingsScreen() {
     }, []);
 
     const loadSettings = async () => {
-        setIsLoading(true);
         const stored = await getNotificationSettings();
         setSettings(stored);
-        setIsLoading(false);
     };
 
     const updateSetting = async (key: keyof NotificationSettings, value: boolean) => {

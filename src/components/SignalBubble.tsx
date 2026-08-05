@@ -34,7 +34,7 @@ export const SignalBubble: React.FC = () => {
   const { colors, isDark } = useTheme();
   
   const { signalInfo, trafficStats, modemStatus } = useModemStore();
-  const [position, setPosition] = useState<Position>({ x: 0, y: 100 });
+  const [, setPosition] = useState<Position>({ x: 0, y: 100 });
   const [isDragging, setIsDragging] = useState(false);
   
   const translateX = useRef(new Animated.Value(0)).current;

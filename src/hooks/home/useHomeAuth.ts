@@ -6,7 +6,6 @@ interface UseHomeAuthProps {
   credentials: any;
   logout: () => Promise<void>;
   login: (creds: any) => Promise<any>;
-  sessionExpired: boolean;
   setRelogging: (val: boolean) => void;
   clearSessionExpired: () => void;
   tryQuietSessionRestore: () => Promise<{ success: boolean; error?: "unreachable" | "auth_failed" }>;
@@ -17,7 +16,6 @@ export function useHomeAuth({
   credentials,
   logout,
   login,
-  sessionExpired,
   setRelogging,
   clearSessionExpired,
   tryQuietSessionRestore,

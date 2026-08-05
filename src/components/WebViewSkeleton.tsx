@@ -4,7 +4,7 @@ import { Skeleton } from './Skeleton';
 import { useTheme } from '@/theme';
 
 export function WebViewSkeleton() {
-    const { colors, isDark } = useTheme();
+    const { isDark } = useTheme();
     const bg = isDark ? '#1a1a1a' : '#ffffff';
     const surfaceBg = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)';
 

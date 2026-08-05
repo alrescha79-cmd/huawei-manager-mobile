@@ -10,7 +10,6 @@ import {
     checkAndSaveMonthlyUsage,
     formatMonthKey,
     getCurrentMonthKey,
-    getLastMonthKey,
     MonthlyUsageData
 } from '@/services/usage-history.service';
 

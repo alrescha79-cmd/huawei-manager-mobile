@@ -23,12 +23,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
   const { credentials, isRelogging, requestRelogin, clearSessionExpired } = useAuthStore();
   
   const {
-    signalInfo,
-    networkInfo,
-    trafficStats,
     modemStatus,
-    wanInfo,
-    mobileDataStatus,
     monthlySettings,
     setSignalInfo,
     setNetworkInfo,

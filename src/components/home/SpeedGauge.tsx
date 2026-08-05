@@ -9,7 +9,7 @@ interface SpeedGaugeProps {
 }
 
 export function SpeedGauge({ downloadSpeed, uploadSpeed }: SpeedGaugeProps) {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography } = useTheme();
 
     const formatSpeed = (bps: number): { value: string; unit: string } => {
         if (bps === 0) return { value: '0.0', unit: 'bps' };

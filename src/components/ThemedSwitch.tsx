@@ -2,8 +2,6 @@ import React from 'react';
 import {
     TouchableOpacity,
     StyleSheet,
-    Animated as RNAnimated,
-    Platform
 } from 'react-native';
 import Animated, {
     useSharedValue,

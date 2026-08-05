@@ -88,7 +88,7 @@ export function useHomeActions({
               async () => {
                 setIsChangingIp(true);
 
-                modemService.triggerPlmnScan().catch((error) => {
+                modemService.triggerPlmnScan().catch(() => {
                 });
 
                 setTimeout(() => {

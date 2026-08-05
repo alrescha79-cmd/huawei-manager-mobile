@@ -9,7 +9,7 @@ interface SpinnerLoadingProps {
 }
 
 export function SpinnerLoading({ size = 'medium', color, style }: SpinnerLoadingProps) {
-    const { colors, isDark } = useTheme();
+    const { colors } = useTheme();
     const spinnerColor = color || colors.primary;
 
     const rotation = useRef(new Animated.Value(0)).current;

@@ -295,14 +295,3 @@ export function getNetworkTypeName(networkType: string): string {
     };
     return types[networkType] || networkType || 'Unknown';
 }
-
-export function getConnectionStatusName(status: string): string {
-    const statuses: Record<string, string> = {
-        '900': 'Connecting',
-        '901': 'Connected',
-        '902': 'Disconnected',
-        '903': 'Disconnecting',
-        '904': 'Connection Failed',
-    };
-    return statuses[status] || status || 'Unknown';
-}

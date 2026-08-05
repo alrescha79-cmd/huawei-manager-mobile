@@ -1,7 +1,6 @@
 import { ModemAPIClient } from './api.service';
 import { ConnectedDevice, WiFiSettings } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
-import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
 
 export class WiFiService {
@@ -589,7 +588,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
-  async unblockDevice(macAddress: string): Promise<boolean> {
+  async unblockDevice(_macAddress: string): Promise<boolean> {
     try {
       const data = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
@@ -687,7 +686,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
-  async toggleParentalControl(enable: boolean): Promise<boolean> {
+  async toggleParentalControl(_enable: boolean): Promise<boolean> {
     return true;
   }
 

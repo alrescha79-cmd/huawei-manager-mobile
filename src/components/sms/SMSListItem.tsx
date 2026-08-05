@@ -19,7 +19,6 @@ interface SMSListItemProps {
 
 export function SMSListItem({
     message,
-    isLast = false,
     timeDisplay = '',
     onPress,
     onLongPress,
@@ -34,7 +33,7 @@ export function SMSListItem({
 
     if (!message) return null;
 
-    const { colors, typography, isDark } = useTheme();
+    const { colors, typography } = useTheme();
 
     const initials = message.phone.charAt(0).toUpperCase();
     const isUnread = message.smstat === '0';

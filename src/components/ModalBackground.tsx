@@ -1,13 +1,11 @@
 import React from 'react';
-import { StyleSheet, View, Dimensions } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Ellipse } from 'react-native-svg';
 import { useTheme } from '@/theme';
 
 interface ModalBackgroundProps {
     style?: any;
 }
-
-const { width, height } = Dimensions.get('window');
 
 /**
  * A subtle mesh gradient overlay for modals

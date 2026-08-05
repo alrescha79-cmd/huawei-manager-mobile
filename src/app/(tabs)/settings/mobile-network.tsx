@@ -3,7 +3,6 @@ import {
     StyleSheet,
     ScrollView,
     View,
-    Text,
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';

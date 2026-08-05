@@ -7,14 +7,12 @@ import {
     TouchableOpacity,
     TextInput,
     ScrollView,
-    ActivityIndicator,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
-    StatusBar,
     Pressable,
 } from 'react-native';
-import { Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ConnectedDevice } from '@/types';

@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter, useSegments } from 'expo-router';
-import { AppState, Platform, Animated } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppStateStatus } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -10,7 +10,7 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, ThemedAlertHelper, AnimatedSplashScreen, ChangelogModal, ChangelogHelper, SignalBubble, ToastContainer, setToastListener, showNextFromQueue, ToastHelper } from '@/components';
+import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, AnimatedSplashScreen, ChangelogModal, ChangelogHelper, SignalBubble, ToastContainer, setToastListener, showNextFromQueue, ToastHelper } from '@/components';
 import { useTranslation } from '@/i18n';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
@@ -24,18 +24,6 @@ import { useModemStore } from '@/stores/modem.store';
 import { useDebugStore } from '@/stores/debug.store';
 import { installConsoleInterceptor, uninstallConsoleInterceptor } from '@/utils/debug-logger';
 import { formatBytes } from '@/utils/formatters';
-
-
-// const getFcmToken = async () => {
-//   try {
-//     const deviceToken = await Notifications.getDevicePushTokenAsync();
-
-//     console.log(deviceToken.data);
-//   } catch (error) {
-//     console.error("Gagal mengambil token:", error);
-//   }
-// };
-// getFcmToken();
 
 SplashScreen.preventAutoHideAsync();
 
@@ -69,14 +57,13 @@ export default function RootLayout() {
     const [fontsLoaded] = useFonts({
         Doto_700Bold,
     });
-    const [appIsReady, setAppIsReady] = useState(false);
+    const [, setAppIsReady] = useState(false);
 
     const { colors, isDark } = useTheme();
     const {
         isAuthenticated,
         loadCredentials,
         autoLogin,
-        tryQuietSessionRestore,
         startSessionKeepAlive,
         stopSessionKeepAlive
     } = useAuthStore();
@@ -88,7 +75,7 @@ export default function RootLayout() {
     const appStateRef = useRef<AppStateStatus>(AppState.currentState);
     const backgroundTimeRef = useRef<number>(0);
     const lastAppOpenShowTimeRef = useRef<number>(0);
-    const [isRestoringSession, setIsRestoringSession] = useState(false);
+    const [, setIsRestoringSession] = useState(false);
     const [authReady, setAuthReady] = useState(false);
     const pendingNotificationRoute = useRef<string | null>(null);
     const pendingNotificationUrl = useRef<string | null>(null);

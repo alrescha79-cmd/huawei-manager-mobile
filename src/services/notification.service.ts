@@ -349,7 +349,6 @@ export async function checkIPChangeNotification(
 
     const lastDuration = await AsyncStorage.getItem(LAST_SESSION_DURATION_KEY);
     const previousDuration = lastDuration ? parseInt(lastDuration, 10) : 0;
-    let ipChanged = false;
     let durationResult: string | null = null;
 
     if (currentSessionDuration < previousDuration && previousDuration > 60) {
@@ -375,7 +374,6 @@ export async function checkIPChangeNotification(
             translations.body(durationText),
             'ip-change'
         );
-        ipChanged = true;
         durationResult = durationText;
     }
 

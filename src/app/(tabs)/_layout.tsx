@@ -1,7 +1,6 @@
 import { Tabs, useRouter, useSegments } from 'expo-router';
 import React, { useEffect } from 'react';
 import { View, StyleSheet, StatusBar, Platform, Text } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { runOnJS } from 'react-native-reanimated';
@@ -91,7 +90,6 @@ export default function TabLayout() {
   const { connectedDevices } = useWiFiStore();
   const { badgesEnabled } = useThemeStore();
   const { t } = useTranslation();
-  const insets = useSafeAreaInsets();
 
   const currentTab = segments[segments.length - 1];
   const tabs = ['home', 'wifi', 'sms', 'settings'];

@@ -1,13 +1,13 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
-import { Skeleton, SkeletonCard } from '@/components';
+import { Skeleton } from '@/components';
 import { useTheme } from '@/theme';
 
 /**
  * Skeleton for WiFi Settings card
  */
 export function WiFiSettingsSkeleton() {
-    const { colors, glassmorphism, isDark } = useTheme();
+    const { glassmorphism, isDark } = useTheme();
 
     return (
         <View style={[styles.card, {
@@ -45,7 +45,7 @@ export function WiFiSettingsSkeleton() {
  * Skeleton for Connected Devices list
  */
 export function ConnectedDevicesSkeleton() {
-    const { colors, glassmorphism, isDark } = useTheme();
+    const { glassmorphism, isDark } = useTheme();
 
     return (
         <View style={[styles.card, {
@@ -76,7 +76,7 @@ export function ConnectedDevicesSkeleton() {
  * Skeleton for Guest WiFi card
  */
 export function GuestWiFiSkeleton() {
-    const { colors, glassmorphism, isDark } = useTheme();
+    const { glassmorphism, isDark } = useTheme();
 
     return (
         <View style={[styles.card, {
@@ -102,7 +102,7 @@ export function GuestWiFiSkeleton() {
  * Skeleton for Parental Control card
  */
 export function ParentalControlSkeleton() {
-    const { colors, glassmorphism, isDark } = useTheme();
+    const { glassmorphism, isDark } = useTheme();
 
     return (
         <View style={[styles.card, {

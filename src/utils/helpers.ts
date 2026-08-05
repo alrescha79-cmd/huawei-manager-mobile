@@ -129,7 +129,7 @@ const decodeHtmlEntities = (text: string): string => {
   let result = text.replace(/&[a-zA-Z0-9#]+;/g, (match) => entities[match] || match);
 
   // Then handle any remaining numeric entities (&#NN;)
-  result = result.replace(/&#(\d+);/g, (match, num) => {
+  result = result.replace(/&#(\d+);/g, (_, num) => {
     const code = parseInt(num, 10);
     return String.fromCharCode(code);
   });

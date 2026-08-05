@@ -8,10 +8,8 @@ import {
     NativeAsset,
     NativeAssetType,
 } from 'react-native-google-mobile-ads';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useThemeStore } from '@/stores/theme.store';
-import { useTranslation } from '@/i18n';
 import en from '@/i18n/en.json';
 import id from '@/i18n/id.json';
 import { ToastHelper } from './Toast';
@@ -61,25 +59,6 @@ function triggerAdblockAlert(error: any) {
     }
 }
 
-function AdBlockerFallbackContent({ isNative = false }: { isNative?: boolean }) {
-    const { colors, typography } = useTheme();
-    const { t } = useTranslation();
-
-    return (
-        <View style={[styles.fallbackContent, { backgroundColor: 'transparent' }]}>
-            <MaterialIcons name="info-outline" size={isNative ? 20 : 18} color={colors.warning} />
-            <View style={[styles.fallbackTextContainer, { backgroundColor: 'transparent' }]}>
-                <Text style={[isNative ? typography.body : typography.footnote, { color: colors.text, fontWeight: '600', backgroundColor: 'transparent' }]} numberOfLines={1}>
-                    {t('ads.blockerDetected')}
-                </Text>
-                <Text style={[isNative ? typography.footnote : typography.caption1, { color: colors.textSecondary, marginTop: 2, backgroundColor: 'transparent' }]} numberOfLines={1}>
-                    {t('ads.supportDeveloper')}
-                </Text>
-            </View>
-        </View>
-    );
-}
-
 // 1) Standard Banner Ad Component
 export const AdBanner: React.FC = React.memo(() => {
     const [isReady, setIsReady] = useState(isAdMobInitialized());
@@ -88,7 +67,7 @@ export const AdBanner: React.FC = React.memo(() => {
     const [shouldLoad, setShouldLoad] = useState(false);
     const [triggerKey, setTriggerKey] = useState(0);
 
-    const { colors, isDark } = useTheme();
+    const { colors } = useTheme();
 
     useEffect(() => {
         if (!isAdMobInitialized()) {
@@ -170,7 +149,7 @@ export const AdNative: React.FC = React.memo(() => {
     const [isLoading, setIsLoading] = useState(true);
     const [triggerKey, setTriggerKey] = useState(0);
 
-    const { colors, typography, isDark } = useTheme();
+    const { colors, typography } = useTheme();
 
     useEffect(() => {
         if (!isAdMobInitialized()) {
@@ -313,7 +292,7 @@ export const InlineAdNative: React.FC = React.memo(() => {
     const [isLoaded, setIsLoaded] = useState(false);
     const [triggerKey, setTriggerKey] = useState(0);
 
-    const { colors, typography, isDark } = useTheme();
+    const { colors, typography } = useTheme();
 
     useEffect(() => {
         if (!isAdMobInitialized()) {

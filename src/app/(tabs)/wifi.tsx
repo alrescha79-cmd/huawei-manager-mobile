@@ -6,15 +6,12 @@ import {
   RefreshControl,
   StatusBar,
   Platform,
-  TextInput,
-  TouchableOpacity,
-  Keyboard,
   AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card, CardHeader, ThemedAlertHelper, ToastHelper, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, RefreshIndicator, AdBanner, AdNative } from '@/components';
+import { Card, CardHeader, ToastHelper, MeshGradientBackground, AnimatedScreen, ThemedSwitch, RefreshIndicator, AdBanner, AdNative } from '@/components';
 import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, WiFiSettingsSkeleton, ConnectedDevicesSkeleton, GuestWiFiSkeleton, ParentalControlSkeleton, wifiStyles as styles, DeviceDetailModal, ParentalProfileModal } from '@/components/wifi';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';

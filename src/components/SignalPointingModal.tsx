@@ -168,7 +168,7 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
     const [bestRsrp, setBestRsrp] = useState<number | null>(null);
     const [bestPci, setBestPci] = useState<string | null>(null);
     const [soundEnabled, setSoundEnabled] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
+    const [, setIsLoading] = useState(true);
     const [signalUnsupported, setSignalUnsupported] = useState(false);
     const [fetchTime, setFetchTime] = useState<number | null>(null);
     const [signalHistory, setSignalHistory] = useState<number[]>([]);

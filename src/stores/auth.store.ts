@@ -212,24 +212,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
     }
 
-    // SCRAM disabled - still fails with 108006. ModemAPIClient password_type 4 works.
-    // TODO: Fix SCRAM client proof calculation
-    // try {
-    //   console.log('[Auth] Trying Direct SCRAM API login...');
-    //   const directAuth = new DirectAuthService(credentials.modemIp);
-    //   await directAuth.login(credentials.password, credentials.username);
-    //   await saveSessionState({
-    //     lastSuccessfulLogin: Date.now(),
-    //     lastSessionActivity: Date.now(),
-    //     sessionHealthy: true,
-    //   });
-    //   get().startSessionKeepAlive();
-    //   console.log('[Auth] Direct SCRAM login successful!');
-    //   return true;
-    // } catch (error: any) {
-    //   console.log('[Auth] Direct SCRAM login failed:', error.message);
-    // }
-
     try {
       console.log('[Auth] Trying ModemAPIClient login...');
       const apiClient = new ModemAPIClient(credentials.modemIp);

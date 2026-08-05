@@ -10,7 +10,7 @@ export class ModemAPIClient {
   private sessionCookie: string = '';
   private tokenExpiry: number = 0;
 
-  constructor(private baseURL: string) {
+  constructor(baseURL: string) {
     this.client = axios.create({
       baseURL: `http://${baseURL}`,
       timeout: 10000,

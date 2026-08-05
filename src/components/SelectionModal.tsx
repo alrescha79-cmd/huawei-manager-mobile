@@ -38,7 +38,7 @@ export function SelectionModal({
     onSelect,
     onClose,
 }: SelectionModalProps) {
-    const { colors, typography, glassmorphism, isDark } = useTheme();
+    const { colors, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
 
     return (

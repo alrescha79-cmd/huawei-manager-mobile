@@ -25,8 +25,6 @@ export function useParentalControls({
   t, 
   handleRefresh, 
   parentalProfiles, 
-  setParentalProfiles,
-  parentalControlEnabled,
   setParentalControlEnabled
 }: UseParentalControlsProps) {
   const [isTogglingParental, setIsTogglingParental] = useState(false);
@@ -193,7 +191,7 @@ export function useParentalControls({
     }
   };
 
-  const handleDeleteProfile = (profileId: string, profileName: string) => {
+  const handleDeleteProfile = (profileId: string, _profileName: string) => {
     ThemedAlertHelper.alert(
       t('parentalControl.deleteProfile'),
       t('parentalControl.deleteConfirm'),

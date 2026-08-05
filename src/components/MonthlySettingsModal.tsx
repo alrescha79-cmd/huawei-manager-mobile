@@ -17,7 +17,6 @@ import { useTranslation } from '@/i18n';
 import { MeshGradientBackground } from './MeshGradientBackground';
 import { ThemedSwitch } from './ThemedSwitch';
 import { ThemedAlertHelper } from './ThemedAlert';
-import { showInterstitial } from '@/services/ad.service';
 import { AdNative } from './AdBanner';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ModalButton } from './ModalButton';
@@ -52,7 +51,7 @@ export function MonthlySettingsModal({
     onSave,
     initialSettings,
 }: MonthlySettingsModalProps) {
-    const { colors, isDark, typography, borderRadius, glassmorphism } = useTheme();
+    const { colors, isDark, typography, glassmorphism } = useTheme();
     const { t } = useTranslation();
     const insets = useSafeAreaInsets();
 

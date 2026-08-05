@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { useThemeStore } from '@/stores/theme.store';
 import { useModemProfileStore } from '@/stores/modem-profile.store';
 import { ModemService } from '@/services/modem.service';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
@@ -73,7 +72,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
     // Time settings
     const [currentTime, setCurrentTime] = useState('');
     const [sntpEnabled, setSntpEnabled] = useState(true);
-    const [ntpServer, setNtpServer] = useState('pool.ntp.org');
+    const [, setNtpServer] = useState('pool.ntp.org');
     const [timezone, setTimezone] = useState('UTC+7');
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
     const [isTogglingSntp, setIsTogglingSntp] = useState(false);

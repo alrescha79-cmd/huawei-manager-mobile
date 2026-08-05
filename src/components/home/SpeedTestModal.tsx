@@ -6,7 +6,6 @@ import {
     Modal,
     TouchableOpacity,
     Animated,
-    Platform,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -547,16 +546,6 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     const currentMax = phase === 'upload' ? ulMax : dlMax;
     const currentColor = phase === 'upload' ? '#3B82F6' : '#22C55E';
     const currentLabel = phase === 'upload' ? t('home.upload') : t('home.download');
-
-    const getPhaseText = () => {
-        switch (phase) {
-            case 'latency': return t('home.latency') + '...';
-            case 'download': return t('home.download') + '...';
-            case 'upload': return t('home.upload') + '...';
-            case 'complete': return t('home.speedtestComplete');
-            default: return t('home.startTest');
-        }
-    };
 
     const progressWidth = progressAnim.interpolate({
         inputRange: [0, 100],

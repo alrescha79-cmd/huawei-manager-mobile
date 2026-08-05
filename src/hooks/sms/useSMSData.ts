@@ -4,7 +4,6 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
 import { checkNewSMSNotification } from '@/services/notification.service';
-import { SMSMessage } from '@/types';
 import { isSessionExpiredError } from '@/utils/huawei-error';
 
 type SMSFilterType = 'all' | 'unread' | 'sent';

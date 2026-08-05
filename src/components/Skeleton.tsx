@@ -18,7 +18,7 @@ export function Skeleton({
     borderRadius = 8,
     style
 }: SkeletonProps) {
-    const { colors, isDark } = useTheme();
+    const { isDark } = useTheme();
     const shimmerAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
