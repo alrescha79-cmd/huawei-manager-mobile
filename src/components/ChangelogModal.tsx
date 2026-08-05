@@ -50,7 +50,7 @@ export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
     const insets = useSafeAreaInsets();
     const router = useRouter();
 
-    const currentVersion = Constants.expoConfig?.version || '1.1.60';
+    const currentVersion = Constants.expoConfig?.version || '';
     const GITHUB_REPO_URL = 'https://github.com/alrescha79-cmd/huawei-manager-mobile';
     const RELEASE_URL = `${GITHUB_REPO_URL}/releases/tag/v${currentVersion}`;
 

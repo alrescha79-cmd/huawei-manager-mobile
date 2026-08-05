@@ -104,7 +104,7 @@ export default function RootLayout() {
         try {
             const notifSettings = await getNotificationSettings();
             const checkPreRelease = notifSettings.preReleaseUpdateEnabled;
-            const currentVersion = Constants.expoConfig?.version || '1.1.50';
+            const currentVersion = Constants.expoConfig?.version || '';
 
             if (checkPreRelease) {
                 const response = await fetch(
@@ -167,7 +167,7 @@ export default function RootLayout() {
             // Only show changelog after user is authenticated — never on login page
             if (!useAuthStore.getState().isAuthenticated) return;
 
-            const currentVersion = Constants.expoConfig?.version || '1.1.55';
+            const currentVersion = Constants.expoConfig?.version || '';
             const shownVersion = await AsyncStorage.getItem(CHANGELOG_SHOWN_VERSION_KEY);
 
             if (shownVersion !== currentVersion) {
