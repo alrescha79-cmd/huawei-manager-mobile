@@ -4,9 +4,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
 import { checkNewSMSNotification } from '@/services/notification.service';
-import { SMSMessage } from '@/types';
-
-type SMSFilterType = 'all' | 'unread' | 'sent';
+import { isSessionExpiredError } from '@/utils/huawei-error';
+import type { SMSFilterType } from '@/components/sms/SMSStatsCard';
 
 interface UseSMSDataProps {
     t: (key: string, options?: any) => string;
@@ -55,7 +54,7 @@ export function useSMSData({ t }: UseSMSDataProps) {
             try {
                 isSupported = await service.isSMSSupported();
             } catch (error: any) {
-                if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+                if (isSessionExpiredError(error)) {
                     const { requestRelogin } = useAuthStore.getState();
                     requestRelogin();
                 }
@@ -114,7 +113,7 @@ export function useSMSData({ t }: UseSMSDataProps) {
                     });
                 }
             } catch (error: any) {
-                if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+                if (isSessionExpiredError(error)) {
                     const { requestRelogin } = useAuthStore.getState();
                     requestRelogin();
                 } else {
@@ -155,13 +154,13 @@ export function useSMSData({ t }: UseSMSDataProps) {
                 setMessages(allMessages);
                 setSMSCount(count);
             } catch (error: any) {
-                if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+                if (isSessionExpiredError(error)) {
                     const { requestRelogin } = useAuthStore.getState();
                     requestRelogin();
                 }
             }
         } catch (error: any) {
-            if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+            if (isSessionExpiredError(error)) {
                 const { requestRelogin } = useAuthStore.getState();
                 requestRelogin();
             }

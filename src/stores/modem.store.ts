@@ -1,9 +1,6 @@
 import { create } from 'zustand';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModemInfo, SignalInfo, NetworkInfo, TrafficStats, ModemStatus, WanInfo, MobileDataStatus } from '@/types';
-import { saveModemDataCache, getModemDataCache, clearModemDataCache } from '@/utils/storage';
-
-const PREVIOUS_WAN_IP_KEY = 'previous_wan_ip';
+import { saveModemDataCache, getModemDataCache } from '@/utils/storage';
 
 export interface MonthlySettings {
   enabled: boolean;
@@ -23,16 +20,10 @@ interface ModemState {
   wanInfo: WanInfo | null;
   mobileDataStatus: MobileDataStatus | null;
   monthlySettings: MonthlySettings | null;
-  previousWanIp: string | null;
   isLoading: boolean;
   isUsingCache: boolean;
   error: string | null;
-  lastClearedDate: string | null;
-  isClearingHistory: boolean;
 
-  setLastClearedDate: (date: string | null) => void;
-  setIsClearingHistory: (isClearing: boolean) => void;
-  clearHistory: () => Promise<void>;
   setModemInfo: (info: ModemInfo) => void;
   setSignalInfo: (info: SignalInfo) => void;
   setNetworkInfo: (info: NetworkInfo) => void;
@@ -41,16 +32,11 @@ interface ModemState {
   setWanInfo: (info: WanInfo) => void;
   setMobileDataStatus: (status: MobileDataStatus) => void;
   setMonthlySettings: (settings: MonthlySettings | null) => void;
-  setPreviousWanIp: (ip: string | null) => void;
-  loadPreviousWanIp: () => Promise<void>;
   setLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
-  reset: () => void;
 
   loadFromCache: () => Promise<boolean>;
   saveToCache: () => Promise<void>;
-  clearCache: () => Promise<void>;
-  setUsingCache: (value: boolean) => void;
 }
 
 export const useModemStore = create<ModemState>((set, get) => ({
@@ -62,19 +48,9 @@ export const useModemStore = create<ModemState>((set, get) => ({
   wanInfo: null,
   mobileDataStatus: null,
   monthlySettings: null,
-  previousWanIp: null,
   isLoading: false,
   isUsingCache: false,
   error: null,
-  lastClearedDate: null,
-  isClearingHistory: false,
-
-  setLastClearedDate: (date) => set({ lastClearedDate: date }),
-  setIsClearingHistory: (isClearing) => set({ isClearingHistory: isClearing }),
-
-  clearHistory: async () => {
-    // This will be handled in useHomeActions, just providing the function here
-  },
 
   setModemInfo: (info) => {
     set({ modemInfo: info });
@@ -89,7 +65,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
           imei: info.imei,
         });
       }
-    } catch (e) {
+    } catch {
       // Silent fail if debug store not available
     }
   },
@@ -106,7 +82,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
           signalStrength: `${info.rssi || info.rsrp || 'N/A'} dBm`,
         });
       }
-    } catch (e) {
+    } catch {
       // Silent fail if debug store not available
     }
   },
@@ -123,7 +99,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
           connectionStatus: info.currentNetworkType,
         });
       }
-    } catch (e) {
+    } catch {
       // Silent fail if debug store not available
     }
   },
@@ -137,15 +113,6 @@ export const useModemStore = create<ModemState>((set, get) => ({
   },
 
   setWanInfo: (info) => {
-    const currentWanInfo = get().wanInfo;
-    const currentIp = currentWanInfo?.wanIPAddress;
-    const newIp = info?.wanIPAddress;
-
-    if (currentIp && newIp && currentIp !== newIp) {
-      set({ previousWanIp: currentIp });
-      AsyncStorage.setItem(PREVIOUS_WAN_IP_KEY, currentIp).catch(console.error);
-    }
-
     set({ wanInfo: info, isUsingCache: false });
   },
 
@@ -155,29 +122,8 @@ export const useModemStore = create<ModemState>((set, get) => ({
 
   setMonthlySettings: (settings) => set({ monthlySettings: settings }),
 
-  setPreviousWanIp: (ip) => {
-    set({ previousWanIp: ip });
-    if (ip) {
-      AsyncStorage.setItem(PREVIOUS_WAN_IP_KEY, ip).catch(console.error);
-    } else {
-      AsyncStorage.removeItem(PREVIOUS_WAN_IP_KEY).catch(console.error);
-    }
-  },
-
-  loadPreviousWanIp: async () => {
-    try {
-      const savedIp = await AsyncStorage.getItem(PREVIOUS_WAN_IP_KEY);
-      if (savedIp) {
-        set({ previousWanIp: savedIp });
-      }
-    } catch (error) {
-      console.error('Error loading previous WAN IP:', error);
-    }
-  },
-
   setLoading: (isLoading) => set({ isLoading }),
   setError: (error) => set({ error }),
-  setUsingCache: (value) => set({ isUsingCache: value }),
 
   loadFromCache: async () => {
     try {
@@ -215,21 +161,4 @@ export const useModemStore = create<ModemState>((set, get) => ({
     }
   },
 
-  clearCache: async () => {
-    await clearModemDataCache();
-    set({ isUsingCache: false });
-  },
-
-  reset: () => set({
-    modemInfo: null,
-    signalInfo: null,
-    networkInfo: null,
-    trafficStats: null,
-    modemStatus: null,
-    wanInfo: null,
-    mobileDataStatus: null,
-    isLoading: false,
-    isUsingCache: false,
-    error: null,
-  }),
 }));

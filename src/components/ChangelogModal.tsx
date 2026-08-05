@@ -3,13 +3,10 @@ import {
     Modal,
     View,
     Text,
-    TouchableOpacity,
     StyleSheet,
     Dimensions,
-    Platform,
     Animated,
     TouchableWithoutFeedback,
-    Linking,
     ScrollView,
 } from 'react-native';
 import { useTheme } from '@/theme';
@@ -47,13 +44,13 @@ export const ChangelogHelper = {
 
 export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
     const [visible, setVisible] = useState(false);
-    const { colors, typography, isDark, borderRadius } = useTheme();
+    const { colors, typography, isDark } = useTheme();
     const { t, language } = useTranslation();
     const [slideAnim] = useState(new Animated.Value(0));
     const insets = useSafeAreaInsets();
     const router = useRouter();
 
-    const currentVersion = Constants.expoConfig?.version || '1.1.60';
+    const currentVersion = Constants.expoConfig?.version || '';
     const GITHUB_REPO_URL = 'https://github.com/alrescha79-cmd/huawei-manager-mobile';
     const RELEASE_URL = `${GITHUB_REPO_URL}/releases/tag/v${currentVersion}`;
 

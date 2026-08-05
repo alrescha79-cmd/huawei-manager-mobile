@@ -2,11 +2,9 @@ import React from 'react';
 import {
     StyleSheet,
     ScrollView,
-    Linking,
     View,
     Text,
     TouchableOpacity,
-    ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import Constants from 'expo-constants';
@@ -22,7 +20,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function SettingsIndex() {
     const router = useRouter();
-    const { colors, typography, isDark } = useTheme();
+    const { colors, isDark } = useTheme();
     const { t } = useTranslation();
     const { themeMode, setThemeMode, language, setLanguage, usageCardStyle, setUsageCardStyle, accentColor, setAccentColor, signalBubbleEnabled, setSignalBubbleEnabled } = useThemeStore();
     const insets = useSafeAreaInsets();
@@ -266,7 +264,7 @@ export default function SettingsIndex() {
                                                             setTimeout(() => {
                                                                 ToastHelper.warning(t('settings.disableDebugReminder'));
                                                             }, 600);
-                                                        } catch (e) {
+                                                        } catch {
                                                         }
                                                     }}
                                                 >
@@ -328,14 +326,14 @@ export default function SettingsIndex() {
                                                                     setTimeout(() => {
                                                                         ToastHelper.warning(t('settings.disableDebugReminder'));
                                                                     }, 600);
-                                                                } catch (e) {
+                                                                } catch {
                                                                 }
                                                             }
                                                         }
                                                     ]
                                                 );
                                             }
-                                        } catch (e) {
+                                        } catch {
                                         ToastHelper.error(t('settings.emailClientError'));
                                         } finally {
                                             setIsSendingDebugLog(false);

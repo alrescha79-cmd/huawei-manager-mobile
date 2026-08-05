@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { MaterialIcons, MaterialCommunityIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
@@ -8,9 +8,7 @@ import { SignalBar } from './SignalBar';
 import { BatteryIndicator } from './BatteryIndicator';
 import {
     getSignalIcon,
-    getSignalStrength,
     getSignalIconFromModemStatus,
-    getSignalStrengthFromIcon,
     getConnectionStatusText,
     getNetworkTypeText,
     getLteBandInfo,
@@ -73,17 +71,6 @@ export function ConnectionStatusCard({
     skeleton,
 }: ConnectionStatusCardProps) {
     const { colors, typography, isDark } = useTheme();
-
-    const getStrengthLabel = () => {
-        const strength = getSignalStrength(signalInfo?.rssi, signalInfo?.rsrp);
-        if (strength !== 'unknown') {
-            return t(`home.signal${strength.charAt(0).toUpperCase()}${strength.slice(1)}`);
-        }
-        const signalIconStr = modemStatus?.signalIcon?.toString();
-        const iconVal = getSignalIconFromModemStatus(signalIconStr);
-        const fallbackStrength = getSignalStrengthFromIcon(iconVal);
-        return t(`home.signal${fallbackStrength.charAt(0).toUpperCase()}${fallbackStrength.slice(1)}`);
-    };
 
     const getSignalBars = () => {
         const calculatedIcon = getSignalIcon(signalInfo?.rssi, signalInfo?.rsrp);

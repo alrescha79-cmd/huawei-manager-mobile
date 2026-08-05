@@ -2,7 +2,7 @@ import axios, { AxiosInstance } from 'axios';
 import { parseXMLValue } from '@/utils/helpers';
 import { updateSessionActivity, markSessionUnhealthy } from '@/utils/storage';
 import * as Crypto from 'expo-crypto';
-import CryptoJS from 'crypto-js';
+import { hasSessionExpiredCode, isSessionExpiredError, parseErrorCode } from '@/utils/huawei-error';
 
 export class ModemAPIClient {
   private client: AxiosInstance;
@@ -10,7 +10,7 @@ export class ModemAPIClient {
   private sessionCookie: string = '';
   private tokenExpiry: number = 0;
 
-  constructor(private baseURL: string) {
+  constructor(baseURL: string) {
     this.client = axios.create({
       baseURL: `http://${baseURL}`,
       timeout: 10000,
@@ -73,7 +73,7 @@ export class ModemAPIClient {
           duration,
         });
       }
-    } catch (e) {
+    } catch {
     }
   }
 
@@ -163,227 +163,6 @@ export class ModemAPIClient {
     return btoa(binary);
   }
 
-  private async generateNonce(): Promise<string> {
-    const randomBytes = await Crypto.getRandomBytesAsync(32);
-    return Array.from(randomBytes).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-
-  private hexToBytes(hex: string): Uint8Array {
-    const bytes = new Uint8Array(hex.length / 2);
-    for (let i = 0; i < hex.length; i += 2) {
-      bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
-    }
-    return bytes;
-  }
-
-  private bytesToHex(bytes: Uint8Array): string {
-    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-  private pbkdf2(password: string, salt: string, iterations: number): Uint8Array {
-    const saltWordArray = CryptoJS.enc.Hex.parse(salt);
-    const derivedKey = CryptoJS.PBKDF2(password, saltWordArray, {
-      keySize: 256 / 32,  // 32 bytes
-      iterations: iterations,
-      hasher: CryptoJS.algo.SHA256,
-    });
-
-    const words = derivedKey.words;
-    const sigBytes = derivedKey.sigBytes;
-    const bytes = new Uint8Array(sigBytes);
-    for (let i = 0; i < sigBytes; i++) {
-      bytes[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
-    }
-    return bytes;
-  }
-
-  private hmacSha256(key: Uint8Array, message: string): Uint8Array {
-    const keyWordArray = CryptoJS.lib.WordArray.create(key as any);
-    const hmac = CryptoJS.HmacSHA256(message, keyWordArray);
-
-    const words = hmac.words;
-    const sigBytes = hmac.sigBytes;
-    const bytes = new Uint8Array(sigBytes);
-    for (let i = 0; i < sigBytes; i++) {
-      bytes[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
-    }
-    return bytes;
-  }
-
-  private xorBytes(a: Uint8Array, b: Uint8Array): Uint8Array {
-    const result = new Uint8Array(a.length);
-    for (let i = 0; i < a.length; i++) {
-      result[i] = a[i] ^ b[i];
-    }
-    return result;
-  }
-
-  private sha256Bytes(data: Uint8Array): Uint8Array {
-    const wordArray = CryptoJS.lib.WordArray.create(data as any);
-    const hash = CryptoJS.SHA256(wordArray);
-
-    const words = hash.words;
-    const sigBytes = hash.sigBytes;
-    const bytes = new Uint8Array(sigBytes);
-    for (let i = 0; i < sigBytes; i++) {
-      bytes[i] = (words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff;
-    }
-    return bytes;
-  }
-
-  async scramLogin(username: string, password: string): Promise<boolean> {
-    try {
-      const sesResponse = await this.client.get('/api/webserver/SesTokInfo');
-      const sesInfo = parseXMLValue(sesResponse.data, 'SesInfo');
-
-      let session = '';
-      if (sesInfo) {
-        session = sesInfo.includes('SessionID=') ? sesInfo : `SessionID=${sesInfo}`;
-      }
-
-      const tokenResponse = await this.client.get('/api/webserver/token', {
-        headers: {
-          'Cookie': session,
-        },
-      });
-      const csrfToken = parseXMLValue(tokenResponse.data, 'token');
-
-      if (!csrfToken) {
-        console.error('[SCRAM] Failed to get CSRF token');
-        return false;
-      }
-
-      console.log('[SCRAM] Got token:', csrfToken.substring(0, 10) + '...');
-
-      const clientNonce = await this.generateNonce();
-
-      const challengeXml = `<?xml version="1.0" encoding="UTF-8"?><request><username>${username}</username><firstnonce>${clientNonce}</firstnonce><mode>1</mode></request>`;
-
-      const challengeResponse = await this.client.post('/api/user/challenge_login', challengeXml, {
-        headers: {
-          '__RequestVerificationToken': csrfToken,
-          'Content-Type': 'application/xml',
-          'Cookie': session,
-        },
-      });
-
-      const challengeData = typeof challengeResponse.data === 'string' ? challengeResponse.data : JSON.stringify(challengeResponse.data);
-      console.log('[SCRAM] Challenge response:', challengeData);
-
-      const salt = parseXMLValue(challengeData, 'salt');
-      const serverNonce = parseXMLValue(challengeData, 'servernonce');
-      const iterations = parseInt(parseXMLValue(challengeData, 'iterations') || '100');
-
-      console.log('[SCRAM] Parsed - salt:', salt, 'serverNonce:', serverNonce, 'iterations:', iterations);
-
-      if (!salt || !serverNonce) {
-        console.error('[SCRAM] Invalid challenge response - missing salt or serverNonce');
-        return false;
-      }
-
-      const passwordHash = await Crypto.digestStringAsync(
-        Crypto.CryptoDigestAlgorithm.SHA256,
-        password,
-        { encoding: Crypto.CryptoEncoding.HEX }
-      );
-
-      const saltedPassword = this.pbkdf2(passwordHash, salt, iterations);
-
-      const clientKey = this.hmacSha256(saltedPassword, 'Client Key');
-
-      const storedKey = this.sha256Bytes(clientKey);
-
-      const authMessage = `${clientNonce},${serverNonce},${serverNonce}`;
-
-      const clientSignature = this.hmacSha256(storedKey, authMessage);
-
-      const clientProof = this.xorBytes(clientKey, clientSignature);
-      const clientProofHex = this.bytesToHex(clientProof);
-
-      const authXml = `<?xml version="1.0" encoding="UTF-8"?><request><clientproof>${clientProofHex}</clientproof><finalnonce>${serverNonce}</finalnonce></request>`;
-
-      const authResponse = await this.client.post('/api/user/authentication_login', authXml, {
-        headers: {
-          '__RequestVerificationToken': csrfToken,
-          'Content-Type': 'application/xml',
-          'Cookie': session,
-        },
-      });
-
-      const authData = typeof authResponse.data === 'string' ? authResponse.data : '';
-      console.log('[SCRAM] Auth response:', authData);
-
-      if (authData.includes('<serversignature>') || authData.includes('<response>')) {
-        if (!authData.includes('<error>')) {
-          this.sessionToken = csrfToken;
-          this.sessionCookie = session;
-          this.tokenExpiry = Date.now() + 120000;
-          return true;
-        }
-      }
-
-      if (authData.includes('<error>')) {
-        const errorCode = parseXMLValue(authData, 'code');
-        console.error('[SCRAM] Auth error:', errorCode);
-        return false;
-      }
-
-      return false;
-    } catch (error) {
-      console.error('[SCRAM] Login error:', error);
-      return false;
-    }
-  }
-
-
-  private xmlHttpRequest(
-    method: string,
-    url: string,
-    body: string | null = null,
-    headers: Record<string, string> = {}
-  ): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      xhr.open(method, url, true);
-      xhr.withCredentials = true;
-
-      for (const key in headers) {
-        xhr.setRequestHeader(key, headers[key]);
-      }
-
-      xhr.onload = () => {
-        if (xhr.status >= 200 && xhr.status < 300) {
-          const setCookieHeader = xhr.getResponseHeader('Set-Cookie');
-          if (setCookieHeader) {
-            const sessionCookie = setCookieHeader.split(';')[0];
-            if (sessionCookie && sessionCookie.includes('SessionID=')) {
-              this.sessionCookie = sessionCookie;
-            }
-          }
-
-          const tokenHeader = xhr.getResponseHeader('__RequestVerificationToken');
-          if (tokenHeader) {
-            this.sessionToken = tokenHeader;
-            this.tokenExpiry = Date.now() + 30000;
-          }
-
-          resolve(xhr.responseText);
-        } else {
-          reject(new Error(`Request failed with status ${xhr.status}: ${xhr.statusText}`));
-        }
-      };
-
-      xhr.onerror = () => {
-        reject(new Error('Network error or request failed'));
-      };
-
-      if (body) {
-        xhr.send(body);
-      } else {
-        xhr.send();
-      }
-    });
-  }
-
   async isLoggedIn(): Promise<boolean> {
     try {
       const response = await this.client.get('/api/device/information', {
@@ -420,7 +199,7 @@ export class ModemAPIClient {
       try {
         await this.client.get('/html/index.html');
         console.log('[Login] Homepage fetched');
-      } catch (e) {
+      } catch {
       }
 
       const tokenResponse = await this.client.get('/api/webserver/SesTokInfo');
@@ -548,7 +327,7 @@ export class ModemAPIClient {
       });
 
       const responseData = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
-      if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
+      if (hasSessionExpiredCode(responseData)) {
         this.sessionToken = '';
         this.sessionCookie = '';
         this.tokenExpiry = 0;
@@ -562,16 +341,16 @@ export class ModemAPIClient {
             },
           });
           const retryData = typeof retryResponse.data === 'string' ? retryResponse.data : JSON.stringify(retryResponse.data);
-          if (retryData.includes('<code>125003</code>') || retryData.includes('<code>125002</code>')) {
+          if (hasSessionExpiredCode(retryData)) {
             markSessionUnhealthy();
-            const errorCode = retryData.includes('125003') ? '125003' : '125002';
+            const errorCode = parseErrorCode(retryData) || '125002';
             throw new Error(`Session expired (${errorCode}). Please re-login.`);
           }
           updateSessionActivity();
           return retryResponse.data;
-        } catch (retryError) {
+        } catch {
           markSessionUnhealthy();
-          const errorCode = responseData.includes('125003') ? '125003' : '125002';
+          const errorCode = parseErrorCode(responseData) || '125002';
           throw new Error(`Session expired (${errorCode}). Please re-login.`);
         }
       }
@@ -580,7 +359,7 @@ export class ModemAPIClient {
 
       return response.data;
     } catch (error: any) {
-      const isSessionError = error?.message?.includes('125003') || error?.message?.includes('125002');
+      const isSessionError = isSessionExpiredError(error);
       if (!isSessionError) {
         console.error(`Error getting ${endpoint}:`, error);
       }
@@ -620,7 +399,7 @@ export class ModemAPIClient {
 
       const responseData = typeof response.data === 'string' ? response.data : '';
 
-      if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
+      if (hasSessionExpiredCode(responseData)) {
         // Auto-retry POST once with a fresh session
         if (retryCount < 1) {
           this.sessionToken = '';
@@ -633,7 +412,7 @@ export class ModemAPIClient {
         this.sessionCookie = '';
         this.tokenExpiry = 0;
         markSessionUnhealthy();
-        const errorCode = responseData.includes('125003') ? '125003' : '125002';
+        const errorCode = parseErrorCode(responseData) || '125002';
         throw new Error(`Session expired (${errorCode}). Please re-login.`);
       }
 
@@ -645,7 +424,7 @@ export class ModemAPIClient {
 
       return response.data;
     } catch (error: any) {
-      const isSessionError = error?.message?.includes('125003') || error?.message?.includes('125002');
+      const isSessionError = isSessionExpiredError(error);
       if (!isSessionError) {
         console.error(`POST error to ${endpoint}:`, error);
       }

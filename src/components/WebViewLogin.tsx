@@ -223,7 +223,7 @@ export function WebViewLogin({
             } else if (message.type === 'LOGIN_ERROR') {
                 ThemedAlertHelper.alert(t('webViewLogin.loginFailed'), message.message || t('webViewLogin.checkCredentials'));
             }
-        } catch (error) {
+        } catch {
         }
     }, [onLoginSuccess]);
 

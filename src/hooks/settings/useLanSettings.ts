@@ -56,14 +56,14 @@ export function useLanSettings({ t }: UseLanSettingsProps) {
             const settings = await service.getEthernetSettings();
             setEthernetMode(settings.connectionMode);
             setEthernetStatus(settings.status);
-        } catch (e) { }
+        } catch { }
     };
 
     const loadDhcp = async (service: NetworkSettingsService) => {
         try {
             const settings = await service.getDHCPSettings();
             setDhcpSettings(settings);
-        } catch (e) { }
+        } catch { }
     };
 
     const loadApn = async (service: NetworkSettingsService) => {
@@ -72,7 +72,7 @@ export function useLanSettings({ t }: UseLanSettingsProps) {
             const activeId = await service.getActiveAPNProfile();
             setActiveApnProfileId(activeId);
             setApnProfiles(profiles.map(p => ({ ...p, isDefault: p.id === activeId })));
-        } catch (e) { }
+        } catch { }
     };
 
     // Ethernet handlers
@@ -91,7 +91,7 @@ export function useLanSettings({ t }: UseLanSettingsProps) {
             if (changed) {
                 showInterstitial(() => { });
             }
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
         } finally {
             setIsChangingEthernet(false);
@@ -105,7 +105,7 @@ export function useLanSettings({ t }: UseLanSettingsProps) {
         try {
             await networkSettingsService.toggleDHCPServer(enabled);
             setDhcpSettings(prev => ({ ...prev, dhcpStatus: enabled }));
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('networkSettings.failedSaveDhcp'));
         } finally {
             setIsTogglingDhcp(false);
@@ -120,7 +120,7 @@ export function useLanSettings({ t }: UseLanSettingsProps) {
             showInterstitial(() => {
                 ThemedAlertHelper.alert(t('common.success'), t('networkSettings.dhcpSaved'));
             });
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('networkSettings.failedSaveDhcp'));
         } finally {
             setIsSavingDhcp(false);
@@ -164,7 +164,7 @@ export function useLanSettings({ t }: UseLanSettingsProps) {
                 ThemedAlertHelper.alert(t('common.success'), t('networkSettings.apnSaved'));
             });
             setTimeout(() => loadApn(networkSettingsService), 2000);
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
         } finally {
             setIsSavingApn(false);
@@ -188,7 +188,7 @@ export function useLanSettings({ t }: UseLanSettingsProps) {
                             await networkSettingsService?.deleteAPNProfile(profileId);
                             ThemedAlertHelper.alert(t('common.success'), t('networkSettings.apnDeleted'));
                             if (networkSettingsService) loadApn(networkSettingsService);
-                        } catch (error) {
+                        } catch {
                             ThemedAlertHelper.alert(t('common.error'), t('networkSettings.deleteApnFailed'));
                         }
                     },
@@ -213,7 +213,7 @@ export function useLanSettings({ t }: UseLanSettingsProps) {
                             await networkSettingsService?.setActiveAPNProfile(profileId);
                             if (networkSettingsService) loadApn(networkSettingsService);
                             ThemedAlertHelper.alert(t('common.success'), t('networkSettings.profileSwitched'));
-                        } catch (e) {
+                        } catch {
                             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
                         }
                     },

@@ -6,7 +6,6 @@ import {
     Modal,
     TouchableOpacity,
     Animated,
-    Platform,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { BlurView } from 'expo-blur';
@@ -310,6 +309,13 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     const abortControllerRef = useRef<AbortController | null>(null);
     const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
+    useEffect(() => {
+        return () => {
+            if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+            abortControllerRef.current?.abort();
+        };
+    }, []);
+
     const [clientIp, setClientIp] = useState<string>('');
     const [ispInfo, setIspInfo] = useState<string>('');
     const [providerHostname, setProviderHostname] = useState<string>('');
@@ -318,8 +324,14 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     const [ulMax, setUlMax] = useState(50);
 
     useEffect(() => {
+        let infoController: AbortController | null = null;
+        let infoTimeout: NodeJS.Timeout | null = null;
+
         if (visible) {
-            fetch('https://ipinfo.io/json')
+            infoController = new AbortController();
+            infoTimeout = setTimeout(() => infoController?.abort(), 5000);
+
+            fetch('https://ipinfo.io/json', { signal: infoController.signal })
                 .then(res => res.json())
                 .then(data => {
                     if (data.ip) setClientIp(data.ip);
@@ -331,7 +343,7 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                     if (data.hostname) setProviderHostname(data.hostname);
                 })
                 .catch(() => {
-                    fetch('https://speed.cloudflare.com/meta')
+                    fetch('https://speed.cloudflare.com/meta', { signal: infoController?.signal })
                         .then(res => res.json())
                         .then(data => {
                             if (data.clientIp) setClientIp(data.clientIp);
@@ -344,6 +356,11 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
             setIspInfo('');
             setProviderHostname('');
         }
+
+        return () => {
+            if (infoTimeout) clearTimeout(infoTimeout);
+            infoController?.abort();
+        };
     }, [visible]);
 
     useEffect(() => {
@@ -431,7 +448,7 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                         if (elapsed > 0) {
                             setResult(prev => ({ ...prev, downloadSpeed: ((totalBytesDownloaded * 8) / elapsed) / 1000000 }));
                         }
-                    } catch (err) {
+                    } catch {
                         if (signal.aborted) break;
                     }
                 }
@@ -476,7 +493,7 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                         if (elapsed > 0) {
                             setResult(prev => ({ ...prev, uploadSpeed: ((totalBytesUploaded * 8) / elapsed) / 1000000 }));
                         }
-                    } catch (err) {
+                    } catch {
                         if (signal.aborted) break;
                     }
                 }
@@ -529,16 +546,6 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     const currentMax = phase === 'upload' ? ulMax : dlMax;
     const currentColor = phase === 'upload' ? '#3B82F6' : '#22C55E';
     const currentLabel = phase === 'upload' ? t('home.upload') : t('home.download');
-
-    const getPhaseText = () => {
-        switch (phase) {
-            case 'latency': return t('home.latency') + '...';
-            case 'download': return t('home.download') + '...';
-            case 'upload': return t('home.upload') + '...';
-            case 'complete': return t('home.speedtestComplete');
-            default: return t('home.startTest');
-        }
-    };
 
     const progressWidth = progressAnim.interpolate({
         inputRange: [0, 100],

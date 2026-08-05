@@ -6,19 +6,17 @@ import {
   RefreshControl,
   StatusBar,
   Platform,
-  TextInput,
-  TouchableOpacity,
-  Keyboard,
   AppState,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Card, CardHeader, ThemedAlertHelper, ToastHelper, MeshGradientBackground, AnimatedScreen, ThemedSwitch, BouncingDots, RefreshIndicator, AdBanner, AdNative } from '@/components';
+import { Card, CardHeader, ToastHelper, MeshGradientBackground, AnimatedScreen, ThemedSwitch, RefreshIndicator, AdBanner, AdNative } from '@/components';
 import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSettings, ParentalControlCard, WiFiSettingsSkeleton, ConnectedDevicesSkeleton, GuestWiFiSkeleton, ParentalControlSkeleton, wifiStyles as styles, DeviceDetailModal, ParentalProfileModal } from '@/components/wifi';
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
 import { WiFiService } from '@/services/wifi.service';
+import { ParentalControlProfile } from '@/types';
 import { useTranslation } from '@/i18n';
 
 import { useWiFiSettings } from '@/hooks/wifi/useWiFiSettings';
@@ -49,7 +47,7 @@ export default function WiFiScreen() {
   const [wifiService, setWiFiService] = useState<WiFiService | null>(null);
 
   const [parentalControlEnabled, setParentalControlEnabled] = useState(false);
-  const [parentalProfiles, setParentalProfiles] = useState<any[]>([]);
+  const [parentalProfiles, setParentalProfiles] = useState<ParentalControlProfile[]>([]);
 
   // Hook Initialization
   const wifiSettingsHook = useWiFiSettings({ wifiSettings, wifiService, t, handleRefresh });
@@ -59,8 +57,6 @@ export default function WiFiScreen() {
     t, 
     handleRefresh, 
     parentalProfiles, 
-    setParentalProfiles, 
-    parentalControlEnabled, 
     setParentalControlEnabled 
   });
   const wifiDevicesHook = useWiFiDevices({ wifiService, t, handleRefresh });

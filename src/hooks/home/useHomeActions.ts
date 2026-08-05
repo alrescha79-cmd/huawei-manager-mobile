@@ -88,7 +88,7 @@ export function useHomeActions({
               async () => {
                 setIsChangingIp(true);
 
-                modemService.triggerPlmnScan().catch((error) => {
+                modemService.triggerPlmnScan().catch(() => {
                 });
 
                 setTimeout(() => {
@@ -204,7 +204,7 @@ export function useHomeActions({
               } else {
                 ToastHelper.error(t('home.clearHistoryFailed'));
               }
-            } catch (error) {
+            } catch {
               ToastHelper.error(t('home.clearHistoryFailed'));
             } finally {
               setIsClearingHistory(false);

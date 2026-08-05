@@ -153,7 +153,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
 
     const sessionTotal = data.currentDownload + data.currentUpload;
     const monthTotal = data.monthDownload + data.monthUpload;
-    const total = data.totalDownload + data.totalUpload;
 
     return (
         <FlexWidget
@@ -315,24 +314,6 @@ export function ModemStatusWidget({ data }: ModemStatusWidgetProps) {
                     </FlexWidget>
                 </FlexWidget>
             </FlexWidget>
-        </FlexWidget>
-    );
-}
-
-export function LoadingWidget() {
-    return (
-        <FlexWidget
-            style={{
-                height: 'match_parent',
-                width: 'match_parent',
-                backgroundColor: colors.background,
-                borderRadius: 24,
-                justifyContent: 'center',
-                alignItems: 'center',
-            }}
-        >
-            <TextWidget text="◌" style={{ fontSize: 40, color: colors.blue, marginBottom: 8 }} />
-            <TextWidget text="Loading..." style={{ fontSize: 14, color: colors.textSecondary }} />
         </FlexWidget>
     );
 }

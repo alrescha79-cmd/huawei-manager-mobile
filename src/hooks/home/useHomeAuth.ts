@@ -1,34 +1,25 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { ModemService } from '@/services/modem.service';
 import { ThemedAlertHelper } from '@/components';
 
 interface UseHomeAuthProps {
   credentials: any;
   logout: () => Promise<void>;
   login: (creds: any) => Promise<any>;
-  sessionExpired: boolean;
   setRelogging: (val: boolean) => void;
   clearSessionExpired: () => void;
   tryQuietSessionRestore: () => Promise<{ success: boolean; error?: "unreachable" | "auth_failed" }>;
-  modemService: ModemService | null;
   t: (key: string) => string;
-  loadData: (service: ModemService) => Promise<void>;
-  loadBands: (service: ModemService) => Promise<void>;
 }
 
 export function useHomeAuth({
   credentials,
   logout,
   login,
-  sessionExpired,
   setRelogging,
   clearSessionExpired,
   tryQuietSessionRestore,
-  modemService,
   t,
-  loadData,
-  loadBands,
 }: UseHomeAuthProps) {
   const router = useRouter();
   const [showReloginWebView, setShowReloginWebView] = useState(false);
@@ -64,10 +55,6 @@ export function useHomeAuth({
         const restored = await tryQuietSessionRestore();
         if (restored.success) {
           success = true;
-          if (modemService) {
-            loadData(modemService);
-            loadBands(modemService);
-          }
           break;
         }
       } catch (error) {
@@ -110,10 +97,6 @@ export function useHomeAuth({
         username: credentials.username,
         password: credentials.password,
       });
-    }
-
-    if (modemService) {
-      loadData(modemService);
     }
   };
 

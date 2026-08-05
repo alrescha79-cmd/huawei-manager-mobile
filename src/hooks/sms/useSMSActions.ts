@@ -51,7 +51,7 @@ export function useSMSActions({
                             await smsService.deleteSMS(index);
                             removeMessage(index);
                             ToastHelper.success(t('sms.messageDeleted'));
-                        } catch (error) {
+                        } catch {
                             ToastHelper.error(t('alerts.failedDeleteSms'));
                         }
                     },
@@ -115,7 +115,7 @@ export function useSMSActions({
                             }
                             ToastHelper.success(t('sms.messagesDeleted', { count: idsToDelete.length }));
                             exitSelectionMode();
-                        } catch (error) {
+                        } catch {
                             ToastHelper.error(t('alerts.failedDeleteSms'));
                         }
                     },
@@ -138,7 +138,7 @@ export function useSMSActions({
             setNewPhone('');
             setNewMessage('');
             handleRefresh();
-        } catch (error) {
+        } catch {
             ToastHelper.error(t('alerts.failedSendSms'));
         } finally {
             setIsSending(false);
@@ -173,7 +173,7 @@ export function useSMSActions({
             setShowDetail(false);
             setSelectedMessage(null);
             handleRefresh();
-        } catch (error) {
+        } catch {
             ToastHelper.error(t('alerts.failedSendSms'));
         } finally {
             setIsSending(false);

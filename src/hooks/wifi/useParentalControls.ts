@@ -1,22 +1,13 @@
 import { useState } from 'react';
 import { WiFiService } from '@/services/wifi.service';
+import { ParentalControlProfile } from '@/types';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
 
 interface UseParentalControlsProps {
   wifiService: WiFiService | null;
   t: (key: string) => string;
   handleRefresh: () => void;
-  parentalProfiles: {
-    id: string;
-    name: string;
-    deviceMacs: string[];
-    startTime: string;
-    endTime: string;
-    activeDays: number[];
-    enabled: boolean;
-  }[];
-  setParentalProfiles: React.Dispatch<React.SetStateAction<any[]>>;
-  parentalControlEnabled: boolean;
+  parentalProfiles: ParentalControlProfile[];
   setParentalControlEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -25,8 +16,6 @@ export function useParentalControls({
   t, 
   handleRefresh, 
   parentalProfiles, 
-  setParentalProfiles,
-  parentalControlEnabled,
   setParentalControlEnabled
 }: UseParentalControlsProps) {
   const [isTogglingParental, setIsTogglingParental] = useState(false);
@@ -63,7 +52,7 @@ export function useParentalControls({
     try {
       await wifiService.toggleParentalControl(enabled);
       setParentalControlEnabled(enabled);
-    } catch (error) {
+    } catch {
       ToastHelper.error(t('common.error'));
     } finally {
       setIsTogglingParental(false);
@@ -186,14 +175,14 @@ export function useParentalControls({
       ToastHelper.success(t('parentalControl.profileSaved'));
       setShowProfileModal(false);
       handleRefresh();
-    } catch (error) {
+    } catch {
       ToastHelper.error(t('common.error'));
     } finally {
       setIsSavingProfile(false);
     }
   };
 
-  const handleDeleteProfile = (profileId: string, profileName: string) => {
+  const handleDeleteProfile = (profileId: string, _profileName: string) => {
     ThemedAlertHelper.alert(
       t('parentalControl.deleteProfile'),
       t('parentalControl.deleteConfirm'),
@@ -207,7 +196,7 @@ export function useParentalControls({
               await wifiService?.deleteParentalControlProfile(profileId);
               ToastHelper.success(t('parentalControl.profileDeleted'));
               handleRefresh();
-            } catch (error) {
+            } catch {
               ToastHelper.error(t('common.error'));
             }
           },

@@ -24,7 +24,6 @@ interface BatteryIndicatorProps {
  */
 export function BatteryIndicator({
     batteryStatus,
-    batteryLevel,
     batteryPercent,
     size = 'medium',
 }: BatteryIndicatorProps) {

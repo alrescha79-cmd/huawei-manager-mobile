@@ -19,7 +19,6 @@ interface SMSListItemProps {
 
 export function SMSListItem({
     message,
-    isLast = false,
     timeDisplay = '',
     onPress,
     onLongPress,
@@ -28,13 +27,13 @@ export function SMSListItem({
     onToggleSelect,
     isAd = false,
 }: SMSListItemProps) {
+    const { colors, typography } = useTheme();
+
     if (isAd) {
         return <InlineAdNative />;
     }
 
     if (!message) return null;
-
-    const { colors, typography, isDark } = useTheme();
 
     const initials = message.phone.charAt(0).toUpperCase();
     const isUnread = message.smstat === '0';

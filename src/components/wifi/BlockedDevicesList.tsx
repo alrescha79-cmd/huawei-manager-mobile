@@ -2,11 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-
-interface BlockedDevice {
-    macAddress: string;
-    hostName: string;
-}
+import { BlockedDevice } from '@/types';
 
 interface BlockedDevicesListProps {
     t: (key: string) => string;

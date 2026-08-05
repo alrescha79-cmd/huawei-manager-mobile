@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getCredentials } from '@/utils/storage';
 
 export interface WidgetData {
     currentDownloadRate: number;
@@ -45,10 +46,9 @@ function safeParseInt(value: string): number {
 
 async function getModemIp(): Promise<string> {
     try {
-        const credentialsStr = await AsyncStorage.getItem('modem_credentials');
-        if (credentialsStr) {
-            const credentials = JSON.parse(credentialsStr);
-            return credentials.modemIp || DEFAULT_MODEM_IP;
+        const credentials = await getCredentials();
+        if (credentials?.modemIp) {
+            return credentials.modemIp;
         }
     } catch {
         // Ignored - use default
@@ -211,7 +211,7 @@ export async function fetchWidgetData(): Promise<WidgetData> {
         await cacheWidgetData(widgetData);
 
         return widgetData;
-    } catch (error: any) {
+    } catch {
         const cachedData = await getCachedWidgetData();
         if (cachedData) {
             return {
@@ -294,15 +294,4 @@ export function getNetworkTypeName(networkType: string): string {
         '1012': '5G',
     };
     return types[networkType] || networkType || 'Unknown';
-}
-
-export function getConnectionStatusName(status: string): string {
-    const statuses: Record<string, string> = {
-        '900': 'Connecting',
-        '901': 'Connected',
-        '902': 'Disconnected',
-        '903': 'Disconnecting',
-        '904': 'Connection Failed',
-    };
-    return statuses[status] || status || 'Unknown';
 }

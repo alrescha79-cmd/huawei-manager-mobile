@@ -9,7 +9,7 @@ interface CardHeaderProps {
 }
 
 export function CardHeader({ title, icon }: CardHeaderProps) {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography } = useTheme();
 
     return (
         <View style={styles.container}>

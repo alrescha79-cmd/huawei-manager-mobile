@@ -26,3 +26,4 @@ export * from './AdBanner';
 export * from './ChangelogModal';
 export * from './UpdateAvailableModal';
 export * from './SignalBubble';
+export * from './GlobalOverlays';

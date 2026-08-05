@@ -1,22 +1,18 @@
 import React, { useState } from 'react';
 import {
-  View,
-  Text,
   ScrollView,
   RefreshControl,
-  TouchableOpacity,
   Platform,
   StatusBar,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
-import { Card, ThemedAlertHelper, ToastHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, SignalPointingModal, AdBanner, AdNative } from '@/components';
+import { ToastHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, MeshGradientBackground, AnimatedScreen, RefreshIndicator, SignalPointingModal, AdBanner, AdNative } from '@/components';
 import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, SignalInfoSkeleton, homeStyles as styles, DiagnosisResultModal, SpeedTestModal, NoSignalModal } from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
-import { formatBytes, formatDuration, DurationUnits } from '@/utils/helpers';
+import { DurationUnits } from '@/utils/helpers';
 import { useTranslation } from '@/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -26,7 +22,7 @@ import { useHomeActions } from '@/hooks/home/useHomeActions';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { colors, typography, spacing, isDark, borderRadius } = useTheme();
+  const { isDark } = useTheme();
   const { usageCardStyle, setUsageCardStyle, themeMode, setThemeMode, signalBubbleEnabled, setSignalBubbleEnabled } = useThemeStore();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -36,7 +32,6 @@ export default function HomeScreen() {
     logout,
     login,
     sessionExpired: authSessionExpired,
-    isRelogging,
     setRelogging,
     clearSessionExpired,
     tryQuietSessionRestore
@@ -65,42 +60,17 @@ export default function HomeScreen() {
   const [showSpeedTestModal, setShowSpeedTestModal] = useState(false);
   const [showSignalPointingModal, setShowSignalPointingModal] = useState(false);
 
-  const {
-    showReloginWebView,
-    setShowReloginWebView,
-    isRetryingSilent,
-    handleReLogin,
-    handleRetrySilent,
-    handleReloginSuccess,
-  } = useHomeAuth({
-    credentials,
-    logout,
-    login,
-    sessionExpired: authSessionExpired,
-    setRelogging,
-    clearSessionExpired,
-    tryQuietSessionRestore,
-    modemService: null, 
-    t,
-    loadData: async () => { }, 
-    loadBands: async () => { },
-  });
-
-  const homeData = useHomeData({ t, showReloginWebView });
-
   const homeAuth = useHomeAuth({
     credentials,
     logout,
     login,
-    sessionExpired: authSessionExpired,
     setRelogging,
     clearSessionExpired,
     tryQuietSessionRestore,
-    modemService: homeData.modemService,
     t,
-    loadData: homeData.loadData,
-    loadBands: homeData.loadBands,
   });
+
+  const homeData = useHomeData({ t, showReloginWebView: homeAuth.showReloginWebView });
 
   const homeActions = useHomeActions({
     modemService: homeData.modemService,

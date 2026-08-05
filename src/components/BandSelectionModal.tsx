@@ -7,15 +7,12 @@ import {
     StyleSheet,
     Modal,
     TextInput,
-    SafeAreaView,
     Keyboard,
-    StatusBar,
-    Platform,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { ModalButton } from './ModalButton';
 import { ModalHeader } from './ModalHeader';
-import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
@@ -24,8 +21,8 @@ import { ToastHelper } from './Toast';
 import { ModemService } from '@/services/modem.service';
 import { ModalBackground } from './ModalBackground';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
-import { AdBanner, AdNative, InlineAdNative } from './AdBanner';
-import { BouncingDots } from './LoadingIndicators';
+import { InlineAdNative } from './AdBanner';
+import { isSessionExpiredError } from '@/utils/huawei-error';
 
 
 const LTE_BANDS = [
@@ -75,7 +72,7 @@ export function BandSelectionModal({
     modemService,
     onSaved,
 }: BandSelectionModalProps) {
-    const { colors, typography, glassmorphism, isDark } = useTheme();
+    const { colors, glassmorphism, isDark } = useTheme();
     const { t } = useTranslation();
     const insets = useSafeAreaInsets();
 
@@ -168,8 +165,7 @@ export function BandSelectionModal({
                         const isNetworkDrop = errorMessage.includes('Network error') || 
                                               errorMessage.includes('timeout') || 
                                               errorMessage.toLowerCase().includes('network') ||
-                                              errorMessage.includes('125003') || 
-                                              errorMessage.includes('125002');
+                                              isSessionExpiredError(error);
                                               
                         if (error?.huaweiErrorCode === '100003') {
                             errorMessage = t('alerts.bandNotSupported') || 'LTE Band selection is not supported on this modem model.';

@@ -5,15 +5,12 @@ import {
     StyleSheet,
     Modal,
     TextInput,
-    TouchableOpacity,
     Pressable,
     Keyboard,
     KeyboardAvoidingView,
     Platform,
-    StatusBar,
     ScrollView,
 } from 'react-native';
-import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

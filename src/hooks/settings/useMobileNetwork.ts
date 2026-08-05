@@ -85,7 +85,7 @@ export function useMobileNetwork({ t }: UseMobileNetworkProps) {
             setMonthlySettings(settings);
             showInterstitial(() => {});
             ToastHelper.success(t('home.monthlySettingsSaved'));
-        } catch (error) {
+        } catch {
             ToastHelper.error(t('home.failedSaveMonthlySettings'));
         }
     };
@@ -118,7 +118,7 @@ export function useMobileNetwork({ t }: UseMobileNetworkProps) {
             await modemService.toggleMobileData(value);
             setMobileDataEnabled(value);
             showInterstitial(() => { });
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedToggleData'));
             setMobileDataEnabled(!value);
         } finally {
@@ -133,7 +133,7 @@ export function useMobileNetwork({ t }: UseMobileNetworkProps) {
             await modemService.setDataRoaming(value);
             setDataRoamingEnabled(value);
             showInterstitial(() => { });
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
             setDataRoamingEnabled(!value);
         } finally {
@@ -148,7 +148,7 @@ export function useMobileNetwork({ t }: UseMobileNetworkProps) {
             await modemService.setAutoNetwork(value);
             setAutoNetworkEnabled(value);
             showInterstitial(() => { });
-        } catch (error) {
+        } catch {
             ToastHelper.error(t('common.error'));
             setAutoNetworkEnabled(!value);
         } finally {

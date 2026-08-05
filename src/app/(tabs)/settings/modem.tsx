@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import {
     StyleSheet,
     ScrollView,
-    ActivityIndicator,
     View,
 } from 'react-native';
 import { useTheme } from '@/theme';
@@ -10,9 +9,8 @@ import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { ModemService } from '@/services/modem.service';
 import { useTranslation } from '@/i18n';
-import { ThemedAlertHelper, ToastHelper, SelectionModal, MeshGradientBackground, BouncingDots, AnimatedScreen, AdNative } from '@/components';
+import { ToastHelper, SelectionModal, MeshGradientBackground, BouncingDots, AnimatedScreen, AdNative } from '@/components';
 import { SettingsSection, SettingsItem, PageHeader } from '@/components/settings';
-import { MaterialIcons } from '@expo/vector-icons';
 import { showInterstitial } from '@/services/ad.service';
 
 const ANTENNA_MODES = [
@@ -92,7 +90,7 @@ export default function ModemSettingsScreen() {
             } else {
                 ToastHelper.success(t('settings.firmwareUpToDate'));
             }
-        } catch (error) {
+        } catch {
             ToastHelper.error(t('alerts.failedCheckFirmware'));
         } finally {
             setIsCheckingFirmware(false);
@@ -112,7 +110,7 @@ export default function ModemSettingsScreen() {
             if (changed) {
                 showInterstitial(() => { });
             }
-        } catch (error) {
+        } catch {
             ToastHelper.error(t('alerts.failedChangeAntenna'));
         } finally {
             setIsChangingAntenna(false);

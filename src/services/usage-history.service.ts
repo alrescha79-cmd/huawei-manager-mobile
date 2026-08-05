@@ -51,7 +51,6 @@ export async function checkAndSaveMonthlyUsage(
     monthUpload: number
 ): Promise<void> {
     const history = await getUsageHistory();
-    const currentMonth = getCurrentMonthKey();
     const lastMonth = getLastMonthKey();
 
     // Calculate last month usage from total - current month

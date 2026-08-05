@@ -1,7 +1,6 @@
 import React from 'react';
-import { requestWidgetUpdate, requestWidgetUpdateById, getWidgetInfo } from 'react-native-android-widget';
+import { requestWidgetUpdate, getWidgetInfo } from 'react-native-android-widget';
 import { AppState } from 'react-native';
-import type { AppStateStatus } from 'react-native';
 import { ModemStatusWidget } from './ModemStatusWidget';
 import { fetchWidgetData, fetchSpeedData, WidgetData } from './widget-data.service';
 
@@ -12,7 +11,6 @@ const FULL_UPDATE_INTERVAL = 120000;
 let speedIntervalId: ReturnType<typeof setInterval> | null = null;
 let fullDataIntervalId: ReturnType<typeof setInterval> | null = null;
 let cachedFullData: WidgetData | null = null;
-let updateCount = 0;
 let isUpdating = false;
 
 async function updateWidgetWithSpeed(): Promise<void> {
@@ -23,7 +21,6 @@ async function updateWidgetWithSpeed(): Promise<void> {
     isUpdating = true;
     try {
         const speedData = await fetchSpeedData();
-        updateCount++;
 
         const mergedData: WidgetData = cachedFullData
             ? {
@@ -58,12 +55,7 @@ async function updateWidgetWithSpeed(): Promise<void> {
             widgetName: WIDGET_NAME,
             renderWidget: () => <ModemStatusWidget data={mergedData} />,
         });
-
-        if (updateCount % 10 === 0) {
-        }
-    } catch (error) {
-        if (updateCount % 10 === 0) {
-        }
+    } catch {
     } finally {
         isUpdating = false;
     }
@@ -78,18 +70,13 @@ async function updateWidgetWithFullData(): Promise<void> {
             renderWidget: () => <ModemStatusWidget data={cachedFullData!} />,
         });
 
-    } catch (error) {
+    } catch {
     }
-}
-
-export async function updateModemWidget(): Promise<void> {
-    await updateWidgetWithFullData();
 }
 
 export function startRealtimeWidgetUpdates(): () => void {
     stopRealtimeWidgetUpdates();
 
-    updateCount = 0;
     isUpdating = false;
 
     getWidgetInfo(WIDGET_NAME).then((widgets) => {

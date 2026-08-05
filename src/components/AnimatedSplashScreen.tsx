@@ -12,7 +12,7 @@ interface AnimatedSplashScreenProps {
     isLoading?: boolean;
 }
 
-export function AnimatedSplashScreen({ onFinish, isLoading = true }: AnimatedSplashScreenProps) {
+export function AnimatedSplashScreen({ isLoading = true }: AnimatedSplashScreenProps) {
     const { colors, isDark } = useTheme();
 
     // Theme-aware colors

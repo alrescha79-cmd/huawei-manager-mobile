@@ -3,7 +3,6 @@ import {
     Modal,
     View,
     Text,
-    TouchableOpacity,
     StyleSheet,
     Dimensions,
     Animated,
@@ -25,7 +24,7 @@ export const NoSignalModal: React.FC<NoSignalModalProps> = ({
     onRetry,
     isRetrying,
 }) => {
-    const { colors, typography, isDark, borderRadius, glassmorphism } = useTheme();
+    const { colors, typography, isDark } = useTheme();
     const { t } = useTranslation();
     const [sheetVisible, setSheetVisible] = useState(false);
     const [shouldShow, setShouldShow] = useState(false);

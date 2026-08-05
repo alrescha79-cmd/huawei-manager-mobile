@@ -229,10 +229,16 @@ export interface ParentalControlProfile {
   id: string;
   name: string;
   deviceMacs: string[];
+  deviceNames?: string[];
   startTime: string;
   endTime: string;
   activeDays: number[];
   enabled: boolean;
+}
+
+export interface BlockedDevice {
+  macAddress: string;
+  hostName: string;
 }
 
 // DHCP Settings Types

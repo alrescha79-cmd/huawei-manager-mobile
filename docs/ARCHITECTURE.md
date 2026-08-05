@@ -4,7 +4,7 @@ Aplikasi ini mengusung tema **macOS + iOS + Android** sebagai gaya visual utama.
 
 - **macOS** — Glassmorphism (blur + transparansi), rounded corners besar, card-based layout, depth layering
 - **iOS** — SF Pro typography, haptic feedback patterns, sheet/modal presentation, tab bar navigation
-- **Android** — Material Design components (react-native-paper), Android Home Screen Widgets, AdMob integration
+- **Android** — Material icons, Android Home Screen Widgets, AdMob integration
 
 Hasil akhir: antarmuka modern yang terasa native di semua platform, dengan estetika frosted glass yang konsisten baik di light maupun dark mode.
 
@@ -20,11 +20,12 @@ Hasil akhir: antarmuka modern yang terasa native di semua platform, dengan estet
 - **Axios** - HTTP client
 
 ## UI/UX
-- **react-native-paper** - Material Design components
+- **@expo/vector-icons** - Material/Ionicons icon set
 - **expo-blur** - iOS blur effects
 - **react-native-reanimated** - Smooth animations
-- **@shopify/react-native-skia** - High-performance graphics
-- **victory-native** - Charts & gauges
+- **react-native-svg** - Charts & gauges
+- **react-native-text-ticker** - Marquee text
+- **expo-linear-gradient / expo-blur** - Mesh gradient backgrounds
 
 ## Storage & Security
 - **expo-secure-store** - Encrypted credential storage
@@ -33,9 +34,9 @@ Hasil akhir: antarmuka modern yang terasa native di semua platform, dengan estet
 
 ## Utilities
 - **dayjs** - Date formatting
-- **react-native-toast-message** - Toast notifications
-- **expo-crypto** - SHA256 hashing for login
-- **i18n-js** / **expo-localization** - Multi-language support
+- **Custom Toast** (`src/components/Toast.tsx`) - Toast notifications
+- **expo-crypto** + **crypto-js** - SHA256/PBKDF2 hashing for login
+- **Custom i18n** (`src/i18n/` + `en.json`/`id.json`) - Multi-language support
 
 ## Native Integrations
 - **react-native-android-widget** - Android Home Screen Widgets
@@ -48,44 +49,60 @@ Hasil akhir: antarmuka modern yang terasa native di semua platform, dengan estet
 ```
 src/
 ├── app/                    # Expo Router screens
-│   ├── (tabs)/            # Tab navigation
-│   │   ├── home/          # Dashboard components & screens
-│   │   ├── wifi/          # WiFi management components
-│   │   ├── sms/           # SMS management components
-│   │   └── _layout.tsx    # Tab navigation layout
-│   ├── login.tsx          # Login screen
-│   └── _layout.tsx        # Root layout
-├── components/            # Reusable components
-│   ├── Button.tsx
-│   ├── Card.tsx
-│   ├── LoadingIndicators.tsx
-│   ├── Skeleton.tsx
-│   └── ThemedAlert.tsx
-├── hooks/                 # Custom React Hooks
-│   └── useModemData.ts    # Example hooks
-├── i18n/                  # Internationalization
-│   └── index.ts           # Translation configuration
-├── services/              # API & business logic
-│   ├── api.service.ts     # Base API client with auth
-│   ├── modem.service.ts   # Modem operations
-│   ├── wifi.service.ts    # WiFi operations
-│   ├── sms.service.ts     # SMS operations
-│   └── network.service.ts # Network detection
-├── stores/                # Zustand stores
+│   ├── (tabs)/             # Tab navigation
+│   │   ├── home.tsx        # Dashboard screen
+│   │   ├── wifi.tsx        # WiFi management screen
+│   │   ├── sms.tsx         # SMS management screen
+│   │   ├── settings/       # Settings stack (lan, system, modem, ...)
+│   │   └── _layout.tsx     # Tab navigation layout
+│   ├── login.tsx           # Login screen
+│   └── _layout.tsx         # Root layout (auth guard, overlays, notifications)
+├── components/             # Reusable components
+│   ├── home/               # Dashboard cards
+│   ├── wifi/               # WiFi management components
+│   ├── sms/                # SMS management components
+│   ├── settings/           # Settings components
+│   ├── GlobalOverlays.tsx  # Alert/toast/update/changelog overlays
+│   └── ...
+├── hooks/                  # Custom React Hooks
+│   ├── home/               # useHomeData, useHomeAuth, useHomeActions
+│   ├── wifi/               # useWiFiSettings, useWiFiDevices, ...
+│   ├── sms/                # useSMSData, useSMSActions, ...
+│   ├── settings/           # useSystemSettings, useLanSettings, ...
+│   ├── useLogin.ts
+│   └── useNotificationRouting.ts
+├── i18n/                   # Internationalization
+│   ├── index.ts            # useTranslation hook
+│   ├── en.json
+│   └── id.json
+├── services/               # API & business logic
+│   ├── api.service.ts      # Base API client with session/token auth
+│   ├── direct-auth.service.ts  # SCRAM login
+│   ├── modem.service.ts    # Modem operations
+│   ├── wifi.service.ts     # WiFi operations
+│   ├── sms.service.ts      # SMS operations
+│   ├── network.service.ts  # Network detection
+│   └── ...
+├── stores/                 # Zustand stores
 │   ├── auth.store.ts
 │   ├── modem.store.ts
 │   ├── wifi.store.ts
 │   ├── sms.store.ts
-│   └── theme.store.ts
-├── theme/                 # Design system
+│   ├── theme.store.ts
+│   ├── debug.store.ts
+│   └── modem-profile.store.ts
+├── theme/                  # Design system
 │   └── index.ts
-├── types/                 # TypeScript types
+├── types/                  # TypeScript types
 │   └── modem.types.ts
-├── utils/                 # Helper functions
+├── utils/                  # Helper functions
 │   ├── helpers.ts
-│   └── constants.ts
-└── widget/                # Android Home Screen Widgets
+│   ├── formatters.ts
+│   ├── huawei-error.ts
+│   └── storage.ts
+└── widget/                 # Android Home Screen Widgets
     ├── ModemStatusWidget.tsx
+    ├── widget-data.service.ts
     └── widget-task-handler.tsx
 ```
 
@@ -96,7 +113,7 @@ src/
 Tampilan menggabungkan elemen terbaik dari tiga ekosistem:
 - **Frosted glass / glassmorphism** khas macOS (blur layer + transparansi)
 - **Typography & spacing** khas iOS (SF Pro scale, generous whitespace)
-- **Component library** dari Android Material Design (react-native-paper)
+- **Component library** dari Material icons + custom design system
 - **Native widgets & ads** untuk platform Android
 
 ## Colors

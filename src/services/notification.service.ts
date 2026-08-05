@@ -106,11 +106,6 @@ async function registerForPushNotifications(): Promise<string | null> {
         console.log(pushToken);
         console.log('===========================================');
 
-        await Notifications.setNotificationChannelAsync?.('app-updates', {
-            name: 'App Updates',
-            importance: Notifications.AndroidImportance.HIGH,
-        });
-
         // Subscribe to FCM topic all_users for broadcast via FCM HTTP v1
         // ponytail: uses @react-native-firebase/messaging, requires prebuild. Upgrade path: if removing firebase, fallback to IID API or Expo topic.
         try {
@@ -148,17 +143,6 @@ async function registerForPushNotifications(): Promise<string | null> {
         return pushToken;
     } catch (error) {
         console.log('Failed to get push token:', error);
-        return null;
-    }
-}
-
-/**
- * Get stored Expo Push Token
- */
-export async function getExpoPushToken(): Promise<string | null> {
-    try {
-        return await AsyncStorage.getItem(EXPO_PUSH_TOKEN_KEY);
-    } catch {
         return null;
     }
 }
@@ -214,6 +198,27 @@ export async function requestNotificationPermissions(): Promise<boolean> {
             vibrationPattern: [0, 250],
             lightColor: '#4ECDC4',
         });
+
+        await Notifications.setNotificationChannelAsync('sms-alerts', {
+            name: 'SMS Alerts',
+            importance: Notifications.AndroidImportance.DEFAULT,
+            vibrationPattern: [0, 250],
+            lightColor: '#4ECDC4',
+        });
+
+        await Notifications.setNotificationChannelAsync('debug-reminder', {
+            name: 'Debug Mode Reminder',
+            importance: Notifications.AndroidImportance.DEFAULT,
+            vibrationPattern: [0, 250],
+            lightColor: '#4ECDC4',
+        });
+
+        await Notifications.setNotificationChannelAsync('inactivity-reminder', {
+            name: 'Inactivity Reminder',
+            importance: Notifications.AndroidImportance.DEFAULT,
+            vibrationPattern: [0, 250],
+            lightColor: '#4ECDC4',
+        });
     }
 
     await registerForPushNotifications();
@@ -238,7 +243,7 @@ export async function sendLocalNotification(
             sound: true,
             data: data || {},
         },
-        trigger: null,
+        trigger: { channelId },
     });
 }
 
@@ -326,15 +331,6 @@ export async function checkMonthlyUsageNotification(
 // IP CHANGE NOTIFICATION
 // ============================================================================
 
-export async function getLastIpChangeTime(): Promise<number | null> {
-    try {
-        const time = await AsyncStorage.getItem(LAST_IP_CHANGE_TIME_KEY);
-        return time ? parseInt(time, 10) : null;
-    } catch {
-        return null;
-    }
-}
-
 export async function checkIPChangeNotification(
     currentSessionDuration: number,
     translations: { title: string; body: (timeAgo: string) => string }
@@ -353,7 +349,6 @@ export async function checkIPChangeNotification(
 
     const lastDuration = await AsyncStorage.getItem(LAST_SESSION_DURATION_KEY);
     const previousDuration = lastDuration ? parseInt(lastDuration, 10) : 0;
-    let ipChanged = false;
     let durationResult: string | null = null;
 
     if (currentSessionDuration < previousDuration && previousDuration > 60) {
@@ -379,7 +374,6 @@ export async function checkIPChangeNotification(
             translations.body(durationText),
             'ip-change'
         );
-        ipChanged = true;
         durationResult = durationText;
     }
 
@@ -425,41 +419,10 @@ export async function checkNewSMSNotification(
 }
 
 // ============================================================================
-// UTILITY FUNCTIONS
-// ============================================================================
-
-export function formatTimeAgo(timestamp: number, translations: {
-    minutesAgo: string;
-    hoursAgo: string;
-    justNow: string;
-}): string {
-    const now = Date.now();
-    const diffMs = now - timestamp;
-    const diffMinutes = Math.floor(diffMs / (1000 * 60));
-    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
-
-    if (diffMinutes < 1) {
-        return translations.justNow;
-    } else if (diffMinutes < 60) {
-        return translations.minutesAgo.replace('{{minutes}}', diffMinutes.toString());
-    } else {
-        return translations.hoursAgo.replace('{{hours}}', diffHours.toString());
-    }
-}
-
-export async function resetNotificationTracking(): Promise<void> {
-    await AsyncStorage.removeItem(LAST_DAILY_USAGE_NOTIFY_KEY);
-    await AsyncStorage.removeItem(LAST_MONTHLY_USAGE_NOTIFY_KEY);
-    await AsyncStorage.removeItem(LAST_SESSION_DURATION_KEY);
-    await AsyncStorage.removeItem(LAST_IP_CHANGE_TIME_KEY);
-}
-
-// ============================================================================
 // DEBUG MODE REMINDER NOTIFICATION
 // ============================================================================
 
 const LAST_ACTIVE_TIME_KEY = 'last_active_time';
-const INACTIVITY_THRESHOLD_MS = 3 * 24 * 60 * 60 * 1000; // 3 days
 
 export async function sendDebugModeReminder(translations: {
     title: string;
@@ -479,37 +442,6 @@ export async function sendDebugModeReminder(translations: {
 
 export async function saveLastActiveTime(): Promise<void> {
     await AsyncStorage.setItem(LAST_ACTIVE_TIME_KEY, Date.now().toString());
-}
-
-export async function getLastActiveTime(): Promise<number | null> {
-    const value = await AsyncStorage.getItem(LAST_ACTIVE_TIME_KEY);
-    return value ? parseInt(value, 10) : null;
-}
-
-export async function checkInactivityReminder(translations: {
-    title: string;
-    body: string;
-}): Promise<boolean> {
-    const lastActive = await getLastActiveTime();
-
-    if (!lastActive) {
-        await saveLastActiveTime();
-        return false;
-    }
-
-    const timeSinceActive = Date.now() - lastActive;
-
-    if (timeSinceActive >= INACTIVITY_THRESHOLD_MS) {
-        await sendLocalNotification(
-            translations.title,
-            translations.body,
-            'inactivity-reminder',
-            { route: '/(tabs)/home' }
-        );
-        return true;
-    }
-
-    return false;
 }
 
 // ============================================================================
@@ -578,6 +510,7 @@ export async function scheduleClearHistoryReminder(
         },
         trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
+            channelId: CLEAR_HISTORY_REMINDER_ID,
             date: nextDate,
         },
     });

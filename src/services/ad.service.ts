@@ -9,7 +9,6 @@ import mobileAds, {
     AdsConsent,
 } from 'react-native-google-mobile-ads';
 import Constants from 'expo-constants';
-import { ThemedAlertHelper } from '@/components/ThemedAlert';
 import { ToastHelper } from '@/components/Toast';
 import { useThemeStore } from '@/stores/theme.store';
 import { useAuthStore } from '@/stores/auth.store';
@@ -113,7 +112,6 @@ export function getAdRequestDelay(adUnitId?: string): number {
 }
 
 export function recordAdRequest(adUnitId: string): void {
-    const lastTime = lastRequestTimestamps[adUnitId];
     const now = Date.now();
     lastRequestTimestamps[adUnitId] = now;
 }
@@ -145,7 +143,7 @@ export function initAdMob(): Promise<void> {
             try {
                 await AdsConsent.requestInfoUpdate();
                 await AdsConsent.loadAndShowConsentFormIfRequired();
-            } catch (_) { }
+            } catch { }
 
             await mobileAds().setRequestConfiguration({
                 maxAdContentRating: MaxAdContentRating.G,
@@ -181,7 +179,7 @@ export function preloadInterstitial(): void {
         cleanup();
     });
 
-    const unsubError = ad.addAdEventListener(AdEventType.ERROR, (error) => {
+    const unsubError = ad.addAdEventListener(AdEventType.ERROR, (_error) => {
         isInterstitialLoading = false;
         preloadedInterstitial = null;
         cleanup();
@@ -420,12 +418,6 @@ export function showRewarded(onRewarded: () => void, onSkipped: () => void): voi
     }
 }
 
-function showLoadErrorAlert() {
-    ToastHelper.error(
-        getTranslation('ads.failedToLoad') || 'Failed to load advertisement. Please check your internet connection or disable your ad blocker.'
-    );
-}
-
 export function preloadAppOpenAd(): void {
     if (!isInitialized || preloadedAppOpen || isAppOpenLoading) return;
     if (!isAdRequestAllowed(APP_OPEN_ID)) return;
@@ -440,7 +432,7 @@ export function preloadAppOpenAd(): void {
         cleanup();
     });
 
-    const unsubError = ad.addAdEventListener(AdEventType.ERROR, (error) => {
+    const unsubError = ad.addAdEventListener(AdEventType.ERROR, (_error) => {
         isAppOpenLoading = false;
         preloadedAppOpen = null;
         cleanup();

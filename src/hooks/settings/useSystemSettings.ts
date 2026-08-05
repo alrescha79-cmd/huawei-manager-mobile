@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '@/stores/auth.store';
-import { useThemeStore } from '@/stores/theme.store';
 import { useModemProfileStore } from '@/stores/modem-profile.store';
 import { ModemService } from '@/services/modem.service';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
@@ -52,14 +51,14 @@ const formatModemTime = (time: string) => {
 
         return `${datePart} ${timePart}`;
 
-    } catch (e) {
+    } catch {
         return time;
     }
 };
 
 export function useSystemSettings({ t }: UseSystemSettingsProps) {
     const router = useRouter();
-    const { credentials, login, logout } = useAuthStore();
+    const { credentials, logout } = useAuthStore();
     const { profiles, loadProfiles, addProfile, deleteProfile, updateProfile, switchProfile, isSwitching } = useModemProfileStore();
 
     // Profile edit state
@@ -73,22 +72,10 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
     // Time settings
     const [currentTime, setCurrentTime] = useState('');
     const [sntpEnabled, setSntpEnabled] = useState(true);
-    const [ntpServer, setNtpServer] = useState('pool.ntp.org');
+    const [, setNtpServer] = useState('pool.ntp.org');
     const [timezone, setTimezone] = useState('UTC+7');
     const [showTimezoneModal, setShowTimezoneModal] = useState(false);
     const [isTogglingSntp, setIsTogglingSntp] = useState(false);
-
-    // Credentials
-    const [modemIp, setModemIp] = useState(credentials?.modemIp || '192.168.8.1');
-    const [modemUsername, setModemUsername] = useState(credentials?.username || 'admin');
-    const [modemPassword, setModemPassword] = useState(credentials?.password || '');
-    const [showPassword, setShowPassword] = useState(false);
-    const [isSavingCredentials, setIsSavingCredentials] = useState(false);
-
-    const hasCredentialsChanges =
-        modemIp !== (credentials?.modemIp || '192.168.8.1') ||
-        modemUsername !== (credentials?.username || 'admin') ||
-        modemPassword !== (credentials?.password || '');
 
     useEffect(() => {
         if (credentials?.modemIp) {
@@ -96,10 +83,23 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             setModemService(service);
             loadTime(service);
 
-            const interval = setInterval(() => {
+            // ponytail: tick the clock client-side instead of a full HTTP poll
+            // every second; resync from the modem every 60s
+            const tick = () => setCurrentTime(prev => {
+                if (!prev) return prev;
+                const date = new Date(prev);
+                if (isNaN(date.getTime())) return prev;
+                date.setSeconds(date.getSeconds() + 1);
+                return date.toISOString();
+            });
+            const tickerId = setInterval(tick, 1000);
+            const syncId = setInterval(() => {
                 service.getCurrentTime().then(time => setCurrentTime(time)).catch(() => { });
-            }, 1000);
-            return () => clearInterval(interval);
+            }, 60000);
+            return () => {
+                clearInterval(tickerId);
+                clearInterval(syncId);
+            };
         }
     }, [credentials]);
 
@@ -110,7 +110,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             setSntpEnabled(settings.sntpEnabled);
             setNtpServer(settings.ntpServer);
             setTimezone(settings.timezone);
-        } catch (e) { }
+        } catch { }
     };
 
     const handleToggleSntp = async (enabled: boolean) => {
@@ -120,7 +120,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             await modemService.setTimeSettings({ sntpEnabled: enabled });
             setSntpEnabled(enabled);
             showInterstitial(() => {});
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
         } finally {
             setIsTogglingSntp(false);
@@ -134,27 +134,8 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             await modemService.setTimeSettings({ timezone: tz });
             setTimezone(tz);
             showInterstitial(() => {});
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
-        }
-    };
-
-    const handleSaveCredentials = async () => {
-        if (isSavingCredentials) return;
-        setIsSavingCredentials(true);
-        try {
-            await login({
-                modemIp,
-                username: modemUsername,
-                password: modemPassword,
-            });
-            showInterstitial(() => {});
-            ToastHelper.success(t('settings.credentialsSaved'));
-            router.replace('/settings');
-        } catch (error) {
-            ToastHelper.error(t('settings.failedSaveCredentials'));
-        } finally {
-            setIsSavingCredentials(false);
         }
     };
 
@@ -173,7 +154,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                                 await modemService.reboot();
                                 showInterstitial(() => {});
                                 ToastHelper.success(t('settings.rebootSuccess'));
-                            } catch (e) {
+                            } catch {
                                 ToastHelper.error(t('alerts.failedReboot'));
                             }
                         }
@@ -195,7 +176,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                     onPress: async () => {
                         try {
                             if (modemService) await modemService.logout();
-                        } catch (e) { }
+                        } catch { }
                         await logout();
                         router.replace('/login');
                     }
@@ -219,7 +200,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                                 await modemService.resetFactorySettings();
                                 showInterstitial(() => {});
                                 ToastHelper.success(t('settings.resetSuccess'));
-                            } catch (e) {
+                            } catch {
                                 ToastHelper.error(t('alerts.failedReset'));
                             }
                         }

@@ -51,7 +51,7 @@ export function useGuestWiFi({ wifiService, t, handleRefresh }: UseGuestWiFiProp
       if (enabled) {
         setTimeout(() => handleRefresh(), 500);
       }
-    } catch (error) {
+    } catch {
       ToastHelper.error(t('alerts.failedToggleGuestWifi'));
     } finally {
       setIsTogglingGuest(false);
@@ -72,7 +72,7 @@ export function useGuestWiFi({ wifiService, t, handleRefresh }: UseGuestWiFiProp
       });
       ToastHelper.success(t('wifi.guestSettingsSaved'));
       handleRefresh();
-    } catch (error) {
+    } catch {
       ToastHelper.error(t('alerts.failedSaveGuestWifi'));
     } finally {
       setIsSavingGuestSettings(false);
@@ -88,7 +88,7 @@ export function useGuestWiFi({ wifiService, t, handleRefresh }: UseGuestWiFiProp
       const timeRemaining = await wifiService.getGuestTimeRemaining();
       setGuestTimeRemaining(timeRemaining.remainingSeconds);
       ThemedAlertHelper.alert(t('common.success'), t('wifi.timeExtended'));
-    } catch (error) {
+    } catch {
       ThemedAlertHelper.alert(t('common.error'), t('wifi.failedExtendTime'));
     } finally {
       setIsExtendingTime(false);

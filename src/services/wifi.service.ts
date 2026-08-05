@@ -1,7 +1,6 @@
 import { ModemAPIClient } from './api.service';
-import { ConnectedDevice, WiFiSettings } from '@/types';
+import { ConnectedDevice, WiFiSettings, ParentalControlProfile } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
-import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
 
 export class WiFiService {
@@ -43,7 +42,7 @@ export class WiFiService {
         if (typeof hostInfoResponse === 'string' && !hostInfoResponse.includes('<error>')) {
           try {
             hostInfoList = JSON.parse(hostInfoResponse);
-          } catch (e) {
+          } catch {
             // Might be XML
             const hostsXML = hostInfoResponse.match(/<Host>([\s\S]*?)<\/Host>/g);
             if (hostsXML) {
@@ -247,7 +246,7 @@ export class WiFiService {
 
 
       if (!encPubKeyN) {
-        return password;
+        throw new Error('Modem did not return a WiFi encryption key');
       }
 
       const keySize = 256;
@@ -278,7 +277,7 @@ export class WiFiService {
 
       return encryptedHex;
     } catch (error) {
-      return password;
+      throw error;
     }
   }
 
@@ -562,7 +561,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
       throw error;
     }
   }
-  async kickDevice(macAddress: string): Promise<boolean> {
+  async blockDevice(macAddress: string): Promise<boolean> {
     try {
       const data = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
@@ -589,7 +588,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
-  async unblockDevice(macAddress: string): Promise<boolean> {
+  async unblockDevice(_macAddress: string): Promise<boolean> {
     try {
       const data = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
@@ -687,33 +686,17 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
-  async toggleParentalControl(enable: boolean): Promise<boolean> {
+  // ponytail: unimplemented - the modem's timerule master-switch payload is
+  // unknown, so this is a no-op. UI toggles locally but nothing persists.
+  async toggleParentalControl(_enable: boolean): Promise<boolean> {
     return true;
   }
 
-  async getParentalControlProfiles(): Promise<{
-    id: string;
-    name: string;
-    deviceMacs: string[];
-    deviceNames: string[];
-    startTime: string;
-    endTime: string;
-    activeDays: number[];
-    enabled: boolean;
-  }[]> {
+  async getParentalControlProfiles(): Promise<ParentalControlProfile[]> {
     try {
       const response = await this.apiClient.get('/api/timerule/timerule');
 
-      const profiles: {
-        id: string;
-        name: string;
-        deviceMacs: string[];
-        deviceNames: string[];
-        startTime: string;
-        endTime: string;
-        activeDays: number[];
-        enabled: boolean;
-      }[] = [];
+      const profiles: ParentalControlProfile[] = [];
 
       const rulesXML = response.match(/<TimeControlRule>([\s\S]*?)<\/TimeControlRule>/g);
 
@@ -748,15 +731,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
-  async createParentalControlProfile(profile: {
-    name: string;
-    deviceMacs: string[];
-    deviceNames?: string[];
-    startTime: string;
-    endTime: string;
-    activeDays: number[];
-    enabled: boolean;
-  }): Promise<boolean> {
+  async createParentalControlProfile(profile: Omit<ParentalControlProfile, 'id'>): Promise<boolean> {
     try {
 
       const deviceMacsXml = profile.deviceMacs.map(mac => `<DevicesMAC>${mac}</DevicesMAC>`).join('');
@@ -795,16 +770,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
-  async updateParentalControlProfile(profile: {
-    id: string;
-    name: string;
-    deviceMacs: string[];
-    deviceNames?: string[];
-    startTime: string;
-    endTime: string;
-    activeDays: number[];
-    enabled: boolean;
-  }): Promise<boolean> {
+  async updateParentalControlProfile(profile: ParentalControlProfile): Promise<boolean> {
     try {
       await this.deleteParentalControlProfile(profile.id);
 
@@ -825,16 +791,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
-  async toggleParentalControlProfileEnabled(profile: {
-    id: string;
-    name: string;
-    deviceMacs: string[];
-    deviceNames?: string[];
-    startTime: string;
-    endTime: string;
-    activeDays: number[];
-    enabled: boolean;
-  }): Promise<boolean> {
+  async toggleParentalControlProfileEnabled(profile: ParentalControlProfile): Promise<boolean> {
     try {
 
       const uniqueMacs = profile.deviceMacs.filter((mac, index, self) => self.indexOf(mac) === index);

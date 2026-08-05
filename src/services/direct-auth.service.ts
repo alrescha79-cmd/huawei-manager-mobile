@@ -93,7 +93,7 @@ export class DirectAuthService {
         try {
             await this.xmlRequest('GET', '/html/index.html');
             console.log('[DirectAuth] Homepage fetched');
-        } catch (e) {
+        } catch {
             await this.xmlRequest('GET', '/');
         }
 
@@ -296,13 +296,4 @@ export class DirectAuthService {
         this.csrfToken = '';
         this.sessionCookie = '';
     }
-}
-
-export function getDirectAuthService(modemIp: string): DirectAuthService {
-    return new DirectAuthService(modemIp);
-}
-
-export function clearDirectAuthService(): void {
-    cachedSession = null;
-    isLoginInProgress = false;
 }

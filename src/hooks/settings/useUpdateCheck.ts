@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import Animated, {
+import {
     useAnimatedStyle,
     useSharedValue,
     withRepeat,

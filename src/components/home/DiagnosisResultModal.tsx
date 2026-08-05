@@ -4,9 +4,6 @@ import {
     Text,
     StyleSheet,
     Modal,
-    TouchableOpacity,
-    Platform,
-    StatusBar,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { MaterialIcons } from '@expo/vector-icons';
