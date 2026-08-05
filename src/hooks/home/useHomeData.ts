@@ -12,6 +12,7 @@ import { WiFiService } from '@/services/wifi.service';
 import { checkDailyUsageNotification, checkMonthlyUsageNotification, checkIPChangeNotification, sendDebugModeReminder, saveLastActiveTime } from '@/services/notification.service';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
 import { getSelectedBandsDisplay } from '@/components';
+import { isSessionExpiredError } from '@/utils/huawei-error';
 
 interface UseHomeDataProps {
   t: (key: string, options?: any) => string;
@@ -164,8 +165,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       console.error('Error loading data:', error);
 
       const errorMessage = error?.message || '';
-      const isSessionError = errorMessage.includes('125003') ||
-        errorMessage.includes('125002') ||
+      const isSessionError = isSessionExpiredError(error) ||
         errorMessage.includes('session') ||
         errorMessage.includes('login') ||
         !modemStatus;
@@ -234,8 +234,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
     } catch (error: any) {
       const errorMessage = error?.message || '';
-      const isSessionError = errorMessage.includes('125003') ||
-        errorMessage.includes('125002') ||
+      const isSessionError = isSessionExpiredError(error) ||
         errorMessage.includes('session') ||
         !modemStatus;
 

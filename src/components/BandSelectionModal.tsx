@@ -26,6 +26,7 @@ import { ModalBackground } from './ModalBackground';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
 import { AdBanner, AdNative, InlineAdNative } from './AdBanner';
 import { BouncingDots } from './LoadingIndicators';
+import { isSessionExpiredError } from '@/utils/huawei-error';
 
 
 const LTE_BANDS = [
@@ -168,8 +169,7 @@ export function BandSelectionModal({
                         const isNetworkDrop = errorMessage.includes('Network error') || 
                                               errorMessage.includes('timeout') || 
                                               errorMessage.toLowerCase().includes('network') ||
-                                              errorMessage.includes('125003') || 
-                                              errorMessage.includes('125002');
+                                              isSessionExpiredError(error);
                                               
                         if (error?.huaweiErrorCode === '100003') {
                             errorMessage = t('alerts.bandNotSupported') || 'LTE Band selection is not supported on this modem model.';
