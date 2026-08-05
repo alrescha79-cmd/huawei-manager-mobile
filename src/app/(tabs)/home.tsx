@@ -65,29 +65,6 @@ export default function HomeScreen() {
   const [showSpeedTestModal, setShowSpeedTestModal] = useState(false);
   const [showSignalPointingModal, setShowSignalPointingModal] = useState(false);
 
-  const {
-    showReloginWebView,
-    setShowReloginWebView,
-    isRetryingSilent,
-    handleReLogin,
-    handleRetrySilent,
-    handleReloginSuccess,
-  } = useHomeAuth({
-    credentials,
-    logout,
-    login,
-    sessionExpired: authSessionExpired,
-    setRelogging,
-    clearSessionExpired,
-    tryQuietSessionRestore,
-    modemService: null, 
-    t,
-    loadData: async () => { }, 
-    loadBands: async () => { },
-  });
-
-  const homeData = useHomeData({ t, showReloginWebView });
-
   const homeAuth = useHomeAuth({
     credentials,
     logout,
@@ -96,11 +73,10 @@ export default function HomeScreen() {
     setRelogging,
     clearSessionExpired,
     tryQuietSessionRestore,
-    modemService: homeData.modemService,
     t,
-    loadData: homeData.loadData,
-    loadBands: homeData.loadBands,
   });
+
+  const homeData = useHomeData({ t, showReloginWebView: homeAuth.showReloginWebView });
 
   const homeActions = useHomeActions({
     modemService: homeData.modemService,
