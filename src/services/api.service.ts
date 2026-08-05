@@ -3,6 +3,7 @@ import { parseXMLValue } from '@/utils/helpers';
 import { updateSessionActivity, markSessionUnhealthy } from '@/utils/storage';
 import * as Crypto from 'expo-crypto';
 import CryptoJS from 'crypto-js';
+import { hasSessionExpiredCode, isSessionExpiredError, parseErrorCode } from '@/utils/huawei-error';
 
 export class ModemAPIClient {
   private client: AxiosInstance;
@@ -548,7 +549,7 @@ export class ModemAPIClient {
       });
 
       const responseData = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
-      if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
+      if (hasSessionExpiredCode(responseData)) {
         this.sessionToken = '';
         this.sessionCookie = '';
         this.tokenExpiry = 0;
@@ -562,16 +563,16 @@ export class ModemAPIClient {
             },
           });
           const retryData = typeof retryResponse.data === 'string' ? retryResponse.data : JSON.stringify(retryResponse.data);
-          if (retryData.includes('<code>125003</code>') || retryData.includes('<code>125002</code>')) {
+          if (hasSessionExpiredCode(retryData)) {
             markSessionUnhealthy();
-            const errorCode = retryData.includes('125003') ? '125003' : '125002';
+            const errorCode = parseErrorCode(retryData) || '125002';
             throw new Error(`Session expired (${errorCode}). Please re-login.`);
           }
           updateSessionActivity();
           return retryResponse.data;
         } catch (retryError) {
           markSessionUnhealthy();
-          const errorCode = responseData.includes('125003') ? '125003' : '125002';
+          const errorCode = parseErrorCode(responseData) || '125002';
           throw new Error(`Session expired (${errorCode}). Please re-login.`);
         }
       }
@@ -580,7 +581,7 @@ export class ModemAPIClient {
 
       return response.data;
     } catch (error: any) {
-      const isSessionError = error?.message?.includes('125003') || error?.message?.includes('125002');
+      const isSessionError = isSessionExpiredError(error);
       if (!isSessionError) {
         console.error(`Error getting ${endpoint}:`, error);
       }
@@ -620,7 +621,7 @@ export class ModemAPIClient {
 
       const responseData = typeof response.data === 'string' ? response.data : '';
 
-      if (responseData.includes('<code>125003</code>') || responseData.includes('<code>125002</code>')) {
+      if (hasSessionExpiredCode(responseData)) {
         // Auto-retry POST once with a fresh session
         if (retryCount < 1) {
           this.sessionToken = '';
@@ -633,7 +634,7 @@ export class ModemAPIClient {
         this.sessionCookie = '';
         this.tokenExpiry = 0;
         markSessionUnhealthy();
-        const errorCode = responseData.includes('125003') ? '125003' : '125002';
+        const errorCode = parseErrorCode(responseData) || '125002';
         throw new Error(`Session expired (${errorCode}). Please re-login.`);
       }
 
@@ -645,7 +646,7 @@ export class ModemAPIClient {
 
       return response.data;
     } catch (error: any) {
-      const isSessionError = error?.message?.includes('125003') || error?.message?.includes('125002');
+      const isSessionError = isSessionExpiredError(error);
       if (!isSessionError) {
         console.error(`POST error to ${endpoint}:`, error);
       }
