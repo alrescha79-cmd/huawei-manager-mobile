@@ -23,3 +23,4 @@ export * from './settings/useMobileNetwork';
 
 // Auth hooks
 export * from './useLogin';
+export * from './useNotificationRouting';

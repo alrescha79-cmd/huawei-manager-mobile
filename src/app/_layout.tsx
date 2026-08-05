@@ -10,12 +10,12 @@ import * as SplashScreen from 'expo-splash-screen';
 import { useAuthStore } from '@/stores/auth.store';
 import { useThemeStore } from '@/stores/theme.store';
 import { useTheme } from '@/theme';
-import { UpdateAvailableModal, UpdateAvailableHelper, ThemedAlert, setAlertListener, AnimatedSplashScreen, ChangelogModal, ChangelogHelper, SignalBubble, ToastContainer, setToastListener, showNextFromQueue, ToastHelper } from '@/components';
+import { GlobalOverlays, UpdateAvailableHelper, setAlertListener, AnimatedSplashScreen, ChangelogHelper, setToastListener, showNextFromQueue, ToastHelper, AlertState, ToastConfig } from '@/components';
 import { useTranslation } from '@/i18n';
+import { useNotificationRouting } from '@/hooks/useNotificationRouting';
 import { startRealtimeWidgetUpdates, stopRealtimeWidgetUpdates } from '@/widget';
 import { isSessionLikelyValid } from '@/utils/storage';
 import { requestNotificationPermissions, getNotificationSettings, syncClearHistoryReminder } from '@/services/notification.service';
-import * as Notifications from 'expo-notifications';
 import * as NavigationBar from 'expo-navigation-bar';
 import { useFonts, Doto_700Bold } from '@expo-google-fonts/doto';
 import { KeyboardProvider } from 'react-native-keyboard-controller';
@@ -26,19 +26,6 @@ import { installConsoleInterceptor, uninstallConsoleInterceptor } from '@/utils/
 import { formatBytes } from '@/utils/formatters';
 
 SplashScreen.preventAutoHideAsync();
-
-interface AlertButton {
-    text: string;
-    onPress?: () => void;
-    style?: 'default' | 'cancel' | 'destructive';
-}
-
-interface AlertState {
-    visible: boolean;
-    title: string;
-    message?: string;
-    buttons?: AlertButton[];
-}
 
 const compareVersions = (v1: string, v2: string): number => {
     const parts1 = v1.split('.').map(Number);
@@ -77,9 +64,6 @@ export default function RootLayout() {
     const lastAppOpenShowTimeRef = useRef<number>(0);
     const [, setIsRestoringSession] = useState(false);
     const [authReady, setAuthReady] = useState(false);
-    const pendingNotificationRoute = useRef<string | null>(null);
-    const pendingNotificationUrl = useRef<string | null>(null);
-    const pendingClearHistoryReminderToast = useRef<boolean>(false);
 
     const onLayoutRootView = useCallback(async () => {
         if (fontsLoaded) {
@@ -114,12 +98,7 @@ export default function RootLayout() {
         buttons: [],
     });
 
-    const [toastConfig, setToastConfig] = useState<{
-        visible: boolean;
-        type: 'success' | 'error' | 'info' | 'warning';
-        message: string;
-        duration?: number;
-    } | null>(null);
+    const [toastConfig, setToastConfig] = useState<ToastConfig | null>(null);
 
     const checkForUpdates = async () => {
         try {
@@ -202,6 +181,18 @@ export default function RootLayout() {
         }
     };
 
+    const deferredStartup = () => {
+        setTimeout(() => {
+            checkForUpdates();
+            requestNotificationPermissions();
+            checkAndShowChangelog();
+            syncClearHistoryReminder({
+                title: t('notifications.clearHistoryReminderTitle'),
+                body: t('notifications.clearHistoryReminderBody'),
+            });
+        }, 3000);
+    };
+
     useEffect(() => {
         const initializeApp = async () => {
             initAdMob();
@@ -241,204 +232,16 @@ export default function RootLayout() {
                         await autoLogin();
                     }
                 }
-                // Defer non-critical operations to reduce startup CPU spike
-                setTimeout(() => {
-                    checkForUpdates();
-                    requestNotificationPermissions();
-                    checkAndShowChangelog();
-                    // Sync clear history reminder
-                    syncClearHistoryReminder({
-                        title: t('notifications.clearHistoryReminderTitle'),
-                        body: t('notifications.clearHistoryReminderBody'),
-                    });
-                }, 3000);
+                deferredStartup();
             } else {
-                setTimeout(() => {
-                    checkForUpdates();
-                    requestNotificationPermissions();
-                    checkAndShowChangelog();
-                    // Sync clear history reminder
-                    syncClearHistoryReminder({
-                        title: t('notifications.clearHistoryReminderTitle'),
-                        body: t('notifications.clearHistoryReminderBody'),
-                    });
-                }, 3000);
+                deferredStartup();
             }
             setAuthReady(true);
         };
         initializeApp();
     }, []);
 
-    useEffect(() => {
-        const getInitialNotification = async () => {
-            const lastResponse = await Notifications.getLastNotificationResponseAsync();
-            if (lastResponse) {
-                handleNotificationResponse(lastResponse);
-            }
-        };
-        getInitialNotification();
-
-        const subscription = Notifications.addNotificationResponseReceivedListener(response => {
-            handleNotificationResponse(response);
-        });
-
-        // FCM foreground message listener (for topic messages)
-        let fcmUnsubscribe: (() => void) | null = null;
-        try {
-            const messaging = require('@react-native-firebase/messaging').default;
-            fcmUnsubscribe = messaging().onMessage(async (remoteMessage: any) => {
-                console.log('FCM foreground message:', remoteMessage);
-                // FCM data messages with notification payload are auto-displayed by system
-                // For data-only messages, show local notification
-                if (remoteMessage?.data && !remoteMessage?.notification) {
-                    const { title, body, route, url } = remoteMessage.data;
-                    if (title && body) {
-                        await Notifications.scheduleNotificationAsync({
-                            content: {
-                                title: title as string,
-                                body: body as string,
-                                data: { route, url, ...remoteMessage.data },
-                                sound: true,
-                            },
-                            trigger: null,
-                        });
-                    }
-                }
-            });
-        } catch (e) {
-            console.log('FCM onMessage not available:', e);
-        }
-
-        return () => {
-            subscription.remove();
-            if (fcmUnsubscribe) fcmUnsubscribe();
-        };
-    }, [router]);
-
-    const handleNotificationResponse = (response: Notifications.NotificationResponse) => {
-        const rawData = response.notification.request.content.data;
-        const notificationTitle = response.notification.request.content.title;
-        const data = rawData as { route?: string; url?: string; type?: string; body?: { route?: string; url?: string } } | undefined;
-
-
-
-        let route = data?.route;
-        let url = data?.url;
-        const notificationType = data?.type;
-
-        if (!route && data?.body?.route) {
-            route = data.body.route;
-        }
-        if (!url && data?.body?.url) {
-            url = data.body.url;
-        }
-
-        const openWebView = (targetUrl: string) => {
-            router.push({ pathname: '/webview', params: { url: targetUrl, title: notificationTitle || 'Link' } });
-        };
-
-        // Handle clear-history-reminder: show toast if not logged in, or remind once if history not cleared
-        const CLEAR_HISTORY_TOAST_SHOWN_KEY = 'clearHistoryReminderToastShown';
-        const handleClearHistoryReminderToast = async () => {
-            const { isAuthenticated, credentials } = useAuthStore.getState();
-            if (!isAuthenticated || !credentials) {
-                setTimeout(() => {
-                    ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
-                }, 1000);
-                return;
-            }
-            // Already cleared this month → no toast
-            const now = new Date();
-            const lastCleared = await AsyncStorage.getItem('lastClearedTrafficDate');
-            if (lastCleared) {
-                const cleared = new Date(lastCleared);
-                if (cleared.getMonth() === now.getMonth() && cleared.getFullYear() === now.getFullYear()) {
-                    return;
-                }
-            }
-            // Already shown for this reminder cycle → no spam
-            const alreadyShown = await AsyncStorage.getItem(CLEAR_HISTORY_TOAST_SHOWN_KEY);
-            const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
-            if (alreadyShown === monthKey) return;
-            await AsyncStorage.setItem(CLEAR_HISTORY_TOAST_SHOWN_KEY, monthKey);
-            setTimeout(() => {
-                ToastHelper.info(t('notifications.clearHistoryReminderBody'));
-            }, 1000);
-        };
-
-        if (authReady) {
-            if (route && typeof route === 'string') {
-
-                router.push(route as any);
-                if (notificationType === 'clear-history-reminder') {
-                    handleClearHistoryReminderToast();
-                }
-            } else if (url && typeof url === 'string') {
-
-                openWebView(url);
-            }
-        } else {
-            if (route && typeof route === 'string') {
-
-                pendingNotificationRoute.current = route;
-                if (notificationType === 'clear-history-reminder') {
-                    pendingClearHistoryReminderToast.current = true;
-                }
-            } else if (url && typeof url === 'string') {
-
-                pendingNotificationUrl.current = url;
-            }
-        }
-    };
-
-    useEffect(() => {
-        if (authReady) {
-            if (pendingNotificationRoute.current) {
-                const route = pendingNotificationRoute.current;
-                pendingNotificationRoute.current = null;
-
-                setTimeout(() => {
-                    router.push(route as any);
-                }, 800);
-            } else if (pendingNotificationUrl.current) {
-                const url = pendingNotificationUrl.current;
-                pendingNotificationUrl.current = null;
-
-                setTimeout(() => {
-                    router.push({ pathname: '/webview', params: { url, title: 'Link' } });
-                }, 800);
-            }
-
-            // Handle pending clear-history-reminder toast
-            if (pendingClearHistoryReminderToast.current) {
-                pendingClearHistoryReminderToast.current = null;
-                const { isAuthenticated, credentials } = useAuthStore.getState();
-                if (!isAuthenticated || !credentials) {
-                    setTimeout(() => {
-                        ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
-                    }, 1500);
-                } else {
-                    // Same check as handleClearHistoryReminderToast: cleared this month? already shown?
-                    const CLEAR_HISTORY_TOAST_SHOWN_KEY = 'clearHistoryReminderToastShown';
-                    (async () => {
-                        const lastCleared = await AsyncStorage.getItem('lastClearedTrafficDate');
-                        const now = new Date();
-                        if (lastCleared) {
-                            const cleared = new Date(lastCleared);
-                            if (cleared.getMonth() === now.getMonth() && cleared.getFullYear() === now.getFullYear()) return;
-                        }
-                        const alreadyShown = await AsyncStorage.getItem(CLEAR_HISTORY_TOAST_SHOWN_KEY);
-                        const monthKey = `${now.getFullYear()}-${now.getMonth()}`;
-                        if (alreadyShown === monthKey) return;
-                        await AsyncStorage.setItem(CLEAR_HISTORY_TOAST_SHOWN_KEY, monthKey);
-                        setTimeout(() => {
-                            ToastHelper.info(t('notifications.clearHistoryReminderBody'));
-                        }, 1500);
-                    })();
-                }
-            }
-        }
-    }, [authReady, router]);
+    useNotificationRouting(authReady);
 
     useEffect(() => {
         const handleAppStateChange = async (nextAppState: AppStateStatus) => {
@@ -631,28 +434,20 @@ export default function RootLayout() {
                     />
                 </Stack>
 
-                <ThemedAlert
-                    visible={alertState.visible}
-                    title={alertState.title}
-                    message={alertState.message}
-                    buttons={alertState.buttons}
-                    onDismiss={dismissAlert}
-                />
-
-                <ToastContainer
-                    config={toastConfig}
-                    onDismiss={() => {
+                <GlobalOverlays
+                    alert={alertState}
+                    toast={toastConfig}
+                    showSignalBubble={isAuthenticated && signalBubbleEnabled}
+                    onAlertDismiss={dismissAlert}
+                    onToastDismiss={() => {
                         setToastConfig(null);
                         showNextFromQueue();
                     }}
+                    onUpdateDownload={() => {
+                        router.navigate('/settings');
+                        router.push('/settings/update?autoDownload=true');
+                    }}
                 />
-
-                <UpdateAvailableModal onDownload={() => {
-                    router.navigate('/settings');
-                    router.push('/settings/update?autoDownload=true');
-                }} />
-<ChangelogModal />
-                {isAuthenticated && signalBubbleEnabled && <SignalBubble />}
             </KeyboardProvider>
         </GestureHandlerRootView>
     );
