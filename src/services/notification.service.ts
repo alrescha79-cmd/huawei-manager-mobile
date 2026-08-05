@@ -106,11 +106,6 @@ async function registerForPushNotifications(): Promise<string | null> {
         console.log(pushToken);
         console.log('===========================================');
 
-        await Notifications.setNotificationChannelAsync?.('app-updates', {
-            name: 'App Updates',
-            importance: Notifications.AndroidImportance.HIGH,
-        });
-
         // Subscribe to FCM topic all_users for broadcast via FCM HTTP v1
         // ponytail: uses @react-native-firebase/messaging, requires prebuild. Upgrade path: if removing firebase, fallback to IID API or Expo topic.
         try {
@@ -214,6 +209,27 @@ export async function requestNotificationPermissions(): Promise<boolean> {
             vibrationPattern: [0, 250],
             lightColor: '#4ECDC4',
         });
+
+        await Notifications.setNotificationChannelAsync('sms-alerts', {
+            name: 'SMS Alerts',
+            importance: Notifications.AndroidImportance.DEFAULT,
+            vibrationPattern: [0, 250],
+            lightColor: '#4ECDC4',
+        });
+
+        await Notifications.setNotificationChannelAsync('debug-reminder', {
+            name: 'Debug Mode Reminder',
+            importance: Notifications.AndroidImportance.DEFAULT,
+            vibrationPattern: [0, 250],
+            lightColor: '#4ECDC4',
+        });
+
+        await Notifications.setNotificationChannelAsync('inactivity-reminder', {
+            name: 'Inactivity Reminder',
+            importance: Notifications.AndroidImportance.DEFAULT,
+            vibrationPattern: [0, 250],
+            lightColor: '#4ECDC4',
+        });
     }
 
     await registerForPushNotifications();
@@ -238,7 +254,7 @@ export async function sendLocalNotification(
             sound: true,
             data: data || {},
         },
-        trigger: null,
+        trigger: { channelId },
     });
 }
 
@@ -578,6 +594,7 @@ export async function scheduleClearHistoryReminder(
         },
         trigger: {
             type: Notifications.SchedulableTriggerInputTypes.DATE,
+            channelId: CLEAR_HISTORY_REMINDER_ID,
             date: nextDate,
         },
     });
