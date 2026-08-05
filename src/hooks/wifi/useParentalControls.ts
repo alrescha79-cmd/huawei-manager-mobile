@@ -1,22 +1,13 @@
 import { useState } from 'react';
 import { WiFiService } from '@/services/wifi.service';
+import { ParentalControlProfile } from '@/types';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
 
 interface UseParentalControlsProps {
   wifiService: WiFiService | null;
   t: (key: string) => string;
   handleRefresh: () => void;
-  parentalProfiles: {
-    id: string;
-    name: string;
-    deviceMacs: string[];
-    startTime: string;
-    endTime: string;
-    activeDays: number[];
-    enabled: boolean;
-  }[];
-  setParentalProfiles: React.Dispatch<React.SetStateAction<any[]>>;
-  parentalControlEnabled: boolean;
+  parentalProfiles: ParentalControlProfile[];
   setParentalControlEnabled: React.Dispatch<React.SetStateAction<boolean>>;
 }
 

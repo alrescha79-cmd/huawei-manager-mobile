@@ -5,8 +5,7 @@ import { useSMSStore } from '@/stores/sms.store';
 import { SMSService } from '@/services/sms.service';
 import { checkNewSMSNotification } from '@/services/notification.service';
 import { isSessionExpiredError } from '@/utils/huawei-error';
-
-type SMSFilterType = 'all' | 'unread' | 'sent';
+import type { SMSFilterType } from '@/components/sms/SMSStatsCard';
 
 interface UseSMSDataProps {
     t: (key: string, options?: any) => string;

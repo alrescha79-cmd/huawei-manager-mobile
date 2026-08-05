@@ -3,27 +3,18 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { Card, CardHeader, Button, ThemedSwitch, BouncingDots } from '@/components';
+import { ParentalControlProfile } from '@/types';
 import { wifiStyles as styles } from './wifi.styles';
-
-interface ParentalProfile {
-    id: string;
-    name: string;
-    startTime: string;
-    endTime: string;
-    activeDays: number[];
-    deviceMacs: string[];
-    enabled: boolean;
-}
 
 interface ParentalControlCardProps {
     t: (key: string) => string;
     parentalControlEnabled: boolean;
     isTogglingParental: boolean;
     isParentalExpanded: boolean;
-    parentalProfiles: ParentalProfile[];
+    parentalProfiles: ParentalControlProfile[];
     onToggleParentalControl: (enabled: boolean) => void;
     onToggleExpanded: () => void;
-    onEditProfile: (profile: ParentalProfile) => void;
+    onEditProfile: (profile: ParentalControlProfile) => void;
     onDeleteProfile: (profileId: string, profileName: string) => void;
     onAddProfile: () => void;
     getDayName: (day: number) => string;

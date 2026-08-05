@@ -16,6 +16,7 @@ import { ConnectedDevicesList, BlockedDevicesList, GuestWiFiSettings, WiFiEditSe
 import { useAuthStore } from '@/stores/auth.store';
 import { useWiFiStore } from '@/stores/wifi.store';
 import { WiFiService } from '@/services/wifi.service';
+import { ParentalControlProfile } from '@/types';
 import { useTranslation } from '@/i18n';
 
 import { useWiFiSettings } from '@/hooks/wifi/useWiFiSettings';
@@ -46,7 +47,7 @@ export default function WiFiScreen() {
   const [wifiService, setWiFiService] = useState<WiFiService | null>(null);
 
   const [parentalControlEnabled, setParentalControlEnabled] = useState(false);
-  const [parentalProfiles, setParentalProfiles] = useState<any[]>([]);
+  const [parentalProfiles, setParentalProfiles] = useState<ParentalControlProfile[]>([]);
 
   // Hook Initialization
   const wifiSettingsHook = useWiFiSettings({ wifiSettings, wifiService, t, handleRefresh });
@@ -56,8 +57,6 @@ export default function WiFiScreen() {
     t, 
     handleRefresh, 
     parentalProfiles, 
-    setParentalProfiles, 
-    parentalControlEnabled, 
     setParentalControlEnabled 
   });
   const wifiDevicesHook = useWiFiDevices({ wifiService, t, handleRefresh });

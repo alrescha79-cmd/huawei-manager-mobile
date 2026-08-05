@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { WiFiService } from '@/services/wifi.service';
-import { ConnectedDevice } from '@/types';
+import { ConnectedDevice, BlockedDevice } from '@/types';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
 
 interface UseWiFiDevicesProps {
@@ -10,7 +10,7 @@ interface UseWiFiDevicesProps {
 }
 
 export function useWiFiDevices({ wifiService, t, handleRefresh }: UseWiFiDevicesProps) {
-  const [blockedDevices, setBlockedDevices] = useState<{ macAddress: string; hostName: string }[]>([]);
+  const [blockedDevices, setBlockedDevices] = useState<BlockedDevice[]>([]);
   const [isUnblocking, setIsUnblocking] = useState<string | null>(null);
   
   const [selectedDevice, setSelectedDevice] = useState<ConnectedDevice | null>(null);
@@ -62,7 +62,7 @@ export function useWiFiDevices({ wifiService, t, handleRefresh }: UseWiFiDevices
           style: 'destructive',
           onPress: async () => {
             try {
-              await wifiService.kickDevice(macAddress);
+              await wifiService.blockDevice(macAddress);
               ToastHelper.success(t('wifi.deviceBlocked'));
               handleRefresh();
             } catch (error) {
