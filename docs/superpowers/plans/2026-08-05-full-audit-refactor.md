@@ -1,5 +1,7 @@
 # Full Audit & Refactoring Implementation Plan
 
+> **Status:** Phases 1-3, 6 (types), 7 (perf/version), 9 (deps/tooling/docs) done as of 2026-08-05. Skipped: modal-scaffold rewrite (P5, cosmetic/risky), formatter/XML merge (P2 scope-cut, behavior-risk). Deferred pending decisions: C5, C7, C8.
+
 > **For agentic workers:** Execute task-by-task. Each task = one focused change, verify with `npx tsc --noEmit`, commit with Conventional Commits. Checkbox (`- [ ]`) tracking.
 
 **Goal:** Transform 33.8k-LOC Expo/RN app into a clean, maintainable, production-grade codebase without changing user-visible behavior.

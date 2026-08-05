@@ -686,6 +686,8 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
+  // ponytail: unimplemented - the modem's timerule master-switch payload is
+  // unknown, so this is a no-op. UI toggles locally but nothing persists.
   async toggleParentalControl(_enable: boolean): Promise<boolean> {
     return true;
   }
