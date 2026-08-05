@@ -1,6 +1,7 @@
 import { ModemAPIClient } from './api.service';
 import { SMSMessage, SMSCount } from '@/types';
 import { parseXMLValue } from '@/utils/helpers';
+import { isSessionExpiredError } from '@/utils/huawei-error';
 
 // Mock SMS data for testing when modem doesn't support SMS
 // Inbox messages (boxType: 1)
@@ -174,7 +175,7 @@ export class SMSService {
       this._smsSupportCache = true;
       return true;
     } catch (error: any) {
-      if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+      if (isSessionExpiredError(error)) {
         throw error;
       }
 
@@ -238,7 +239,7 @@ export class SMSService {
 
       return messages;
     } catch (error: any) {
-      if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+      if (isSessionExpiredError(error)) {
         throw error;
       }
 
@@ -270,7 +271,7 @@ export class SMSService {
         simMax: parseInt(parseXMLValue(response, 'SimMax')) || 0,
       };
     } catch (error: any) {
-      if (error?.message?.includes('125003') || error?.message?.includes('125002')) {
+      if (isSessionExpiredError(error)) {
         throw error;
       }
 
