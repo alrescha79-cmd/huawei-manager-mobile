@@ -27,13 +27,13 @@ export function SMSListItem({
     onToggleSelect,
     isAd = false,
 }: SMSListItemProps) {
+    const { colors, typography } = useTheme();
+
     if (isAd) {
         return <InlineAdNative />;
     }
 
     if (!message) return null;
-
-    const { colors, typography } = useTheme();
 
     const initials = message.phone.charAt(0).toUpperCase();
     const isUnread = message.smstat === '0';

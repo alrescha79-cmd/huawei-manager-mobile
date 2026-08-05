@@ -99,7 +99,7 @@ export function MonthlySettingsModal({
                 monthThreshold,
             });
             onClose();
-        } catch (error) {
+        } catch {
             // Error handled by parent
         } finally {
             setIsSaving(false);

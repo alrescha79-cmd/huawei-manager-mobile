@@ -93,7 +93,7 @@ export class DirectAuthService {
         try {
             await this.xmlRequest('GET', '/html/index.html');
             console.log('[DirectAuth] Homepage fetched');
-        } catch (e) {
+        } catch {
             await this.xmlRequest('GET', '/');
         }
 

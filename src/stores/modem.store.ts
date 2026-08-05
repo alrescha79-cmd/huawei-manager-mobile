@@ -65,7 +65,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
           imei: info.imei,
         });
       }
-    } catch (e) {
+    } catch {
       // Silent fail if debug store not available
     }
   },
@@ -82,7 +82,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
           signalStrength: `${info.rssi || info.rsrp || 'N/A'} dBm`,
         });
       }
-    } catch (e) {
+    } catch {
       // Silent fail if debug store not available
     }
   },
@@ -99,7 +99,7 @@ export const useModemStore = create<ModemState>((set, get) => ({
           connectionStatus: info.currentNetworkType,
         });
       }
-    } catch (e) {
+    } catch {
       // Silent fail if debug store not available
     }
   },

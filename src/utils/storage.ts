@@ -1,6 +1,6 @@
 import * as SecureStore from 'expo-secure-store';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { ModemCredentials, ModemProfile } from '@/types';
+import { ModemCredentials, ModemProfile, SignalInfo, NetworkInfo, TrafficStats, ModemStatus, WanInfo, MobileDataStatus } from '@/types';
 
 const CREDENTIALS_KEY = 'modem_credentials';
 const SESSION_STATE_KEY = 'session_state';
@@ -97,12 +97,10 @@ export const isSessionLikelyValid = async (): Promise<boolean> => {
 
     const timeSinceActivity = Date.now() - state.lastSessionActivity;
     return state.sessionHealthy && timeSinceActivity < SESSION_TIMEOUT_MS;
-  } catch (error) {
+  } catch {
     return false;
   }
 };
-
-import { SignalInfo, NetworkInfo, TrafficStats, ModemStatus, WanInfo, MobileDataStatus } from '@/types';
 
 const MODEM_DATA_CACHE_KEY = 'modem_data_cache';
 

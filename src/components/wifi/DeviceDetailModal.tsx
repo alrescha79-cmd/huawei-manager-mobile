@@ -105,7 +105,7 @@ export function DeviceDetailModal({
             await onSaveName(device.id, deviceName);
             setHasChanges(false);
             onClose();
-        } catch (error) {
+        } catch {
         } finally {
             setIsSaving(false);
         }

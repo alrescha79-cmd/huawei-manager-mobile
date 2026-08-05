@@ -73,7 +73,7 @@ export class ModemAPIClient {
           duration,
         });
       }
-    } catch (e) {
+    } catch {
     }
   }
 
@@ -199,7 +199,7 @@ export class ModemAPIClient {
       try {
         await this.client.get('/html/index.html');
         console.log('[Login] Homepage fetched');
-      } catch (e) {
+      } catch {
       }
 
       const tokenResponse = await this.client.get('/api/webserver/SesTokInfo');
@@ -348,7 +348,7 @@ export class ModemAPIClient {
           }
           updateSessionActivity();
           return retryResponse.data;
-        } catch (retryError) {
+        } catch {
           markSessionUnhealthy();
           const errorCode = parseErrorCode(responseData) || '125002';
           throw new Error(`Session expired (${errorCode}). Please re-login.`);

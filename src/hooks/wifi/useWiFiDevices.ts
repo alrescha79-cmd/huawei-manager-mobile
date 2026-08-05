@@ -42,7 +42,7 @@ export function useWiFiDevices({ wifiService, t, handleRefresh }: UseWiFiDevices
       ToastHelper.success(t('wifi.deviceUnblocked'));
       const blocked = await wifiService.getBlockedDevices();
       setBlockedDevices(blocked);
-    } catch (error) {
+    } catch {
       ToastHelper.error(t('wifi.failedUnblockDevice'));
     } finally {
       setIsUnblocking(null);
@@ -65,7 +65,7 @@ export function useWiFiDevices({ wifiService, t, handleRefresh }: UseWiFiDevices
               await wifiService.blockDevice(macAddress);
               ToastHelper.success(t('wifi.deviceBlocked'));
               handleRefresh();
-            } catch (error) {
+            } catch {
               ToastHelper.error(t('alerts.failedKickDevice'));
             }
           },

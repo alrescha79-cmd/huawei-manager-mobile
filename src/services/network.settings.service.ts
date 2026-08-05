@@ -57,7 +57,7 @@ export class NetworkSettingsService {
             }
 
             return profiles;
-        } catch (error) {
+        } catch {
             return [];
         }
     }
@@ -76,7 +76,7 @@ export class NetworkSettingsService {
             }
             const activeId = parseXMLValue(response, 'CurrentProfile') || '0';
             return activeId;
-        } catch (error) {
+        } catch {
             return '0';
         }
     }
@@ -307,7 +307,7 @@ export class NetworkSettingsService {
             let response: string;
             try {
                 response = await this.apiClient.get('/api/cradle/basic-info');
-            } catch (primaryError) {
+            } catch {
                 try {
                     response = await this.apiClient.get('/api/ethernet/settings');
                 } catch {
@@ -327,7 +327,7 @@ export class NetworkSettingsService {
                 connectionMode: this.parseCradleMode(modeValue),
                 status: await this.getEthernetStatus(),
             };
-        } catch (error) {
+        } catch {
             return {
                 connectionMode: 'auto',
                 status: {

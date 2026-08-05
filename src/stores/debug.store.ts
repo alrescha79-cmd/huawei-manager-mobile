@@ -87,7 +87,7 @@ export const useDebugStore = create<DebugState>()(
                                 },
                             });
                         }
-                    } catch (e) {
+                    } catch {
                         // Silent fail if stores not available
                     }
                 } else {

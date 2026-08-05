@@ -316,7 +316,7 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
             if (changed) {
                 showInterstitial(() => { });
             }
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('alerts.failedChangeAntenna'));
         } finally {
             setIsChangingAntenna(false);

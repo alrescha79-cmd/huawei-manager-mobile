@@ -204,7 +204,7 @@ export function useHomeActions({
               } else {
                 ToastHelper.error(t('home.clearHistoryFailed'));
               }
-            } catch (error) {
+            } catch {
               ToastHelper.error(t('home.clearHistoryFailed'));
             } finally {
               setIsClearingHistory(false);

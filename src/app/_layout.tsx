@@ -1,6 +1,5 @@
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { useRouter, useSegments } from 'expo-router';
 import { AppState, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import type { AppStateStatus } from 'react-native';
@@ -269,7 +268,7 @@ export default function RootLayout() {
                         } else {
                             await useAuthStore.getState().tryQuietSessionRestore();
                         }
-                    } catch (error) {
+                    } catch {
                     } finally {
                         setIsRestoringSession(false);
                     }

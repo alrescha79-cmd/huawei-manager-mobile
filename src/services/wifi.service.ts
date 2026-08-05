@@ -42,7 +42,7 @@ export class WiFiService {
         if (typeof hostInfoResponse === 'string' && !hostInfoResponse.includes('<error>')) {
           try {
             hostInfoList = JSON.parse(hostInfoResponse);
-          } catch (e) {
+          } catch {
             // Might be XML
             const hostsXML = hostInfoResponse.match(/<Host>([\s\S]*?)<\/Host>/g);
             if (hostsXML) {

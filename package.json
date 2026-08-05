@@ -14,7 +14,9 @@
     "android:tunnel": "expo start --android --tunnel",
     "ios": "expo run:ios",
     "web": "expo start --web",
-    "build:android": "APP_ENV=production expo prebuild --platform android && cd android && ./gradlew assembleRelease"
+    "build:android": "APP_ENV=production expo prebuild --platform android && cd android && ./gradlew assembleRelease",
+    "lint": "eslint .",
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@expo-google-fonts/doto": "^0.4.1",
@@ -65,6 +67,10 @@
     "babel-plugin-module-resolver": "^5.0.2",
     "babel-plugin-transform-remove-console": "^6.9.4",
     "babel-preset-expo": "~54.0.0",
+    "eslint": "^9.39.5",
+    "eslint-config-expo": "^57.0.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.9.6",
     "typescript": "~5.9.2"
   },
   "private": true

@@ -180,7 +180,7 @@ export class ModemService {
         dlbandwidth,
         ulbandwidth,
       };
-    } catch (error) {
+    } catch {
       const fallback = await this.getSignalFallbackInfo();
       return {
         rssi: '',
@@ -268,7 +268,7 @@ export class ModemService {
           parseXMLValue(monthResponse, 'dayDuration') ||
           parseXMLValue(monthResponse, 'DayDuration')
         );
-      } catch (monthErr) {
+      } catch {
         // Month statistics not available - continue without them
       }
 

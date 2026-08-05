@@ -211,7 +211,7 @@ export async function fetchWidgetData(): Promise<WidgetData> {
         await cacheWidgetData(widgetData);
 
         return widgetData;
-    } catch (error: any) {
+    } catch {
         const cachedData = await getCachedWidgetData();
         if (cachedData) {
             return {

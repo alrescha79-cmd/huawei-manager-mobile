@@ -51,7 +51,7 @@ const formatModemTime = (time: string) => {
 
         return `${datePart} ${timePart}`;
 
-    } catch (e) {
+    } catch {
         return time;
     }
 };
@@ -110,7 +110,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             setSntpEnabled(settings.sntpEnabled);
             setNtpServer(settings.ntpServer);
             setTimezone(settings.timezone);
-        } catch (e) { }
+        } catch { }
     };
 
     const handleToggleSntp = async (enabled: boolean) => {
@@ -120,7 +120,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             await modemService.setTimeSettings({ sntpEnabled: enabled });
             setSntpEnabled(enabled);
             showInterstitial(() => {});
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
         } finally {
             setIsTogglingSntp(false);
@@ -134,7 +134,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             await modemService.setTimeSettings({ timezone: tz });
             setTimezone(tz);
             showInterstitial(() => {});
-        } catch (error) {
+        } catch {
             ThemedAlertHelper.alert(t('common.error'), t('common.error'));
         }
     };
@@ -154,7 +154,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                                 await modemService.reboot();
                                 showInterstitial(() => {});
                                 ToastHelper.success(t('settings.rebootSuccess'));
-                            } catch (e) {
+                            } catch {
                                 ToastHelper.error(t('alerts.failedReboot'));
                             }
                         }
@@ -176,7 +176,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                     onPress: async () => {
                         try {
                             if (modemService) await modemService.logout();
-                        } catch (e) { }
+                        } catch { }
                         await logout();
                         router.replace('/login');
                     }
@@ -200,7 +200,7 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
                                 await modemService.resetFactorySettings();
                                 showInterstitial(() => {});
                                 ToastHelper.success(t('settings.resetSuccess'));
-                            } catch (e) {
+                            } catch {
                                 ToastHelper.error(t('alerts.failedReset'));
                             }
                         }

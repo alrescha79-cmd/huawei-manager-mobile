@@ -140,7 +140,7 @@ export function useUpdateDownload({ t }: UseUpdateDownloadProps) {
                             isCancelledRef.current = true;
                             try {
                                 await downloadResumable.cancelAsync();
-                            } catch (e) {
+                            } catch {
                                 // cancelAsync may throw if download already finished — ignore
                             }
                             setDownloading(false);

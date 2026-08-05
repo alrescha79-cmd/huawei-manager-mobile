@@ -207,7 +207,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           setRelogging(false);
           return { success: true };
         }
-      } catch (error) {
+      } catch {
         // API call failed, session likely expired
       }
     }
@@ -228,7 +228,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         setRelogging(false);
         return { success: true };
       }
-    } catch (error) {
+    } catch {
       // Direct login failed
     }
 
@@ -281,7 +281,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try {
         const apiClient = new ModemAPIClient(currentCredentials.modemIp);
         await apiClient.isLoggedIn();
-      } catch (error) {
+      } catch {
       }
     }, SESSION_KEEPALIVE_INTERVAL_MS);
 

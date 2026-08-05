@@ -90,7 +90,7 @@ export default function ModemSettingsScreen() {
             } else {
                 ToastHelper.success(t('settings.firmwareUpToDate'));
             }
-        } catch (error) {
+        } catch {
             ToastHelper.error(t('alerts.failedCheckFirmware'));
         } finally {
             setIsCheckingFirmware(false);
@@ -110,7 +110,7 @@ export default function ModemSettingsScreen() {
             if (changed) {
                 showInterstitial(() => { });
             }
-        } catch (error) {
+        } catch {
             ToastHelper.error(t('alerts.failedChangeAntenna'));
         } finally {
             setIsChangingAntenna(false);

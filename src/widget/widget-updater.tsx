@@ -55,7 +55,7 @@ async function updateWidgetWithSpeed(): Promise<void> {
             widgetName: WIDGET_NAME,
             renderWidget: () => <ModemStatusWidget data={mergedData} />,
         });
-    } catch (error) {
+    } catch {
     } finally {
         isUpdating = false;
     }
@@ -70,7 +70,7 @@ async function updateWidgetWithFullData(): Promise<void> {
             renderWidget: () => <ModemStatusWidget data={cachedFullData!} />,
         });
 
-    } catch (error) {
+    } catch {
     }
 }
 

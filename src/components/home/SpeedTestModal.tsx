@@ -448,7 +448,7 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                         if (elapsed > 0) {
                             setResult(prev => ({ ...prev, downloadSpeed: ((totalBytesDownloaded * 8) / elapsed) / 1000000 }));
                         }
-                    } catch (err) {
+                    } catch {
                         if (signal.aborted) break;
                     }
                 }
@@ -493,7 +493,7 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
                         if (elapsed > 0) {
                             setResult(prev => ({ ...prev, uploadSpeed: ((totalBytesUploaded * 8) / elapsed) / 1000000 }));
                         }
-                    } catch (err) {
+                    } catch {
                         if (signal.aborted) break;
                     }
                 }

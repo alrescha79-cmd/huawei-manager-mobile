@@ -52,7 +52,7 @@ export function useParentalControls({
     try {
       await wifiService.toggleParentalControl(enabled);
       setParentalControlEnabled(enabled);
-    } catch (error) {
+    } catch {
       ToastHelper.error(t('common.error'));
     } finally {
       setIsTogglingParental(false);
@@ -175,7 +175,7 @@ export function useParentalControls({
       ToastHelper.success(t('parentalControl.profileSaved'));
       setShowProfileModal(false);
       handleRefresh();
-    } catch (error) {
+    } catch {
       ToastHelper.error(t('common.error'));
     } finally {
       setIsSavingProfile(false);
@@ -196,7 +196,7 @@ export function useParentalControls({
               await wifiService?.deleteParentalControlProfile(profileId);
               ToastHelper.success(t('parentalControl.profileDeleted'));
               handleRefresh();
-            } catch (error) {
+            } catch {
               ToastHelper.error(t('common.error'));
             }
           },

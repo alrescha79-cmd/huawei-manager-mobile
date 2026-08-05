@@ -143,7 +143,7 @@ export function initAdMob(): Promise<void> {
             try {
                 await AdsConsent.requestInfoUpdate();
                 await AdsConsent.loadAndShowConsentFormIfRequired();
-            } catch (_) { }
+            } catch { }
 
             await mobileAds().setRequestConfiguration({
                 maxAdContentRating: MaxAdContentRating.G,

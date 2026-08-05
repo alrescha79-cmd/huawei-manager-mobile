@@ -264,7 +264,7 @@ export default function SettingsIndex() {
                                                             setTimeout(() => {
                                                                 ToastHelper.warning(t('settings.disableDebugReminder'));
                                                             }, 600);
-                                                        } catch (e) {
+                                                        } catch {
                                                         }
                                                     }}
                                                 >
@@ -326,14 +326,14 @@ export default function SettingsIndex() {
                                                                     setTimeout(() => {
                                                                         ToastHelper.warning(t('settings.disableDebugReminder'));
                                                                     }, 600);
-                                                                } catch (e) {
+                                                                } catch {
                                                                 }
                                                             }
                                                         }
                                                     ]
                                                 );
                                             }
-                                        } catch (e) {
+                                        } catch {
                                         ToastHelper.error(t('settings.emailClientError'));
                                         } finally {
                                             setIsSendingDebugLog(false);

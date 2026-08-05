@@ -10,8 +10,7 @@ import { useDebugStore } from '@/stores/debug.store';
 import { SMSService } from '@/services/sms.service';
 import { WiFiService } from '@/services/wifi.service';
 import { checkDailyUsageNotification, checkMonthlyUsageNotification, checkIPChangeNotification, sendDebugModeReminder, saveLastActiveTime } from '@/services/notification.service';
-import { ThemedAlertHelper, ToastHelper } from '@/components';
-import { getSelectedBandsDisplay } from '@/components';
+import { ThemedAlertHelper, ToastHelper, getSelectedBandsDisplay } from '@/components';
 import { isSessionExpiredError } from '@/utils/huawei-error';
 
 interface UseHomeDataProps {
@@ -52,7 +51,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
         const prevTotal = await AsyncStorage.getItem('previousTotalTraffic');
         if (prevTotal) setPreviousTotalTraffic(parseInt(prevTotal));
-      } catch (error) {
+      } catch {
       }
     };
     loadLastClearedDate();
