@@ -247,7 +247,7 @@ export class WiFiService {
 
 
       if (!encPubKeyN) {
-        return password;
+        throw new Error('Modem did not return a WiFi encryption key');
       }
 
       const keySize = 256;
@@ -278,7 +278,7 @@ export class WiFiService {
 
       return encryptedHex;
     } catch (error) {
-      return password;
+      throw error;
     }
   }
 
