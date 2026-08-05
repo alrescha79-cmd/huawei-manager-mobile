@@ -83,10 +83,23 @@ export function useSystemSettings({ t }: UseSystemSettingsProps) {
             setModemService(service);
             loadTime(service);
 
-            const interval = setInterval(() => {
+            // ponytail: tick the clock client-side instead of a full HTTP poll
+            // every second; resync from the modem every 60s
+            const tick = () => setCurrentTime(prev => {
+                if (!prev) return prev;
+                const date = new Date(prev);
+                if (isNaN(date.getTime())) return prev;
+                date.setSeconds(date.getSeconds() + 1);
+                return date.toISOString();
+            });
+            const tickerId = setInterval(tick, 1000);
+            const syncId = setInterval(() => {
                 service.getCurrentTime().then(time => setCurrentTime(time)).catch(() => { });
-            }, 1000);
-            return () => clearInterval(interval);
+            }, 60000);
+            return () => {
+                clearInterval(tickerId);
+                clearInterval(syncId);
+            };
         }
     }, [credentials]);
 
