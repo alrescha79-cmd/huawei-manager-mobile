@@ -1,5 +1,6 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getCredentials } from '@/utils/storage';
 
 export interface WidgetData {
     currentDownloadRate: number;
@@ -45,10 +46,9 @@ function safeParseInt(value: string): number {
 
 async function getModemIp(): Promise<string> {
     try {
-        const credentialsStr = await AsyncStorage.getItem('modem_credentials');
-        if (credentialsStr) {
-            const credentials = JSON.parse(credentialsStr);
-            return credentials.modemIp || DEFAULT_MODEM_IP;
+        const credentials = await getCredentials();
+        if (credentials?.modemIp) {
+            return credentials.modemIp;
         }
     } catch {
         // Ignored - use default
