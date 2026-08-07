@@ -553,6 +553,7 @@
     "clearLogsMessage": "This deletes all recorded debug logs (API + console). Can't be undone.",
     "configureBands": "Configure",
     "connection": "Connection",
+    "copied": "Copied to clipboard",
     "credentialsHint": "Used for auto-login when app opens",
     "credentialsSaved": "Connection settings saved",
     "currentAppVersion": "Current App Version",

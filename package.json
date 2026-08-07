@@ -29,6 +29,7 @@
     "expo": "~54.0.30",
     "expo-blur": "^15.0.8",
     "expo-build-properties": "^1.0.10",
+    "expo-clipboard": "~8.0.8",
     "expo-constants": "~18.0.12",
     "expo-crypto": "^15.0.8",
     "expo-device": "~8.0.10",
