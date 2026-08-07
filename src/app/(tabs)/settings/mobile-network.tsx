@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
+import { useRouter } from 'expo-router';
 import { BandSelectionModal, MonthlySettingsModal, SelectionModal, MeshGradientBackground, ThemedSwitch, BouncingDots, AnimatedScreen, SignalPointingModal, AdNative } from '@/components';
 import { SettingsSection, SettingsItem, PageHeader } from '@/components/settings';
 import { useMobileNetwork } from '@/hooks/settings';
@@ -23,6 +24,7 @@ const NETWORK_MODES = [
 export default function MobileNetworkSettingsScreen() {
     const { colors } = useTheme();
     const { t } = useTranslation();
+    const router = useRouter();
 
     const {
         modemService, loadSettings,
@@ -136,6 +138,11 @@ export default function MobileNetworkSettingsScreen() {
                             title={t('home.signalPointing')}
                             subtitle={t('settings.signalPointingDesc')}
                             onPress={() => setShowSignalPointingModal(true)}
+                        />
+                        <SettingsItem
+                            title={t('bts.title')}
+                            subtitle={t('settings.btsDesc')}
+                            onPress={() => router.push('/bts-locator')}
                             isLast
                         />
                     </SettingsSection>

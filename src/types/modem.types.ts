@@ -61,6 +61,7 @@ export interface NetworkInfo {
   shortName: string;
   spnName: string;
   fullName: string;
+  numeric?: string;
 }
 
 export interface TrafficStats {

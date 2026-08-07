@@ -216,11 +216,46 @@ export class ModemService {
         shortName: parseXMLValue(response, 'ShortName'),
         spnName: parseXMLValue(response, 'SpnName'),
         fullName: parseXMLValue(response, 'FullName'),
+        numeric: parseXMLValue(response, 'Numeric'),
       };
-    } catch (error) {
-      console.error('Error getting network info:', error);
-      throw error;
+      } catch (error) {
+        console.error('Error getting network info:', error);
+        throw error;
+      }
+  }
+
+  /**
+   * Active cell info (TAC/LAC, CellId, PCI) probed across multiple endpoints.
+   * Firmwares expose these in different places; the first hit wins.
+   */
+  async getCellInfo(): Promise<{ tac: string; cellId: string; pci: string }> {
+    const result: { tac: string; cellId: string; pci: string } = { tac: '', cellId: '', pci: '' };
+    for (const endpoint of ['/api/net/cell-info', '/api/net/register']) {
+      try {
+        const response = await this.apiClient.get(endpoint);
+        console.log(`[ModemService] ${endpoint} raw:`, response);
+        const tac =
+          parseXMLValue(response, 'Tac') ||
+          parseXMLValue(response, 'tac') ||
+          parseXMLValue(response, 'Lac') ||
+          parseXMLValue(response, 'lac') ||
+          parseXMLValue(response, 'TAC') ||
+          parseXMLValue(response, 'LAC');
+        const cellId =
+          parseXMLValue(response, 'CellId') ||
+          parseXMLValue(response, 'cellId') ||
+          parseXMLValue(response, 'cell_id') ||
+          parseXMLValue(response, 'CellID');
+        const pci = parseXMLValue(response, 'Pci') || parseXMLValue(response, 'pci') || parseXMLValue(response, 'PCI');
+        if (tac) result.tac = tac;
+        if (cellId) result.cellId = cellId;
+        if (pci) result.pci = pci;
+        if (result.tac) break;
+      } catch (error) {
+        console.log(`[ModemService] ${endpoint} error:`, error);
+      }
     }
+    return result;
   }
 
   async getTrafficStats(): Promise<TrafficStats> {
