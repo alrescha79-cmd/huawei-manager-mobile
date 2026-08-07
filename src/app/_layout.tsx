@@ -378,10 +378,13 @@ export default function RootLayout() {
 
         const inAuthGroup = segments[0] === '(tabs)';
         const inWebview = segments[0] === 'webview';
+        const inBtsLocator = segments[0] === 'bts-locator';
+
+        console.log('[AuthGuard] segments:', segments.join('/'), '| isAuthenticated:', isAuthenticated);
 
         if (!isAuthenticated && inAuthGroup) {
             router.replace('/login');
-        } else if (isAuthenticated && !inAuthGroup && !inWebview) {
+        } else if (isAuthenticated && !inAuthGroup && !inWebview && !inBtsLocator) {
             router.replace('/(tabs)/home');
         }
     }, [isAuthenticated, segments, fontsLoaded, authReady]);
@@ -429,6 +432,13 @@ export default function RootLayout() {
                         options={{
                             headerShown: false,
                             presentation: 'modal',
+                        }}
+                    />
+                    <Stack.Screen
+                        name="bts-locator"
+                        options={{
+                            headerShown: false,
+                            animation: 'slide_from_right',
                         }}
                     />
                 </Stack>

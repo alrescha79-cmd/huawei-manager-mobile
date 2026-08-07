@@ -10,14 +10,12 @@ interface QuickActionsCardProps {
     t: (key: string) => string;
     selectedBands: string[];
     wanIpAddress?: string;
-    mobileDataEnabled: boolean;
-    isTogglingData: boolean;
     isChangingIp: boolean;
     isRunningCheck: boolean;
     onOpenBandModal: () => void;
     onChangeIp: () => void;
-    onToggleMobileData: () => void;
     onSignalPointing: () => void;
+    onBtsLocator: () => void;
     onQuickCheck: () => void;
     onSpeedtest: () => void;
     onOpenMonthlySettings: () => void;
@@ -39,14 +37,12 @@ interface QuickActionsCardProps {
     t,
     selectedBands,
     wanIpAddress,
-    mobileDataEnabled,
-    isTogglingData,
     isChangingIp,
     isRunningCheck,
     onOpenBandModal,
     onChangeIp,
-    onToggleMobileData,
     onSignalPointing,
+    onBtsLocator,
     onQuickCheck,
     onSpeedtest,
     onOpenMonthlySettings,
@@ -168,53 +164,31 @@ interface QuickActionsCardProps {
 
             {/* Bottom row - Small actions (Row 1) */}
             <View style={styles.bottomRow}>
-                {/* Data Seluler */}
+                {/* Lokasi BTS */}
                 <TouchableOpacity
                     style={styles.smallAction}
-                    onPress={onToggleMobileData}
-                    disabled={isTogglingData}
+                    onPress={onBtsLocator}
                     activeOpacity={0.7}
                 >
-                    {isTogglingData ? (
-                        <BouncingDots size="small" color={mobileDataEnabled ? colors.background : colors.primary} />
-                    ) : (
-                        <>
-                            <View style={[
-                                styles.smallIconCircle,
-                                {
-                                    backgroundColor: mobileDataEnabled ? colors.primary : itemBg,
-                                    borderColor: mobileDataEnabled ? colors.border : itemBorder,
-                                    borderWidth: 1,
-                                }
-                            ]}>
-                                <MaterialIcons
-                                    name="swap-vert"
-                                    size={16}
-                                    color={mobileDataEnabled ? '#eeeeee' : colors.primary}
-                                />
-                            </View>
-                            <View style={styles.smallActionTextContainer}>
-                                <TextTicker
-                                    style={StyleSheet.flatten([
-                                        typography.caption2,
-                                        {
-                                            color: colors.text,
-                                            fontWeight: '600',
-                                            textAlign: 'center',
-                                            alignSelf: 'center'
-                                        }
-                                    ])}
-                                    duration={4000}
-                                    loop
-                                    bounce
-                                    repeatSpacer={50}
-                                    marqueeDelay={1000}
-                                >
-                                    {t('home.mobileData')}
-                                </TextTicker>
-                            </View>
-                        </>
-                    )}
+                    <View style={[styles.smallIconCircle, {
+                        backgroundColor: colors.itemBg,
+                        borderColor: colors.border,
+                        borderWidth: 1,
+                    }]}>
+                        <MaterialIcons name="cell-tower" size={16} color={colors.primary} />
+                    </View>
+                    <View style={styles.smallActionTextContainer}>
+                        <TextTicker
+                            style={StyleSheet.flatten([typography.caption2, { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' }])}
+                            duration={4000}
+                            loop
+                            bounce
+                            repeatSpacer={50}
+                            marqueeDelay={1000}
+                        >
+                            {t('home.btsLocator')}
+                        </TextTicker>
+                    </View>
                 </TouchableOpacity>
 
                 {/* Cari Sinyal */}
@@ -484,11 +458,12 @@ const styles = StyleSheet.create({
     },
     bottomRow: {
         flexDirection: 'row',
+        flexWrap: 'wrap',
         justifyContent: 'space-between',
         marginTop: 12,
     },
     smallAction: {
-        width: '22.8%',
+        width: '18%',
         alignItems: 'center',
         justifyContent: 'center',
     },

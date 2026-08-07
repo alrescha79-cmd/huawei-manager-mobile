@@ -495,6 +495,17 @@ export const getLteBandInfo = (band: string | undefined): string => {
   return band;
 };
 
+/** Human label for a band, e.g. "Band 3 (1800 MHz)". Falls back to getLteBandInfo output. */
+export const getLteBandLabel = (band: string | undefined): string => {
+  if (!band) return '-';
+  const info = getLteBandInfo(band);
+  const match = info.match(/- (\d+(?:\/\d+)?) MHz/);
+  if (!match) return info;
+  const upper = band.toUpperCase().trim();
+  if (upper.startsWith('N')) return `Band ${band.toLowerCase()} (${match[1]} MHz)`;
+  return `Band ${upper.replace(/^B/, '')} (${match[1]} MHz)`;
+};
+
 export const estimateLteBand = (cellId: number | string | undefined, plmn: string | undefined): string | undefined => {
   if (!cellId) return undefined;
   const cidNum = typeof cellId === 'string' ? parseInt(cellId, 10) : cellId;

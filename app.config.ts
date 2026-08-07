@@ -56,6 +56,12 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 },
             ],
             'expo-localization',
+            [
+                'expo-location',
+                {
+                    locationWhenInUsePermission: 'Allow $(PRODUCT_NAME) to use your location to find the nearest BTS tower.',
+                },
+            ],
             'expo-font',
             ['react-native-android-widget', widgetConfig],
             'expo-mail-composer',

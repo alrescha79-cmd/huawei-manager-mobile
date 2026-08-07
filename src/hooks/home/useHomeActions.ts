@@ -2,13 +2,12 @@ import { useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModemService } from '@/services/modem.service';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
-import { showInterstitial, showRewarded } from '@/services/ad.service';
+import { showRewarded } from '@/services/ad.service';
 
 interface UseHomeActionsProps {
   modemService: ModemService | null;
   t: (key: string) => string;
   mobileDataStatus: any;
-  setMobileDataStatus: (status: any) => void;
   loadData: (service: ModemService) => Promise<void>;
   loadMonthlySettings: (service: ModemService) => Promise<void>;
   setLastClearedDate: (date: string) => void;
@@ -19,13 +18,11 @@ export function useHomeActions({
   modemService,
   t,
   mobileDataStatus,
-  setMobileDataStatus,
   loadData,
   loadMonthlySettings,
   setLastClearedDate,
   setPreviousTotalTraffic,
 }: UseHomeActionsProps) {
-  const [isTogglingData, setIsTogglingData] = useState(false);
   const [isChangingIp, setIsChangingIp] = useState(false);
   const [isRunningDiagnosis, setIsRunningDiagnosis] = useState(false);
   const [isRunningCheck, setIsRunningCheck] = useState(false);
@@ -35,41 +32,6 @@ export function useHomeActions({
   const [diagnosisTitle, setDiagnosisTitle] = useState('');
   const [diagnosisResults, setDiagnosisResults] = useState<{ label: string; success: boolean; value?: string }[]>([]);
   const [diagnosisSummary, setDiagnosisSummary] = useState('');
-
-  const handleToggleMobileData = async () => {
-    if (!modemService || isTogglingData) return;
-
-    const newState = !mobileDataStatus?.isEnabled;
-
-    const performToggle = async () => {
-      setIsTogglingData(true);
-      try {
-        await modemService.toggleMobileData(newState);
-        const dataStatus = await modemService.getMobileDataStatus();
-        setMobileDataStatus(dataStatus);
-        ToastHelper.success(newState ? t('home.dataEnabled') : t('home.dataDisabled'));
-        showInterstitial(() => { });
-      } catch (error) {
-        console.error('Error toggling mobile data:', error);
-        ToastHelper.error(t('alerts.failedToggleData'));
-      } finally {
-        setIsTogglingData(false);
-      }
-    };
-
-    if (!newState) {
-      ThemedAlertHelper.alert(
-        t('home.disableData'),
-        t('home.confirmDisableData'),
-        [
-          { text: t('common.cancel'), style: 'cancel' },
-          { text: t('common.confirm'), onPress: performToggle },
-        ]
-      );
-    } else {
-      performToggle();
-    }
-  };
 
   const handleChangeIp = async () => {
     if (!modemService || isChangingIp) return;
@@ -235,7 +197,6 @@ export function useHomeActions({
   };
 
   return {
-    isTogglingData,
     isChangingIp,
     isRunningDiagnosis,
     isRunningCheck,
@@ -245,7 +206,6 @@ export function useHomeActions({
     diagnosisTitle,
     diagnosisResults,
     diagnosisSummary,
-    handleToggleMobileData,
     handleChangeIp,
     handleDiagnosis,
     handleOneClickCheck,

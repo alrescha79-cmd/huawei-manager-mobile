@@ -1,8 +1,8 @@
 const upstreamTransformer = require("@expo/metro-config/babel-transformer");
 
 module.exports.transform = async function ({ src, filename, options }) {
-  // If it is a markdown file, transform it into a JavaScript module exporting a raw string.
-  if (filename.endsWith(".md")) {
+  // If it is a markdown or csv file, transform it into a JavaScript module exporting a raw string.
+  if (filename.endsWith(".md") || filename.endsWith(".csv")) {
     const code = `module.exports = ${JSON.stringify(src)};`;
     return upstreamTransformer.transform({ src: code, filename, options });
   }

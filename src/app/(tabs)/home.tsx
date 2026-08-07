@@ -45,7 +45,6 @@ export default function HomeScreen() {
     wanInfo,
     mobileDataStatus,
     monthlySettings,
-    setMobileDataStatus,
   } = useModemStore();
 
   const durationUnits: DurationUnits = {
@@ -76,7 +75,6 @@ export default function HomeScreen() {
     modemService: homeData.modemService,
     t,
     mobileDataStatus,
-    setMobileDataStatus,
     loadData: homeData.loadData,
     loadMonthlySettings: homeData.loadMonthlySettings,
     setLastClearedDate: homeData.setLastClearedDate,
@@ -126,15 +124,13 @@ export default function HomeScreen() {
                t={t}
                selectedBands={homeData.selectedBands}
                wanIpAddress={wanInfo?.wanIPAddress}
-               mobileDataEnabled={!!mobileDataStatus?.isEnabled}
-               isTogglingData={homeActions.isTogglingData}
                isChangingIp={homeActions.isChangingIp}
                isRunningCheck={homeActions.isRunningCheck}
                deviceName={homeData.modemInfo?.deviceName}
                onOpenBandModal={() => setShowBandModal(true)}
                onChangeIp={homeActions.handleChangeIp}
-               onToggleMobileData={homeActions.handleToggleMobileData}
-               onSignalPointing={() => setShowSignalPointingModal(true)}
+                onSignalPointing={() => setShowSignalPointingModal(true)}
+                onBtsLocator={() => router.push('/bts-locator')}
                onQuickCheck={homeActions.handleOneClickCheck}
                onSpeedtest={() => setShowSpeedTestModal(true)}
                onOpenMonthlySettings={() => setShowMonthlySettingsModal(true)}
