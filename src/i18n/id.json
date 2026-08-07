@@ -553,6 +553,7 @@
     "clearLogsMessage": "Ini hapus semua log debug (API + console). Tidak bisa dibatalkan.",
     "configureBands": "Konfigurasi",
     "connection": "Koneksi",
+    "copied": "Tersalin ke clipboard",
     "credentialsHint": "Digunakan untuk auto-login saat buka aplikasi",
     "credentialsSaved": "Pengaturan koneksi disimpan",
     "currentAppVersion": "Versi Aplikasi Saat Ini",
