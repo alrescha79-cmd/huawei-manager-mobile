@@ -7,7 +7,6 @@ import {
     StyleSheet,
     Dimensions,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 
 interface AlertButton {
@@ -58,17 +57,14 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
         >
             <View style={[
                 styles.overlay,
-                { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.85)' : 'rgba(0, 0, 0, 0.5)' }
+                { backgroundColor: isDark ? 'rgba(0, 0, 0, 0.75)' : 'rgba(0, 0, 0, 0.45)' }
             ]}>
-                <BlurView
-                    intensity={glassmorphism.blur.alert}
-                    tint={isDark ? 'dark' : 'light'}
-                    experimentalBlurMethod='dimezisBlurView'
+                <View
                     style={[
                         styles.alertContainer,
                         {
-                            backgroundColor: isDark ? '#1c1c1e' : '#ffffff',
-                            borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                            borderColor: isDark ? glassmorphism.border.dark : colors.border,
                             borderWidth: 1,
                         }
                     ]}
@@ -114,7 +110,7 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
                             </TouchableOpacity>
                         ))}
                     </View>
-                </BlurView>
+                </View>
             </View>
         </Modal>
     );

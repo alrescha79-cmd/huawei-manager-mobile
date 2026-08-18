@@ -40,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ...config,
         name: isDev ? 'HM Mobile [DEV]' : 'Huawei Manager',
         slug: 'hm-mobile',
-        version: '1.1.70',
+        version: '1.1.75',
         orientation: 'portrait',
         icon: './assets/logo.png',
         userInterfaceStyle: 'automatic',
@@ -52,6 +52,9 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                 {
                     android: {
                         usesCleartextTraffic: true,
+                        // Shrink release APKs: R8 code shrinking + resource stripping.
+                        enableProguardInReleaseBuilds: true,
+                        enableShrinkResourcesInReleaseBuilds: true,
                     },
                 },
             ],

@@ -523,14 +523,14 @@ export const estimateLteBand = (cellId: number | string | undefined, plmn: strin
       if (sectorId >= 31 && sectorId <= 33) return 'B1';
       if (sectorId >= 40 && sectorId <= 42) return 'B40';
     }
-    // XL Axiata (51011)
+    // Telkomsel (51011) — same operator as 51010
     if (plmnStr === '51011') {
       if (sectorId >= 1 && sectorId <= 3) return 'B3';
       if (sectorId >= 7 && sectorId <= 9) return 'B8';
       if (sectorId >= 31 && sectorId <= 33) return 'B1';
       if (sectorId >= 40 && sectorId <= 42) return 'B40';
     }
-    // Indosat (51009)
+    // Smartfren (51009)
     if (plmnStr === '51009') {
       if (sectorId >= 1 && sectorId <= 3) return 'B3';
       if (sectorId >= 7 && sectorId <= 9) return 'B8';

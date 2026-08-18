@@ -8,7 +8,6 @@ import {
     Animated,
 } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import Svg, { Path, Line, Text as SvgText } from 'react-native-svg';
 import Reanimated, {
     useSharedValue,
@@ -555,139 +554,136 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     return (
         <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
             <View style={styles.overlay}>
-                <BlurView
-                    intensity={glassmorphism.blur.overlay}
-                    tint={isDark ? 'dark' : 'light'}
-                    experimentalBlurMethod="dimezisBlurView"
-                    style={styles.blurContainer}
-                >
-                    <View style={[styles.modalContent, { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }]}>
-                        <ModalBackground />
+                <View style={[styles.modalContent, {
+                    backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                    borderColor: isDark ? glassmorphism.border.dark : colors.border,
+                    borderWidth: 1,
+                }]}>
+                    <ModalBackground />
 
-                        {/* Header */}
-                        <View style={styles.header}>
-                            <Text style={[typography.title2, { color: colors.text, fontWeight: '700' }]}>
-                                {t('home.speedtestTitle')}
-                            </Text>
-                            <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                                <MaterialIcons name="close" size={24} color={colors.textSecondary} />
-                            </TouchableOpacity>
-                        </View>
-
-                        {/* ISP Info */}
-                        {(clientIp || ispInfo || providerHostname) && (
-                            <View style={[styles.ispCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
-                                {ispInfo !== '' && (
-                                    <Text style={[typography.caption1, { color: colors.textSecondary }]}>
-                                        <Ionicons name="earth" size={12} color={colors.textSecondary} />{' '}
-                                        <Text style={{ color: colors.text, fontWeight: '600' }}>{ispInfo}</Text>
-                                    </Text>
-                                )}
-                                {clientIp !== '' && (
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
-                                        <MaterialIcons name="network-wifi" size={12} color={colors.textSecondary} />{' '}
-                                        <Text style={{ color: colors.text, fontWeight: '600' }}>{clientIp}</Text>
-                                    </Text>
-                                )}
-                                {providerHostname !== '' && providerHostname !== clientIp && (
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2, textAlign: 'center' }]}>
-                                        <MaterialIcons name="computer" size={12} color={colors.textSecondary} />{' '}
-                                        <Text style={{ color: colors.text, fontWeight: '600' }}>{providerHostname}</Text>
-                                    </Text>
-                                )}
-                            </View>
-                        )}
-
-                        {/* Gauge */}
-                        <SpeedometerGauge
-                            speed={currentSpeed}
-                            maxSpeed={currentMax}
-                            color={currentColor}
-                            label={currentLabel}
-                            isActive={isRunning}
-                        />
-
-                        {/* Progress bar */}
-                        {isRunning && (
-                            <View style={[styles.progressContainer, { backgroundColor: colors.border }]}>
-                                <Animated.View
-                                    style={[styles.progressBar, { width: progressWidth, backgroundColor: currentColor }]}
-                                />
-                            </View>
-                        )}
-
-                        {/* Ad */}
-                        <View style={{ paddingHorizontal: 4, marginTop: spacing.sm }}>
-                            <AdNative />
-                        </View>
-
-                        {/* Results */}
-                        {phase === 'complete' && result.latency > 0 && (
-                            <View style={[styles.resultsRow, { marginTop: spacing.sm }]}>
-                                <View style={[styles.resultItem, { backgroundColor: isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.06)' }]}>
-                                    <Ionicons name="arrow-down" size={16} color="#22C55E" />
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
-                                        {t('home.download')}
-                                    </Text>
-                                    <Text style={[typography.headline, { color: '#22C55E', fontWeight: '700', fontSize: 18 }]}>
-                                        {result.downloadSpeed.toFixed(1)}
-                                    </Text>
-                                    <Text style={[typography.caption2, { color: colors.textSecondary }]}>Mbps</Text>
-                                </View>
-                                <View style={[styles.resultItem, { backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.06)' }]}>
-                                    <Ionicons name="arrow-up" size={16} color="#3B82F6" />
-                                    <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
-                                        {t('home.upload')}
-                                    </Text>
-                                    <Text style={[typography.headline, { color: '#3B82F6', fontWeight: '700', fontSize: 18 }]}>
-                                        {result.uploadSpeed.toFixed(1)}
-                                    </Text>
-                                    <Text style={[typography.caption2, { color: colors.textSecondary }]}>Mbps</Text>
-                                </View>
-                            </View>
-                        )}
-
-                        <View style={[styles.statsRow, { marginTop: spacing.sm }]}>
-                            <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
-                                <MaterialIcons name="timer" size={20} color={colors.primary} />
-                                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
-                                    {t('home.latency')}
-                                </Text>
-                                <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]}>
-                                    {result.latency.toFixed(0)} ms
-                                </Text>
-                            </View>
-                            <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
-                                <MaterialIcons name="trending-up" size={20} color={colors.success} />
-                                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
-                                    {t('home.jitter')}
-                                </Text>
-                                <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]}>
-                                    {result.jitter.toFixed(1)} ms
-                                </Text>
-                            </View>
-                        </View>
-
-                        {/* Action */}
-                        <TouchableOpacity
-                            style={[styles.actionButton, { backgroundColor: isRunning ? colors.error : colors.primary }]}
-                            onPress={isRunning ? stopSpeedtest : phase === 'complete' ? handleClose : runSpeedtest}
-                        >
-                            <Text
-                                style={[typography.body, { color: '#FFFFFF', fontWeight: '600', textAlign: 'center' }]}
-                                numberOfLines={1}
-                                adjustsFontSizeToFit
-                                minimumFontScale={0.8}
-                            >
-                                {isRunning ? t('common.stop') : phase === 'complete' ? t('common.ok') : t('home.startTest')}
-                            </Text>
-                        </TouchableOpacity>
-
-                        <Text style={[typography.caption2, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
-                            {t('home.poweredBy')}
+                    {/* Header */}
+                    <View style={styles.header}>
+                        <Text style={[typography.title2, { color: colors.text, fontWeight: '700' }]}>
+                            {t('home.speedtestTitle')}
                         </Text>
+                        <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
+                            <MaterialIcons name="close" size={24} color={colors.textSecondary} />
+                        </TouchableOpacity>
                     </View>
-                </BlurView>
+
+                    {/* ISP Info */}
+                    {(clientIp || ispInfo || providerHostname) && (
+                        <View style={[styles.ispCard, { backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)' }]}>
+                            {ispInfo !== '' && (
+                                <Text style={[typography.caption1, { color: colors.textSecondary }]}>
+                                    <Ionicons name="earth" size={12} color={colors.textSecondary} />{' '}
+                                    <Text style={{ color: colors.text, fontWeight: '600' }}>{ispInfo}</Text>
+                                </Text>
+                            )}
+                            {clientIp !== '' && (
+                                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2 }]}>
+                                    <MaterialIcons name="network-wifi" size={12} color={colors.textSecondary} />{' '}
+                                    <Text style={{ color: colors.text, fontWeight: '600' }}>{clientIp}</Text>
+                                </Text>
+                            )}
+                            {providerHostname !== '' && providerHostname !== clientIp && (
+                                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 2, textAlign: 'center' }]}>
+                                    <MaterialIcons name="computer" size={12} color={colors.textSecondary} />{' '}
+                                    <Text style={{ color: colors.text, fontWeight: '600' }}>{providerHostname}</Text>
+                                </Text>
+                            )}
+                        </View>
+                    )}
+
+                    {/* Gauge */}
+                    <SpeedometerGauge
+                        speed={currentSpeed}
+                        maxSpeed={currentMax}
+                        color={currentColor}
+                        label={currentLabel}
+                        isActive={isRunning}
+                    />
+
+                    {/* Progress bar */}
+                    {isRunning && (
+                        <View style={[styles.progressContainer, { backgroundColor: colors.border }]}>
+                            <Animated.View
+                                style={[styles.progressBar, { width: progressWidth, backgroundColor: currentColor }]}
+                            />
+                        </View>
+                    )}
+
+                    {/* Ad */}
+                    <View style={{ paddingHorizontal: 4, marginTop: spacing.sm }}>
+                        <AdNative />
+                    </View>
+
+                    {/* Results */}
+                    {phase === 'complete' && result.latency > 0 && (
+                        <View style={[styles.resultsRow, { marginTop: spacing.sm }]}>
+                            <View style={[styles.resultItem, { backgroundColor: isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.06)' }]}>
+                                <Ionicons name="arrow-down" size={16} color="#22C55E" />
+                                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
+                                    {t('home.download')}
+                                </Text>
+                                <Text style={[typography.headline, { color: '#22C55E', fontWeight: '700', fontSize: 18 }]}>
+                                    {result.downloadSpeed.toFixed(1)}
+                                </Text>
+                                <Text style={[typography.caption2, { color: colors.textSecondary }]}>Mbps</Text>
+                            </View>
+                            <View style={[styles.resultItem, { backgroundColor: isDark ? 'rgba(59,130,246,0.08)' : 'rgba(59,130,246,0.06)' }]}>
+                                <Ionicons name="arrow-up" size={16} color="#3B82F6" />
+                                <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
+                                    {t('home.upload')}
+                                </Text>
+                                <Text style={[typography.headline, { color: '#3B82F6', fontWeight: '700', fontSize: 18 }]}>
+                                    {result.uploadSpeed.toFixed(1)}
+                                </Text>
+                                <Text style={[typography.caption2, { color: colors.textSecondary }]}>Mbps</Text>
+                            </View>
+                        </View>
+                    )}
+
+                    <View style={[styles.statsRow, { marginTop: spacing.sm }]}>
+                        <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
+                            <MaterialIcons name="timer" size={20} color={colors.primary} />
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
+                                {t('home.latency')}
+                            </Text>
+                            <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]}>
+                                {result.latency.toFixed(0)} ms
+                            </Text>
+                        </View>
+                        <View style={[styles.statItem, { backgroundColor: isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light }]}>
+                            <MaterialIcons name="trending-up" size={20} color={colors.success} />
+                            <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 4 }]}>
+                                {t('home.jitter')}
+                            </Text>
+                            <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]}>
+                                {result.jitter.toFixed(1)} ms
+                            </Text>
+                        </View>
+                    </View>
+
+                    {/* Action */}
+                    <TouchableOpacity
+                        style={[styles.actionButton, { backgroundColor: isRunning ? colors.error : colors.primary }]}
+                        onPress={isRunning ? stopSpeedtest : phase === 'complete' ? handleClose : runSpeedtest}
+                    >
+                        <Text
+                            style={[typography.body, { color: '#FFFFFF', fontWeight: '600', textAlign: 'center' }]}
+                            numberOfLines={1}
+                            adjustsFontSizeToFit
+                            minimumFontScale={0.8}
+                        >
+                            {isRunning ? t('common.stop') : phase === 'complete' ? t('common.ok') : t('home.startTest')}
+                        </Text>
+                    </TouchableOpacity>
+
+                    <Text style={[typography.caption2, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
+                        {t('home.poweredBy')}
+                    </Text>
+                </View>
             </View>
         </Modal>
     );
@@ -704,16 +700,13 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: 'rgba(0,0,0,0.7)',
     },
-    blurContainer: {
-        borderRadius: 24,
-        overflow: 'hidden',
-        margin: 20,
-        width: '90%',
-        maxWidth: 400,
-    },
     modalContent: {
         padding: 24,
         borderRadius: 24,
+        margin: 20,
+        width: '90%',
+        maxWidth: 400,
+        overflow: 'hidden',
     },
     header: {
         flexDirection: 'row',
