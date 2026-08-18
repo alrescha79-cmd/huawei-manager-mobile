@@ -9,7 +9,7 @@ import { useModemStore } from '@/stores/modem.store';
 import { AnimatedScreen, MeshGradientBackground, Card, BtsMapWebView, BouncingDots, ToastHelper, AdBanner } from '@/components';
 import { PageHeader } from '@/components/settings';
 import { parseCellIdString, calculateDistanceKm, calculateBearing, normalizeBearing, bearingToCompass } from '@/utils/geoMath';
-import { fetchBtsCoordinates, fetchNearbyTowers, NearbyTower, BTS_SEARCH_RADIUS_KM } from '@/services/btsService';
+import { fetchBtsCoordinates, fetchNearbyTowers, NearbyTower, BtsCoordinates, BTS_SEARCH_RADIUS_KM } from '@/services/btsService';
 import { ModemService } from '@/services/modem.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { estimateLteBand, getLteBandLabel } from '@/utils/helpers';
@@ -28,6 +28,7 @@ export default function BtsLocatorScreen() {
 
     const [userLocation, setUserLocation] = useState<{ lat: number; lon: number } | null>(null);
     const [btsLocation, setBtsLocation] = useState<{ lat: number; lon: number } | null>(null);
+    const [btsSource, setBtsSource] = useState<BtsCoordinates['source'] | null>(null);
     const [nearbyTowers, setNearbyTowers] = useState<NearbyTower[]>([]);
     const [distanceM, setDistanceM] = useState<number | null>(null);
     const [bearing, setBearing] = useState<number | null>(null);
@@ -95,18 +96,22 @@ export default function BtsLocatorScreen() {
             }
 
             const bts = await fetchBtsCoordinates({ mcc, mnc, cellId, tac }, user.lat, user.lon);
+            // Nearby towers render regardless of whether the connected one resolved,
+            // so the map is never empty even when every lookup misses.
+            const nearby = fetchNearbyTowers(mcc, user.lat, user.lon, BTS_SEARCH_RADIUS_KM);
+            setNearbyTowers(nearby);
             if (!bts) {
                 setBtsLocation(null);
+                setBtsSource(null);
                 setDistanceM(null);
                 setBearing(null);
                 setErrorMsg('bts.notFound');
                 return;
             }
             setBtsLocation({ lat: bts.lat, lon: bts.lon });
+            setBtsSource(bts.source);
             setDistanceM(calculateDistanceKm(user.lat, user.lon, bts.lat, bts.lon) * 1000);
             setBearing(normalizeBearing(calculateBearing(user.lat, user.lon, bts.lat, bts.lon)));
-            const nearby = fetchNearbyTowers(mnc, user.lat, user.lon, BTS_SEARCH_RADIUS_KM);
-            setNearbyTowers(nearby);
         } catch {
             ToastHelper.error(tRef.current('bts.locationError'));
             setErrorMsg('bts.locationError');
@@ -133,6 +138,10 @@ export default function BtsLocatorScreen() {
         return meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`;
     };
 
+    // 'site'/'lac' results are estimates — the UI labels them so users know the
+    // marker is approximate instead of the exact connected cell.
+    const estimated = btsSource === 'site' || btsSource === 'lac';
+
     return (
         <AnimatedScreen noAnimation>
             <MeshGradientBackground>
@@ -151,6 +160,9 @@ export default function BtsLocatorScreen() {
                                       band,
                                       rsrp: signalInfo?.rsrp,
                                       distanceKm: distanceM !== null ? distanceM / 1000 : undefined,
+                                      // Operator name straight from the modem (networkInfo), not from a lookup table.
+                                      operator: operatorName,
+                                      estimated,
                                   }
                                 : undefined
                         }
@@ -163,7 +175,15 @@ export default function BtsLocatorScreen() {
                             </Text>
                         </View>
                     )}
-                    {!loading && errorMsg !== '' && (
+                    {!loading && errorMsg === 'bts.notFound' && (
+                        <View style={styles.mapNotice}>
+                            <MaterialIcons name="info-outline" size={18} color={colors.warning} />
+                            <Text style={[typography.caption1, { color: colors.text, marginLeft: 6, flex: 1 }]}>
+                                {t('bts.notFoundShort')}
+                            </Text>
+                        </View>
+                    )}
+                    {!loading && errorMsg !== '' && errorMsg !== 'bts.notFound' && (
                         <View style={styles.mapOverlay}>
                             <MaterialIcons name="location-off" size={28} color={colors.warning} />
                             <Text style={[typography.body, { color: colors.text, textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }]}>
@@ -173,12 +193,29 @@ export default function BtsLocatorScreen() {
                     )}
                 </View>
 
-                <AdBanner />
+                {/* Give the banner breathing room from the map, then let the card sit
+                    right under it — it used to hug the map and float far from the summary. */}
+                <View style={{ marginTop: spacing.md }}>
+                    <AdBanner />
+                </View>
 
                 <Card style={[styles.card, { marginBottom: insets.bottom + spacing.md }]}>
                     <View style={styles.cardHeader}>
                         <Text style={[typography.headline, { color: colors.text }]}>{t('bts.summary')}</Text>
                     </View>
+
+                    <View style={[styles.disclaimerContainer, { backgroundColor: colors.warning + '15', borderColor: colors.warning + '35' }]}>
+                        <MaterialIcons name="info-outline" size={16} color={colors.warning} style={{ marginTop: 1 }} />
+                        <Text style={[typography.caption1, { color: colors.warning, marginLeft: 6, flex: 1, lineHeight: 16 }]}>
+                            {t('bts.betaDisclaimer')}
+                        </Text>
+                    </View>
+
+                    {estimated && (
+                        <Text style={[typography.caption1, { color: colors.warning, marginBottom: 8 }]}>
+                            {t('bts.estimated')}
+                        </Text>
+                    )}
 
                     <View style={styles.row}>
                         <Text style={[typography.subheadline, { color: colors.textSecondary }]}>{t('bts.operator')}</Text>
@@ -240,14 +277,33 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         backgroundColor: 'rgba(0,0,0,0.45)',
     },
+    mapNotice: {
+        position: 'absolute',
+        left: 12,
+        right: 12,
+        bottom: 12,
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0,0,0,0.78)',
+        borderRadius: 10,
+        paddingVertical: 8,
+        paddingHorizontal: 10,
+    },
     card: {
         marginHorizontal: 16,
-        marginTop: 12,
     },
     cardHeader: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
+        marginBottom: 12,
+    },
+    disclaimerContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        borderWidth: 1,
+        borderRadius: 8,
+        padding: 8,
         marginBottom: 12,
     },
     row: {

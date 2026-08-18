@@ -5,7 +5,6 @@ import {
     StyleSheet,
     Modal,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
@@ -47,15 +46,12 @@ export function DiagnosisResultModal({
             onRequestClose={handleClose}
         >
             <View style={styles.overlay}>
-                <BlurView
-                    intensity={glassmorphism.blur.card}
-                    tint={isDark ? 'dark' : 'light'}
-                    experimentalBlurMethod='dimezisBlurView'
+                <View
                     style={[
                         styles.modalContainer,
                         {
-                            backgroundColor: isDark ? glassmorphism.background.dark.alert : glassmorphism.background.light.alert,
-                            borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                            borderColor: isDark ? glassmorphism.border.dark : colors.border,
                             borderWidth: 1,
                         }
                     ]}
@@ -111,7 +107,7 @@ export function DiagnosisResultModal({
                         onPress={handleClose}
                         style={{ margin: 16, marginTop: 0 }}
                     />
-                </BlurView>
+                </View>
             </View>
         </Modal>
     );

@@ -1,6 +1,6 @@
 {
   "name": "hm-mobile",
-  "version": "1.1.70",
+  "version": "1.1.75",
   "main": "index.js",
   "scripts": {
     "start": "expo start",
@@ -16,7 +16,8 @@
     "web": "expo start --web",
     "build:android": "APP_ENV=production expo prebuild --platform android && cd android && ./gradlew assembleRelease",
     "lint": "eslint .",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "towers": "node scripts/prepare-towers.mjs"
   },
   "dependencies": {
     "@expo-google-fonts/doto": "^0.4.1",

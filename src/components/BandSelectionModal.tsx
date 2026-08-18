@@ -9,7 +9,6 @@ import {
     TextInput,
     Keyboard,
 } from 'react-native';
-import { BlurView } from 'expo-blur';
 import { ModalButton } from './ModalButton';
 import { ModalHeader } from './ModalHeader';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,7 +18,7 @@ import { useTranslation } from '@/i18n';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { ToastHelper } from './Toast';
 import { ModemService } from '@/services/modem.service';
-import { ModalBackground } from './ModalBackground';
+import { MeshGradientBackground } from './MeshGradientBackground';
 import { showInterstitial, showRewarded } from '@/services/ad.service';
 import { InlineAdNative } from './AdBanner';
 import { isSessionExpiredError } from '@/utils/huawei-error';
@@ -229,16 +228,7 @@ export function BandSelectionModal({
             presentationStyle="pageSheet"
             onRequestClose={handleClose}
         >
-            <BlurView
-                intensity={isDark ? 80 : glassmorphism.blur.modal}
-                tint={isDark ? 'dark' : 'light'}
-                experimentalBlurMethod='dimezisBlurView'
-                style={[
-                    styles.container,
-                    { backgroundColor: isDark ? 'rgba(20, 20, 22, 0.92)' : glassmorphism.background.light.modal }
-                ]}
-            >
-                <ModalBackground />
+            <MeshGradientBackground style={styles.container}>
                 <ModalHeader
                     title={t('settings.lteBandSelection') || 'Select Bands'}
                     subtitle={t('settings.selectedCount', { count: selectedBandBits.length })}
@@ -298,7 +288,7 @@ export function BandSelectionModal({
                 </View>
 
                 {/* Scrollable content area with margin to stop above footer */}
-                <View style={{ flex: 1, marginBottom: 60, backgroundColor: 'transparent' }}>
+                <View style={{ flex: 1, marginBottom: 70, backgroundColor: 'transparent' }}>
                     <ScrollView
                         showsVerticalScrollIndicator={true}
                         contentContainerStyle={styles.listContent}
@@ -350,14 +340,11 @@ export function BandSelectionModal({
                     </ScrollView>
                 </View>
 
-                {/* Footer Button - Floating with transparent glassmorphism */}
-                <BlurView
-                    intensity={20}
-                    tint={isDark ? 'dark' : 'light'}
-                    experimentalBlurMethod='dimezisBlurView'
+                {/* Footer Button - Floating with theme background */}
+                <View
                     style={[styles.footer, {
-                        backgroundColor: isDark ? 'rgba(10, 10, 10, 0.1)' : 'rgba(255, 255, 255, 0.1)',
-                        borderTopColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.05)',
+                        backgroundColor: isDark ? 'rgba(17, 17, 17, 0.95)' : 'rgba(240, 242, 245, 0.95)',
+                        borderTopColor: colors.border,
                         paddingBottom: insets.bottom > 0 ? insets.bottom + 16 : 24
                     }]}
                 >
@@ -368,8 +355,8 @@ export function BandSelectionModal({
                         disabled={hasChanges && isSaveDisabled}
                         onPress={hasChanges ? handleSave : handleClose}
                     />
-                </BlurView>
-            </BlurView>
+                </View>
+            </MeshGradientBackground>
         </Modal>
     );
 }

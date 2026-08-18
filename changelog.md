@@ -1,5 +1,10 @@
 # EN
 
+## v1.1.75
+- **UI/UX Performance & Consistency Overhaul** Replaced BlurView overlays on modals (`BandSelectionModal`, `PageSheetModal`, `SelectionModal`, `ThemedAlert`, `SpeedTestModal`, and `DiagnosisResultModal`) with lightweight `MeshGradientBackground` and translucent theme-aware containers to eliminate UI lag and stutter on low-end/older smartphones.
+- **BTS Locator Database Refresh & Beta Disclaimer** Updated bundled cell tower database to 75,466 towers with automated coordinate rounding and deduplication for minimal bundle footprint. Added explicit beta disclaimer noting BTS coordinate accuracy limitations.
+- **Project Hygiene & Code Cleanup** Cleaned up unused variables and redundant blur paths; moved heavy raw BTS source files (`510.csv`) to `.gitignore`.
+
 ## v1.1.70
 - **Notifications & Alerts** Monthly clear history reminder with customizable day/time (Settings > Notifications). FCM links open in-app WebView. Toast warnings for daily 99% usage and monthly 95% quota.
 - **Toast Queue System** Toasts now queue and display one at a time — no more overlapping notifications.
@@ -31,6 +36,11 @@
 - **Background Resource & Ad Optimization** Suspends background updates and widget polling to save battery when backgrounded, with capped App Open ad frequency and improved interstitial flow.
 
 # ID
+
+## v1.1.75
+- **Optimalisasi Performa & Konsistensi UI/UX** Mengganti lapisan BlurView pada seluruh modal (`BandSelectionModal`, `PageSheetModal`, `SelectionModal`, `ThemedAlert`, `SpeedTestModal`, dan `DiagnosisResultModal`) dengan `MeshGradientBackground` dan kontainer bertema yang ringan untuk menghilangkan lag serta patah-patah pada smartphone low-end/lama.
+- **Pembaruan Database BTS Locator & Keterangan Beta** Memperbarui database menara BTS internal ke 75.466 titik koordinat dengan deduplikasi dan pembulatan presisi otomatis untuk efisiensi ukuran aplikasi. Menambahkan keterangan status versi beta terkait akurasi titik BTS.
+- **Pembersihan Kode & File Project** Menghapus kode dan variabel yang tidak digunakan; file mentah database BTS (`510.csv`) dikeluarkan dari git tracking dan dimasukkan ke `.gitignore`.
 
 ## v1.1.70
 - **Notifikasi & Peringatan** Pengingat bulanan hapus riwayat dengan tanggal/waktu yang bisa diatur (Settings > Notifications). Link FCM dibuka di WebView dalam aplikasi. Toast peringatan saat penggunaan harian 99% dan kuota bulanan 95%.

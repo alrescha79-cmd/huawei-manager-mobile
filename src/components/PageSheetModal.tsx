@@ -10,8 +10,7 @@ import {
 } from 'react-native';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
-import { BlurView } from 'expo-blur';
-import { ModalBackground } from './ModalBackground';
+import { MeshGradientBackground } from './MeshGradientBackground';
 import { ThemedAlertHelper } from './ThemedAlert';
 import { BouncingDots } from './LoadingIndicators';
 
@@ -38,7 +37,7 @@ export function PageSheetModal({
     hasChanges = false,
     children,
 }: PageSheetModalProps) {
-    const { colors, typography, glassmorphism, isDark } = useTheme();
+    const { colors, typography } = useTheme();
     const { t } = useTranslation();
 
     const handleClose = () => {
@@ -64,16 +63,7 @@ export function PageSheetModal({
             transparent
             onRequestClose={handleClose}
         >
-            <BlurView
-                intensity={glassmorphism.blur.modal}
-                tint={isDark ? 'dark' : 'light'}
-                experimentalBlurMethod='dimezisBlurView'
-                style={[
-                    styles.container,
-                    { backgroundColor: isDark ? glassmorphism.background.dark.modal : glassmorphism.background.light.modal }
-                ]}
-            >
-                <ModalBackground />
+            <MeshGradientBackground style={styles.container}>
                 <View style={[styles.header, {
                     borderBottomColor: colors.border,
                     paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 16 : 16
@@ -97,7 +87,7 @@ export function PageSheetModal({
                     )}
                 </View>
                 {children}
-            </BlurView>
+            </MeshGradientBackground>
         </Modal>
     );
 }

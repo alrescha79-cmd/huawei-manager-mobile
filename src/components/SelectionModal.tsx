@@ -8,7 +8,6 @@ import {
     ScrollView,
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import { useTheme } from '@/theme';
 import { useTranslation } from '@/i18n';
 import { ModalBackground } from './ModalBackground';
@@ -49,15 +48,12 @@ export function SelectionModal({
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>
-                <BlurView
-                    intensity={isDark ? 80 : glassmorphism.blur.card}
-                    tint={isDark ? 'dark' : 'light'}
-                    experimentalBlurMethod='dimezisBlurView'
+                <View
                     style={[
                         styles.modalContent,
                         {
-                            backgroundColor: isDark ? 'rgba(20, 20, 22, 0.92)' : glassmorphism.background.light.overlay,
-                            borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : glassmorphism.border.light,
+                            backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
+                            borderColor: isDark ? glassmorphism.border.dark : colors.border,
                             borderWidth: 1,
                         }
                     ]}
@@ -78,7 +74,7 @@ export function SelectionModal({
                                     style={[
                                         styles.modalItem,
                                         {
-                                            backgroundColor: isSelected ? colors.primary + '15' : 'transparent',
+                                            backgroundColor: isSelected ? colors.primary + '15' : (isDark ? glassmorphism.innerBackground.dark : glassmorphism.innerBackground.light),
                                             borderColor: isSelected ? colors.primary : 'transparent'
                                         }
                                     ]}
@@ -116,7 +112,7 @@ export function SelectionModal({
                             onPress={onClose}
                         />
                     </View>
-                </BlurView>
+                </View>
             </View>
         </Modal>
     );

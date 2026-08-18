@@ -15,6 +15,9 @@ export interface BtsMapInfo {
     band?: string;
     rsrp?: string;
     distanceKm?: number;
+    operator?: string;
+    /** True when the marker is an estimate (same-site tower, guessed-TAC lookup). */
+    estimated?: boolean;
 }
 
 export interface NearbyTowerPoint {
@@ -22,6 +25,9 @@ export interface NearbyTowerPoint {
     lon: number;
     cellId: number;
     eNodeB: number;
+    radio?: 'LTE' | 'UMTS';
+    operator?: string;
+    distanceKm?: number;
 }
 
 interface BtsMapWebViewProps {
@@ -38,6 +44,13 @@ const esc = (value: unknown): string =>
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 
+/** "±340 m from you" style label; '-' when the distance is unknown. */
+const formatFromYou = (distanceKm: number | undefined, fromYou: string): string => {
+    if (distanceKm === undefined) return '-';
+    const value = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`;
+    return `±${value} ${esc(fromYou)}`;
+};
+
 const buildHtml = (): string => `
 <!DOCTYPE html>
 <html>
@@ -50,7 +63,7 @@ const buildHtml = (): string => `
   .leaflet-popup-content { font: 12px/1.5 system-ui, sans-serif; margin: 10px 12px; }
   .leaflet-container { background: #0f0f12; }
   .bts-popup { min-width: 170px; }
-  .bts-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #f59e0b; }
+  .bts-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #ef4444; }
   .bts-row { display: flex; justify-content: space-between; gap: 14px; margin-top: 4px; }
   .bts-row span { color: #9ca3af; }
   .bts-row b { color: #fff; font-weight: 600; }
@@ -97,10 +110,11 @@ const buildHtml = (): string => `
     });
   }
   function towerIcon() {
+    // Connected BTS marker — red-white so it stands out from the gray nearby towers.
     return L.divIcon({
       className: '', iconSize: [34, 42], iconAnchor: [17, 40],
-      html: '<svg width="34" height="42" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">' +
-        '<g stroke="#f59e0b" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+      html: '<svg width="34" height="42" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 1px 4px rgba(239,68,68,0.85))">' +
+        '<g stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
         '<line x1="5" y1="29" x2="10" y2="7.5"/><line x1="19" y1="29" x2="14" y2="7.5"/>' +
         '<line x1="5" y1="29" x2="19" y2="29"/>' +
         '<line x1="6.2" y1="24" x2="17.8" y2="24"/>' +
@@ -109,12 +123,13 @@ const buildHtml = (): string => `
         '<line x1="6.2" y1="24" x2="16.6" y2="19"/>' +
         '<line x1="7.4" y1="19" x2="15.4" y2="14"/>' +
         '</g>' +
-        '<line x1="12" y1="7.5" x2="12" y2="3" stroke="#f59e0b" stroke-width="1.4"/>' +
-        '<g fill="#f59e0b">' +
+        '<line x1="12" y1="7.5" x2="12" y2="3" stroke="#ffffff" stroke-width="1.4"/>' +
+        '<g fill="#ef4444">' +
         '<rect x="8.8" y="8.2" width="6.4" height="3.8" rx="0.9"/>' +
         '<rect x="8" y="12.8" width="2.8" height="3.6" rx="0.9"/>' +
         '<rect x="13.2" y="12.8" width="2.8" height="3.6" rx="0.9"/>' +
         '</g>' +
+        '<circle cx="12" cy="2.2" r="2.1" fill="rgba(239,68,68,0.35)"/>' +
         '<circle cx="12" cy="2.2" r="1" fill="#ef4444"/>' +
       '</svg>',
     });
@@ -148,7 +163,7 @@ const buildHtml = (): string => `
     L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
     userMarker = L.marker([-6.2, 106.816], { icon: modemIcon() }).addTo(map);
     btsMarker = L.marker([-6.2, 106.816], { icon: towerIcon() }).addTo(map);
-    line = L.polyline([], { color: '#f59e0b', dashArray: '6,8', weight: 2, opacity: 0.9 }).addTo(map);
+    line = L.polyline([], { color: '#ef4444', dashArray: '6,8', weight: 2, opacity: 0.9 }).addTo(map);
     if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('ready');
   }
   function ensureRadiusGradient() {
@@ -252,13 +267,27 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
     const payload = useMemo(() => {
         const user = userLocation ? { lat: userLocation.lat, lon: userLocation.lon } : null;
         const bts = btsLocation ? { lat: btsLocation.lat, lon: btsLocation.lon } : null;
-        const nearby = (nearbyTowers || []).map((t) => ({
-            lat: t.lat,
-            lon: t.lon,
-            cellId: t.cellId,
-            eNodeB: t.eNodeB,
-            popup: `${esc(tRef.current('bts.nearbyTower'))} ${t.eNodeB}<br/>${esc(tRef.current('bts.cell'))} ${t.cellId}`,
-        }));
+        const nearby = (nearbyTowers || []).map((t) => {
+            const operatorLabel = esc(tRef.current('bts.operator'));
+            const networkLabel = esc(tRef.current('bts.network'));
+            const distanceLabel = esc(tRef.current('bts.distance'));
+            const operator = esc(t.operator || '-');
+            const network = t.radio === 'UMTS' ? esc(tRef.current('bts.networkUmts')) : esc(tRef.current('bts.networkLte'));
+            const dist = formatFromYou(t.distanceKm, tRef.current('bts.fromYou'));
+            return {
+                lat: t.lat,
+                lon: t.lon,
+                cellId: t.cellId,
+                eNodeB: t.eNodeB,
+                popup: `
+                <div class="bts-popup">
+                  <div class="bts-title">${esc(tRef.current('bts.nearbyTitle'))}</div>
+                  <div class="bts-row"><span>${operatorLabel}</span><b>${operator}</b></div>
+                  <div class="bts-row"><span>${networkLabel}</span><b>${network}</b></div>
+                  <div class="bts-row"><span>${distanceLabel}</span><b>${dist}</b></div>
+                </div>`,
+            };
+        });
 
         const rsrp = Number(btsInfo?.rsrp);
         let quality: string;
@@ -283,10 +312,16 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
         }
 
         const distanceKm = btsInfo?.distanceKm;
-        const distanceLabel =
-            distanceKm === undefined ? '-' : distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(2)} km`;
+        const distanceLabel = formatFromYou(distanceKm, tRef.current('bts.fromYou'));
 
         const signalBars = [0, 1, 2, 3].map((i) => `<i${i < bars ? ' class="on"' : ''}></i>`).join('');
+        const bandLabel = esc(getLteBandLabel(btsInfo?.band));
+        const operator = esc(btsInfo?.operator);
+        // Only render the operator row when the modem actually reported a name.
+        const operatorRow =
+            operator && operator !== '-' ? `<div class="bts-row"><span>${esc(tRef.current('bts.operator'))}</span><b>${operator}</b></div>` : '';
+        // (≈) marks an estimated marker, mirroring the '±' on the distance label.
+        const titleSuffix = btsInfo?.estimated ? ' (≈)' : '';
 
         return {
             user,
@@ -297,11 +332,12 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
             offlineLabel: tRef.current('bts.offline'),
             btsPopup: `
                 <div class="bts-popup">
-                  <div class="bts-title">${esc(tRef.current('bts.popupTitle'))}</div>
+                  <div class="bts-title">${esc(tRef.current('bts.popupTitle'))}${titleSuffix}</div>
+                  ${operatorRow}
                   <div class="bts-row"><span>${esc(tRef.current('bts.distance'))}</span><b>${distanceLabel}</b></div>
                   <div class="bts-bars">${signalBars}</div>
                   <div class="bts-row"><span>${esc(tRef.current('bts.signal'))}</span><b>${bars ? `${esc(btsInfo?.rsrp)} dBm · ${esc(quality)}` : '-'}</b></div>
-                  <div class="bts-row"><span>${esc(tRef.current('bts.network'))}</span><b>${esc(getLteBandLabel(btsInfo?.band))}</b></div>
+                  <div class="bts-row"><span>${esc(tRef.current('bts.network'))}</span><b>${esc(tRef.current('bts.networkLte'))}${bandLabel !== '-' ? ` · ${bandLabel}` : ''}</b></div>
                   <div class="bts-row"><span>${esc(tRef.current('bts.towerId'))}</span><b>${esc(btsInfo?.eNodeB) || '-'} · S${esc(btsInfo?.sectorId) || '-'}</b></div>
                 </div>`,
         };

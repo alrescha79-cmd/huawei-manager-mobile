@@ -8,6 +8,7 @@ Huawei Manager Mobile — Expo SDK 54 / React Native 0.81 / TypeScript app for c
 - `npx tsc --noEmit` — typecheck. **Must stay green after every change.** `tsconfig.json` has `strict: false` but `noUnusedLocals` + `noUnusedParameters` are **enabled** — dead imports/variables fail the build.
 - `npm run lint` — ESLint (flat config, `eslint.config.js`, extends `eslint-config-expo` + `eslint-config-prettier`). Currently 0 errors; `react-hooks/exhaustive-deps` is the only advisory category (34 warnings, not enforced). React Compiler-era rules (`refs`, `set-state-in-effect`, `immutability`, `purity`) are configured off, and lazy `require()` is allowed deliberately to break store circular deps — do not re-enable without a reason.
 - `npm run format` — Prettier write (`singleQuote`, `semi`, `printWidth 100`, `trailingComma es5`, see `.prettierrc.json`).
+- `npm run towers` — regenerate `openCell/towers.min.csv` from the raw OpenCelliD dump `openCell/510.csv` (keeps LTE+UMTS rows, strips unused columns, rounds coords). The compact file is what gets bundled via the metro CSV transformer — commit it whenever the dump is refreshed.
 - `npm run android` — builds and installs the dev app on a connected Android device/emulator (`APP_ENV=development`, `npx expo run:android`). Primary local run command.
 - `eas build --profile preview --platform android` — APK build; `production` profile = app-bundle (see `eas.json`).
 - No test framework — verification is tsc + lint + manual smoke against a real modem.
