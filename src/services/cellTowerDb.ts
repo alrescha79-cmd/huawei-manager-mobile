@@ -1,6 +1,6 @@
 import rawCsv from '../../openCell/towers.min.csv';
 
-export type TowerRadio = 'LTE' | 'UMTS';
+export type TowerRadio = 'LTE' | 'UMTS' | 'GSM' | 'NR';
 
 export interface CellTower {
     radio: TowerRadio;
@@ -11,11 +11,11 @@ export interface CellTower {
     lac: number;
 }
 
-// Compact dump columns: radio(L|U),mnc,lac,cellid,lon,lat
+// Compact dump columns: radio(L|U|G|N),mnc,lac,cellid,lon,lat
 // Regenerate from the raw OpenCelliD dump with: npm run towers
-const TOWERS = new Map<string, CellTower>(); // LTE only, keyed `mnc|cellId` — exact tower lookups
-const TOWERS_BY_ENODEB = new Map<string, CellTower[]>(); // LTE only
-const ALL_TOWERS: CellTower[] = []; // LTE + UMTS — nearby tower map visualization
+const TOWERS = new Map<string, CellTower>(); // LTE exact tower lookups
+const TOWERS_BY_ENODEB = new Map<string, CellTower[]>(); // LTE sectors
+const ALL_TOWERS: CellTower[] = []; // All radios — nearby tower map visualization
 
 /**
  * OpenCelliD stores MNCs without leading zeros ('1'), while modems often report
@@ -25,12 +25,26 @@ export const normalizeMnc = (mnc: string): string => mnc.replace(/^0+/, '') || m
 
 const enodebOf = (cellId: number): number => Math.floor(cellId / 256);
 
+const parseRadio = (code: string): TowerRadio => {
+    switch (code) {
+        case 'G':
+            return 'GSM';
+        case 'U':
+            return 'UMTS';
+        case 'N':
+            return 'NR';
+        case 'L':
+        default:
+            return 'LTE';
+    }
+};
+
 const buildIndex = () => {
     for (const line of rawCsv.split('\n')) {
         if (!line) continue;
         const parts = line.split(',');
         if (parts.length < 6) continue;
-        const radio: TowerRadio = parts[0] === 'U' ? 'UMTS' : 'LTE';
+        const radio: TowerRadio = parseRadio(parts[0]);
         const mnc = normalizeMnc(parts[1]);
         const cellId = parseInt(parts[3], 10);
         const lon = parseFloat(parts[4]);
