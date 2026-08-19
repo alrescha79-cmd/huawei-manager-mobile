@@ -440,6 +440,7 @@ export function ReleaseNotesModal({
             animationType="slide"
             presentationStyle="overFullScreen"
             transparent
+            statusBarTranslucent
             onRequestClose={onClose}
         >
             <MeshGradientBackground>

@@ -90,7 +90,7 @@ export const UpdateAvailableModal: React.FC<UpdateAvailableModalProps> = ({ onDo
     });
 
     return (
-        <Modal visible={visible} transparent animationType="none" onRequestClose={handleClose}>
+        <Modal visible={visible} transparent statusBarTranslucent animationType="none" onRequestClose={handleClose}>
             <View style={styles.overlay}>
                 <TouchableWithoutFeedback onPress={handleClose}>
                     <Animated.View style={[

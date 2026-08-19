@@ -45,6 +45,7 @@ export function SelectionModal({
             visible={visible}
             animationType="fade"
             transparent={true}
+            statusBarTranslucent
             onRequestClose={onClose}
         >
             <View style={styles.modalOverlay}>

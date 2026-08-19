@@ -79,6 +79,7 @@ export const NoSignalModal: React.FC<NoSignalModalProps> = ({
         <Modal
             visible={sheetVisible}
             transparent
+            statusBarTranslucent
             animationType="none"
             onRequestClose={() => { }}
         >

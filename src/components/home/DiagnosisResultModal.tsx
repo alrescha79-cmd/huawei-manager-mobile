@@ -43,6 +43,7 @@ export function DiagnosisResultModal({
             visible={visible}
             animationType="fade"
             transparent={true}
+            statusBarTranslucent
             onRequestClose={handleClose}
         >
             <View style={styles.overlay}>

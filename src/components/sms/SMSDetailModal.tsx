@@ -62,6 +62,8 @@ export function SMSDetailModal({
             visible={visible}
             animationType="slide"
             presentationStyle="pageSheet"
+            transparent
+            statusBarTranslucent
             onRequestClose={handleClose}
         >
             <StatusBar backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />

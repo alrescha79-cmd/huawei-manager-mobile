@@ -128,6 +128,8 @@ export function ProfileEditModal({
             visible={visible}
             animationType="slide"
             presentationStyle="pageSheet"
+            transparent
+            statusBarTranslucent
             onRequestClose={handleClose}
         >
             <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>

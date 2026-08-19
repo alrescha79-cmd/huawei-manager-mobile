@@ -130,6 +130,8 @@ export function ApnModal({
             visible={visible}
             animationType="slide"
             presentationStyle="pageSheet"
+            transparent
+            statusBarTranslucent
             onRequestClose={handleClose}
         >
             <View style={[styles.modalContainer, { backgroundColor: colors.background }]}>

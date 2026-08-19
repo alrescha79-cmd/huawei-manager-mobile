@@ -257,9 +257,10 @@ export function WebViewLogin({
     return (
         <Modal
             visible={visible}
-            animationType={hidden ? "fade" : "slide"}
+            animationType={hidden ? "none" : "slide"}
             presentationStyle={hidden ? "overFullScreen" : "fullScreen"}
             transparent={hidden}
+            statusBarTranslucent
             onRequestClose={handleClose}
         >
             {hidden ? (

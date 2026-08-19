@@ -135,6 +135,8 @@ export function DeviceDetailModal({
             visible={visible}
             animationType="slide"
             presentationStyle="pageSheet"
+            transparent
+            statusBarTranslucent
             onRequestClose={onClose}
         >
             <MeshGradientBackground style={styles.modalContainer}>

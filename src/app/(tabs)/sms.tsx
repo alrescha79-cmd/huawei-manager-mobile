@@ -261,6 +261,8 @@ export default function SMSScreen() {
         visible={showCompose}
         animationType="slide"
         presentationStyle="pageSheet"
+        transparent
+        statusBarTranslucent
         onRequestClose={() => setShowCompose(false)}
       >
         <StatusBar backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
