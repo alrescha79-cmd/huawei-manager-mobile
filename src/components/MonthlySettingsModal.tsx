@@ -145,6 +145,8 @@ export function MonthlySettingsModal({
             visible={visible}
             animationType="slide"
             presentationStyle="pageSheet"
+            transparent
+            statusBarTranslucent
             onRequestClose={handleClose}
         >
             <MeshGradientBackground style={styles.modalContainer}>

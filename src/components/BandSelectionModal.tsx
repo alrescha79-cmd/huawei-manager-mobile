@@ -226,6 +226,8 @@ export function BandSelectionModal({
             visible={visible}
             animationType="slide"
             presentationStyle="pageSheet"
+            transparent
+            statusBarTranslucent
             onRequestClose={handleClose}
         >
             <MeshGradientBackground style={styles.container}>

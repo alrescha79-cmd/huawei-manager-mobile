@@ -104,7 +104,7 @@ Menemukan bug atau punya saran?
   Sertakan model modem, versi firmware, dan screenshot jika bisa.
 
 - **Via Formulir Web**:
-  Kirim feedback cepat melalui [**formulir online ini**](https://hm.cakson.my.id/#support).
+  Kirim feedback cepat melalui [**formulir online ini**](https://hm.cakson.my.id/en/#feedback).
 
 ---
 

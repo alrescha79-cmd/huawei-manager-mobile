@@ -503,6 +503,27 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                             </TouchableOpacity>
                         </Card>
 
+                        <TouchableOpacity
+                            style={[styles.soundToggle, {
+                                backgroundColor: soundEnabled ? colors.primary : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
+                                marginTop: spacing.md,
+                            }]}
+                            onPress={() => setSoundEnabled(!soundEnabled)}
+                        >
+                            <MaterialIcons
+                                name={soundEnabled ? 'vibration' : 'notifications-off'}
+                                size={24}
+                                color={soundEnabled ? '#FFFFFF' : colors.textSecondary}
+                            />
+                            <Text style={[typography.body, {
+                                color: soundEnabled ? '#FFFFFF' : colors.text,
+                                marginLeft: 8,
+                                fontWeight: '600',
+                            }]}>
+                                {t('home.vibrationFeedback')}: {soundEnabled ? 'ON' : 'OFF'}
+                            </Text>
+                        </TouchableOpacity>
+
                         {/* Tips - Standard positioning (hidden when external antenna selected) */}
                         {antennaMode !== 'external' && (
                             <Card style={{ marginTop: spacing.md, backgroundColor: isDark ? 'rgba(52,199,89,0.1)' : 'rgba(52,199,89,0.05)' }}>
@@ -554,27 +575,6 @@ export function SignalPointingModal({ visible, onClose }: SignalPointingModalPro
                                 </View>
                             </Card>
                         )}
-
-                        <TouchableOpacity
-                            style={[styles.soundToggle, {
-                                backgroundColor: soundEnabled ? colors.primary : (isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)'),
-                                marginTop: spacing.md,
-                            }]}
-                            onPress={() => setSoundEnabled(!soundEnabled)}
-                        >
-                            <MaterialIcons
-                                name={soundEnabled ? 'vibration' : 'notifications-off'}
-                                size={24}
-                                color={soundEnabled ? '#FFFFFF' : colors.textSecondary}
-                            />
-                            <Text style={[typography.body, {
-                                color: soundEnabled ? '#FFFFFF' : colors.text,
-                                marginLeft: 8,
-                                fontWeight: '600',
-                            }]}>
-                                {t('home.vibrationFeedback')}: {soundEnabled ? 'ON' : 'OFF'}
-                            </Text>
-                        </TouchableOpacity>
                     </>
                 )}
             </ScrollView>

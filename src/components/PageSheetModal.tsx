@@ -61,6 +61,7 @@ export function PageSheetModal({
             animationType="slide"
             presentationStyle="overFullScreen"
             transparent
+            statusBarTranslucent
             onRequestClose={handleClose}
         >
             <MeshGradientBackground style={styles.container}>

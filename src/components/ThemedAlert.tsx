@@ -52,6 +52,7 @@ export const ThemedAlert: React.FC<ThemedAlertProps> = ({
         <Modal
             visible={visible}
             transparent
+            statusBarTranslucent
             animationType="fade"
             onRequestClose={onDismiss}
         >

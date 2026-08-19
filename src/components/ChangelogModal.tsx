@@ -197,6 +197,7 @@ export const ChangelogModal: React.FC<ChangelogModalProps> = () => {
         <Modal
             visible={visible}
             transparent
+            statusBarTranslucent
             animationType="none"
             onRequestClose={handleClose}
         >

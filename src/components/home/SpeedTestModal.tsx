@@ -552,7 +552,7 @@ export const SpeedTestModal: React.FC<SpeedTestModalProps> = ({ visible, onClose
     });
 
     return (
-        <Modal visible={visible} transparent animationType="fade" onRequestClose={handleClose}>
+        <Modal visible={visible} transparent statusBarTranslucent animationType="fade" onRequestClose={handleClose}>
             <View style={styles.overlay}>
                 <View style={[styles.modalContent, {
                     backgroundColor: isDark ? '#1C1C1E' : '#FFFFFF',
