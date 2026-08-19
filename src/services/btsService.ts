@@ -1,8 +1,8 @@
 import { lookupCellTower, findByENodeB, findNearestSite, findNearestLac, lookupCellTowerAnyOperator, findNearbyTowers, TowerRadio } from './cellTowerDb';
 import { calculateDistanceKm } from '@/utils/geoMath';
 
-/** Search radius for nearby towers and the map's focus circle. */
-export const BTS_SEARCH_RADIUS_KM = 25;
+/** Search radius for nearby towers and the map's focus circle (max 20 km). */
+export const BTS_SEARCH_RADIUS_KM = 20;
 
 export interface BtsCoordinates {
     lat: number;
@@ -28,7 +28,7 @@ export interface BtsLookupParams {
     tac?: string;
 }
 
-const OPENCELLID_URL = 'https://opencellid.org/cell/get';
+const FREXELLO_ACTIVE_TOWER_URL = 'https://api.frexello.com/api/active-tower';
 const MLS_URL = 'https://location.services.mozilla.com/v1/geolocate';
 const GOOGLE_GEOLOCATION_URL = 'https://www.googleapis.com/geolocation/v1/geolocate';
 
@@ -56,6 +56,24 @@ const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs: number):
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+};
+
+/**
+ * Frexello active-tower API lookup (https://api.frexello.com/api/active-tower).
+ * Returns exact crowdsourced tower location per upstream-api.md.
+ */
+const scrapeFrexello = async (mcc: string, mnc: string, cellId: number, lac: number): Promise<BtsCoordinates | null> => {
+    try {
+        const query = `mcc=${encodeURIComponent(mcc)}&mnc=${encodeURIComponent(mnc)}&lac=${encodeURIComponent(String(lac))}&ci=${encodeURIComponent(String(cellId))}`;
+        const response = await fetchWithTimeout(`${FREXELLO_ACTIVE_TOWER_URL}?${query}`, { method: 'GET' }, 8000);
+        if (!response.ok) return null;
+        const data = await response.json();
+        if (typeof data?.tower_lat === 'number' && typeof data?.tower_lon === 'number') {
+            return { lat: data.tower_lat, lon: data.tower_lon, source: 'api' };
+        }
+    } catch {
+    }
+    return null;
 };
 
 /** Mozilla Location Services geolocation from a cell id (free, no key). */
@@ -88,8 +106,8 @@ const scrapeMozilla = async (mcc: string, mnc: string, cellId: number, lac?: num
 
 /**
  * Google Geolocation API lookup (free tier, requires
- * EXPO_PUBLIC_GOOGLE_GEOLOCATION_KEY). Cell-based fallback when the local dump
- * and OpenCelliD miss.
+ * EXPO_PUBLIC_GOOGLE_GEOLOCATION_KEY). Cell-based fallback when local dump
+ * and Frexello miss.
  */
 const scrapeGoogleGeolocation = async (
     mcc: string,
@@ -126,24 +144,6 @@ const scrapeGoogleGeolocation = async (
     return null;
 };
 
-/** OpenCelliD API lookup (requires key + LAC). */
-const scrapeOpenCellId = async (mcc: string, mnc: string, cellId: number, lac: number): Promise<BtsCoordinates | null> => {
-    const key = process.env.EXPO_PUBLIC_OPENCELLID_KEY;
-    if (!key) {
-        return null;
-    }
-    try {
-        const query = `key=${encodeURIComponent(key)}&mcc=${encodeURIComponent(mcc)}&mnc=${encodeURIComponent(mnc)}&lac=${encodeURIComponent(String(lac))}&cellid=${encodeURIComponent(String(cellId))}&format=json`;
-        const response = await fetchWithTimeout(`${OPENCELLID_URL}?${query}`, { method: 'GET' }, 8000);
-        const data = await response.json();
-        if (data?.status === 'ok' && typeof data.lat === 'number' && typeof data.lon === 'number') {
-            return { lat: data.lat, lon: data.lon, source: 'api' };
-        }
-    } catch {
-    }
-    return null;
-};
-
 /**
  * Parse a TAC/LAC value from the modem. Huawei firmwares sometimes report it
  * as hex (with or without a '0x' prefix); fall back to base 16 when the
@@ -161,11 +161,18 @@ const parseTac = (tac?: string): number | undefined => {
 
 /**
  * Resolve the connected BTS coordinates — anchored to the modem's own cell
- * data (cellId, and the TAC when the modem reports it). Exact matches first
- * (OpenCelliD API, local dump cell/eNodeB), then remote geolocation with the
- * modem's real TAC, then honest estimates: a same-site tower from the local
- * dump, and finally remote lookups with a guessed TAC. Returns null only when
- * every source misses, so the map almost always has a connected-tower marker.
+ * data (cellId, and the TAC when the modem reports it).
+ *
+ * Indonesia (MCC 510):
+ *   1. Local exact cell & eNodeB matches
+ *   2. Frexello active-tower API (fallback when CSV misses or has estimates)
+ *   3. Local same-site approximate matches
+ *   4. Google Geolocation / Mozilla Location Services
+ *   5. Guessed-LAC fallback via Frexello / Mozilla
+ *
+ * International (Non-510 MCC):
+ *   1. Frexello active-tower API
+ *   2. Google Geolocation / Mozilla Location Services
  */
 export const fetchBtsCoordinates = async (
     params: BtsLookupParams,
@@ -175,36 +182,70 @@ export const fetchBtsCoordinates = async (
     const { mcc, mnc, cellId, tac } = params;
     const eNodeB = Math.floor(cellId / 256);
     const lac = parseTac(tac);
+    const isIndonesia = mcc === '510';
 
-    // 1. OpenCelliD API with the real TAC from the modem — most accurate.
+    if (isIndonesia) {
+        // 1. Local dump, exact cell (scanned across operators when the MNC is unusable).
+        const exact = mnc ? lookupCellTower(mnc, cellId) : lookupCellTowerAnyOperator(cellId, userLat, userLon);
+        if (exact) {
+            return { lat: exact.lat, lon: exact.lon, source: 'local' };
+        }
+
+        // 2. Local dump, same eNodeB (different sector of the same tower).
+        const byEnodeB = findByENodeB(mnc, eNodeB, userLat, userLon);
+        if (byEnodeB) {
+            return { lat: byEnodeB.lat, lon: byEnodeB.lon, source: 'enodeb' };
+        }
+
+        // 3. Frexello API with real TAC when CSV has no exact cell match.
+        if (lac) {
+            const frexello = await scrapeFrexello(mcc, mnc, cellId, lac);
+            if (frexello) {
+                return frexello;
+            }
+        }
+
+        // 4. Local dump, numerically-adjacent eNodeB (likely same physical site).
+        const site = findNearestSite(mnc, eNodeB, userLat, userLon);
+        if (site) {
+            return { lat: site.lat, lon: site.lon, source: 'site' };
+        }
+
+        // 5. Remote geolocation with real TAC (Google -> Mozilla).
+        const google = await scrapeGoogleGeolocation(mcc, mnc, cellId, lac);
+        if (google) {
+            return google;
+        }
+
+        const mozilla = await scrapeMozilla(mcc, mnc, cellId, lac);
+        if (mozilla) {
+            return mozilla;
+        }
+
+        // 6. Guessed TAC fallback from nearest known tower.
+        const guessedLac = findNearestLac(mnc, userLat, userLon);
+        if (guessedLac && guessedLac !== lac) {
+            const frexelloGuessed = await scrapeFrexello(mcc, mnc, cellId, guessedLac);
+            if (frexelloGuessed) {
+                return { ...frexelloGuessed, source: 'lac' };
+            }
+            const mozillaGuessed = await scrapeMozilla(mcc, mnc, cellId, guessedLac);
+            if (mozillaGuessed) {
+                return { ...mozillaGuessed, source: 'lac' };
+            }
+        }
+
+        return null;
+    }
+
+    // International fallback flow (non-510 MCC)
     if (lac) {
-        const api = await scrapeOpenCellId(mcc, mnc, cellId, lac);
-        if (api) {
-            return api;
+        const frexello = await scrapeFrexello(mcc, mnc, cellId, lac);
+        if (frexello) {
+            return frexello;
         }
     }
 
-    // 2. Local dump, exact cell (scanned across operators when the MNC is unusable).
-    const exact = mnc ? lookupCellTower(mnc, cellId) : lookupCellTowerAnyOperator(cellId, userLat, userLon);
-    if (exact) {
-        return { lat: exact.lat, lon: exact.lon, source: 'local' };
-    }
-
-    // 3. Local dump, same eNodeB (different sector of the same tower).
-    const byEnodeB = findByENodeB(mnc, eNodeB, userLat, userLon);
-    if (byEnodeB) {
-        return { lat: byEnodeB.lat, lon: byEnodeB.lon, source: 'enodeb' };
-    }
-
-    // 4. Local dump, numerically-adjacent eNodeB (likely same physical site).
-    //    An estimate, but instant and keeps the map useful when the exact cell
-    //    isn't in the dump.
-    const site = findNearestSite(mnc, eNodeB, userLat, userLon);
-    if (site) {
-        return { lat: site.lat, lon: site.lon, source: 'site' };
-    }
-
-    // 5. Remote geolocation — only with the modem's real TAC.
     const google = await scrapeGoogleGeolocation(mcc, mnc, cellId, lac);
     if (google) {
         return google;
@@ -215,27 +256,12 @@ export const fetchBtsCoordinates = async (
         return mozilla;
     }
 
-    // 6. Last resort — remote lookups with a guessed TAC (nearest tower in the dump).
-    const guessedLac = findNearestLac(mnc, userLat, userLon);
-    if (guessedLac && guessedLac !== lac) {
-        const api = await scrapeOpenCellId(mcc, mnc, cellId, guessedLac);
-        if (api) {
-            return { ...api, source: 'lac' };
-        }
-        const mozillaGuessed = await scrapeMozilla(mcc, mnc, cellId, guessedLac);
-        if (mozillaGuessed) {
-            return { ...mozillaGuessed, source: 'lac' };
-        }
-    }
-
     return null;
 };
 
 /**
  * Towers around the user for map visualization — every operator and radio
- * (LTE + UMTS) within the radius, closest first. The connected tower stays
- * highlighted separately, so including other operators just fills the map with
- * the real site landscape.
+ * (LTE + UMTS + GSM + NR) within the radius, closest first.
  */
 export const fetchNearbyTowers = (
     mcc: string,

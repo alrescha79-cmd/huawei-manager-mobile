@@ -25,7 +25,7 @@ export interface NearbyTowerPoint {
     lon: number;
     cellId: number;
     eNodeB: number;
-    radio?: 'LTE' | 'UMTS';
+    radio?: 'LTE' | 'UMTS' | 'GSM' | 'NR';
     operator?: string;
     distanceKm?: number;
 }
@@ -185,7 +185,7 @@ const buildHtml = (): string => `
   function addRadiusCircle(user, meters) {
     if (radiusCircle) map.removeLayer(radiusCircle);
     radiusCircle = L.circle([user.lat, user.lon], {
-      radius: meters || 25000,
+      radius: meters || 20000,
       stroke: true, color: '#22c55e', weight: 1, opacity: 0.6, dashArray: '4,8', fill: false,
     }).addTo(map);
     ensureRadiusGradient();
@@ -209,7 +209,7 @@ const buildHtml = (): string => `
       lastNearbyKey = nearbyKey;
     }
     if (user) {
-      var radius = p.radiusMeters || 25000;
+      var radius = p.radiusMeters || 20000;
       if (radius !== lastRadius) {
         addRadiusCircle(user, radius);
         lastRadius = radius;
@@ -224,12 +224,11 @@ const buildHtml = (): string => `
       pts.push([bts.lat, bts.lon]);
     }
     line.setLatLngs(pts);
-    // Only refit when user position or radius changes — never on popup/signal
-    // updates, so a manual zoom toward the tower is preserved.
+    // Auto focus and zoom to modem location (or tight bounds with BTS if close)
     if (user) {
-      var fitKey = user.lat.toFixed(5) + ',' + user.lon.toFixed(5) + ':' + (p.radiusMeters || 25000);
+      var fitKey = user.lat.toFixed(5) + ',' + user.lon.toFixed(5) + ':' + (p.radiusMeters || 20000);
       if (fitKey !== lastFitKey) {
-        map.fitBounds(userMarker.getLatLng().toBounds((p.radiusMeters || 25000) * 1.1), { padding: [16, 16] });
+        map.setView([user.lat, user.lon], 14, { animate: false });
         lastFitKey = fitKey;
       }
     }
@@ -272,7 +271,10 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
             const networkLabel = esc(tRef.current('bts.network'));
             const distanceLabel = esc(tRef.current('bts.distance'));
             const operator = esc(t.operator || '-');
-            const network = t.radio === 'UMTS' ? esc(tRef.current('bts.networkUmts')) : esc(tRef.current('bts.networkLte'));
+            let network = esc(tRef.current('bts.networkLte'));
+            if (t.radio === 'UMTS') network = esc(tRef.current('bts.networkUmts'));
+            else if (t.radio === 'GSM') network = esc(tRef.current('bts.networkGsm'));
+            else if (t.radio === 'NR') network = esc(tRef.current('bts.networkNr'));
             const dist = formatFromYou(t.distanceKm, tRef.current('bts.fromYou'));
             return {
                 lat: t.lat,
@@ -327,7 +329,7 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
             user,
             bts,
             nearby,
-            radiusMeters: radiusMeters ?? 25000,
+            radiusMeters: radiusMeters ?? 20000,
             userPopup: 'You',
             offlineLabel: tRef.current('bts.offline'),
             btsPopup: `
