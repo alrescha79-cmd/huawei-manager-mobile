@@ -1,9 +1,13 @@
 # EN
 
 ## v1.1.75
-- **UI/UX Performance & Consistency Overhaul** Replaced BlurView overlays on modals (`BandSelectionModal`, `PageSheetModal`, `SelectionModal`, `ThemedAlert`, `SpeedTestModal`, and `DiagnosisResultModal`) with lightweight `MeshGradientBackground` and translucent theme-aware containers to eliminate UI lag and stutter on low-end/older smartphones.
-- **BTS Locator Database Refresh & Beta Disclaimer** Updated bundled cell tower database to 75,466 towers with automated coordinate rounding and deduplication for minimal bundle footprint. Added explicit beta disclaimer noting BTS coordinate accuracy limitations.
-- **Project Hygiene & Code Cleanup** Cleaned up unused variables and redundant blur paths; moved heavy raw BTS source files (`510.csv`) to `.gitignore`.
+- **BTS Locator Feature** Added a dedicated interactive BTS Locator map to find the connected cell tower and visualize nearby 2G (GSM), 3G (UMTS), 4G (LTE), and 5G (NR) towers within a 20 km radius, with seamless fallback to remote data when the local database misses.
+- **UI/UX & Privacy Enhancements**
+  - Removed BlurView effects across all modal dialogs in favor of lightweight theme-aware backgrounds, eliminating stutter and lag on older smartphones.
+  - Added BTS Locator shortcut to Dashboard Quick Actions for instant access.
+  - Added privacy mask toggle (`***`) and quick copy actions in Modem Information.
+  - Redesigned BTS summary card into a compact layout with expandable technical details to maximize map visibility.
+- **Performance & Stability Improvements** Streamlined in-memory tower database parsing, minimized bundle overhead, and optimized map render cycles.
 
 ## v1.1.70
 - **Notifications & Alerts** Monthly clear history reminder with customizable day/time (Settings > Notifications). FCM links open in-app WebView. Toast warnings for daily 99% usage and monthly 95% quota.
@@ -38,9 +42,13 @@
 # ID
 
 ## v1.1.75
-- **Optimalisasi Performa & Konsistensi UI/UX** Mengganti lapisan BlurView pada seluruh modal (`BandSelectionModal`, `PageSheetModal`, `SelectionModal`, `ThemedAlert`, `SpeedTestModal`, dan `DiagnosisResultModal`) dengan `MeshGradientBackground` dan kontainer bertema yang ringan untuk menghilangkan lag serta patah-patah pada smartphone low-end/lama.
-- **Pembaruan Database BTS Locator & Keterangan Beta** Memperbarui database menara BTS internal ke 75.466 titik koordinat dengan deduplikasi dan pembulatan presisi otomatis untuk efisiensi ukuran aplikasi. Menambahkan keterangan status versi beta terkait akurasi titik BTS.
-- **Pembersihan Kode & File Project** Menghapus kode dan variabel yang tidak digunakan; file mentah database BTS (`510.csv`) dikeluarkan dari git tracking dan dimasukkan ke `.gitignore`.
+- **Fitur Baru BTS Locator** Menambahkan peta interaktif BTS Locator untuk melacak posisi menara BTS yang sedang terhubung serta menampilkan persebaran BTS 2G (GSM), 3G (UMTS), 4G (LTE), dan 5G (NR) terdekat dalam radius 20 km, lengkap dengan fallback ke data online saat database lokal tidak menemukan hasil.
+- **Peningkatan UI/UX & Privasi**
+  - Menghilangkan efek BlurView pada seluruh dialog modal dan menggantinya dengan latar tema yang ringan untuk menghilangkan lag pada perangkat model lama.
+  - Menambahkan pintasan BTS Locator pada Aksi Cepat di dashboard utama.
+  - Menambahkan opsi sensor privasi (`***`) serta tombol salin (copy) pada Informasi Modem.
+  - Merombak kartu ringkasan BTS menjadi lebih ringkas dengan opsi buka-tutup rincian teknis agar tampilan peta menjadi jauh lebih luas.
+- **Peningkatan Performa & Stabilitas** Pengoptimalan parsing database BTS lokal, efisiensi ukuran bundle aplikasi, dan peningkatan responsivitas visualisasi peta.
 
 ## v1.1.70
 - **Notifikasi & Peringatan** Pengingat bulanan hapus riwayat dengan tanggal/waktu yang bisa diatur (Settings > Notifications). Link FCM dibuka di WebView dalam aplikasi. Toast peringatan saat penggunaan harian 99% dan kuota bulanan 95%.

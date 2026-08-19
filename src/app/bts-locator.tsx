@@ -32,6 +32,7 @@ export default function BtsLocatorScreen() {
     const [nearbyTowers, setNearbyTowers] = useState<NearbyTower[]>([]);
     const [distanceM, setDistanceM] = useState<number | null>(null);
     const [bearing, setBearing] = useState<number | null>(null);
+    const [showMore, setShowMore] = useState(false);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<TranslationKey | ''>('');
 
@@ -193,70 +194,79 @@ export default function BtsLocatorScreen() {
                     )}
                 </View>
 
-                {/* Give the banner breathing room from the map, then let the card sit
-                    right under it — it used to hug the map and float far from the summary. */}
-                <View style={{ marginTop: spacing.md }}>
+                <View style={{ marginTop: spacing.sm }}>
                     <AdBanner />
                 </View>
 
-                <Card style={[styles.card, { marginBottom: insets.bottom + spacing.md }]}>
+                <Card style={[styles.card, { marginBottom: insets.bottom + spacing.sm }]}>
                     <View style={styles.cardHeader}>
-                        <Text style={[typography.headline, { color: colors.text }]}>{t('bts.summary')}</Text>
+                        <Text style={[typography.headline, { color: colors.text, fontSize: 16 }]}>{t('bts.summary')}</Text>
+                        <TouchableOpacity
+                            style={[styles.refreshIconBtn, { backgroundColor: colors.primary + '18' }]}
+                            onPress={load}
+                            activeOpacity={0.7}
+                        >
+                            <MaterialIcons name="my-location" size={16} color={colors.primary} />
+                            <Text style={[typography.caption1, { color: colors.primary, fontWeight: '700', marginLeft: 4 }]}>
+                                {t('bts.refresh')}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
 
                     <View style={[styles.disclaimerContainer, { backgroundColor: colors.warning + '15', borderColor: colors.warning + '35' }]}>
-                        <MaterialIcons name="info-outline" size={16} color={colors.warning} style={{ marginTop: 1 }} />
-                        <Text style={[typography.caption1, { color: colors.warning, marginLeft: 6, flex: 1, lineHeight: 16 }]}>
+                        <MaterialIcons name="info-outline" size={14} color={colors.warning} style={{ marginTop: 1 }} />
+                        <Text style={[typography.caption2, { color: colors.warning, marginLeft: 6, flex: 1, lineHeight: 14 }]}>
                             {t('bts.betaDisclaimer')}
                         </Text>
                     </View>
 
                     {estimated && (
-                        <Text style={[typography.caption1, { color: colors.warning, marginBottom: 8 }]}>
+                        <Text style={[typography.caption2, { color: colors.warning, marginBottom: 6 }]}>
                             {t('bts.estimated')}
                         </Text>
                     )}
 
                     <View style={styles.row}>
-                        <Text style={[typography.subheadline, { color: colors.textSecondary }]}>{t('bts.operator')}</Text>
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{operatorName}</Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('bts.operator')}</Text>
+                        <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>{operatorName}</Text>
                     </View>
                     <View style={styles.row}>
-                        <Text style={[typography.subheadline, { color: colors.textSecondary }]}>{t('bts.distance')}</Text>
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{formatDistance(distanceM)}</Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('bts.distance')}</Text>
+                        <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>{formatDistance(distanceM)}</Text>
                     </View>
                     <View style={styles.row}>
-                        <Text style={[typography.subheadline, { color: colors.textSecondary }]}>{t('bts.bearing')}</Text>
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>
-                            {bearing !== null ? `${bearing.toFixed(0)}° ${bearingToCompass(bearing)}` : '-'}
-                        </Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={[typography.subheadline, { color: colors.textSecondary }]}>{t('bts.enodeb')}</Text>
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{cellIds ? cellIds.eNodeB : '-'}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={[typography.subheadline, { color: colors.textSecondary }]}>{t('bts.sector')}</Text>
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{cellIds ? cellIds.sectorId : '-'}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={[typography.subheadline, { color: colors.textSecondary }]}>{t('bts.rsrp')}</Text>
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{signalInfo?.rsrp ? `${signalInfo.rsrp} dBm` : '-'}</Text>
-                    </View>
-                    <View style={styles.row}>
-                        <Text style={[typography.subheadline, { color: colors.textSecondary }]}>{t('bts.band')}</Text>
-                        <Text style={[typography.body, { color: colors.text, fontWeight: '600' }]}>{getLteBandLabel(band)}</Text>
+                        <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('bts.rsrp')}</Text>
+                        <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>{signalInfo?.rsrp ? `${signalInfo.rsrp} dBm` : '-'}</Text>
                     </View>
 
-                    <TouchableOpacity
-                        style={[styles.refreshButton, { backgroundColor: colors.primary }]}
-                        onPress={load}
-                        activeOpacity={0.8}
-                    >
-                        <MaterialIcons name="my-location" size={18} color="#ffffff" />
-                        <Text style={[typography.subheadline, { color: '#ffffff', fontWeight: '700', marginLeft: 8 }]}>
-                            {t('bts.refresh')}
+                    {showMore && (
+                        <>
+                            <View style={styles.row}>
+                                <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('bts.bearing')}</Text>
+                                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>
+                                    {bearing !== null ? `${bearing.toFixed(0)}° ${bearingToCompass(bearing)}` : '-'}
+                                </Text>
+                            </View>
+                            <View style={styles.row}>
+                                <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('bts.enodeb')}</Text>
+                                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>{cellIds ? cellIds.eNodeB : '-'}</Text>
+                            </View>
+                            <View style={styles.row}>
+                                <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('bts.sector')}</Text>
+                                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>{cellIds ? cellIds.sectorId : '-'}</Text>
+                            </View>
+                            <View style={styles.row}>
+                                <Text style={[typography.caption1, { color: colors.textSecondary }]}>{t('bts.band')}</Text>
+                                <Text style={[typography.subheadline, { color: colors.text, fontWeight: '600' }]}>{getLteBandLabel(band)}</Text>
+                            </View>
+                        </>
+                    )}
+
+                    <TouchableOpacity style={styles.expandToggle} onPress={() => setShowMore((prev) => !prev)} activeOpacity={0.7}>
+                        <Text style={[typography.caption1, { color: colors.textSecondary, marginRight: 2 }]}>
+                            {t(showMore ? 'bts.lessDetails' : 'bts.moreDetails')}
                         </Text>
+                        <MaterialIcons name={showMore ? 'keyboard-arrow-up' : 'keyboard-arrow-down'} size={18} color={colors.textSecondary} />
                     </TouchableOpacity>
                 </Card>
             </MeshGradientBackground>
@@ -310,14 +320,20 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: 6,
+        paddingVertical: 3,
     },
-    refreshButton: {
+    refreshIconBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 8,
+    },
+    expandToggle: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'center',
-        borderRadius: 12,
-        paddingVertical: 12,
-        marginTop: 10,
+        paddingTop: 6,
+        marginTop: 2,
     },
 });
