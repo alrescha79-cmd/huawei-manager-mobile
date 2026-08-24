@@ -8,7 +8,6 @@ Huawei Manager Mobile — Expo SDK 54 / React Native 0.81 / TypeScript app for c
 - `npx tsc --noEmit` — typecheck. **Must stay green after every change.** `tsconfig.json` has `strict: false` but `noUnusedLocals` + `noUnusedParameters` are **enabled** — dead imports/variables fail the build.
 - `npm run lint` — ESLint (flat config, `eslint.config.js`, extends `eslint-config-expo` + `eslint-config-prettier`). Currently 0 errors; `react-hooks/exhaustive-deps` is the only advisory category (34 warnings, not enforced). React Compiler-era rules (`refs`, `set-state-in-effect`, `immutability`, `purity`) are configured off, and lazy `require()` is allowed deliberately to break store circular deps — do not re-enable without a reason.
 - `npm run format` — Prettier write (`singleQuote`, `semi`, `printWidth 100`, `trailingComma es5`, see `.prettierrc.json`).
-- `npm run towers` — regenerate `openCell/towers.min.csv` from the raw OpenCelliD dump `openCell/510.csv` (keeps LTE+UMTS rows, strips unused columns, rounds coords). The compact file is what gets bundled via the metro CSV transformer — commit it whenever the dump is refreshed.
 - `npm run android` — builds and installs the dev app on a connected Android device/emulator (`APP_ENV=development`, `npx expo run:android`). Primary local run command.
 - `eas build --profile preview --platform android` — APK build; `production` profile = app-bundle (see `eas.json`).
 - No test framework — verification is tsc + lint + manual smoke against a real modem.
@@ -38,7 +37,7 @@ Huawei Manager Mobile — Expo SDK 54 / React Native 0.81 / TypeScript app for c
 - Import alias `@/*` → `src/*` is wired in **three** places: `tsconfig.json` paths, `babel.config.js` (module-resolver), `metro.config.js` resolver alias. Keep all three in sync.
 - `babel.config.js` strips `console.*` only when `NODE_ENV=production`; dev builds keep logs. Debug mode (Settings → Debug Mode) captures console + network logs via `src/utils/debug-logger.ts` — **dev builds only**, because the production bundle strips the console calls the interceptor reads.
 - Shared modem types live in `src/types/modem.types.ts` (ModemCredentials, SignalInfo, TrafficStats, WiFiSettings, ParentalControlProfile, BlockedDevice, ...). Do not re-declare these locally in components/hooks — import them.
-- `android/` and `ios/` are gitignored generated dirs. Never edit them by hand — run `npx expo prebuild` to regenerate. Only `build-test.yml` prebuilds with `--clean`; `build-release.yml` skips prebuild if `android/` already exists in the checkout.
+- `android/` and `ios/` are gitignored generated dirs. Never edit them by hand — run `npx expo prebuild` to regenerate. Only `build-test.yml` prebuilds with `--clean`; `build-release.yml` skips prebuild if `android/` already exists in the checkout. Any native tweak must go through a config plugin in `app.config.ts` (see `plugins/with-clear-dim-flags.js` — patches MainActivity to clear stale `FLAG_DIM_BEHIND`/`screenBrightness` after RN Modal / AdMob full-screen windows close, which some OEM ROMs leak as a persistently dimmed screen).
 - `APP_ENV` changes app identity: `development` → name `HM Mobile [DEV]`, package `com.alrescha79.hmmobile.dev`; production → `com.alrescha79.hmmobile`. Dev and prod install as separate apps.
 - Bump release version in **both** `package.json` and `app.config.ts`; `versionCode` comes from `ANDROID_VERSION_CODE` env (CI computes it). Runtime code reads the version via `Constants.expoConfig?.version` — no hardcoded fallback strings.
 - `app.config.ts` injects `org.gradle.java.home` from `JAVA_HOME` or hardcoded `/usr/lib/jvm/java-21-openjdk-amd64` if present. CI uses JDK 17.
@@ -50,6 +49,7 @@ Huawei Manager Mobile — Expo SDK 54 / React Native 0.81 / TypeScript app for c
 ## Secrets & builds
 
 - `.env`, `google-services.json`, and `hm-mobile-1a0d0-...-adminsdk...json` are gitignored but present locally. Never commit them. AdMob unit IDs read from env at build time (see `app.config.ts`); local `.env` has only commented-out names, real values live in CI secrets.
+- BTS tower API (`btsService.ts`): base URL + API key come from `EXPO_PUBLIC_BTS_API_URL` / `EXPO_PUBLIC_BTS_API_KEY` (no hardcoded URL). Both must be set in GitHub Actions secrets (`EXPO_PUBLIC_BTS_API_URL`, `EXPO_PUBLIC_BTS_API_KEY`) or the bts.cakson lookups are skipped entirely. The key is sent as the `X-API-Key` header.
 - Release APKs are built by GitHub Actions (`.github/workflows/build-test.yml`, `build-release.yml`) — expo prebuild + `./gradlew assembleRelease`, not EAS. Secrets: `GOOGLE_SERVICES_JSON`, `ADMOB_*`, `RELEASE_KEYSTORE_*`, `FIREBASE_SERVICE_ACCOUNT`, `EXPO_TOKEN`.
 - Firebase Messaging: app-updates notifications pushed to `all_users` topic from CI; notification channel id `app-updates`.
 
