@@ -8,6 +8,7 @@ import {
     Modal,
     TextInput,
     Keyboard,
+    Platform,
 } from 'react-native';
 import { ModalButton } from './ModalButton';
 import { ModalHeader } from './ModalHeader';
@@ -225,8 +226,8 @@ export function BandSelectionModal({
         <Modal
             visible={visible}
             animationType="slide"
-            presentationStyle="pageSheet"
-            transparent
+            presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+            transparent={Platform.OS === 'ios'}
             statusBarTranslucent
             onRequestClose={handleClose}
         >

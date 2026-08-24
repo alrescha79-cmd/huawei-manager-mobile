@@ -1,6 +1,6 @@
 import { ModemAPIClient } from './api.service';
 import { ConnectedDevice, WiFiSettings, ParentalControlProfile } from '@/types';
-import { parseXMLValue } from '@/utils/helpers';
+import { parseXMLValue, escapeXml } from '@/utils/helpers';
 import CryptoJS from 'crypto-js';
 
 export class WiFiService {
@@ -17,6 +17,10 @@ export class WiFiService {
       const devices: ConnectedDevice[] = [];
 
       if (typeof response === 'string') {
+        if (response.includes('<error>')) {
+          const code = response.match(/<code>(\d+)<\/code>/)?.[1] || 'unknown';
+          throw new Error(`host-list endpoint error code ${code}`);
+        }
         const hostsXML = response.match(/<Host>([\s\S]*?)<\/Host>/g);
         if (hostsXML) {
           hostsXML.forEach((hostXML) => {
@@ -46,14 +50,17 @@ export class WiFiService {
             // Might be XML
             const hostsXML = hostInfoResponse.match(/<Host>([\s\S]*?)<\/Host>/g);
             if (hostsXML) {
-              hostInfoList = hostsXML.map(hostXML => ({
+              hostInfoList = hostsXML.map((hostXML) => ({
                 HostName: parseXMLValue(hostXML, 'HostName'),
-                MACAddress: parseXMLValue(hostXML, 'MacAddress') || parseXMLValue(hostXML, 'MACAddress'),
-                AssociatedTime: parseXMLValue(hostXML, 'AssociatedTime') || parseXMLValue(hostXML, 'AssociatedSsidTime'),
+                MACAddress:
+                  parseXMLValue(hostXML, 'MacAddress') || parseXMLValue(hostXML, 'MACAddress'),
+                AssociatedTime:
+                  parseXMLValue(hostXML, 'AssociatedTime') ||
+                  parseXMLValue(hostXML, 'AssociatedSsidTime'),
                 DeviceType: parseXMLValue(hostXML, 'DeviceType'),
                 InterfaceType: parseXMLValue(hostXML, 'InterfaceType'),
                 VendorClassID: parseXMLValue(hostXML, 'VendorClassID'),
-                Frequency: parseXMLValue(hostXML, 'Frequency')
+                Frequency: parseXMLValue(hostXML, 'Frequency'),
               }));
             }
           }
@@ -97,6 +104,11 @@ export class WiFiService {
     try {
       const response = await this.apiClient.get('/api/wlan/multi-basic-settings');
 
+      if (typeof response === 'string' && response.includes('<error>')) {
+        const code = response.match(/<code>(\d+)<\/code>/)?.[1] || 'unknown';
+        throw new Error(`multi-basic-settings endpoint error code ${code}`);
+      }
+
       const ssidMatch = response.match(/<Ssid>([\s\S]*?)<\/Ssid>/);
       const mainSsid = ssidMatch ? ssidMatch[0] : response;
 
@@ -113,7 +125,17 @@ export class WiFiService {
       };
     } catch (error) {
       console.error('Error getting WiFi settings:', error);
-      throw error;
+      return {
+        ssid: '',
+        password: '',
+        wifiEnable: false,
+        channel: '',
+        band: '',
+        maxAssoc: '',
+        wifiMode: '',
+        securityMode: '',
+        encryptionMode: '',
+      };
     }
   }
 
@@ -156,7 +178,9 @@ export class WiFiService {
    * Helper: bytes to hex string
    */
   private bytesToHex(bytes: Uint8Array): string {
-    return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+    return Array.from(bytes)
+      .map((b) => b.toString(16).padStart(2, '0'))
+      .join('');
   }
 
   /**
@@ -243,8 +267,6 @@ export class WiFiService {
       const encPubKeyE = parseXMLValue(pubkeyResponse, 'encpubkeye') || '010001';
       const encPubKeyN = parseXMLValue(pubkeyResponse, 'encpubkeyn') || '';
 
-
-
       if (!encPubKeyN) {
         throw new Error('Modem did not return a WiFi encryption key');
       }
@@ -292,24 +314,26 @@ export class WiFiService {
       const currentSsid = ssidMatch[0];
       const currentIndex = parseXMLValue(currentSsid, 'Index') || '0';
       const currentWifiMac = parseXMLValue(currentSsid, 'WifiMac') || '';
-      const currentID = parseXMLValue(currentSsid, 'ID') || 'InternetGatewayDevice.X_Config.Wifi.Radio.1.Ssid.1.';
+      const currentID =
+        parseXMLValue(currentSsid, 'ID') || 'InternetGatewayDevice.X_Config.Wifi.Radio.1.Ssid.1.';
       const currentBroadcast = parseXMLValue(currentSsid, 'WifiBroadcast') || '0';
       const currentEnable = parseXMLValue(currentSsid, 'WifiEnable') || '1';
       const currentWepKeyIndex = parseXMLValue(currentSsid, 'WifiWepKeyIndex') || '1';
       const currentGuestNetwork = parseXMLValue(currentSsid, 'wifiisguestnetwork') || '0';
       const currentGuestOffTime = parseXMLValue(currentSsid, 'wifiguestofftime') || '4';
       const securityModeMap: Record<string, string> = {
-        'WPA2PSK': 'WPA2-PSK',
-        'WPAPSK': 'WPA-PSK',
-        'WPA': 'WPA-PSK',
-        'WPA2': 'WPA2-PSK',
-        'OPEN': 'OPEN',
+        WPA2PSK: 'WPA2-PSK',
+        WPAPSK: 'WPA-PSK',
+        WPA: 'WPA-PSK',
+        WPA2: 'WPA2-PSK',
+        OPEN: 'OPEN',
         'WPA2-PSK': 'WPA2-PSK',
         'WPA-PSK': 'WPA-PSK',
       };
 
       const newSsid = settings.ssid || parseXMLValue(currentSsid, 'WifiSsid') || '';
-      const rawAuthMode = settings.securityMode || parseXMLValue(currentSsid, 'WifiAuthmode') || 'WPA2-PSK';
+      const rawAuthMode =
+        settings.securityMode || parseXMLValue(currentSsid, 'WifiAuthmode') || 'WPA2-PSK';
       const newAuthMode = securityModeMap[rawAuthMode] || rawAuthMode;
       const newWpaEncryption = parseXMLValue(currentSsid, 'WifiWpaencryptionmodes') || 'AES';
 
@@ -327,7 +351,7 @@ export class WiFiService {
                 <WifiBroadcast>${currentBroadcast}</WifiBroadcast>
                 <WifiWep128Key3></WifiWep128Key3>
                 <WifiMac>${currentWifiMac}</WifiMac>
-                <WifiSsid>${newSsid}</WifiSsid>
+                <WifiSsid>${escapeXml(newSsid)}</WifiSsid>
                 <wifiisguestnetwork>${currentGuestNetwork}</wifiisguestnetwork>
                 <wifiguestofftime>${currentGuestOffTime}</wifiguestofftime>
                 <WifiWep128Key4></WifiWep128Key4>
@@ -347,10 +371,10 @@ export class WiFiService {
           encryptedPsk = await this.encryptWifiPassword(settings.password);
         }
 
-        const pskFields = encryptedPsk ? `
-                <WifiWpapsk>${encryptedPsk}</WifiWpapsk>` : '';
-
-
+        const pskFields = encryptedPsk
+          ? `
+                <WifiWpapsk>${encryptedPsk}</WifiWpapsk>`
+          : '';
 
         requestBody = `<?xml version="1.0" encoding="UTF-8"?>
           <request>
@@ -364,7 +388,7 @@ export class WiFiService {
                 <WifiBroadcast>${currentBroadcast}</WifiBroadcast>
                 <WifiWep128Key3></WifiWep128Key3>${pskFields}
                 <WifiMac>${currentWifiMac}</WifiMac>
-                <WifiSsid>${newSsid}</WifiSsid>
+                <WifiSsid>${escapeXml(newSsid)}</WifiSsid>
                 <wifiisguestnetwork>${currentGuestNetwork}</wifiisguestnetwork>
                 <wifiguestofftime>${currentGuestOffTime}</wifiguestofftime>
                 <WifiWep128Key4></WifiWep128Key4>
@@ -498,11 +522,26 @@ export class WiFiService {
       const guestMac = parseXMLValue(guestSsidXml, 'WifiMac') || '';
       const guestId = parseXMLValue(guestSsidXml, 'ID') || '';
 
-      const guestEnabled = settings.enabled !== undefined ? (settings.enabled ? '1' : '0') : parseXMLValue(guestSsidXml, 'WifiEnable') || '0';
-      const guestSsidName = settings.ssid !== undefined ? settings.ssid : parseXMLValue(guestSsidXml, 'WifiSsid') || '';
-      const guestAuthmode = settings.securityMode !== undefined ? settings.securityMode : parseXMLValue(guestSsidXml, 'WifiAuthmode') || 'OPEN';
-      const guestPassword = settings.password !== undefined ? settings.password : parseXMLValue(guestSsidXml, 'WifiWpapsk') || '';
-      const guestOfftime = settings.duration !== undefined ? settings.duration : parseXMLValue(guestSsidXml, 'wifiguestofftime') || '0';
+      const guestEnabled =
+        settings.enabled !== undefined
+          ? settings.enabled
+            ? '1'
+            : '0'
+          : parseXMLValue(guestSsidXml, 'WifiEnable') || '0';
+      const guestSsidName =
+        settings.ssid !== undefined ? settings.ssid : parseXMLValue(guestSsidXml, 'WifiSsid') || '';
+      const guestAuthmode =
+        settings.securityMode !== undefined
+          ? settings.securityMode
+          : parseXMLValue(guestSsidXml, 'WifiAuthmode') || 'OPEN';
+      const guestPassword =
+        settings.password !== undefined
+          ? settings.password
+          : parseXMLValue(guestSsidXml, 'WifiWpapsk') || '';
+      const guestOfftime =
+        settings.duration !== undefined
+          ? settings.duration
+          : parseXMLValue(guestSsidXml, 'wifiguestofftime') || '0';
       const guestBasicEncrypt = guestAuthmode === 'OPEN' ? 'NONE' : '';
       const guestWpaEncrypt = guestAuthmode !== 'OPEN' ? 'AES' : '';
 
@@ -529,7 +568,7 @@ export class WiFiService {
 </Ssid>
 <Ssid>
 <Index>${guestIndex}</Index>
-<WifiSsid>${guestSsidName}</WifiSsid>
+<WifiSsid>${escapeXml(guestSsidName)}</WifiSsid>
 <WifiAuthmode>${guestAuthmode}</WifiAuthmode>
 <WifiWepKeyIndex>${guestWepKeyIndex}</WifiWepKeyIndex>
 <WifiBroadcast>${guestBroadcast}</WifiBroadcast>
@@ -677,7 +716,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
       const response = await this.apiClient.get('/api/timerule/timerule');
       const rulesXML = response.match(/<TimeControlRule>([\s\S]*?)<\/TimeControlRule>/g);
       if (rulesXML) {
-        return rulesXML.some(rule => parseXMLValue(rule, 'Enable') === '1');
+        return rulesXML.some((rule) => parseXMLValue(rule, 'Enable') === '1');
       }
       return false;
     } catch (error) {
@@ -702,11 +741,14 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
 
       if (rulesXML) {
         rulesXML.forEach((ruleXML, index) => {
-
           const macsMatch = ruleXML.match(/<DevicesMAC>([^<]+)<\/DevicesMAC>/g);
-          const deviceMacs = macsMatch ? macsMatch.map(m => m.replace(/<\/?DevicesMAC>/g, '')) : [];
+          const deviceMacs = macsMatch
+            ? macsMatch.map((m) => m.replace(/<\/?DevicesMAC>/g, ''))
+            : [];
           const namesMatch = ruleXML.match(/<DevicesName>([^<]+)<\/DevicesName>/g);
-          const deviceNames = namesMatch ? namesMatch.map(m => m.replace(/<\/?DevicesName>/g, '')) : [];
+          const deviceNames = namesMatch
+            ? namesMatch.map((m) => m.replace(/<\/?DevicesName>/g, ''))
+            : [];
 
           const weekEnable = parseXMLValue(ruleXML, 'WeekEnable') || '0000000';
           const id = parseXMLValue(ruleXML, 'ID') || `rule_${index}`;
@@ -731,11 +773,16 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 
-  async createParentalControlProfile(profile: Omit<ParentalControlProfile, 'id'>): Promise<boolean> {
+  async createParentalControlProfile(
+    profile: Omit<ParentalControlProfile, 'id'>
+  ): Promise<boolean> {
     try {
-
-      const deviceMacsXml = profile.deviceMacs.map(mac => `<DevicesMAC>${mac}</DevicesMAC>`).join('');
-      const deviceNamesXml = (profile.deviceNames || [profile.name]).map(name => `<DevicesName>${name}</DevicesName>`).join('');
+      const deviceMacsXml = profile.deviceMacs
+        .map((mac) => `<DevicesMAC>${escapeXml(mac)}</DevicesMAC>`)
+        .join('');
+      const deviceNamesXml = (profile.deviceNames || [profile.name])
+        .map((name) => `<DevicesName>${escapeXml(name)}</DevicesName>`)
+        .join('');
       const weekEnable = this.daysToString(profile.activeDays);
 
       const data = `<?xml version="1.0" encoding="UTF-8"?>
@@ -754,7 +801,6 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
 </TimeControlRule>
 </TimeControlRules>
 </request>`;
-
 
       const response = await this.apiClient.post('/api/timerule/timerule', data);
 
@@ -776,7 +822,7 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
 
       await this.createParentalControlProfile({
         name: profile.name,
-        deviceMacs: profile.deviceMacs.filter((mac, index, self) => self.indexOf(mac) === index), 
+        deviceMacs: profile.deviceMacs.filter((mac, index, self) => self.indexOf(mac) === index),
         deviceNames: profile.deviceNames,
         startTime: profile.startTime,
         endTime: profile.endTime,
@@ -793,10 +839,13 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
 
   async toggleParentalControlProfileEnabled(profile: ParentalControlProfile): Promise<boolean> {
     try {
-
-      const uniqueMacs = profile.deviceMacs.filter((mac, index, self) => self.indexOf(mac) === index);
-      const deviceMacsXml = uniqueMacs.map(mac => `<DevicesMAC>${mac}</DevicesMAC>`).join('');
-      const deviceNamesXml = (profile.deviceNames || [profile.name]).map(name => `<DevicesName>${name}</DevicesName>`).join('');
+      const uniqueMacs = profile.deviceMacs.filter(
+        (mac, index, self) => self.indexOf(mac) === index
+      );
+      const deviceMacsXml = uniqueMacs.map((mac) => `<DevicesMAC>${mac}</DevicesMAC>`).join('');
+      const deviceNamesXml = (profile.deviceNames || [profile.name])
+        .map((name) => `<DevicesName>${name}</DevicesName>`)
+        .join('');
 
       const weekEnable = this.daysToString(profile.activeDays);
 
@@ -817,7 +866,6 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
 </TimeControlRules>
 </request>`;
 
-
       const response = await this.apiClient.post('/api/timerule/timerule', data);
 
       if (response.includes('<error>')) {
@@ -834,7 +882,6 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
 
   async deleteParentalControlProfile(profileId: string): Promise<boolean> {
     try {
-
       const data = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
 <TimeControlRules>
@@ -844,7 +891,6 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
 </TimeControlRule>
 </TimeControlRules>
 </request>`;
-
 
       const response = await this.apiClient.post('/api/timerule/timerule', data);
 
@@ -898,4 +944,3 @@ ${encryptedGuestPsk ? `<WifiWpapsk>${encryptedGuestPsk}</WifiWpapsk>` : ''}
     }
   }
 }
-

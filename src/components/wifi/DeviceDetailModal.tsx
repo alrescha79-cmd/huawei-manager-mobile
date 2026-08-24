@@ -134,8 +134,8 @@ export function DeviceDetailModal({
         <Modal
             visible={visible}
             animationType="slide"
-            presentationStyle="pageSheet"
-            transparent
+            presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+            transparent={Platform.OS === 'ios'}
             statusBarTranslucent
             onRequestClose={onClose}
         >

@@ -1,6 +1,18 @@
 import { create } from 'zustand';
-import { ModemInfo, SignalInfo, NetworkInfo, TrafficStats, ModemStatus, WanInfo, MobileDataStatus } from '@/types';
+import {
+  ModemInfo,
+  SignalInfo,
+  NetworkInfo,
+  TrafficStats,
+  ModemStatus,
+  WanInfo,
+  MobileDataStatus,
+} from '@/types';
 import { saveModemDataCache, getModemDataCache } from '@/utils/storage';
+
+const equals = (a: unknown, b: unknown): boolean => JSON.stringify(a) === JSON.stringify(b);
+
+let cacheWriteTimer: ReturnType<typeof setTimeout> | null = null;
 
 export interface MonthlySettings {
   enabled: boolean;
@@ -71,15 +83,18 @@ export const useModemStore = create<ModemState>((set, get) => ({
   },
 
   setSignalInfo: (info) => {
+    const prev = get().signalInfo;
+    if (equals(prev, info)) return;
     set({ signalInfo: info, isUsingCache: false });
-    get().saveToCache();
+    if (cacheWriteTimer) clearTimeout(cacheWriteTimer);
+    cacheWriteTimer = setTimeout(() => get().saveToCache(), 500);
     try {
       const { useDebugStore } = require('./debug.store');
       const debugStore = useDebugStore.getState();
       if (debugStore.debugEnabled) {
         debugStore.setModemInfo({
           ...debugStore.modemInfo,
-          signalStrength: `${info.rssi || info.rsrp || 'N/A'} dBm`,
+          signalStrength: `${info?.rssi || info?.rsrp || 'N/A'} dBm`,
         });
       }
     } catch {
@@ -88,6 +103,8 @@ export const useModemStore = create<ModemState>((set, get) => ({
   },
 
   setNetworkInfo: (info) => {
+    const prev = get().networkInfo;
+    if (equals(prev, info)) return;
     set({ networkInfo: info, isUsingCache: false });
     try {
       const { useDebugStore } = require('./debug.store');
@@ -95,8 +112,8 @@ export const useModemStore = create<ModemState>((set, get) => ({
       if (debugStore.debugEnabled) {
         debugStore.setModemInfo({
           ...debugStore.modemInfo,
-          networkOperator: info.fullName || info.networkName,
-          connectionStatus: info.currentNetworkType,
+          networkOperator: info?.fullName || info?.networkName,
+          connectionStatus: info?.currentNetworkType,
         });
       }
     } catch {
@@ -105,18 +122,26 @@ export const useModemStore = create<ModemState>((set, get) => ({
   },
 
   setTrafficStats: (stats) => {
+    const prev = get().trafficStats;
+    if (equals(prev, stats)) return;
     set({ trafficStats: stats, isUsingCache: false });
   },
 
   setModemStatus: (status) => {
+    const prev = get().modemStatus;
+    if (equals(prev, status)) return;
     set({ modemStatus: status, isUsingCache: false });
   },
 
   setWanInfo: (info) => {
+    const prev = get().wanInfo;
+    if (equals(prev, info)) return;
     set({ wanInfo: info, isUsingCache: false });
   },
 
   setMobileDataStatus: (status) => {
+    const prev = get().mobileDataStatus;
+    if (equals(prev, status)) return;
     set({ mobileDataStatus: status, isUsingCache: false });
   },
 
@@ -160,5 +185,4 @@ export const useModemStore = create<ModemState>((set, get) => ({
       });
     }
   },
-
 }));

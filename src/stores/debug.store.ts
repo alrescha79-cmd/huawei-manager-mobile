@@ -7,138 +7,141 @@ import { isAvailableAsync, shareAsync } from 'expo-sharing';
 import * as MailComposer from 'expo-mail-composer';
 
 export interface ApiLog {
-    timestamp: number;
-    endpoint: string;
-    method: string;
-    requestData?: any;
-    responseData?: any;
-    error?: string;
-    duration: number;
+  timestamp: number;
+  endpoint: string;
+  method: string;
+  requestData?: any;
+  responseData?: any;
+  error?: string;
+  duration: number;
 }
 
 export interface ConsoleLog {
-    timestamp: number;
-    level: 'log' | 'warn' | 'error' | 'info' | 'debug';
-    message: string;
-    data?: string;
+  timestamp: number;
+  level: 'log' | 'warn' | 'error' | 'info' | 'debug';
+  message: string;
+  data?: string;
 }
 
 export interface ModemDebugInfo {
-    modemIp?: string;
-    modemModel?: string;
-    firmwareVersion?: string;
-    imei?: string;
-    networkOperator?: string;
-    connectionStatus?: string;
-    signalStrength?: string;
+  modemIp?: string;
+  modemModel?: string;
+  firmwareVersion?: string;
+  imei?: string;
+  networkOperator?: string;
+  connectionStatus?: string;
+  signalStrength?: string;
 }
 
 interface DebugState {
-    debugEnabled: boolean;
-    apiLogs: ApiLog[];
-    consoleLogs: ConsoleLog[];
-    modemInfo: ModemDebugInfo;
+  debugEnabled: boolean;
+  apiLogs: ApiLog[];
+  consoleLogs: ConsoleLog[];
+  modemInfo: ModemDebugInfo;
 
-    setDebugEnabled: (enabled: boolean) => void;
-    setModemInfo: (info: ModemDebugInfo) => void;
-    addLog: (log: Omit<ApiLog, 'timestamp'>) => void;
-    addConsoleLog: (log: Omit<ConsoleLog, 'timestamp'>) => void;
-    clearLogs: () => void;
-    exportLogsAsText: () => string;
-    createDebugFile: () => Promise<string>;
-    sendDebugEmail: () => Promise<boolean>;
-    shareDebugLog: () => Promise<void>;
+  setDebugEnabled: (enabled: boolean) => void;
+  setModemInfo: (info: ModemDebugInfo) => void;
+  addLog: (log: Omit<ApiLog, 'timestamp'>) => void;
+  addConsoleLog: (log: Omit<ConsoleLog, 'timestamp'>) => void;
+  clearLogs: () => void;
+  exportLogsAsText: () => string;
+  createDebugFile: () => Promise<string>;
+  sendDebugEmail: () => Promise<boolean>;
+  shareDebugLog: () => Promise<void>;
 }
 
 const MAX_LOGS = 500;
 const MAX_CONSOLE_LOGS = 500;
 
 export const useDebugStore = create<DebugState>()(
-    persist(
-        (set, get) => ({
-            debugEnabled: false,
-            apiLogs: [],
-            consoleLogs: [],
-            modemInfo: {},
+  persist(
+    (set, get) => ({
+      debugEnabled: false,
+      apiLogs: [],
+      consoleLogs: [],
+      modemInfo: {},
 
-            setDebugEnabled: (enabled: boolean) => {
-                set({ debugEnabled: enabled });
-                if (enabled) {
-                    try {
-                        const { useModemStore } = require('./modem.store');
-                        const { useAuthStore } = require('./auth.store');
-                        const modemStore = useModemStore.getState();
-                        const authStore = useAuthStore.getState();
+      setDebugEnabled: (enabled: boolean) => {
+        set({ debugEnabled: enabled });
+        if (enabled) {
+          try {
+            const { useModemStore } = require('./modem.store');
+            const { useAuthStore } = require('./auth.store');
+            const modemStore = useModemStore.getState();
+            const authStore = useAuthStore.getState();
 
-                        const modemInfo = modemStore.modemInfo;
-                        const signalInfo = modemStore.signalInfo;
-                        const networkInfo = modemStore.networkInfo;
+            const modemInfo = modemStore.modemInfo;
+            const signalInfo = modemStore.signalInfo;
+            const networkInfo = modemStore.networkInfo;
 
-                        if (modemInfo || signalInfo || networkInfo) {
-                            set({
-                                modemInfo: {
-                                    modemIp: authStore.credentials?.modemIp,
-                                    modemModel: modemInfo?.deviceName,
-                                    firmwareVersion: modemInfo?.softwareVersion,
-                                    imei: modemInfo?.imei,
-                                    networkOperator: networkInfo?.fullName || networkInfo?.networkName,
-                                    connectionStatus: networkInfo?.currentNetworkType,
-                                    signalStrength: signalInfo ? `${signalInfo.rssi || signalInfo.rsrp || 'N/A'} dBm` : undefined,
-                                },
-                            });
-                        }
-                    } catch {
-                        // Silent fail if stores not available
-                    }
-                } else {
-                    set({ apiLogs: [], consoleLogs: [], modemInfo: {} });
-                }
-            },
+            if (modemInfo || signalInfo || networkInfo) {
+              set({
+                modemInfo: {
+                  modemIp: authStore.credentials?.modemIp,
+                  modemModel: modemInfo?.deviceName,
+                  firmwareVersion: modemInfo?.softwareVersion,
+                  imei: modemInfo?.imei,
+                  networkOperator: networkInfo?.fullName || networkInfo?.networkName,
+                  connectionStatus: networkInfo?.currentNetworkType,
+                  signalStrength: signalInfo
+                    ? `${signalInfo.rssi || signalInfo.rsrp || 'N/A'} dBm`
+                    : undefined,
+                },
+              });
+            }
+          } catch {
+            // Silent fail if stores not available
+          }
+        } else {
+          set({ apiLogs: [], consoleLogs: [], modemInfo: {} });
+        }
+      },
 
-            setModemInfo: (info: ModemDebugInfo) => {
-                set({ modemInfo: info });
-            },
+      setModemInfo: (info: ModemDebugInfo) => {
+        set({ modemInfo: info });
+      },
 
-            addLog: (log: Omit<ApiLog, 'timestamp'>) => {
-                const { debugEnabled, apiLogs } = get();
-                if (!debugEnabled) return;
+      addLog: (log: Omit<ApiLog, 'timestamp'>) => {
+        const { debugEnabled, apiLogs } = get();
+        if (!debugEnabled) return;
 
-                const newLog: ApiLog = {
-                    ...log,
-                    timestamp: Date.now(),
-                };
+        const newLog: ApiLog = {
+          ...log,
+          timestamp: Date.now(),
+        };
 
-                const updatedLogs = [...apiLogs, newLog].slice(-MAX_LOGS);
-                set({ apiLogs: updatedLogs });
-            },
+        const updatedLogs = [...apiLogs, newLog].slice(-MAX_LOGS);
+        set({ apiLogs: updatedLogs });
+      },
 
-            addConsoleLog: (log: Omit<ConsoleLog, 'timestamp'>) => {
-                const { debugEnabled, consoleLogs } = get();
-                if (!debugEnabled) return;
+      addConsoleLog: (log: Omit<ConsoleLog, 'timestamp'>) => {
+        const { debugEnabled, consoleLogs } = get();
+        if (!debugEnabled) return;
 
-                const newLog: ConsoleLog = {
-                    ...log,
-                    timestamp: Date.now(),
-                };
+        const newLog: ConsoleLog = {
+          ...log,
+          timestamp: Date.now(),
+        };
 
-                const updated = [...consoleLogs, newLog].slice(-MAX_CONSOLE_LOGS);
-                set({ consoleLogs: updated });
-            },
+        const updated = [...consoleLogs, newLog].slice(-MAX_CONSOLE_LOGS);
+        set({ consoleLogs: updated });
+      },
 
-            clearLogs: () => {
-                set({ apiLogs: [], consoleLogs: [] });
-            },
+      clearLogs: () => {
+        set({ apiLogs: [], consoleLogs: [] });
+      },
 
-            exportLogsAsText: () => {
-                const { apiLogs, consoleLogs, modemInfo } = get();
+      exportLogsAsText: () => {
+        const { apiLogs, consoleLogs, modemInfo } = get();
 
-                const deviceString = `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
-                const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
+        const deviceString =
+          `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
+        const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
 
-                const modemString = modemInfo.modemModel || 'Not connected';
-                const firmwareString = modemInfo.firmwareVersion || 'N/A';
+        const modemString = modemInfo.modemModel || 'Not connected';
+        const firmwareString = modemInfo.firmwareVersion || 'N/A';
 
-                const header = `========================================
+        const header = `========================================
 HUAWEI MANAGER DEBUG LOG
 Generated: ${new Date().toISOString()}
 ========================================
@@ -151,7 +154,7 @@ Generated: ${new Date().toISOString()}
 📡 MODEM INFO:
    Model: ${modemString}
    Firmware: ${firmwareString}
-   IMEI: ${modemInfo.imei || 'N/A'}
+   IMEI: ${modemInfo.imei ? `${modemInfo.imei.slice(0, 4)}****` : 'N/A'}
    Network: ${modemInfo.networkOperator || 'N/A'}
    Connection: ${modemInfo.connectionStatus || 'N/A'}
    Signal: ${modemInfo.signalStrength || 'N/A'}
@@ -163,9 +166,10 @@ API LOGS (${apiLogs.length} entries)
 
 `;
 
-                const logsText = apiLogs.map((log, index) => {
-                    const date = new Date(log.timestamp).toISOString();
-                    return `[${index + 1}] ${date}
+        const logsText = apiLogs
+          .map((log, index) => {
+            const date = new Date(log.timestamp).toISOString();
+            return `[${index + 1}] ${date}
 Endpoint: ${log.endpoint}
 Method: ${log.method}
 Duration: ${log.duration}ms
@@ -174,56 +178,60 @@ ${log.responseData ? `Response: ${JSON.stringify(log.responseData, null, 2)}` : 
 ${log.error ? `Error: ${log.error}` : ''}
 ----------------------------------------
 `;
-                }).join('\n');
+          })
+          .join('\n');
 
-                const consoleHeader = `
+        const consoleHeader = `
 ========================================
 CONSOLE LOGS (${consoleLogs.length} entries)
 ========================================
 
 `;
 
-                const consoleText = consoleLogs.map((log, index) => {
-                    const date = new Date(log.timestamp).toISOString();
-                    const lvl = log.level.toUpperCase().padEnd(5);
-                    return `[${index + 1}] ${date} [${lvl}] ${log.message}${log.data ? `\n  Data: ${log.data}` : ''}
+        const consoleText = consoleLogs
+          .map((log, index) => {
+            const date = new Date(log.timestamp).toISOString();
+            const lvl = log.level.toUpperCase().padEnd(5);
+            return `[${index + 1}] ${date} [${lvl}] ${log.message}${log.data ? `\n  Data: ${log.data}` : ''}
 ----------------------------------------
 `;
-                }).join('\n');
+          })
+          .join('\n');
 
-                return header + logsText + consoleHeader + consoleText;
-            },
+        return header + logsText + consoleHeader + consoleText;
+      },
 
-            createDebugFile: async () => {
-                const { exportLogsAsText } = get();
-                const logText = exportLogsAsText();
+      createDebugFile: async () => {
+        const { exportLogsAsText } = get();
+        const logText = exportLogsAsText();
 
-                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
-                const deviceName = (Device.modelName || 'device').replace(/\s+/g, '_');
-                const filename = `huawei_manager_debug_${deviceName}_${timestamp}.txt`;
-                const file = new File(Paths.cache, filename);
-                await file.write(logText);
+        const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
+        const deviceName = (Device.modelName || 'device').replace(/\s+/g, '_');
+        const filename = `huawei_manager_debug_${deviceName}_${timestamp}.txt`;
+        const file = new File(Paths.cache, filename);
+        await file.write(logText);
 
-                return file.uri;
-            },
+        return file.uri;
+      },
 
-            sendDebugEmail: async () => {
-                const { createDebugFile, modemInfo } = get();
+      sendDebugEmail: async () => {
+        const { createDebugFile, modemInfo } = get();
 
-                const isAvailable = await MailComposer.isAvailableAsync();
-                if (!isAvailable) {
-                    return false;
-                }
+        const isAvailable = await MailComposer.isAvailableAsync();
+        if (!isAvailable) {
+          return false;
+        }
 
-                const fileUri = await createDebugFile();
-                const deviceString = `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
-                const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
-                const modemModel = modemInfo.modemModel || 'Unknown Modem';
-                const firmwareVersion = modemInfo.firmwareVersion || 'N/A';
+        const fileUri = await createDebugFile();
+        const deviceString =
+          `${Device.manufacturer || ''} ${Device.modelName || 'Unknown Device'}`.trim();
+        const osString = `${Device.osName || 'Unknown OS'} ${Device.osVersion || ''}`;
+        const modemModel = modemInfo.modemModel || 'Unknown Modem';
+        const firmwareVersion = modemInfo.firmwareVersion || 'N/A';
 
-                const subject = `[Huawei Manager] Bug Report / Feature Request - ${modemModel}`;
+        const subject = `[Huawei Manager] Bug Report / Feature Request - ${modemModel}`;
 
-                const body = `
+        const body = `
 === BUG REPORT / FEATURE REQUEST ===
 
 📱 Device: ${deviceString}
@@ -254,37 +262,37 @@ CONSOLE LOGS (${consoleLogs.length} entries)
 Thank you for your feedback!
 `;
 
-                await MailComposer.composeAsync({
-                    recipients: ['anggun@cakson.my.id'],
-                    subject,
-                    body,
-                    attachments: [fileUri],
-                });
+        await MailComposer.composeAsync({
+          recipients: ['anggun@cakson.my.id'],
+          subject,
+          body,
+          attachments: [fileUri],
+        });
 
-                return true;
-            },
+        return true;
+      },
 
-            shareDebugLog: async () => {
-                const { createDebugFile } = get();
-                const fileUri = await createDebugFile();
-                const isAvailable = await isAvailableAsync();
-                if (isAvailable) {
-                    await shareAsync(fileUri, {
-                        mimeType: 'text/plain',
-                        dialogTitle: 'Share Debug Log',
-                    });
-                } else {
-                    throw new Error('Sharing not available');
-                }
-            },
-        }),
-        {
-            name: 'debug-storage',
-            storage: createJSONStorage(() => AsyncStorage),
-            partialize: (state) => ({
-                debugEnabled: state.debugEnabled,
-                // Don't persist logs - they're session-only
-            }),
+      shareDebugLog: async () => {
+        const { createDebugFile } = get();
+        const fileUri = await createDebugFile();
+        const isAvailable = await isAvailableAsync();
+        if (isAvailable) {
+          await shareAsync(fileUri, {
+            mimeType: 'text/plain',
+            dialogTitle: 'Share Debug Log',
+          });
+        } else {
+          throw new Error('Sharing not available');
         }
-    )
+      },
+    }),
+    {
+      name: 'debug-storage',
+      storage: createJSONStorage(() => AsyncStorage),
+      partialize: (state) => ({
+        debugEnabled: state.debugEnabled,
+        // Don't persist logs - they're session-only
+      }),
+    }
+  )
 );
