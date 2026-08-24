@@ -16,8 +16,7 @@
     "web": "expo start --web",
     "build:android": "APP_ENV=production expo prebuild --platform android && cd android && ./gradlew assembleRelease",
     "lint": "eslint .",
-    "format": "prettier --write .",
-    "towers": "node scripts/prepare-towers.mjs"
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@expo-google-fonts/doto": "^0.4.1",
