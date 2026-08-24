@@ -1,69 +1,73 @@
+import { useCallback } from 'react';
 import { useThemeStore } from '@/stores/theme.store';
 import en from './en.json';
 import id from './id.json';
 
 type TranslationKeys = typeof en;
 type NestedKeyOf<T> = T extends object
-    ? {
-        [K in keyof T]: K extends string
+  ? {
+      [K in keyof T]: K extends string
         ? T[K] extends object
-        ? `${K}.${NestedKeyOf<T[K]>}`
-        : K
+          ? `${K}.${NestedKeyOf<T[K]>}`
+          : K
         : never;
     }[keyof T]
-    : never;
+  : never;
 
 export type TranslationKey = NestedKeyOf<TranslationKeys>;
 
 const translations: Record<string, typeof en> = {
-    en,
-    id,
+  en,
+  id,
 };
 
 /**
  * Hook to get translated strings based on current language setting
- * 
+ *
  * Usage:
  * const { t } = useTranslation();
  * <Text>{t('home.connectionStatus')}</Text>
  */
 export function useTranslation() {
-    const { language } = useThemeStore();
+  const language = useThemeStore((s) => s.language);
 
-    const t = (key: TranslationKey | (string & {}), options?: Record<string, string | number>): string => {
-        const keys = key.split('.');
-        const translation = translations[language] || translations.en;
+  const t = useCallback(
+    (key: TranslationKey | (string & {}), options?: Record<string, string | number>): string => {
+      const keys = key.split('.');
+      const translation = translations[language] || translations.en;
 
-        let result: unknown = translation;
-        for (const k of keys) {
-            if (result && typeof result === 'object' && k in result) {
-                result = (result as Record<string, unknown>)[k];
+      let result: unknown = translation;
+      for (const k of keys) {
+        if (result && typeof result === 'object' && k in result) {
+          result = (result as Record<string, unknown>)[k];
+        } else {
+          // Fallback to English if key not found
+          result = translations.en;
+          for (const fallbackKey of keys) {
+            if (result && typeof result === 'object' && fallbackKey in result) {
+              result = (result as Record<string, unknown>)[fallbackKey];
             } else {
-                // Fallback to English if key not found
-                result = translations.en;
-                for (const fallbackKey of keys) {
-                    if (result && typeof result === 'object' && fallbackKey in result) {
-                        result = (result as Record<string, unknown>)[fallbackKey];
-                    } else {
-                        return key; // Return key if not found
-                    }
-                }
-                break;
+              return key; // Return key if not found
             }
+          }
+          break;
         }
+      }
 
-        let text = typeof result === 'string' ? result : key;
+      let text = typeof result === 'string' ? result : key;
 
-        if (options) {
-            Object.entries(options).forEach(([k, v]) => {
-                text = text.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
-            });
-        }
+      if (options) {
+        Object.entries(options).forEach(([k, v]) => {
+          text = text.replace(new RegExp(`{{${k}}}`, 'g'), String(v));
+        });
+      }
 
-        return text;
-    };
+      return text;
+    },
+    [language]
+  );
 
-    return { t, language };
+  return { t, language };
 }
 
 export { en, id };

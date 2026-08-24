@@ -167,7 +167,8 @@ export const Typography = {
 
 export const useTheme = () => {
   const systemColorScheme = useColorScheme();
-  const { themeMode, accentColor } = useThemeStore();
+  const themeMode = useThemeStore((s) => s.themeMode);
+  const accentColor = useThemeStore((s) => s.accentColor);
 
   let isDark: boolean;
   if (themeMode === 'system') {
@@ -194,4 +195,3 @@ export const useTheme = () => {
 };
 
 export type Theme = ReturnType<typeof useTheme>;
-

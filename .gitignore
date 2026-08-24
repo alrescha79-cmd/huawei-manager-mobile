@@ -7,6 +7,8 @@ node_modules/
 notes.txt
 graphify-out/
 reports/
+upstream-api.md
+API.md
 
 # Expo
 .expo/
@@ -53,8 +55,5 @@ GoogleService-Info.plist
 
 # Bruno 
 bruno-huawei-lte-api/
-
-# Raw OpenCell database (bundled output is towers.min.csv)
-openCell/510.csv
 
 

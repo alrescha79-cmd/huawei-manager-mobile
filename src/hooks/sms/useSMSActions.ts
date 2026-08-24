@@ -1,230 +1,233 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { SMSService } from '@/services/sms.service';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
 import { SMSMessage } from '@/types';
 
 interface UseSMSActionsProps {
-    smsService: SMSService | null;
-    messages: SMSMessage[];
-    filteredMessages: SMSMessage[];
-    removeMessage: (index: string) => void;
-    handleRefresh: () => void;
-    t: (key: string, options?: any) => string;
+  smsService: SMSService | null;
+  messages: SMSMessage[];
+  filteredMessages: SMSMessage[];
+  removeMessage: (index: string) => void;
+  handleRefresh: () => void;
+  t: (key: string, options?: any) => string;
 }
 
 export function useSMSActions({
-    smsService,
-    messages,
-    filteredMessages,
-    removeMessage,
-    handleRefresh,
-    t,
+  smsService,
+  messages,
+  filteredMessages,
+  removeMessage,
+  handleRefresh,
+  t,
 }: UseSMSActionsProps) {
-    // Compose state
-    const [showCompose, setShowCompose] = useState(false);
-    const [newPhone, setNewPhone] = useState('');
-    const [newMessage, setNewMessage] = useState('');
-    const [isSending, setIsSending] = useState(false);
+  // Compose state
+  const [showCompose, setShowCompose] = useState(false);
+  const [newPhone, setNewPhone] = useState('');
+  const [newMessage, setNewMessage] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
-    // Detail state
-    const [selectedMessage, setSelectedMessage] = useState<SMSMessage | null>(null);
-    const [showDetail, setShowDetail] = useState(false);
-    const [replyMessage, setReplyMessage] = useState('');
+  // Detail state
+  const [selectedMessage, setSelectedMessage] = useState<SMSMessage | null>(null);
+  const [showDetail, setShowDetail] = useState(false);
+  const [replyMessage, setReplyMessage] = useState('');
 
-    // Selection state
-    const [isSelectionMode, setIsSelectionMode] = useState(false);
-    const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  // Selection state
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
-    const handleDelete = async (index: string) => {
-        if (!smsService) return;
+  const handleDelete = async (key: string) => {
+    if (!smsService) return;
+    const index = key.split('-').slice(1).join('-');
 
-        ThemedAlertHelper.alert(
-            t('sms.deleteSms'),
-            t('sms.deleteConfirm'),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('common.delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            await smsService.deleteSMS(index);
-                            removeMessage(index);
-                            ToastHelper.success(t('sms.messageDeleted'));
-                        } catch {
-                            ToastHelper.error(t('alerts.failedDeleteSms'));
-                        }
-                    },
-                },
-            ]
-        );
-    };
+    ThemedAlertHelper.alert(t('sms.deleteSms'), t('sms.deleteConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.delete'),
+        style: 'destructive',
+        onPress: async () => {
+          try {
+            await smsService.deleteSMS(index);
+            removeMessage(key);
+            ToastHelper.success(t('sms.messageDeleted'));
+          } catch {
+            ToastHelper.error(t('alerts.failedDeleteSms'));
+          }
+        },
+      },
+    ]);
+  };
 
-    const handleLongPress = (message: SMSMessage) => {
-        if (!isSelectionMode) {
-            setIsSelectionMode(true);
-            setSelectedIds(new Set([`${message.boxType}-${message.index}`]));
-        }
-    };
+  const handleLongPress = useCallback(
+    (message: SMSMessage) => {
+      if (!isSelectionMode) {
+        setIsSelectionMode(true);
+        setSelectedIds(new Set([`${message.boxType}-${message.index}`]));
+      }
+    },
+    [isSelectionMode]
+  );
 
-    const toggleSelect = (message: SMSMessage) => {
-        const id = `${message.boxType}-${message.index}`;
-        setSelectedIds(prev => {
-            const newSet = new Set(prev);
-            if (newSet.has(id)) {
-                newSet.delete(id);
-            } else {
-                newSet.add(id);
-            }
-            return newSet;
-        });
-    };
+  const toggleSelect = useCallback((message: SMSMessage) => {
+    const id = `${message.boxType}-${message.index}`;
+    setSelectedIds((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  }, []);
 
-    const handleSelectAll = () => {
-        if (selectedIds.size === filteredMessages.length) {
-            setSelectedIds(new Set());
-        } else {
-            const allIds = filteredMessages.map(m => `${m.boxType}-${m.index}`);
-            setSelectedIds(new Set(allIds));
-        }
-    };
+  const handleSelectAll = () => {
+    if (selectedIds.size === filteredMessages.length) {
+      setSelectedIds(new Set());
+    } else {
+      const allIds = filteredMessages.map((m) => `${m.boxType}-${m.index}`);
+      setSelectedIds(new Set(allIds));
+    }
+  };
 
-    const exitSelectionMode = () => {
-        setIsSelectionMode(false);
-        setSelectedIds(new Set());
-    };
+  const exitSelectionMode = () => {
+    setIsSelectionMode(false);
+    setSelectedIds(new Set());
+  };
 
-    const handleDeleteSelected = async () => {
-        if (!smsService || selectedIds.size === 0) return;
+  const handleDeleteSelected = async () => {
+    if (!smsService || selectedIds.size === 0) return;
 
-        ThemedAlertHelper.alert(
-            t('sms.deleteSelected'),
-            t('sms.deleteSelectedConfirm', { count: selectedIds.size }),
-            [
-                { text: t('common.cancel'), style: 'cancel' },
-                {
-                    text: t('common.delete'),
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const idsToDelete = Array.from(selectedIds);
-                            for (const id of idsToDelete) {
-                                const index = id.split('-').slice(1).join('-');
-                                await smsService.deleteSMS(index);
-                                removeMessage(index);
-                            }
-                            ToastHelper.success(t('sms.messagesDeleted', { count: idsToDelete.length }));
-                            exitSelectionMode();
-                        } catch {
-                            ToastHelper.error(t('alerts.failedDeleteSms'));
-                        }
-                    },
-                },
-            ]
-        );
-    };
-
-    const handleSend = async () => {
-        if (!smsService || !newPhone || !newMessage) {
-            ToastHelper.error(t('sms.fillAllFields'));
-            return;
-        }
-
-        setIsSending(true);
-        try {
-            await smsService.sendSMS(newPhone, newMessage);
-            ToastHelper.success(t('sms.messageSent'));
-            setShowCompose(false);
-            setNewPhone('');
-            setNewMessage('');
-            handleRefresh();
-        } catch {
-            ToastHelper.error(t('alerts.failedSendSms'));
-        } finally {
-            setIsSending(false);
-        }
-    };
-
-    const handleOpenDetail = async (message: SMSMessage) => {
-        setSelectedMessage(message);
-        setReplyMessage('');
-        setShowDetail(true);
-
-        if (smsService && message.smstat === '0') {
+    ThemedAlertHelper.alert(
+      t('sms.deleteSelected'),
+      t('sms.deleteSelectedConfirm', { count: selectedIds.size }),
+      [
+        { text: t('common.cancel'), style: 'cancel' },
+        {
+          text: t('common.delete'),
+          style: 'destructive',
+          onPress: async () => {
             try {
-                await smsService.markAsRead(message.index);
-            } catch (error) {
-                console.error('Failed to mark SMS as read:', error);
+              const idsToDelete = Array.from(selectedIds);
+              for (const id of idsToDelete) {
+                const index = id.split('-').slice(1).join('-');
+                await smsService.deleteSMS(index);
+                removeMessage(id);
+              }
+              ToastHelper.success(t('sms.messagesDeleted', { count: idsToDelete.length }));
+              exitSelectionMode();
+            } catch {
+              ToastHelper.error(t('alerts.failedDeleteSms'));
             }
-        }
-    };
+          },
+        },
+      ]
+    );
+  };
 
-    const handleReply = async () => {
-        if (!smsService || !selectedMessage || !replyMessage) {
-            ToastHelper.error(t('sms.fillAllFields'));
-            return;
-        }
+  const handleSend = async () => {
+    if (!smsService || !newPhone || !newMessage) {
+      ToastHelper.error(t('sms.fillAllFields'));
+      return;
+    }
 
-        setIsSending(true);
+    setIsSending(true);
+    try {
+      await smsService.sendSMS(newPhone, newMessage);
+      ToastHelper.success(t('sms.messageSent'));
+      setShowCompose(false);
+      setNewPhone('');
+      setNewMessage('');
+      handleRefresh();
+    } catch {
+      ToastHelper.error(t('alerts.failedSendSms'));
+    } finally {
+      setIsSending(false);
+    }
+  };
+
+  const handleOpenDetail = useCallback(
+    async (message: SMSMessage) => {
+      setSelectedMessage(message);
+      setReplyMessage('');
+      setShowDetail(true);
+
+      if (smsService && message.smstat === '0') {
         try {
-            await smsService.sendSMS(selectedMessage.phone, replyMessage);
-            ToastHelper.success(t('sms.messageSent'));
-            setReplyMessage('');
-            setShowDetail(false);
-            setSelectedMessage(null);
-            handleRefresh();
-        } catch {
-            ToastHelper.error(t('alerts.failedSendSms'));
-        } finally {
-            setIsSending(false);
+          await smsService.markAsRead(message.index);
+        } catch (error) {
+          console.error('Failed to mark SMS as read:', error);
         }
-    };
+      }
+    },
+    [smsService]
+  );
 
-    const handleMarkAllAsRead = async () => {
-        if (!smsService) return;
-        const unreadMessages = messages.filter(m => m.smstat === '0');
-        for (const msg of unreadMessages) {
-            try {
-                await smsService.markAsRead(msg.index);
-            } catch (error) {
-                console.error('Failed to mark SMS as read:', error);
-            }
-        }
-        handleRefresh();
-    };
+  const handleReply = async () => {
+    if (!smsService || !selectedMessage || !replyMessage) {
+      ToastHelper.error(t('sms.fillAllFields'));
+      return;
+    }
 
-    return {
-        // Compose
-        showCompose,
-        setShowCompose,
-        newPhone,
-        setNewPhone,
-        newMessage,
-        setNewMessage,
-        isSending,
-        handleSend,
+    setIsSending(true);
+    try {
+      await smsService.sendSMS(selectedMessage.phone, replyMessage);
+      ToastHelper.success(t('sms.messageSent'));
+      setReplyMessage('');
+      setShowDetail(false);
+      setSelectedMessage(null);
+      handleRefresh();
+    } catch {
+      ToastHelper.error(t('alerts.failedSendSms'));
+    } finally {
+      setIsSending(false);
+    }
+  };
 
-        // Detail
-        selectedMessage,
-        setSelectedMessage,
-        showDetail,
-        setShowDetail,
-        replyMessage,
-        setReplyMessage,
-        handleOpenDetail,
-        handleReply,
+  const handleMarkAllAsRead = async () => {
+    if (!smsService) return;
+    const unreadMessages = messages.filter((m) => m.smstat === '0');
+    for (const msg of unreadMessages) {
+      try {
+        await smsService.markAsRead(msg.index);
+      } catch (error) {
+        console.error('Failed to mark SMS as read:', error);
+      }
+    }
+    handleRefresh();
+  };
 
-        // Selection
-        isSelectionMode,
-        selectedIds,
-        handleLongPress,
-        toggleSelect,
-        handleSelectAll,
-        exitSelectionMode,
-        handleDeleteSelected,
+  return {
+    // Compose
+    showCompose,
+    setShowCompose,
+    newPhone,
+    setNewPhone,
+    newMessage,
+    setNewMessage,
+    isSending,
+    handleSend,
 
-        // Actions
-        handleDelete,
-        handleMarkAllAsRead,
-    };
+    // Detail
+    selectedMessage,
+    setSelectedMessage,
+    showDetail,
+    setShowDetail,
+    replyMessage,
+    setReplyMessage,
+    handleOpenDetail,
+    handleReply,
+
+    // Selection
+    isSelectionMode,
+    selectedIds,
+    handleLongPress,
+    toggleSelect,
+    handleSelectAll,
+    exitSelectionMode,
+    handleDeleteSelected,
+
+    // Actions
+    handleDelete,
+    handleMarkAllAsRead,
+  };
 }

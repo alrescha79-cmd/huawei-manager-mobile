@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModemService } from '@/services/modem.service';
@@ -9,7 +9,13 @@ import { useWiFiStore } from '@/stores/wifi.store';
 import { useDebugStore } from '@/stores/debug.store';
 import { SMSService } from '@/services/sms.service';
 import { WiFiService } from '@/services/wifi.service';
-import { checkDailyUsageNotification, checkMonthlyUsageNotification, checkIPChangeNotification, sendDebugModeReminder, saveLastActiveTime } from '@/services/notification.service';
+import {
+  checkDailyUsageNotification,
+  checkMonthlyUsageNotification,
+  checkIPChangeNotification,
+  sendDebugModeReminder,
+  saveLastActiveTime,
+} from '@/services/notification.service';
 import { ThemedAlertHelper, ToastHelper, getSelectedBandsDisplay } from '@/components';
 import { isSessionExpiredError } from '@/utils/huawei-error';
 
@@ -20,7 +26,7 @@ interface UseHomeDataProps {
 
 export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
   const { credentials, isRelogging, requestRelogin, clearSessionExpired } = useAuthStore();
-  
+
   const {
     modemStatus,
     monthlySettings,
@@ -37,9 +43,17 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [modemService, setModemService] = useState<ModemService | null>(null);
-  const [reloginAttempts, setReloginAttempts] = useState(0);
   const [selectedBands, setSelectedBands] = useState<string[]>([]);
-  
+
+  const reloginAttemptsRef = useRef(0);
+  const showReloginWebViewRef = useRef(showReloginWebView);
+  showReloginWebViewRef.current = showReloginWebView;
+
+  // Bumped on every credentials change; async results from an older
+  // generation are discarded so a previous modem can't write into the store.
+  const generationRef = useRef(0);
+  const isStale = (gen: number) => gen !== generationRef.current;
+
   const [lastClearedDate, setLastClearedDate] = useState<string | null>(null);
   const [previousTotalTraffic, setPreviousTotalTraffic] = useState<number>(0);
 
@@ -51,13 +65,13 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
         const prevTotal = await AsyncStorage.getItem('previousTotalTraffic');
         if (prevTotal) setPreviousTotalTraffic(parseInt(prevTotal));
-      } catch {
-      }
+      } catch {}
     };
     loadLastClearedDate();
   }, []);
 
   const loadData = async (service: ModemService) => {
+    const gen = generationRef.current;
     try {
       setIsRefreshing(true);
 
@@ -71,6 +85,8 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
         service.getModemInfo().catch(() => null),
       ]);
 
+      if (isStale(gen)) return;
+
       if (signal) setSignalInfo(signal);
       if (network) setNetworkInfo(network);
       if (traffic) setTrafficStats(traffic);
@@ -78,6 +94,23 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       if (wan) setWanInfo(wan);
       if (dataStatus) setMobileDataStatus(dataStatus);
       if (modemInfo) setModemInfo(modemInfo);
+
+      if (credentials?.modemIp) {
+        try {
+          const wifiService = new WiFiService(credentials.modemIp);
+          const devices = await wifiService.getConnectedDevices();
+          if (!isStale(gen)) useWiFiStore.getState().setConnectedDevices(devices);
+        } catch {}
+
+        try {
+          const smsService = new SMSService(credentials.modemIp);
+          const isSupported = await smsService.isSMSSupported();
+          if (isSupported) {
+            const smsCount = await smsService.getSMSCount();
+            if (!isStale(gen)) useSMSStore.getState().setSMSCount(smsCount);
+          }
+        } catch {}
+      }
 
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
@@ -99,9 +132,10 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       }
 
       if (traffic && monthlySettings?.enabled) {
-        const dataLimitInGB = monthlySettings.dataLimitUnit === 'GB'
-          ? monthlySettings.dataLimit
-          : monthlySettings.dataLimit / 1024;
+        const dataLimitInGB =
+          monthlySettings.dataLimitUnit === 'GB'
+            ? monthlySettings.dataLimit
+            : monthlySettings.dataLimit / 1024;
 
         checkDailyUsageNotification(
           traffic.dayUsed || 0,
@@ -114,11 +148,15 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
         );
 
         // Toast warning if daily usage >= 99%
-        const dailyLimitBytes = (dataLimitInGB * 1073741824) / new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
+        const dailyLimitBytes =
+          (dataLimitInGB * 1073741824) /
+          new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
         if (dailyLimitBytes > 0) {
-          const dailyPercent = Math.min((traffic.dayUsed || 0) / dailyLimitBytes * 100, 100);
+          const dailyPercent = Math.min(((traffic.dayUsed || 0) / dailyLimitBytes) * 100, 100);
           if (dailyPercent >= 99) {
-            ToastHelper.warning(t('notifications.dailyUsageWarning') || 'Daily usage has reached 99%!');
+            ToastHelper.warning(
+              t('notifications.dailyUsageWarning') || 'Daily usage has reached 99%!'
+            );
           }
         }
 
@@ -134,32 +172,40 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
         const ipChangeDuration = await checkIPChangeNotification(traffic.currentConnectTime || 0, {
           title: t('notifications.ipChangeTitle'),
-          body: (duration) => duration === '0'
-            ? t('notifications.ipChangeBodyJustNow')
-            : t('notifications.ipChangeBody', { duration }),
+          body: (duration) =>
+            duration === '0'
+              ? t('notifications.ipChangeBodyJustNow')
+              : t('notifications.ipChangeBody', { duration }),
         });
 
         if (ipChangeDuration !== null) {
-          const alertBody = ipChangeDuration === '0'
-            ? t('notifications.ipChangeBodyJustNow')
-            : t('notifications.ipChangeBody', { duration: ipChangeDuration });
+          const alertBody =
+            ipChangeDuration === '0'
+              ? t('notifications.ipChangeBodyJustNow')
+              : t('notifications.ipChangeBody', { duration: ipChangeDuration });
           ToastHelper.warning(alertBody);
         }
       }
 
-      if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
+      if (
+        isDataEmpty &&
+        credentials &&
+        reloginAttemptsRef.current < 3 &&
+        !showReloginWebViewRef.current
+      ) {
         requestRelogin();
-        setReloginAttempts(prev => prev + 1);
+        reloginAttemptsRef.current += 1;
       } else if (!isDataEmpty) {
         clearSessionExpired();
-        setReloginAttempts(0);
+        reloginAttemptsRef.current = 0;
       }
-
     } catch (error: any) {
+      if (isStale(gen)) return;
       console.error('Error loading data:', error);
 
       const errorMessage = error?.message || '';
-      const isSessionError = isSessionExpiredError(error) ||
+      const isSessionError =
+        isSessionExpiredError(error) ||
         errorMessage.includes('session') ||
         errorMessage.includes('login') ||
         !modemStatus;
@@ -167,10 +213,10 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       if (isSessionError) {
         setSignalInfo(null);
         setModemStatus(null);
-        
-        if (credentials && reloginAttempts < 3 && !showReloginWebView) {
+
+        if (credentials && reloginAttemptsRef.current < 3 && !showReloginWebViewRef.current) {
           requestRelogin();
-          setReloginAttempts(prev => prev + 1);
+          reloginAttemptsRef.current += 1;
         }
       } else {
         ThemedAlertHelper.alert(t('common.error'), t('alerts.failedLoadModemData'));
@@ -181,6 +227,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
   };
 
   const loadDataSilent = async (service: ModemService) => {
+    const gen = generationRef.current;
     try {
       const [signal, network, traffic, status, wan, dataStatus, modemInfo] = await Promise.all([
         service.getSignalInfoFast().catch(() => null),
@@ -191,6 +238,8 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
         service.getMobileDataStatus().catch(() => null),
         service.getModemInfo().catch(() => null),
       ]);
+
+      if (isStale(gen)) return;
 
       if (signal) setSignalInfo(signal);
       if (network) setNetworkInfo(network);
@@ -211,6 +260,23 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       if (dataStatus) setMobileDataStatus(dataStatus);
       if (modemInfo) setModemInfo(modemInfo);
 
+      if (credentials?.modemIp) {
+        try {
+          const wifiService = new WiFiService(credentials.modemIp);
+          const devices = await wifiService.getConnectedDevices();
+          if (!isStale(gen)) useWiFiStore.getState().setConnectedDevices(devices);
+        } catch {}
+
+        try {
+          const smsService = new SMSService(credentials.modemIp);
+          const isSupported = await smsService.isSMSSupported();
+          if (isSupported) {
+            const smsCount = await smsService.getSMSCount();
+            if (!isStale(gen)) useSMSStore.getState().setSMSCount(smsCount);
+          }
+        } catch {}
+      }
+
       const isDataEmpty = !signal?.rsrp && !signal?.rssi && !status?.connectionStatus;
 
       if (isDataEmpty) {
@@ -218,35 +284,41 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
         setModemStatus(null);
       }
 
-      if (isDataEmpty && credentials && reloginAttempts < 3 && !showReloginWebView) {
+      if (
+        isDataEmpty &&
+        credentials &&
+        reloginAttemptsRef.current < 3 &&
+        !showReloginWebViewRef.current
+      ) {
         requestRelogin();
-        setReloginAttempts(prev => prev + 1);
+        reloginAttemptsRef.current += 1;
       } else if (!isDataEmpty) {
         clearSessionExpired();
-        setReloginAttempts(0);
+        reloginAttemptsRef.current = 0;
       }
-
     } catch (error: any) {
+      if (isStale(gen)) return;
       const errorMessage = error?.message || '';
-      const isSessionError = isSessionExpiredError(error) ||
-        errorMessage.includes('session') ||
-        !modemStatus;
+      const isSessionError =
+        isSessionExpiredError(error) || errorMessage.includes('session') || !modemStatus;
 
       if (isSessionError) {
         setSignalInfo(null);
         setModemStatus(null);
-        
-        if (credentials && reloginAttempts < 3 && !showReloginWebView) {
+
+        if (credentials && reloginAttemptsRef.current < 3 && !showReloginWebViewRef.current) {
           requestRelogin();
-          setReloginAttempts(prev => prev + 1);
+          reloginAttemptsRef.current += 1;
         }
       }
     }
   };
 
   const loadTrafficOnly = async (service: ModemService) => {
+    const gen = generationRef.current;
     try {
       const fast = await service.getTrafficStatsFast();
+      if (isStale(gen)) return;
       // Preserve month/day stats from last full fetch
       const prev = useModemStore.getState().trafficStats;
       if (prev) {
@@ -258,6 +330,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
       }
       setTrafficStats(fast);
     } catch (error) {
+      if (isStale(gen)) return;
       console.error('Error loading traffic data:', error);
     }
   };
@@ -285,6 +358,7 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
 
   useEffect(() => {
     if (credentials?.modemIp) {
+      generationRef.current += 1;
       const service = new ModemService(credentials.modemIp);
       setModemService(service);
 
@@ -302,21 +376,17 @@ export function useHomeData({ t, showReloginWebView }: UseHomeDataProps) {
             const smsCount = await smsService.getSMSCount();
             useSMSStore.getState().setSMSCount(smsCount);
           }
-        } catch (e) {
-          console.error('Failed to load SMS count:', e);
-        }
 
-        try {
           const wifiService = new WiFiService(credentials.modemIp);
           const devices = await wifiService.getConnectedDevices();
           useWiFiStore.getState().setConnectedDevices(devices);
         } catch (e) {
-          console.error('Failed to load WiFi devices:', e);
+          console.error('Failed to load initial tab badge data:', e);
         }
       };
 
       initializeData();
-      
+
       const checkDebugReminder = async () => {
         const debugStore = useDebugStore.getState();
         if (debugStore.debugEnabled) {

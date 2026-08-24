@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { AppState } from 'react-native';
 import { useAuthStore } from '@/stores/auth.store';
 import { useSMSStore } from '@/stores/sms.store';
@@ -8,195 +8,200 @@ import { isSessionExpiredError } from '@/utils/huawei-error';
 import type { SMSFilterType } from '@/components/sms/SMSStatsCard';
 
 interface UseSMSDataProps {
-    t: (key: string, options?: any) => string;
+  t: (key: string, options?: any) => string;
 }
 
 export function useSMSData({ t }: UseSMSDataProps) {
-    const { credentials } = useAuthStore();
-    const {
-        messages,
-        smsCount,
-        setMessages,
-        setSMSCount,
-        removeMessage,
-    } = useSMSStore();
+  const { credentials } = useAuthStore();
+  const { messages, smsCount, setMessages, setSMSCount, removeMessage } = useSMSStore();
 
-    const [isRefreshing, setIsRefreshing] = useState(false);
-    const [smsService, setSMSService] = useState<SMSService | null>(null);
-    const [smsSupported, setSmsSupported] = useState(true);
-    const [searchQuery, setSearchQuery] = useState('');
-    const [messageFilter, setMessageFilter] = useState<SMSFilterType>('all');
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [smsService, setSMSService] = useState<SMSService | null>(null);
+  const [smsSupported, setSmsSupported] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [messageFilter, setMessageFilter] = useState<SMSFilterType>('all');
 
-    useEffect(() => {
-        if (credentials?.modemIp) {
-            const service = new SMSService(credentials.modemIp);
-            setSMSService(service);
+  // Bumped per credentials change; discards results from an older modem.
+  const generationRef = useRef(0);
+  const isStale = (gen: number) => gen !== generationRef.current;
 
-            service.resetSMSCache();
+  useEffect(() => {
+    if (credentials?.modemIp) {
+      generationRef.current += 1;
+      const service = new SMSService(credentials.modemIp);
+      setSMSService(service);
 
-            loadData(service);
+      service.resetSMSCache();
 
-            const intervalId = setInterval(() => {
-                if (AppState.currentState === 'active') {
-                    loadDataSilent(service);
-                }
-            }, 10000);
+      loadData(service);
 
-            return () => clearInterval(intervalId);
+      const intervalId = setInterval(() => {
+        if (AppState.currentState === 'active') {
+          loadDataSilent(service);
         }
-    }, [credentials]);
+      }, 10000);
 
-    const loadData = async (service: SMSService) => {
+      return () => clearInterval(intervalId);
+    }
+  }, [credentials]);
+
+  const loadData = async (service: SMSService) => {
+    const gen = generationRef.current;
+    try {
+      setIsRefreshing(true);
+
+      let isSupported = false;
+      try {
+        isSupported = await service.isSMSSupported();
+      } catch (error: any) {
+        if (isSessionExpiredError(error)) {
+          const { requestRelogin } = useAuthStore.getState();
+          requestRelogin();
+        }
+        setSmsSupported(false);
+        return;
+      }
+
+      if (!isSupported) {
+        setSmsSupported(false);
+        setMessages([]);
+        setSMSCount({
+          localUnread: 0,
+          localInbox: 0,
+          localOutbox: 0,
+          localDraft: 0,
+          simUnread: 0,
+          simInbox: 0,
+          simOutbox: 0,
+          simDraft: 0,
+          newMsg: 0,
+          localDeleted: 0,
+          simDeleted: 0,
+          localMax: 0,
+          simMax: 0,
+        });
+        return;
+      }
+
+      try {
+        const [inboxMessages, count] = await Promise.all([
+          service.getSMSList(1, 20, 1),
+          service.getSMSCount(),
+        ]);
+
+        let sentMessages: typeof inboxMessages = [];
         try {
-            setIsRefreshing(true);
-
-            let isSupported = false;
-            try {
-                isSupported = await service.isSMSSupported();
-            } catch (error: any) {
-                if (isSessionExpiredError(error)) {
-                    const { requestRelogin } = useAuthStore.getState();
-                    requestRelogin();
-                }
-                setSmsSupported(false);
-                return;
-            }
-
-            if (!isSupported) {
-                setSmsSupported(false);
-                setMessages([]);
-                setSMSCount({
-                    localUnread: 0,
-                    localInbox: 0,
-                    localOutbox: 0,
-                    localDraft: 0,
-                    simUnread: 0,
-                    simInbox: 0,
-                    simOutbox: 0,
-                    simDraft: 0,
-                    newMsg: 0,
-                    localDeleted: 0,
-                    simDeleted: 0,
-                    localMax: 0,
-                    simMax: 0,
-                });
-                return;
-            }
-
-            try {
-                const [inboxMessages, count] = await Promise.all([
-                    service.getSMSList(1, 20, 1),
-                    service.getSMSCount(),
-                ]);
-
-                let sentMessages: typeof inboxMessages = [];
-                try {
-                    if (count.localOutbox > 0) {
-                        sentMessages = await service.getSMSList(1, 20, 2);
-                    }
-                } catch (outboxError) {
-                    console.log('Outbox loading skipped:', outboxError);
-                }
-
-                const allMessages = [...inboxMessages, ...sentMessages].sort(
-                    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-                );
-
-                setMessages(allMessages);
-                setSMSCount(count);
-                setSmsSupported(true);
-
-                if (count.localUnread > 0) {
-                    checkNewSMSNotification(count.localUnread, {
-                        title: t('notifications.newSms'),
-                        body: (n) => t('notifications.newSmsBody', { count: n }),
-                    });
-                }
-            } catch (error: any) {
-                if (isSessionExpiredError(error)) {
-                    const { requestRelogin } = useAuthStore.getState();
-                    requestRelogin();
-                } else {
-                    setSmsSupported(false);
-                }
-            }
-        } finally {
-            setIsRefreshing(false);
+          if (count.localOutbox > 0) {
+            sentMessages = await service.getSMSList(1, 20, 2);
+          }
+        } catch (outboxError) {
+          console.log('Outbox loading skipped:', outboxError);
         }
-    };
 
-    const loadDataSilent = async (service: SMSService) => {
+        const allMessages = [...inboxMessages, ...sentMessages].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
+
+        if (isStale(gen)) return;
+
+        setMessages(allMessages);
+        setSMSCount(count);
+        setSmsSupported(true);
+
+        if (count.localUnread > 0) {
+          checkNewSMSNotification(count.localUnread, {
+            title: t('notifications.newSms'),
+            body: (n) => t('notifications.newSmsBody', { count: n }),
+          });
+        }
+      } catch (error: any) {
+        if (isSessionExpiredError(error)) {
+          const { requestRelogin } = useAuthStore.getState();
+          requestRelogin();
+        } else {
+          setSmsSupported(false);
+        }
+      }
+    } finally {
+      if (!isStale(gen)) setIsRefreshing(false);
+    }
+  };
+
+  const loadDataSilent = async (service: SMSService) => {
+    const gen = generationRef.current;
+    try {
+      const isSupported = await service.isSMSSupported();
+      if (!isSupported) {
+        setSmsSupported(false);
+        return;
+      }
+
+      try {
+        const [inboxMessages, count] = await Promise.all([
+          service.getSMSList(1, 20, 1),
+          service.getSMSCount(),
+        ]);
+
+        let sentMessages: typeof inboxMessages = [];
         try {
-            const isSupported = await service.isSMSSupported();
-            if (!isSupported) {
-                setSmsSupported(false);
-                return;
-            }
+          if (count.localOutbox > 0) {
+            sentMessages = await service.getSMSList(1, 20, 2);
+          }
+        } catch {}
 
-            try {
-                const [inboxMessages, count] = await Promise.all([
-                    service.getSMSList(1, 20, 1),
-                    service.getSMSCount(),
-                ]);
+        const allMessages = [...inboxMessages, ...sentMessages].sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        );
 
-                let sentMessages: typeof inboxMessages = [];
-                try {
-                    if (count.localOutbox > 0) {
-                        sentMessages = await service.getSMSList(1, 20, 2);
-                    }
-                } catch {
-                }
+        if (isStale(gen)) return;
 
-                const allMessages = [...inboxMessages, ...sentMessages].sort(
-                    (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
-                );
-
-                setMessages(allMessages);
-                setSMSCount(count);
-            } catch (error: any) {
-                if (isSessionExpiredError(error)) {
-                    const { requestRelogin } = useAuthStore.getState();
-                    requestRelogin();
-                }
-            }
-        } catch (error: any) {
-            if (isSessionExpiredError(error)) {
-                const { requestRelogin } = useAuthStore.getState();
-                requestRelogin();
-            }
+        setMessages(allMessages);
+        setSMSCount(count);
+      } catch (error: any) {
+        if (isSessionExpiredError(error)) {
+          const { requestRelogin } = useAuthStore.getState();
+          requestRelogin();
         }
-    };
+      }
+    } catch (error: any) {
+      if (isSessionExpiredError(error)) {
+        const { requestRelogin } = useAuthStore.getState();
+        requestRelogin();
+      }
+    }
+  };
 
-    const handleRefresh = () => {
-        if (smsService) {
-            loadData(smsService);
-        }
-    };
+  const handleRefresh = () => {
+    if (smsService) {
+      loadData(smsService);
+    }
+  };
 
-    const filteredMessages = messages.filter(msg => {
+  const filteredMessages = useMemo(
+    () =>
+      messages.filter((msg) => {
         if (messageFilter === 'unread' && msg.smstat !== '0') return false;
         if (messageFilter === 'sent' && msg.boxType !== 2) return false;
 
         if (!searchQuery.trim()) return true;
         const query = searchQuery.toLowerCase();
-        return (
-            msg.phone.toLowerCase().includes(query) ||
-            msg.content.toLowerCase().includes(query)
-        );
-    });
+        return msg.phone.toLowerCase().includes(query) || msg.content.toLowerCase().includes(query);
+      }),
+    [messages, messageFilter, searchQuery]
+  );
 
-    return {
-        isRefreshing,
-        smsService,
-        smsSupported,
-        searchQuery,
-        setSearchQuery,
-        messageFilter,
-        setMessageFilter,
-        messages,
-        smsCount,
-        removeMessage,
-        filteredMessages,
-        handleRefresh,
-    };
+  return {
+    isRefreshing,
+    smsService,
+    smsSupported,
+    searchQuery,
+    setSearchQuery,
+    messageFilter,
+    setMessageFilter,
+    messages,
+    smsCount,
+    removeMessage,
+    filteredMessages,
+    handleRefresh,
+  };
 }

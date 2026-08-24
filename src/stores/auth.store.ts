@@ -6,13 +6,15 @@ import {
   deleteCredentials,
   saveSessionState,
   isSessionLikelyValid,
-  updateSessionActivity
+  updateSessionActivity,
 } from '@/utils/storage';
 import { ModemAPIClient } from '@/services/api.service';
 import { DirectAuthService } from '@/services/direct-auth.service';
 import { networkService } from '@/services/network.service';
 
 const SESSION_KEEPALIVE_INTERVAL_MS = 2 * 60 * 1000;
+
+let keepAliveInFlight = false;
 
 interface AuthState {
   isAuthenticated: boolean;
@@ -34,7 +36,10 @@ interface AuthState {
   setRelogging: (value: boolean) => void;
   clearSessionExpired: () => void;
 
-  tryQuietSessionRestore: () => Promise<{ success: boolean; error?: 'unreachable' | 'auth_failed' }>;
+  tryQuietSessionRestore: () => Promise<{
+    success: boolean;
+    error?: 'unreachable' | 'auth_failed';
+  }>;
   tryDirectApiLogin: () => Promise<boolean>;
   startSessionKeepAlive: () => void;
   stopSessionKeepAlive: () => void;
@@ -78,7 +83,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Login failed',
-        isLoading: false
+        isLoading: false,
       });
       throw error;
     }
@@ -100,7 +105,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Logout failed',
-        isLoading: false
+        isLoading: false,
       });
       throw error;
     }
@@ -113,12 +118,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({
         credentials,
         isAuthenticated: credentials !== null,
-        isLoading: false
+        isLoading: false,
       });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : 'Failed to load credentials',
-        isLoading: false
+        isLoading: false,
       });
     }
   },
@@ -278,10 +283,14 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         return;
       }
 
+      if (keepAliveInFlight) return;
+      keepAliveInFlight = true;
       try {
         const apiClient = new ModemAPIClient(currentCredentials.modemIp);
         await apiClient.isLoggedIn();
       } catch {
+      } finally {
+        keepAliveInFlight = false;
       }
     }, SESSION_KEEPALIVE_INTERVAL_MS);
 

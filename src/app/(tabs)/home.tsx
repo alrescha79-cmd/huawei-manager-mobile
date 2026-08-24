@@ -1,14 +1,33 @@
 import React, { useState } from 'react';
-import {
-  ScrollView,
-  RefreshControl,
-  Platform,
-  StatusBar,
-} from 'react-native';
+import { ScrollView, RefreshControl, Platform, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/theme';
-import { ToastHelper, WebViewLogin, BandSelectionModal, MonthlySettingsModal, MeshGradientBackground, AnimatedScreen, RefreshIndicator, SignalPointingModal, AdBanner, AdNative } from '@/components';
-import { QuickActionsCard, ConnectionStatusCard, SignalInfoCard, TrafficStatsCard, ConnectionStatusSkeleton, QuickActionsSkeleton, TrafficStatsSkeleton, SignalInfoSkeleton, homeStyles as styles, DiagnosisResultModal, SpeedTestModal, NoSignalModal } from '@/components/home';
+import {
+  ToastHelper,
+  WebViewLogin,
+  BandSelectionModal,
+  MonthlySettingsModal,
+  MeshGradientBackground,
+  AnimatedScreen,
+  RefreshIndicator,
+  SignalPointingModal,
+  AdBanner,
+  AdNative,
+} from '@/components';
+import {
+  QuickActionsCard,
+  ConnectionStatusCard,
+  SignalInfoCard,
+  TrafficStatsCard,
+  ConnectionStatusSkeleton,
+  QuickActionsSkeleton,
+  TrafficStatsSkeleton,
+  SignalInfoSkeleton,
+  homeStyles as styles,
+  DiagnosisResultModal,
+  SpeedTestModal,
+  NoSignalModal,
+} from '@/components/home';
 import { useAuthStore } from '@/stores/auth.store';
 import { useModemStore } from '@/stores/modem.store';
 import { useThemeStore } from '@/stores/theme.store';
@@ -23,7 +42,12 @@ import { useHomeActions } from '@/hooks/home/useHomeActions';
 export default function HomeScreen() {
   const router = useRouter();
   const { isDark } = useTheme();
-  const { usageCardStyle, setUsageCardStyle, themeMode, setThemeMode, signalBubbleEnabled, setSignalBubbleEnabled } = useThemeStore();
+  const usageCardStyle = useThemeStore((s) => s.usageCardStyle);
+  const setUsageCardStyle = useThemeStore((s) => s.setUsageCardStyle);
+  const themeMode = useThemeStore((s) => s.themeMode);
+  const setThemeMode = useThemeStore((s) => s.setThemeMode);
+  const signalBubbleEnabled = useThemeStore((s) => s.signalBubbleEnabled);
+  const setSignalBubbleEnabled = useThemeStore((s) => s.setSignalBubbleEnabled);
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
 
@@ -34,18 +58,16 @@ export default function HomeScreen() {
     sessionExpired: authSessionExpired,
     setRelogging,
     clearSessionExpired,
-    tryQuietSessionRestore
+    tryQuietSessionRestore,
   } = useAuthStore();
 
-  const {
-    signalInfo,
-    networkInfo,
-    trafficStats,
-    modemStatus,
-    wanInfo,
-    mobileDataStatus,
-    monthlySettings,
-  } = useModemStore();
+  const signalInfo = useModemStore((s) => s.signalInfo);
+  const networkInfo = useModemStore((s) => s.networkInfo);
+  const trafficStats = useModemStore((s) => s.trafficStats);
+  const modemStatus = useModemStore((s) => s.modemStatus);
+  const wanInfo = useModemStore((s) => s.wanInfo);
+  const mobileDataStatus = useModemStore((s) => s.mobileDataStatus);
+  const monthlySettings = useModemStore((s) => s.monthlySettings);
 
   const durationUnits: DurationUnits = {
     days: t('common.days'),
@@ -95,10 +117,10 @@ export default function HomeScreen() {
           style={[styles.container, { backgroundColor: 'transparent' }]}
           contentContainerStyle={[
             styles.content,
-            { 
-              paddingTop: 8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0),
-              paddingBottom: 110 + (insets.bottom > 0 ? insets.bottom : 16)
-            }
+            {
+              paddingTop: 8 + (Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0),
+              paddingBottom: 110 + (insets.bottom > 0 ? insets.bottom : 16),
+            },
           ]}
           refreshControl={
             <RefreshControl
@@ -119,30 +141,32 @@ export default function HomeScreen() {
             </>
           )}
 
-           {signalInfo && (
-               <QuickActionsCard
-               t={t}
-               selectedBands={homeData.selectedBands}
-               wanIpAddress={wanInfo?.wanIPAddress}
-               isChangingIp={homeActions.isChangingIp}
-               isRunningCheck={homeActions.isRunningCheck}
-               deviceName={homeData.modemInfo?.deviceName}
-               onOpenBandModal={() => setShowBandModal(true)}
-               onChangeIp={homeActions.handleChangeIp}
-                onSignalPointing={() => setShowSignalPointingModal(true)}
-                onBtsLocator={() => router.push('/bts-locator')}
-               onQuickCheck={homeActions.handleOneClickCheck}
-               onSpeedtest={() => setShowSpeedTestModal(true)}
-               onOpenMonthlySettings={() => setShowMonthlySettingsModal(true)}
-               onToggleUsageStyle={() => setUsageCardStyle(usageCardStyle === 'split' ? 'compact' : 'split')}
-               usageCardStyle={usageCardStyle}
-               onToggleSignalBubble={() => setSignalBubbleEnabled(!signalBubbleEnabled)}
-               onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
-               isSignalBubbleEnabled={signalBubbleEnabled}
-               isDarkTheme={isDark}
-               monthlySettings={monthlySettings}
-             />
-           )}
+          {signalInfo && (
+            <QuickActionsCard
+              t={t}
+              selectedBands={homeData.selectedBands}
+              wanIpAddress={wanInfo?.wanIPAddress}
+              isChangingIp={homeActions.isChangingIp}
+              isRunningCheck={homeActions.isRunningCheck}
+              deviceName={homeData.modemInfo?.deviceName}
+              onOpenBandModal={() => setShowBandModal(true)}
+              onChangeIp={homeActions.handleChangeIp}
+              onSignalPointing={() => setShowSignalPointingModal(true)}
+              onBtsLocator={() => router.push('/bts-locator')}
+              onQuickCheck={homeActions.handleOneClickCheck}
+              onSpeedtest={() => setShowSpeedTestModal(true)}
+              onOpenMonthlySettings={() => setShowMonthlySettingsModal(true)}
+              onToggleUsageStyle={() =>
+                setUsageCardStyle(usageCardStyle === 'split' ? 'compact' : 'split')
+              }
+              usageCardStyle={usageCardStyle}
+              onToggleSignalBubble={() => setSignalBubbleEnabled(!signalBubbleEnabled)}
+              onToggleTheme={() => setThemeMode(themeMode === 'dark' ? 'light' : 'dark')}
+              isSignalBubbleEnabled={signalBubbleEnabled}
+              isDarkTheme={isDark}
+              monthlySettings={monthlySettings}
+            />
+          )}
 
           <ConnectionStatusCard
             t={t}
@@ -169,16 +193,16 @@ export default function HomeScreen() {
           />
 
           {trafficStats && (
-                <TrafficStatsCard
-                    t={t}
-                    trafficStats={trafficStats}
-                    monthlySettings={monthlySettings}
-                    usageCardStyle={usageCardStyle}
-                    durationUnits={durationUnits}
-                    lastClearedDate={homeData.lastClearedDate}
-                    isClearingHistory={homeActions.isClearingHistory}
-                    onClearHistory={homeActions.handleClearHistory}
-                />
+            <TrafficStatsCard
+              t={t}
+              trafficStats={trafficStats}
+              monthlySettings={monthlySettings}
+              usageCardStyle={usageCardStyle}
+              durationUnits={durationUnits}
+              lastClearedDate={homeData.lastClearedDate}
+              isClearingHistory={homeActions.isClearingHistory}
+              onClearHistory={homeActions.handleClearHistory}
+            />
           )}
 
           <AdBanner />

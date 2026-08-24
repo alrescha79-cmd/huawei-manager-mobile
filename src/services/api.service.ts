@@ -1,5 +1,5 @@
 import axios, { AxiosInstance } from 'axios';
-import { parseXMLValue } from '@/utils/helpers';
+import { parseXMLValue, escapeXml } from '@/utils/helpers';
 import { updateSessionActivity, markSessionUnhealthy } from '@/utils/storage';
 import * as Crypto from 'expo-crypto';
 import { hasSessionExpiredCode, isSessionExpiredError, parseErrorCode } from '@/utils/huawei-error';
@@ -16,11 +16,12 @@ export class ModemAPIClient {
       timeout: 10000,
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        'Accept': '*/*',
+        Accept: '*/*',
         'Accept-Language': 'en,en-US;q=0.9,id;q=0.8',
         'X-Requested-With': 'XMLHttpRequest',
-        'Referer': `http://${baseURL}/html/content.html`,
-        'User-Agent': 'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36',
+        Referer: `http://${baseURL}/html/content.html`,
+        'User-Agent':
+          'Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Mobile Safari/537.36',
       },
     });
 
@@ -73,21 +74,28 @@ export class ModemAPIClient {
           duration,
         });
       }
-    } catch {
-    }
+    } catch {}
   }
 
   private sanitizeData(data: any): any {
     if (typeof data === 'string') {
       return data
         .replace(/<password>.*?<\/password>/gi, '<password>***</password>')
-        .replace(/<Password>.*?<\/Password>/gi, '<Password>***</Password>');
+        .replace(/<Password>.*?<\/Password>/gi, '<Password>***</Password>')
+        .replace(/<WifiWpapsk>.*?<\/WifiWpapsk>/gi, '<WifiWpapsk>***</WifiWpapsk>')
+        .replace(/<WifiWepKey1>.*?<\/WifiWepKey1>/gi, '<WifiWepKey1>***</WifiWepKey1>')
+        .replace(/<WifiWepKey\d>.*?<\/WifiWepKey\d>/gi, '<WifiWepKey>***</WifiWepKey>')
+        .replace(/<Content>[\s\S]*?<\/Content>/gi, '<Content>***</Content>')
+        .replace(/<clientproof>.*?<\/clientproof>/gi, '<clientproof>***</clientproof>');
     }
     return data;
   }
 
-  private async getToken(forceRefresh: boolean = false): Promise<{ token: string; session: string }> {
-    const shouldRefresh = forceRefresh || !this.sessionToken || Date.now() > (this.tokenExpiry - 10000);
+  private async getToken(
+    forceRefresh: boolean = false
+  ): Promise<{ token: string; session: string }> {
+    const shouldRefresh =
+      forceRefresh || !this.sessionToken || Date.now() > this.tokenExpiry - 10000;
 
     if (!shouldRefresh) {
       return { token: this.sessionToken, session: this.sessionCookie };
@@ -115,9 +123,7 @@ export class ModemAPIClient {
       }
 
       if (!session && sesInfo) {
-        session = sesInfo.includes('SessionID=')
-          ? sesInfo
-          : `SessionID=${sesInfo}`;
+        session = sesInfo.includes('SessionID=') ? sesInfo : `SessionID=${sesInfo}`;
       }
 
       this.sessionCookie = session;
@@ -168,7 +174,7 @@ export class ModemAPIClient {
       const response = await this.client.get('/api/device/information', {
         timeout: 5000,
         headers: {
-          'Cookie': this.sessionCookie || '',
+          Cookie: this.sessionCookie || '',
         },
       });
 
@@ -199,8 +205,7 @@ export class ModemAPIClient {
       try {
         await this.client.get('/html/index.html');
         console.log('[Login] Homepage fetched');
-      } catch {
-      }
+      } catch {}
 
       const tokenResponse = await this.client.get('/api/webserver/SesTokInfo');
 
@@ -218,30 +223,31 @@ export class ModemAPIClient {
         this.sessionCookie = session;
       }
 
-      console.log('[Login] Got token:', token.substring(0, 16) + '...');
-      console.log('[Login] Got session:', session.substring(0, 30) + '...');
+      console.log('[Login] Got token');
+      console.log('[Login] Got session');
 
       const passwordType = '4';
       const encodedPassword = await this.encodePassword(password, username, token);
 
       const loginXML = `<?xml version="1.0" encoding="UTF-8"?>
 <request>
-  <Username>${username}</Username>
+  <Username>${escapeXml(username)}</Username>
   <Password>${encodedPassword}</Password>
   <password_type>${passwordType}</password_type>
 </request>`;
 
       const loginResponse = await this.client.post('/api/user/login', loginXML, {
         headers: {
-          '__RequestVerificationToken': token,
+          __RequestVerificationToken: token,
           'Content-Type': 'application/xml',
-          'Cookie': session,
+          Cookie: session,
         },
       });
 
-      const responseData = typeof loginResponse.data === 'string'
-        ? loginResponse.data
-        : JSON.stringify(loginResponse.data);
+      const responseData =
+        typeof loginResponse.data === 'string'
+          ? loginResponse.data
+          : JSON.stringify(loginResponse.data);
 
       console.log('[Login] Response:', responseData.substring(0, 150));
 
@@ -259,10 +265,12 @@ export class ModemAPIClient {
         return false;
       }
 
-      if (responseData.includes('<response>OK</response>') ||
+      if (
+        responseData.includes('<response>OK</response>') ||
         responseData.includes('<response/>') ||
         responseData.includes('<?xml version="1.0" encoding="UTF-8"?><response>OK</response>') ||
-        responseData.trim() === 'OK') {
+        responseData.trim() === 'OK'
+      ) {
         console.log('[Login] Login successful!');
         this.sessionToken = token;
         this.sessionCookie = session;
@@ -275,9 +283,10 @@ export class ModemAPIClient {
     } catch (error: any) {
       console.log('[Login] Error:', error.message);
       if (error.response?.data) {
-        const errorData = typeof error.response.data === 'string'
-          ? error.response.data
-          : JSON.stringify(error.response.data);
+        const errorData =
+          typeof error.response.data === 'string'
+            ? error.response.data
+            : JSON.stringify(error.response.data);
 
         console.log('[Login] Error response data:', errorData.substring(0, 150));
 
@@ -305,7 +314,7 @@ export class ModemAPIClient {
 
       const response = await this.client.post('/api/user/logout', logoutData, {
         headers: {
-          '__RequestVerificationToken': token,
+          __RequestVerificationToken: token,
         },
       });
 
@@ -322,11 +331,12 @@ export class ModemAPIClient {
 
       const response = await this.client.get(endpoint, {
         headers: {
-          'Cookie': this.sessionCookie || '',
+          Cookie: this.sessionCookie || '',
         },
       });
 
-      const responseData = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
+      const responseData =
+        typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
       if (hasSessionExpiredCode(responseData)) {
         this.sessionToken = '';
         this.sessionCookie = '';
@@ -337,10 +347,13 @@ export class ModemAPIClient {
           await this.getToken(true);
           const retryResponse = await this.client.get(endpoint, {
             headers: {
-              'Cookie': this.sessionCookie || '',
+              Cookie: this.sessionCookie || '',
             },
           });
-          const retryData = typeof retryResponse.data === 'string' ? retryResponse.data : JSON.stringify(retryResponse.data);
+          const retryData =
+            typeof retryResponse.data === 'string'
+              ? retryResponse.data
+              : JSON.stringify(retryResponse.data);
           if (hasSessionExpiredCode(retryData)) {
             markSessionUnhealthy();
             const errorCode = parseErrorCode(retryData) || '125002';
@@ -375,7 +388,7 @@ export class ModemAPIClient {
     try {
       const response = await this.client.get(endpoint, {
         headers: {
-          'Cookie': this.sessionCookie || '',
+          Cookie: this.sessionCookie || '',
         },
         timeout: 2000, // Short timeout for fast polling
       });
@@ -392,8 +405,8 @@ export class ModemAPIClient {
 
       const response = await this.client.post(endpoint, data, {
         headers: {
-          '__RequestVerificationToken': token,
-          'Cookie': this.sessionCookie || '',
+          __RequestVerificationToken: token,
+          Cookie: this.sessionCookie || '',
         },
       });
 

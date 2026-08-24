@@ -17,6 +17,7 @@
     "offline": "Tanpa internet — data lokal saja",
     "noCellId": "Belum ada info sel dari modem. Pastikan modem terhubung dan sudah login.",
     "notFound": "Menara yang terhubung tidak ditemukan. Lokasi persisnya belum ada di database lokal maupun layanan menara online. Pastikan modem terhubung dan info sel tersedia.",
+    "rateLimited": "Batas data BTS tercapai. Coba lagi dalam {{time}}.",
     "notFoundShort": "Menara terhubung tidak ditemukan — menampilkan menara terdekat.",
     "estimated": "Perkiraan posisi dari menara terdekat.",
     "betaDisclaimer": "Fitur ini masih dalam tahap beta dan belum 100% akurat karena keterbatasan data titik koordinat BTS.",

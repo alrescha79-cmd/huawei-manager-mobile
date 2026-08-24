@@ -80,34 +80,42 @@ export default function WiFiScreen() {
   const loadData = async (service: WiFiService) => {
     try {
       setIsRefreshing(true);
-      const [devices, settings, guestSettings, parentalEnabled, profiles] = await Promise.all([
-        service.getConnectedDevices(),
-        service.getWiFiSettings(),
-        service.getGuestWiFiSettings(),
-        service.getParentalControlEnabled(),
-        service.getParentalControlProfiles(),
-      ]);
+      const [devices, settings, guestSettings, parentalEnabled, profiles] =
+        await Promise.allSettled([
+          service.getConnectedDevices(),
+          service.getWiFiSettings(),
+          service.getGuestWiFiSettings(),
+          service.getParentalControlEnabled(),
+          service.getParentalControlProfiles(),
+        ]);
 
-      setConnectedDevices(devices);
-      setWiFiSettings(settings);
-      
-      guestWiFiHook.setGuestWifiEnabled(guestSettings.enabled);
-      guestWiFiHook.setGuestWifiSsid(guestSettings.ssid || '');
-      guestWiFiHook.setGuestWifiPassword(guestSettings.password || '');
-      guestWiFiHook.setGuestWifiSecurity(guestSettings.securityMode || 'OPEN');
-      guestWiFiHook.setGuestWifiDuration(guestSettings.duration || '0');
-      
-      setParentalControlEnabled(parentalEnabled);
-      setParentalProfiles(profiles);
+      if (devices.status === 'fulfilled') setConnectedDevices(devices.value);
+      if (settings.status === 'fulfilled') setWiFiSettings(settings.value);
 
-      if (guestSettings.enabled) {
-        const timeRemaining = await service.getGuestTimeRemaining();
-        guestWiFiHook.setGuestTimeRemaining(timeRemaining.remainingSeconds);
-        guestWiFiHook.setIsTimeRemainingActive(timeRemaining.isActive);
+      if (guestSettings.status === 'fulfilled') {
+        const g = guestSettings.value;
+        guestWiFiHook.setGuestWifiEnabled(g.enabled);
+        guestWiFiHook.setGuestWifiSsid(g.ssid || '');
+        guestWiFiHook.setGuestWifiPassword(g.password || '');
+        guestWiFiHook.setGuestWifiSecurity(g.securityMode || 'OPEN');
+        guestWiFiHook.setGuestWifiDuration(g.duration || '0');
       }
 
-      const blocked = await service.getBlockedDevices();
-      wifiDevicesHook.setBlockedDevices(blocked);
+      if (parentalEnabled.status === 'fulfilled') setParentalControlEnabled(parentalEnabled.value);
+      if (profiles.status === 'fulfilled') setParentalProfiles(profiles.value);
+
+      if (guestSettings.status === 'fulfilled' && guestSettings.value.enabled) {
+        try {
+          const timeRemaining = await service.getGuestTimeRemaining();
+          guestWiFiHook.setGuestTimeRemaining(timeRemaining.remainingSeconds);
+          guestWiFiHook.setIsTimeRemainingActive(timeRemaining.isActive);
+        } catch {}
+      }
+
+      try {
+        const blocked = await service.getBlockedDevices();
+        wifiDevicesHook.setBlockedDevices(blocked);
+      } catch {}
     } catch (error) {
       console.error('Error loading WiFi data:', error);
       ToastHelper.error('Failed to load WiFi data');
@@ -118,12 +126,12 @@ export default function WiFiScreen() {
 
   const loadDataSilent = async (service: WiFiService) => {
     try {
-      const [devices, settings] = await Promise.all([
+      const [devices, settings] = await Promise.allSettled([
         service.getConnectedDevices(),
         service.getWiFiSettings(),
       ]);
-      setConnectedDevices(devices);
-      setWiFiSettings(settings);
+      if (devices.status === 'fulfilled') setConnectedDevices(devices.value);
+      if (settings.status === 'fulfilled') setWiFiSettings(settings.value);
     } catch (error) {
       console.error('Error in background update:', error);
     }

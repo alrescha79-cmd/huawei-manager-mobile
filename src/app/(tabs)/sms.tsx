@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,23 @@ import {
 import { MaterialIcons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/theme';
-import { MeshGradientBackground, AnimatedScreen, BouncingDots, RefreshIndicator, AdNative } from '@/components';
-import { SMSListItem, SMSStatsCard, SMSDetailModal, SMSStatsSkeleton, SMSListSkeleton, SMSSearchSkeleton, smsStyles as styles, KeyboardAnimatedView } from '@/components/sms';
+import {
+  MeshGradientBackground,
+  AnimatedScreen,
+  BouncingDots,
+  RefreshIndicator,
+  AdNative,
+} from '@/components';
+import {
+  SMSListItem,
+  SMSStatsCard,
+  SMSDetailModal,
+  SMSStatsSkeleton,
+  SMSListSkeleton,
+  SMSSearchSkeleton,
+  smsStyles as styles,
+  KeyboardAnimatedView,
+} from '@/components/sms';
 import { formatTimeAgo } from '@/utils/formatters';
 import { useTranslation } from '@/i18n';
 import { useSMSData, useSMSActions, useMessageLinks } from '@/hooks/sms';
@@ -37,17 +52,54 @@ export default function SMSScreen() {
   const { renderMessageWithLinks } = useMessageLinks();
 
   const {
-    isRefreshing, smsSupported, searchQuery, setSearchQuery,
-    messageFilter, setMessageFilter, smsCount, filteredMessages, handleRefresh,
+    isRefreshing,
+    smsSupported,
+    searchQuery,
+    setSearchQuery,
+    messageFilter,
+    setMessageFilter,
+    smsCount,
+    filteredMessages,
+    handleRefresh,
   } = smsData;
 
   const {
-    showCompose, setShowCompose, newPhone, setNewPhone, newMessage, setNewMessage,
-    isSending, handleSend, selectedMessage, setSelectedMessage, showDetail, setShowDetail,
-    replyMessage, setReplyMessage, handleOpenDetail, handleReply,
-    isSelectionMode, selectedIds, handleLongPress, toggleSelect, handleSelectAll,
-    exitSelectionMode, handleDeleteSelected, handleDelete, handleMarkAllAsRead,
+    showCompose,
+    setShowCompose,
+    newPhone,
+    setNewPhone,
+    newMessage,
+    setNewMessage,
+    isSending,
+    handleSend,
+    selectedMessage,
+    setSelectedMessage,
+    showDetail,
+    setShowDetail,
+    replyMessage,
+    setReplyMessage,
+    handleOpenDetail,
+    handleReply,
+    isSelectionMode,
+    selectedIds,
+    handleLongPress,
+    toggleSelect,
+    handleSelectAll,
+    exitSelectionMode,
+    handleDeleteSelected,
+    handleDelete,
+    handleMarkAllAsRead,
   } = smsActions;
+
+  const listData = useMemo(
+    () =>
+      filteredMessages.map((message) => ({
+        key: `${message.boxType}-${message.index}`,
+        message,
+        timeDisplay: formatTimeAgo(message.date),
+      })),
+    [filteredMessages]
+  );
 
   return (
     <>
@@ -56,10 +108,12 @@ export default function SMSScreen() {
           <RefreshIndicator refreshing={isRefreshing} />
 
           {isSelectionMode && (
-            <View style={[
-              styles.selectionHeader,
-              { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 8 : 8 }
-            ]}>
+            <View
+              style={[
+                styles.selectionHeader,
+                { paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 8 : 8 },
+              ]}
+            >
               <TouchableOpacity onPress={exitSelectionMode}>
                 <MaterialIcons name="close" size={24} color={colors.text} />
               </TouchableOpacity>
@@ -82,9 +136,13 @@ export default function SMSScreen() {
             contentContainerStyle={[
               styles.content,
               {
-                paddingTop: isSelectionMode ? 0 : (8 + (Platform.OS === 'android' ? (StatusBar.currentHeight || 24) : 0)),
-                paddingBottom: isSelectionMode ? 140 : 110 + (insets.bottom > 0 ? insets.bottom : 16)
-              }
+                paddingTop: isSelectionMode
+                  ? 0
+                  : 8 + (Platform.OS === 'android' ? StatusBar.currentHeight || 24 : 0),
+                paddingBottom: isSelectionMode
+                  ? 140
+                  : 110 + (insets.bottom > 0 ? insets.bottom : 16),
+              },
             ]}
             refreshControl={
               <RefreshControl
@@ -97,7 +155,6 @@ export default function SMSScreen() {
               />
             }
           >
-
             {!smsCount && isRefreshing && (
               <>
                 <SMSStatsSkeleton />
@@ -118,11 +175,18 @@ export default function SMSScreen() {
             )}
 
             {smsSupported && (
-              <View style={[styles.searchContainer, {
-                backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                borderWidth: 1,
-                borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-              }]}>
+              <View
+                style={[
+                  styles.searchContainer,
+                  {
+                    backgroundColor: isDark
+                      ? glassmorphism.background.dark.card
+                      : glassmorphism.background.light.card,
+                    borderWidth: 1,
+                    borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                  },
+                ]}
+              >
                 <MaterialIcons name="search" size={20} color={colors.textSecondary} />
                 <TextInput
                   style={[styles.searchInput, { color: colors.text }]}
@@ -141,13 +205,28 @@ export default function SMSScreen() {
 
             {smsSupported && !isSelectionMode && (
               <View style={styles.messagesHeader}>
-                <Text style={[typography.caption1, { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 }]}>
+                <Text
+                  style={[
+                    typography.caption1,
+                    { color: colors.textSecondary, textTransform: 'uppercase', letterSpacing: 0.5 },
+                  ]}
+                >
                   {t('sms.recentMessages')}
                 </Text>
                 {smsCount && smsCount.localUnread > 0 && (
-                  <TouchableOpacity onPress={handleMarkAllAsRead} style={{ flexDirection: 'row', alignItems: 'center' }}>
-                    <MaterialIcons name="check" size={16} color={colors.primary} style={{ marginRight: 4 }} />
-                    <Text style={[typography.caption1, { color: colors.primary, fontWeight: '600' }]}>
+                  <TouchableOpacity
+                    onPress={handleMarkAllAsRead}
+                    style={{ flexDirection: 'row', alignItems: 'center' }}
+                  >
+                    <MaterialIcons
+                      name="check"
+                      size={16}
+                      color={colors.primary}
+                      style={{ marginRight: 4 }}
+                    />
+                    <Text
+                      style={[typography.caption1, { color: colors.primary, fontWeight: '600' }]}
+                    >
                       {t('sms.markAllAsRead')}
                     </Text>
                   </TouchableOpacity>
@@ -157,31 +236,53 @@ export default function SMSScreen() {
 
             {!smsSupported || filteredMessages.length === 0 ? (
               <>
-                <View style={[styles.emptyState, {
-                  backgroundColor: isDark ? glassmorphism.background.dark.card : glassmorphism.background.light.card,
-                  borderWidth: 1,
-                  borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
-                  marginBottom: spacing.md,
-                }]}>
-                  <MaterialIcons name="sms" size={48} color={colors.textSecondary} style={{ opacity: 0.5 }} />
-                  <Text style={[typography.body, { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md }]}>
-                    {isRefreshing ? t('sms.loadingMessages') : searchQuery ? t('sms.noSearchResults') : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
+                <View
+                  style={[
+                    styles.emptyState,
+                    {
+                      backgroundColor: isDark
+                        ? glassmorphism.background.dark.card
+                        : glassmorphism.background.light.card,
+                      borderWidth: 1,
+                      borderColor: isDark ? glassmorphism.border.dark : glassmorphism.border.light,
+                      marginBottom: spacing.md,
+                    },
+                  ]}
+                >
+                  <MaterialIcons
+                    name="sms"
+                    size={48}
+                    color={colors.textSecondary}
+                    style={{ opacity: 0.5 }}
+                  />
+                  <Text
+                    style={[
+                      typography.body,
+                      { color: colors.textSecondary, textAlign: 'center', marginTop: spacing.md },
+                    ]}
+                  >
+                    {isRefreshing
+                      ? t('sms.loadingMessages')
+                      : searchQuery
+                        ? t('sms.noSearchResults')
+                        : `${t('sms.noMessages')}\n${t('sms.smsNotSupported')}`}
                   </Text>
                 </View>
               </>
             ) : (
               <View style={{ marginBottom: spacing.md }}>
-                {filteredMessages.map((message, index) => (
-                  <React.Fragment key={`${message.boxType}-${message.index}`}>
+                {/* ponytail: 40-row map, keeps ScrollView. FlatList if list grows. */}
+                {listData.map(({ key, message, timeDisplay }, index) => (
+                  <React.Fragment key={key}>
                     <SMSListItem
                       message={message}
-                      isLast={index === filteredMessages.length - 1}
-                      timeDisplay={formatTimeAgo(message.date)}
-                      onPress={() => handleOpenDetail(message)}
-                      onLongPress={() => handleLongPress(message)}
+                      isLast={index === listData.length - 1}
+                      timeDisplay={timeDisplay}
+                      onPress={handleOpenDetail}
+                      onLongPress={handleLongPress}
                       isSelectionMode={isSelectionMode}
-                      isSelected={selectedIds.has(`${message.boxType}-${message.index}`)}
-                      onToggleSelect={() => toggleSelect(message)}
+                      isSelected={selectedIds.has(key)}
+                      onToggleSelect={toggleSelect}
                     />
                     {index === 3 && <SMSListItem isAd={true} />}
                   </React.Fragment>
@@ -190,18 +291,19 @@ export default function SMSScreen() {
             )}
 
             <AdNative />
-
           </ScrollView>
 
           {isSelectionMode && (
-            <View style={[
-              styles.selectionBottomBar,
-              {
-                backgroundColor: colors.card,
-                borderTopColor: colors.border,
-                paddingBottom: bottomOffset + 12,
-              }
-            ]}>
+            <View
+              style={[
+                styles.selectionBottomBar,
+                {
+                  backgroundColor: colors.card,
+                  borderTopColor: colors.border,
+                  paddingBottom: bottomOffset + 12,
+                },
+              ]}
+            >
               <TouchableOpacity
                 style={styles.selectionAction}
                 onPress={handleMarkAllAsRead}
@@ -212,10 +314,12 @@ export default function SMSScreen() {
                   size={24}
                   color={selectedIds.size === 0 ? colors.textSecondary : colors.primary}
                 />
-                <Text style={[
-                  typography.caption1,
-                  { color: selectedIds.size === 0 ? colors.textSecondary : colors.primary }
-                ]}>
+                <Text
+                  style={[
+                    typography.caption1,
+                    { color: selectedIds.size === 0 ? colors.textSecondary : colors.primary },
+                  ]}
+                >
                   {t('sms.markAllAsRead')}
                 </Text>
               </TouchableOpacity>
@@ -229,10 +333,12 @@ export default function SMSScreen() {
                   size={24}
                   color={selectedIds.size === 0 ? colors.textSecondary : colors.error}
                 />
-                <Text style={[
-                  typography.caption1,
-                  { color: selectedIds.size === 0 ? colors.textSecondary : colors.error }
-                ]}>
+                <Text
+                  style={[
+                    typography.caption1,
+                    { color: selectedIds.size === 0 ? colors.textSecondary : colors.error },
+                  ]}
+                >
                   {t('common.delete')}
                 </Text>
               </TouchableOpacity>
@@ -246,7 +352,7 @@ export default function SMSScreen() {
                 {
                   backgroundColor: colors.primary,
                   bottom: bottomOffset + 16,
-                }
+                },
               ]}
               onPress={() => setShowCompose(true)}
               activeOpacity={0.8}
@@ -260,26 +366,28 @@ export default function SMSScreen() {
       <Modal
         visible={showCompose}
         animationType="slide"
-        presentationStyle="pageSheet"
-        transparent
+        presentationStyle={Platform.OS === 'ios' ? 'pageSheet' : 'fullScreen'}
+        transparent={Platform.OS === 'ios'}
         statusBarTranslucent
         onRequestClose={() => setShowCompose(false)}
       >
-        <StatusBar backgroundColor={colors.background} barStyle={isDark ? 'light-content' : 'dark-content'} />
+        <StatusBar
+          backgroundColor={colors.background}
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+        />
         <KeyboardAnimatedView
           style={[styles.modalContainer, { backgroundColor: colors.background }]}
         >
-          <View style={[
-            styles.composeHeader,
-            {
-              borderBottomColor: colors.border,
-              paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 12 : 16
-            }
-          ]}>
-            <TouchableOpacity
-              onPress={() => setShowCompose(false)}
-              style={styles.headerButton}
-            >
+          <View
+            style={[
+              styles.composeHeader,
+              {
+                borderBottomColor: colors.border,
+                paddingTop: Platform.OS === 'android' ? (StatusBar.currentHeight || 24) + 12 : 16,
+              },
+            ]}
+          >
+            <TouchableOpacity onPress={() => setShowCompose(false)} style={styles.headerButton}>
               <MaterialIcons name="close" size={24} color={colors.text} />
             </TouchableOpacity>
             <Text style={[typography.headline, { color: colors.text, fontWeight: '600' }]}>
@@ -307,11 +415,24 @@ export default function SMSScreen() {
             </View>
           </View>
 
-          <View style={[styles.composeSendBar, { borderTopColor: colors.border, backgroundColor: colors.card, paddingBottom: Math.max(insets.bottom, 12) }]}>
+          <View
+            style={[
+              styles.composeSendBar,
+              {
+                borderTopColor: colors.border,
+                backgroundColor: colors.card,
+                paddingBottom: Math.max(insets.bottom, 12),
+              },
+            ]}
+          >
             <TextInput
               style={[
                 styles.composeSendInput,
-                { backgroundColor: colors.background, borderColor: colors.border, color: colors.text }
+                {
+                  backgroundColor: colors.background,
+                  borderColor: colors.border,
+                  color: colors.text,
+                },
               ]}
               value={newMessage}
               onChangeText={setNewMessage}
@@ -323,7 +444,7 @@ export default function SMSScreen() {
             <TouchableOpacity
               style={[
                 styles.sendButton,
-                { backgroundColor: (newPhone && newMessage) ? colors.primary : colors.textSecondary }
+                { backgroundColor: newPhone && newMessage ? colors.primary : colors.textSecondary },
               ]}
               onPress={handleSend}
               disabled={isSending || !newPhone || !newMessage}

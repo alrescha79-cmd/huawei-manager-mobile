@@ -46,6 +46,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         userInterfaceStyle: 'automatic',
         scheme: 'hm-mobile',
         plugins: [
+            './plugins/with-clear-dim-flags',
             'expo-router',
             [
                 'expo-build-properties',

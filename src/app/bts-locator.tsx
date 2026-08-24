@@ -9,14 +9,14 @@ import { useModemStore } from '@/stores/modem.store';
 import { AnimatedScreen, MeshGradientBackground, Card, BtsMapWebView, BouncingDots, ToastHelper, AdBanner } from '@/components';
 import { PageHeader } from '@/components/settings';
 import { parseCellIdString, calculateDistanceKm, calculateBearing, normalizeBearing, bearingToCompass } from '@/utils/geoMath';
-import { fetchBtsCoordinates, fetchNearbyTowers, NearbyTower, BtsCoordinates, BTS_SEARCH_RADIUS_KM } from '@/services/btsService';
+import { fetchBtsCoordinates, fetchNearbyTowers, getBtsRateLimit, NearbyTower, BtsCoordinates, BTS_SEARCH_RADIUS_KM } from '@/services/btsService';
 import { ModemService } from '@/services/modem.service';
 import { useAuthStore } from '@/stores/auth.store';
 import { estimateLteBand, getLteBandLabel } from '@/utils/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function BtsLocatorScreen() {
-    const { colors, typography, spacing } = useTheme();
+    const { colors, typography, spacing, isDark } = useTheme();
     const { t } = useTranslation();
     const insets = useSafeAreaInsets();
     const tRef = useRef(t);
@@ -35,6 +35,7 @@ export default function BtsLocatorScreen() {
     const [showMore, setShowMore] = useState(false);
     const [loading, setLoading] = useState(true);
     const [errorMsg, setErrorMsg] = useState<TranslationKey | ''>('');
+    const [rateLimitSeconds, setRateLimitSeconds] = useState<number | null>(null);
 
     const cellIds = useMemo(() => parseCellIdString(signalInfo?.cellId), [signalInfo?.cellId]);
     const numeric = networkInfo?.numeric || '';
@@ -46,6 +47,7 @@ export default function BtsLocatorScreen() {
     const load = useCallback(async () => {
         setLoading(true);
         setErrorMsg('');
+        setRateLimitSeconds(null);
         try {
             try {
                 const netState = await Network.getNetworkStateAsync();
@@ -96,11 +98,42 @@ export default function BtsLocatorScreen() {
                 }
             }
 
+            const rateLimitBefore = getBtsRateLimit();
+            if (rateLimitBefore) {
+                setBtsLocation(null);
+                setBtsSource(null);
+                setDistanceM(null);
+                setBearing(null);
+                setRateLimitSeconds(rateLimitBefore.retryAfterSeconds);
+                setErrorMsg('bts.rateLimited');
+                ToastHelper.warning(
+                    tRef.current('bts.rateLimited', { time: formatRetry(rateLimitBefore.retryAfterSeconds) })
+                );
+                return;
+            }
+
             const bts = await fetchBtsCoordinates({ mcc, mnc, cellId, tac }, user.lat, user.lon);
             // Nearby towers render regardless of whether the connected one resolved,
             // so the map is never empty even when every lookup misses.
-            const nearby = fetchNearbyTowers(mcc, user.lat, user.lon, BTS_SEARCH_RADIUS_KM);
+            const nearby = await fetchNearbyTowers(mcc, user.lat, user.lon, BTS_SEARCH_RADIUS_KM);
             setNearbyTowers(nearby);
+
+            // A 429 hit during the lookups above arms the client-side cooldown —
+            // surface it instead of the misleading "not found" state.
+            const rateLimitAfter = getBtsRateLimit();
+            if (rateLimitAfter) {
+                setBtsLocation(null);
+                setBtsSource(null);
+                setDistanceM(null);
+                setBearing(null);
+                setRateLimitSeconds(rateLimitAfter.retryAfterSeconds);
+                setErrorMsg('bts.rateLimited');
+                ToastHelper.warning(
+                    tRef.current('bts.rateLimited', { time: formatRetry(rateLimitAfter.retryAfterSeconds) })
+                );
+                return;
+            }
+
             if (!bts) {
                 setBtsLocation(null);
                 setBtsSource(null);
@@ -134,14 +167,20 @@ export default function BtsLocatorScreen() {
         return () => sub.remove();
     }, [load]);
 
-    const formatDistance = (meters: number | null): string => {
-        if (meters === null) return '-';
-        return meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`;
-    };
+const formatDistance = (meters: number | null): string => {
+    if (meters === null) return '-';
+    return meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${Math.round(meters)} m`;
+};
 
-    // 'site'/'lac' results are estimates — the UI labels them so users know the
+const formatRetry = (seconds: number): string => {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.ceil(seconds / 60);
+    return `${minutes} min`;
+};
+
+    // 'site' results are estimates — the UI labels them so users know the
     // marker is approximate instead of the exact connected cell.
-    const estimated = btsSource === 'site' || btsSource === 'lac';
+    const estimated = btsSource === 'site';
 
     return (
         <AnimatedScreen noAnimation>
@@ -169,7 +208,7 @@ export default function BtsLocatorScreen() {
                         }
                     />
                     {loading && (
-                        <View style={styles.mapOverlay}>
+                        <View style={[styles.mapOverlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.7)' }]}>
                             <BouncingDots color={colors.primary} />
                             <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 8 }]}>
                                 {t('bts.locating')}
@@ -177,7 +216,7 @@ export default function BtsLocatorScreen() {
                         </View>
                     )}
                     {!loading && errorMsg === 'bts.notFound' && (
-                        <View style={styles.mapNotice}>
+                        <View style={[styles.mapNotice, { backgroundColor: isDark ? 'rgba(20,20,24,0.92)' : 'rgba(255,255,255,0.95)', borderColor: colors.border, borderWidth: 1 }]}>
                             <MaterialIcons name="info-outline" size={18} color={colors.warning} />
                             <Text style={[typography.caption1, { color: colors.text, marginLeft: 6, flex: 1 }]}>
                                 {t('bts.notFoundShort')}
@@ -185,10 +224,12 @@ export default function BtsLocatorScreen() {
                         </View>
                     )}
                     {!loading && errorMsg !== '' && errorMsg !== 'bts.notFound' && (
-                        <View style={styles.mapOverlay}>
+                        <View style={[styles.mapOverlay, { backgroundColor: isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.7)' }]}>
                             <MaterialIcons name="location-off" size={28} color={colors.warning} />
                             <Text style={[typography.body, { color: colors.text, textAlign: 'center', marginTop: 8, paddingHorizontal: 24 }]}>
-                                {t(errorMsg)}
+                                {errorMsg === 'bts.rateLimited' && rateLimitSeconds !== null
+                                    ? t('bts.rateLimited', { time: formatRetry(rateLimitSeconds) })
+                                    : t(errorMsg)}
                             </Text>
                         </View>
                     )}
@@ -285,7 +326,6 @@ const styles = StyleSheet.create({
         ...StyleSheet.absoluteFillObject,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(0,0,0,0.45)',
     },
     mapNotice: {
         position: 'absolute',
@@ -294,7 +334,6 @@ const styles = StyleSheet.create({
         bottom: 12,
         flexDirection: 'row',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.78)',
         borderRadius: 10,
         paddingVertical: 8,
         paddingHorizontal: 10,

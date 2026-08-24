@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useMemo } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, TextStyle } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import TextTicker from 'react-native-text-ticker';
 import { useTheme } from '@/theme';
@@ -33,7 +33,7 @@ interface QuickActionsCardProps {
  * Quick actions card for home screen
  * Contains: Band selection, Change IP, Toggle Data, Signal Pointing, Quick Check, Speedtest
  */
-export function QuickActionsCard({
+export const QuickActionsCard = React.memo(function QuickActionsCard({
   t,
   selectedBands,
   wanIpAddress,
@@ -59,6 +59,23 @@ export function QuickActionsCard({
 
   const itemBg = isDark ? 'rgba(255, 255, 255, 0.03)' : 'rgba(0, 0, 0, 0.02)';
   const itemBorder = isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.05)';
+
+  const tickerTitleStyle = useMemo<TextStyle>(
+    () => StyleSheet.flatten([typography.subheadline, { color: colors.text, fontWeight: '700' }]),
+    [typography, colors.text]
+  );
+  const tickerSubtitleStyle = useMemo<TextStyle>(
+    () => StyleSheet.flatten([typography.caption2, { color: colors.textSecondary, marginTop: 2 }]),
+    [typography, colors.textSecondary]
+  );
+  const tickerSmallLabelStyle = useMemo<TextStyle>(
+    () =>
+      StyleSheet.flatten([
+        typography.caption2,
+        { color: colors.text, fontWeight: '600', textAlign: 'center', alignSelf: 'center' },
+      ]),
+    [typography, colors.text]
+  );
 
   const headerRightBadge = (
     <View
@@ -103,10 +120,7 @@ export function QuickActionsCard({
           </View>
           <View style={styles.largeActionContent}>
             <TextTicker
-              style={StyleSheet.flatten([
-                typography.subheadline,
-                { color: colors.text, fontWeight: '700' },
-              ])}
+              style={tickerTitleStyle}
               duration={4000}
               loop
               bounce
@@ -116,10 +130,7 @@ export function QuickActionsCard({
               {t('home.setBand')}
             </TextTicker>
             <TextTicker
-              style={StyleSheet.flatten([
-                typography.caption2,
-                { color: colors.textSecondary, marginTop: 2 },
-              ])}
+              style={tickerSubtitleStyle}
               duration={6000}
               loop
               bounce
@@ -148,10 +159,7 @@ export function QuickActionsCard({
           </View>
           <View style={styles.largeActionContent}>
             <TextTicker
-              style={StyleSheet.flatten([
-                typography.subheadline,
-                { color: colors.text, fontWeight: '700' },
-              ])}
+              style={tickerTitleStyle}
               duration={4000}
               loop
               bounce
@@ -161,10 +169,7 @@ export function QuickActionsCard({
               {t('home.changeIp')}
             </TextTicker>
             <TextTicker
-              style={StyleSheet.flatten([
-                typography.caption2,
-                { color: colors.textSecondary, marginTop: 2 },
-              ])}
+              style={tickerSubtitleStyle}
               duration={6000}
               loop
               bounce
@@ -197,15 +202,7 @@ export function QuickActionsCard({
             </View>
             <View style={styles.smallActionTextContainer}>
               <TextTicker
-                style={StyleSheet.flatten([
-                  typography.caption2,
-                  {
-                    color: colors.text,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    alignSelf: 'center',
-                  },
-                ])}
+                style={tickerSmallLabelStyle}
                 duration={4000}
                 loop
                 bounce
@@ -237,15 +234,7 @@ export function QuickActionsCard({
             </View>
             <View style={styles.smallActionTextContainer}>
               <TextTicker
-                style={StyleSheet.flatten([
-                  typography.caption2,
-                  {
-                    color: colors.text,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    alignSelf: 'center',
-                  },
-                ])}
+                style={tickerSmallLabelStyle}
                 duration={4000}
                 loop
                 bounce
@@ -282,15 +271,7 @@ export function QuickActionsCard({
                 </View>
                 <View style={styles.smallActionTextContainer}>
                   <TextTicker
-                    style={StyleSheet.flatten([
-                      typography.caption2,
-                      {
-                        color: colors.text,
-                        fontWeight: '600',
-                        textAlign: 'center',
-                        alignSelf: 'center',
-                      },
-                    ])}
+                    style={tickerSmallLabelStyle}
                     duration={4000}
                     loop
                     bounce
@@ -320,15 +301,7 @@ export function QuickActionsCard({
             </View>
             <View style={styles.smallActionTextContainer}>
               <TextTicker
-                style={StyleSheet.flatten([
-                  typography.caption2,
-                  {
-                    color: colors.text,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    alignSelf: 'center',
-                  },
-                ])}
+                style={tickerSmallLabelStyle}
                 duration={4000}
                 loop
                 bounce
@@ -367,15 +340,7 @@ export function QuickActionsCard({
             </View>
             <View style={styles.smallActionTextContainer}>
               <TextTicker
-                style={StyleSheet.flatten([
-                  typography.caption2,
-                  {
-                    color: colors.text,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    alignSelf: 'center',
-                  },
-                ])}
+                style={tickerSmallLabelStyle}
                 duration={4000}
                 loop
                 bounce
@@ -411,15 +376,7 @@ export function QuickActionsCard({
             </View>
             <View style={styles.smallActionTextContainer}>
               <TextTicker
-                style={StyleSheet.flatten([
-                  typography.caption2,
-                  {
-                    color: colors.text,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    alignSelf: 'center',
-                  },
-                ])}
+                style={tickerSmallLabelStyle}
                 duration={4000}
                 loop
                 bounce
@@ -455,15 +412,7 @@ export function QuickActionsCard({
             </View>
             <View style={styles.smallActionTextContainer}>
               <TextTicker
-                style={StyleSheet.flatten([
-                  typography.caption2,
-                  {
-                    color: colors.text,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    alignSelf: 'center',
-                  },
-                ])}
+                style={tickerSmallLabelStyle}
                 duration={4000}
                 loop
                 bounce
@@ -495,15 +444,7 @@ export function QuickActionsCard({
             </View>
             <View style={styles.smallActionTextContainer}>
               <TextTicker
-                style={StyleSheet.flatten([
-                  typography.caption2,
-                  {
-                    color: colors.text,
-                    fontWeight: '600',
-                    textAlign: 'center',
-                    alignSelf: 'center',
-                  },
-                ])}
+                style={tickerSmallLabelStyle}
                 duration={4000}
                 loop
                 bounce
@@ -518,7 +459,7 @@ export function QuickActionsCard({
       </View>
     </CollapsibleCard>
   );
-}
+});
 
 const styles = StyleSheet.create({
   cardTitle: {

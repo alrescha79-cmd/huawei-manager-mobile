@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { ModemService } from '@/services/modem.service';
 import { ThemedAlertHelper, ToastHelper } from '@/components';
@@ -30,45 +30,60 @@ export function useHomeActions({
 
   const [showDiagnosisModal, setShowDiagnosisModal] = useState(false);
   const [diagnosisTitle, setDiagnosisTitle] = useState('');
-  const [diagnosisResults, setDiagnosisResults] = useState<{ label: string; success: boolean; value?: string }[]>([]);
+  const [diagnosisResults, setDiagnosisResults] = useState<
+    { label: string; success: boolean; value?: string }[]
+  >([]);
   const [diagnosisSummary, setDiagnosisSummary] = useState('');
+
+  const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timersRef.current = [];
+    };
+  }, []);
+
+  const scheduleTimer = (fn: () => void, ms: number) => {
+    const id = setTimeout(() => {
+      timersRef.current = timersRef.current.filter((t) => t !== id);
+      fn();
+    }, ms);
+    timersRef.current.push(id);
+  };
 
   const handleChangeIp = async () => {
     if (!modemService || isChangingIp) return;
 
-    ThemedAlertHelper.alert(
-      t('alerts.changeIpTitle'),
-      t('alerts.changeIpMessage'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.continue'),
-          onPress: () => {
-            ToastHelper.info(t('alerts.ipChangeStartedMessage'));
+    ThemedAlertHelper.alert(t('alerts.changeIpTitle'), t('alerts.changeIpMessage'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.continue'),
+        onPress: () => {
+          ToastHelper.info(t('alerts.ipChangeStartedMessage'));
 
-            showRewarded(
-              async () => {
-                setIsChangingIp(true);
+          showRewarded(
+            async () => {
+              setIsChangingIp(true);
 
-                modemService.triggerPlmnScan().catch(() => {
-                });
+              modemService.triggerPlmnScan().catch(() => {});
 
-                setTimeout(() => {
-                  setIsChangingIp(false);
-                }, 10000);
+              scheduleTimer(() => {
+                setIsChangingIp(false);
+              }, 10000);
 
-                setTimeout(() => {
-                  if (modemService) {
-                    loadData(modemService);
-                  }
-                }, 45000);
-              },
-              () => ToastHelper.warning(t('ads.watchAdToAccess'))
-            );
-          },
+              scheduleTimer(() => {
+                if (modemService) {
+                  loadData(modemService);
+                }
+              }, 45000);
+            },
+            () => ToastHelper.warning(t('ads.watchAdToAccess'))
+          );
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleDiagnosis = async () => {
@@ -88,10 +103,12 @@ export function useHomeActions({
       }
 
       setDiagnosisTitle(t('home.diagnosisResult'));
-      setDiagnosisResults([
-        { label: `Ping ${result.host}`, success: result.success },
-      ]);
-      setDiagnosisSummary(result.success ? t('home.connectionOk') || 'Connection is working!' : t('home.connectionFailed') || 'Could not reach server');
+      setDiagnosisResults([{ label: `Ping ${result.host}`, success: result.success }]);
+      setDiagnosisSummary(
+        result.success
+          ? t('home.connectionOk') || 'Connection is working!'
+          : t('home.connectionFailed') || 'Could not reach server'
+      );
       setShowDiagnosisModal(true);
     } catch (error: any) {
       console.error('Error running diagnosis ping:', error);
@@ -121,7 +138,11 @@ export function useHomeActions({
       setDiagnosisResults([
         { label: t('home.internetConnection'), success: result.internetConnection },
         { label: t('home.dnsResolution'), success: result.dnsResolution },
-        { label: t('home.status'), success: result.networkStatus === 'Connected', value: result.networkStatus },
+        {
+          label: t('home.status'),
+          success: result.networkStatus === 'Connected',
+          value: result.networkStatus,
+        },
         { label: t('home.signalStrength'), success: true, value: result.signalStrength },
       ]);
       setDiagnosisSummary(t(`home.${result.summaryKey}`));
@@ -139,42 +160,38 @@ export function useHomeActions({
   };
 
   const handleClearHistory = () => {
-    ThemedAlertHelper.alert(
-      t('home.clearHistory'),
-      t('home.clearHistoryConfirm'),
-      [
-        { text: t('common.cancel'), style: 'cancel' },
-        {
-          text: t('common.confirm'),
-          style: 'destructive',
-          onPress: async () => {
-            if (!modemService) {
-              ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
-              return;
-            }
-            setIsClearingHistory(true);
-            try {
-              const success = await modemService.clearTrafficHistory();
-              if (success) {
-                const now = new Date().toISOString();
-                await AsyncStorage.setItem('lastClearedTrafficDate', now);
-                setLastClearedDate(now);
-                setPreviousTotalTraffic(0);
-                await AsyncStorage.setItem('previousTotalTraffic', '0');
-                loadData(modemService);
-                ToastHelper.success(t('home.historyClearedSuccess'));
-              } else {
-                ToastHelper.error(t('home.clearHistoryFailed'));
-              }
-            } catch {
+    ThemedAlertHelper.alert(t('home.clearHistory'), t('home.clearHistoryConfirm'), [
+      { text: t('common.cancel'), style: 'cancel' },
+      {
+        text: t('common.confirm'),
+        style: 'destructive',
+        onPress: async () => {
+          if (!modemService) {
+            ToastHelper.warning(t('notifications.clearHistoryReminderNeedLogin'));
+            return;
+          }
+          setIsClearingHistory(true);
+          try {
+            const success = await modemService.clearTrafficHistory();
+            if (success) {
+              const now = new Date().toISOString();
+              await AsyncStorage.setItem('lastClearedTrafficDate', now);
+              setLastClearedDate(now);
+              setPreviousTotalTraffic(0);
+              await AsyncStorage.setItem('previousTotalTraffic', '0');
+              loadData(modemService);
+              ToastHelper.success(t('home.historyClearedSuccess'));
+            } else {
               ToastHelper.error(t('home.clearHistoryFailed'));
-            } finally {
-              setIsClearingHistory(false);
             }
-          },
+          } catch {
+            ToastHelper.error(t('home.clearHistoryFailed'));
+          } finally {
+            setIsClearingHistory(false);
+          }
         },
-      ]
-    );
+      },
+    ]);
   };
 
   const handleSaveMonthlySettings = async (settings: {

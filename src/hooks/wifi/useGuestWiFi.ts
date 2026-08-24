@@ -18,7 +18,7 @@ export function useGuestWiFi({ wifiService, t, handleRefresh }: UseGuestWiFiProp
   const [isSavingGuestSettings, setIsSavingGuestSettings] = useState(false);
   const [showGuestSecurityDropdown, setShowGuestSecurityDropdown] = useState(false);
   const [showGuestDurationDropdown, setShowGuestDurationDropdown] = useState(false);
-  
+
   const [guestTimeRemaining, setGuestTimeRemaining] = useState(0);
   const [isTimeRemainingActive, setIsTimeRemainingActive] = useState(false);
   const [isExtendingTime, setIsExtendingTime] = useState(false);
@@ -37,7 +37,7 @@ export function useGuestWiFi({ wifiService, t, handleRefresh }: UseGuestWiFiProp
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [guestWifiEnabled, isTimeRemainingActive, guestTimeRemaining]);
+  }, [guestWifiEnabled, isTimeRemainingActive]);
 
   const handleToggleGuestWiFi = async (enabled: boolean) => {
     if (!wifiService || isTogglingGuest) return;

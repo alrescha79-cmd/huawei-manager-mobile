@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { StyleSheet, Text, View } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useTranslation } from '@/i18n';
+import { useTheme } from '@/theme';
 import { getLteBandLabel } from '@/utils/helpers';
 
 export interface MapPoint {
@@ -51,30 +52,46 @@ const formatFromYou = (distanceKm: number | undefined, fromYou: string): string 
     return `±${value} ${esc(fromYou)}`;
 };
 
-const buildHtml = (): string => `
+interface ThemeParams {
+    isDark: boolean;
+    bg: string;
+    popupBg: string;
+    text: string;
+    textSecondary: string;
+    primary: string;
+    success: string;
+    warning: string;
+    error: string;
+    barOff: string;
+    tileUrl: string;
+    modemFrameStroke: string;
+    towerFrameStroke: string;
+}
+
+const buildHtml = (p: ThemeParams): string => `
 <!DOCTYPE html>
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
-  html, body, #map { margin: 0; padding: 0; height: 100%; width: 100%; background: #0f0f12; }
-  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: #1c1c22; color: #eee; }
+  html, body, #map { margin: 0; padding: 0; height: 100%; width: 100%; background: ${p.bg}; }
+  .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: ${p.popupBg}; color: ${p.text}; box-shadow: 0 4px 14px rgba(0,0,0,${p.isDark ? '0.5' : '0.15'}); }
   .leaflet-popup-content { font: 12px/1.5 system-ui, sans-serif; margin: 10px 12px; }
-  .leaflet-container { background: #0f0f12; }
+  .leaflet-container { background: ${p.bg}; }
   .bts-popup { min-width: 170px; }
-  .bts-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; color: #ef4444; }
+  .bts-title { font-weight: 700; font-size: 13px; margin-bottom: 6px; color: ${p.primary}; }
   .bts-row { display: flex; justify-content: space-between; gap: 14px; margin-top: 4px; }
-  .bts-row span { color: #9ca3af; }
-  .bts-row b { color: #fff; font-weight: 600; }
+  .bts-row span { color: ${p.textSecondary}; }
+  .bts-row b { color: ${p.text}; font-weight: 600; }
   .bts-bars { display: flex; align-items: flex-end; gap: 3px; height: 14px; margin: 7px 0 2px; }
-  .bts-bars i { width: 6px; background: #3a3a44; border-radius: 1px; }
+  .bts-bars i { width: 6px; background: ${p.barOff}; border-radius: 1px; }
   .bts-bars i:nth-child(1){height:5px} .bts-bars i:nth-child(2){height:8px}
   .bts-bars i:nth-child(3){height:11px} .bts-bars i:nth-child(4){height:14px}
-  .bts-bars i.on { background: #22c55e; }
+  .bts-bars i.on { background: ${p.success}; }
   #offline-badge { position: absolute; top: 10px; right: 10px; z-index: 1000;
-    background: rgba(0,0,0,0.65); color: #fbbf24; font: 11px/1.4 system-ui, sans-serif;
-    padding: 4px 8px; border-radius: 6px; display: none; }
+    background: ${p.isDark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.85)'}; color: ${p.warning}; font: 11px/1.4 system-ui, sans-serif;
+    padding: 4px 8px; border-radius: 6px; border: 1px solid ${p.warning}40; display: none; }
 </style>
 </head>
 <body>
@@ -95,26 +112,25 @@ const buildHtml = (): string => `
     return L.divIcon({
       className: '', iconSize: [30, 36], iconAnchor: [15, 33],
       html: '<svg width="30" height="36" viewBox="0 0 30 36" xmlns="http://www.w3.org/2000/svg">' +
-        '<g stroke="#7f8c9b" stroke-width="1.8" stroke-linecap="round" fill="none">' +
+        '<g stroke="${p.textSecondary}" stroke-width="1.8" stroke-linecap="round" fill="none">' +
         '<path d="M10 11 L7 3.5"/><path d="M20 11 L23 3.5"/></g>' +
-        '<circle cx="7" cy="3" r="1.6" fill="#3d4857"/>' +
-        '<circle cx="23" cy="3" r="1.6" fill="#3d4857"/>' +
-        '<rect x="4" y="11" width="22" height="20" rx="3.5" fill="#f6f8fb" stroke="#8a95a5" stroke-width="1.2"/>' +
-        '<rect x="4" y="11" width="22" height="5.5" rx="3.5" fill="#e8edf3"/>' +
-        '<circle cx="8.5" cy="23.5" r="1.6" fill="#22c55e"/>' +
-        '<circle cx="12.5" cy="23.5" r="1.6" fill="#22c55e"/>' +
-        '<circle cx="16.5" cy="23.5" r="1.6" fill="#22c55e"/>' +
-        '<circle cx="20.5" cy="23.5" r="1.6" fill="#f59e0b"/>' +
-        '<path d="M9 28.5 l1.3 1.3 -1.3 1.3 M12 27 l1.6 1.6 -1.6 1.6" stroke="#22c55e" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+        '<circle cx="7" cy="3" r="1.6" fill="${p.textSecondary}"/>' +
+        '<circle cx="23" cy="3" r="1.6" fill="${p.textSecondary}"/>' +
+        '<rect x="4" y="11" width="22" height="20" rx="3.5" fill="${p.isDark ? '#f6f8fb' : '#ffffff'}" stroke="${p.modemFrameStroke}" stroke-width="1.2"/>' +
+        '<rect x="4" y="11" width="22" height="5.5" rx="3.5" fill="${p.isDark ? '#e8edf3' : '#f1f5f9'}"/>' +
+        '<circle cx="8.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
+        '<circle cx="12.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
+        '<circle cx="16.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
+        '<circle cx="20.5" cy="23.5" r="1.6" fill="${p.warning}"/>' +
+        '<path d="M9 28.5 l1.3 1.3 -1.3 1.3 M12 27 l1.6 1.6 -1.6 1.6" stroke="${p.primary}" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
       '</svg>',
     });
   }
   function towerIcon() {
-    // Connected BTS marker — red-white so it stands out from the gray nearby towers.
     return L.divIcon({
       className: '', iconSize: [34, 42], iconAnchor: [17, 40],
-      html: '<svg width="34" height="42" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 1px 4px rgba(239,68,68,0.85))">' +
-        '<g stroke="#ffffff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+      html: '<svg width="34" height="42" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 1px 5px ${p.primary}99)">' +
+        '<g stroke="${p.towerFrameStroke}" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
         '<line x1="5" y1="29" x2="10" y2="7.5"/><line x1="19" y1="29" x2="14" y2="7.5"/>' +
         '<line x1="5" y1="29" x2="19" y2="29"/>' +
         '<line x1="6.2" y1="24" x2="17.8" y2="24"/>' +
@@ -123,14 +139,14 @@ const buildHtml = (): string => `
         '<line x1="6.2" y1="24" x2="16.6" y2="19"/>' +
         '<line x1="7.4" y1="19" x2="15.4" y2="14"/>' +
         '</g>' +
-        '<line x1="12" y1="7.5" x2="12" y2="3" stroke="#ffffff" stroke-width="1.4"/>' +
-        '<g fill="#ef4444">' +
+        '<line x1="12" y1="7.5" x2="12" y2="3" stroke="${p.towerFrameStroke}" stroke-width="1.4"/>' +
+        '<g fill="${p.primary}">' +
         '<rect x="8.8" y="8.2" width="6.4" height="3.8" rx="0.9"/>' +
         '<rect x="8" y="12.8" width="2.8" height="3.6" rx="0.9"/>' +
         '<rect x="13.2" y="12.8" width="2.8" height="3.6" rx="0.9"/>' +
         '</g>' +
-        '<circle cx="12" cy="2.2" r="2.1" fill="rgba(239,68,68,0.35)"/>' +
-        '<circle cx="12" cy="2.2" r="1" fill="#ef4444"/>' +
+        '<circle cx="12" cy="2.2" r="2.1" fill="${p.primary}55"/>' +
+        '<circle cx="12" cy="2.2" r="1" fill="${p.primary}"/>' +
       '</svg>',
     });
   }
@@ -138,7 +154,7 @@ const buildHtml = (): string => `
     return L.divIcon({
       className: '', iconSize: [24, 30], iconAnchor: [12, 29],
       html: '<svg width="24" height="30" viewBox="0 0 24 30" xmlns="http://www.w3.org/2000/svg">' +
-        '<g stroke="#94a3b8" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
+        '<g stroke="${p.textSecondary}" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round">' +
         '<line x1="5" y1="29" x2="10" y2="7.5"/><line x1="19" y1="29" x2="14" y2="7.5"/>' +
         '<line x1="5" y1="29" x2="19" y2="29"/>' +
         '<line x1="6.2" y1="24" x2="17.8" y2="24"/>' +
@@ -147,23 +163,23 @@ const buildHtml = (): string => `
         '<line x1="6.2" y1="24" x2="16.6" y2="19"/>' +
         '<line x1="7.4" y1="19" x2="15.4" y2="14"/>' +
         '</g>' +
-        '<line x1="12" y1="7.5" x2="12" y2="3" stroke="#94a3b8" stroke-width="1.2"/>' +
-        '<g fill="#94a3b8">' +
+        '<line x1="12" y1="7.5" x2="12" y2="3" stroke="${p.textSecondary}" stroke-width="1.2"/>' +
+        '<g fill="${p.textSecondary}">' +
         '<rect x="8.8" y="8.2" width="6.4" height="3.8" rx="0.9"/>' +
         '<rect x="8" y="12.8" width="2.8" height="3.6" rx="0.9"/>' +
         '<rect x="13.2" y="12.8" width="2.8" height="3.6" rx="0.9"/>' +
         '</g>' +
-        '<circle cx="12" cy="2.2" r="1" fill="#ef4444"/>' +
+        '<circle cx="12" cy="2.2" r="1" fill="${p.primary}"/>' +
       '</svg>',
     });
   }
   function initMap() {
     if (map) return;
     map = L.map('map', { zoomControl: true, attributionControl: false }).setView([-6.2, 106.816], 6);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', { maxZoom: 19 }).addTo(map);
+    L.tileLayer('${p.tileUrl}', { maxZoom: 19 }).addTo(map);
     userMarker = L.marker([-6.2, 106.816], { icon: modemIcon() }).addTo(map);
     btsMarker = L.marker([-6.2, 106.816], { icon: towerIcon() }).addTo(map);
-    line = L.polyline([], { color: '#ef4444', dashArray: '6,8', weight: 2, opacity: 0.9 }).addTo(map);
+    line = L.polyline([], { color: '${p.primary}', dashArray: '6,8', weight: 2, opacity: 0.9 }).addTo(map);
     if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('ready');
   }
   function ensureRadiusGradient() {
@@ -175,7 +191,7 @@ const buildHtml = (): string => `
     [[0, 0.35], [0.55, 0.14], [0.85, 0.05], [1, 0]].forEach(function (s) {
       var stop = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
       stop.setAttribute('offset', s[0] * 100 + '%');
-      stop.setAttribute('stop-color', '#22c55e');
+      stop.setAttribute('stop-color', '${p.primary}');
       stop.setAttribute('stop-opacity', s[1]);
       grad.appendChild(stop);
     });
@@ -186,7 +202,7 @@ const buildHtml = (): string => `
     if (radiusCircle) map.removeLayer(radiusCircle);
     radiusCircle = L.circle([user.lat, user.lon], {
       radius: meters || 20000,
-      stroke: true, color: '#22c55e', weight: 1, opacity: 0.6, dashArray: '4,8', fill: false,
+      stroke: true, color: '${p.primary}', weight: 1, opacity: 0.6, dashArray: '4,8', fill: false,
     }).addTo(map);
     ensureRadiusGradient();
     radiusCircle._path.setAttribute('fill', 'url(#radius-grad)');
@@ -232,16 +248,12 @@ const buildHtml = (): string => `
       }
     }
   }
-  // Leaflet is loaded from CDN — if offline it cannot load, so skip init and
-  // wait for the 'online' event instead of surfacing a raw error overlay.
   try {
     if (navigator.onLine) initMap();
   } catch (e) {
     if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('error:' + (e && e.message));
   }
   window.addEventListener('online', function () {
-    // If the page loaded offline the CDN leaflet script never ran — a reload
-    // is the only way to fetch it, so do that instead of retrying init in vain.
     if (!map && typeof L === 'undefined') {
       window.location.reload();
     } else if (!map) {
@@ -254,10 +266,33 @@ const buildHtml = (): string => `
 `;
 
 export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers, radiusMeters }: BtsMapWebViewProps) {
+    const { colors, isDark } = useTheme();
     const webRef = useRef<WebView>(null);
     const [ready, setReady] = useState(false);
     const [webError, setWebError] = useState<string | null>(null);
-    const html = useMemo(() => buildHtml(), []);
+
+    const themeParams: ThemeParams = useMemo(
+        () => ({
+            isDark,
+            bg: colors.background,
+            popupBg: isDark ? '#1c1c22' : '#ffffff',
+            text: colors.text,
+            textSecondary: colors.textSecondary,
+            primary: colors.primary,
+            success: colors.success,
+            warning: colors.warning,
+            error: colors.error,
+            barOff: isDark ? '#3a3a44' : '#cbd5e1',
+            tileUrl: isDark
+                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+            modemFrameStroke: isDark ? '#8a95a5' : '#cbd5e1',
+            towerFrameStroke: isDark ? '#ffffff' : '#0f172a',
+        }),
+        [isDark, colors]
+    );
+
+    const html = useMemo(() => buildHtml(themeParams), [themeParams]);
     const { t } = useTranslation();
     const tRef = useRef(t);
     tRef.current = t;
@@ -360,7 +395,7 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
                 source={{ html }}
                 javaScriptEnabled
                 domStorageEnabled
-                style={styles.webview}
+                style={[styles.webview, { backgroundColor: colors.background }]}
                 onLoadEnd={() => {
                     setReady(true);
                 }}
@@ -375,8 +410,8 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
                 onHttpError={() => setWebError('webview-http-error')}
             />
             {webError && (
-                <View style={styles.errorOverlay}>
-                    <Text style={styles.errorText}>{webError}</Text>
+                <View style={[styles.errorOverlay, { backgroundColor: colors.background + 'D9' }]}>
+                    <Text style={[styles.errorText, { color: colors.error }]}>{webError}</Text>
                 </View>
             )}
         </View>
@@ -389,17 +424,14 @@ const styles = StyleSheet.create({
     },
     webview: {
         flex: 1,
-        backgroundColor: '#0f0f12',
     },
     errorOverlay: {
         ...StyleSheet.absoluteFillObject,
         alignItems: 'center',
         justifyContent: 'center',
-        backgroundColor: 'rgba(15, 15, 18, 0.85)',
         paddingHorizontal: 24,
     },
     errorText: {
-        color: '#f87171',
         fontSize: 13,
         textAlign: 'center',
     },
