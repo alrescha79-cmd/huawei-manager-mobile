@@ -91,6 +91,17 @@ jobs:
       - name: Prebuild Android
         run: npx expo prebuild --platform android --clean
 
+      - name: Verify environment variables
+        run: |
+          echo "BTS_API_URL is set: $([ -n "$EXPO_PUBLIC_BTS_API_URL" ] && echo 'YES' || echo 'NO')"
+          echo "BTS_API_KEY is set: $([ -n "$EXPO_PUBLIC_BTS_API_KEY" ] && echo 'YES' || echo 'NO')"
+          if [ -z "$EXPO_PUBLIC_BTS_API_URL" ]; then
+            echo "::warning::EXPO_PUBLIC_BTS_API_URL is not set — BTS lookups via bts.cakson will be skipped"
+          fi
+          if [ -z "$EXPO_PUBLIC_BTS_API_KEY" ]; then
+            echo "::warning::EXPO_PUBLIC_BTS_API_KEY is not set — BTS lookups via bts.cakson will be skipped"
+          fi
+
       - name: Ensure debug keystore exists
         run: |
           # expo prebuild --clean may not create debug.keystore on CI,
