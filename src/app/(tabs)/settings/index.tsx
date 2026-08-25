@@ -29,7 +29,6 @@ export default function SettingsIndex() {
     const [showLanguageModal, setShowLanguageModal] = React.useState(false);
     const [showUsageModal, setShowUsageModal] = React.useState(false);
     const [showAccentModal, setShowAccentModal] = React.useState(false);
-    const [showBugReportModal, setShowBugReportModal] = React.useState(false);
     const [isSendingDebugLog, setIsSendingDebugLog] = React.useState(false);
 
     // Debug store
@@ -204,7 +203,7 @@ export default function SettingsIndex() {
                             icon="bug-report"
                             title={t('settings.bugReport')}
                             subtitle={t('settings.bugReportHint')}
-                            onPress={() => setShowBugReportModal(true)}
+                            onPress={() => router.push('/settings/feedback')}
                             isLast
                         />
                     </SettingsSection>
@@ -433,26 +432,6 @@ export default function SettingsIndex() {
                             }
                         }}
                         onClose={() => setShowAccentModal(false)}
-                    />
-
-                    <SelectionModal
-                        visible={showBugReportModal}
-                        title={t('settings.bugReport')}
-                        options={[
-                            { label: t('settings.bugReportWebsite'), value: 'website' },
-                            { label: t('settings.bugReportGithub'), value: 'github' },
-                        ]}
-                        selectedValue=""
-                        onSelect={(val) => {
-                            setShowBugReportModal(false);
-                            if (val === 'website') {
-                                const feedbackUrl = language === 'id' ? 'https://hm.cakson.my.id/id/#feedback' : 'https://hm.cakson.my.id/en/#feedback';
-                                router.push({ pathname: '/webview', params: { url: feedbackUrl, title: t('settings.bugReport') || 'Bug Report' } });
-                            } else {
-                                router.push({ pathname: '/webview', params: { url: 'https://github.com/alrescha79-cmd/huawei-manager-mobile/issues/new?assignees=alrescha79-cmd&labels=bug&projects=&template=bug_report.md', title: t('settings.bugReport') || 'Bug Report' } });
-                            }
-                        }}
-                        onClose={() => setShowBugReportModal(false)}
                     />
                 </ScrollView>
             </MeshGradientBackground>
