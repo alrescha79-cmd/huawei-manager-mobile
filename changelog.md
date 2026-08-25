@@ -1,5 +1,12 @@
 # EN
 
+## v1.1.80
+- **Android Screen Dimming Fix** Resolved an issue on certain Android devices where screen brightness dropped or dimmed on launch in release builds by automatically clearing stale WindowManager flags upon resume.
+- **BTS Locator API & Quota Optimization** Migrated cell tower coordinate resolution from bundled local CSV to a dedicated remote BTS API mirror with API key authentication, dynamic env configuration, and graceful rate-limit handling (429) with retry cooldowns. Free geolocation sources are prioritized to preserve API quota.
+- **Dynamic Map Theme Integration** BTS Locator and WebView map layers now automatically adapt to light/dark themes and accent color settings in real time.
+- **Tab Badges & Background Polling** Fixed the WiFi tab badge not appearing upon initial startup by polling connected devices in the background right from the home screen.
+- **Mock SMS Testing Mode** Added mock SMS support to facilitate UI and badge testing on modems without native SMS capabilities.
+
 ## v1.1.75
 - **BTS Locator Feature** Added a dedicated interactive BTS Locator map to find the connected cell tower and visualize nearby 2G (GSM), 3G (UMTS), 4G (LTE), and 5G (NR) towers within a 20 km radius, with seamless fallback to remote data when the local database misses.
 - **UI/UX & Privacy Enhancements**
@@ -40,6 +47,13 @@
 - **Background Resource & Ad Optimization** Suspends background updates and widget polling to save battery when backgrounded, with capped App Open ad frequency and improved interstitial flow.
 
 # ID
+
+## v1.1.80
+- **Perbaikan Layar Meredup Android** Mengatasi bug pada beberapa perangkat Android di mana kecerahan layar turun/meredup saat membuka aplikasi hasil build rilis, dengan membersihkan flag WindowManager secara otomatis saat aplikasi dibuka kembali.
+- **Migrasi API BTS & Penghematan Kuota** Mengganti database CSV lokal dengan mirror API BTS jarak jauh berbasis autentikasi API key, konfigurasi URL dinamis melalui env, serta penanganan batas request (rate limit 429) dengan sistem cooldown. Sumber geolokasi gratis diprioritaskan untuk menghemat kuota API.
+- **Pewarnaan Peta Otomatis Mengikuti Tema** Peta BTS Locator dan WebView kini otomatis menyesuaikan mode terang/gelap serta warna aksen aplikasi secara real-time.
+- **Perbaikan Badge Tab WiFi & Polling Latar Belakang** Memperbaiki badge angka pada tab WiFi yang sebelumnya tidak muncul saat awal buka aplikasi dengan memuat data perangkat terhubung secara berkala dari layar utama.
+- **Mode Mock SMS untuk Pengujian** Menambahkan kembali data mock SMS agar antarmuka SMS dan badge pesan belum dibaca dapat diuji pada modem yang tidak mendukung SMS.
 
 ## v1.1.75
 - **Fitur Baru BTS Locator** Menambahkan peta interaktif BTS Locator untuk melacak posisi menara BTS yang sedang terhubung serta menampilkan persebaran BTS 2G (GSM), 3G (UMTS), 4G (LTE), dan 5G (NR) terdekat dalam radius 20 km, lengkap dengan fallback ke data online saat database lokal tidak menemukan hasil.

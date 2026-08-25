@@ -127,7 +127,18 @@ jobs:
             echo "android/ directory exists — skipping expo prebuild to preserve manual native changes"
           else
             echo "android/ not found — running expo prebuild"
-            npx expo prebuild --platform android
+            npx expo prebuild --platform android --clean
+          fi
+
+      - name: Verify environment variables
+        run: |
+          echo "BTS_API_URL is set: $([ -n "$EXPO_PUBLIC_BTS_API_URL" ] && echo 'YES' || echo 'NO')"
+          echo "BTS_API_KEY is set: $([ -n "$EXPO_PUBLIC_BTS_API_KEY" ] && echo 'YES' || echo 'NO')"
+          if [ -z "$EXPO_PUBLIC_BTS_API_URL" ]; then
+            echo "::warning::EXPO_PUBLIC_BTS_API_URL is not set — BTS lookups via bts.cakson will be skipped"
+          fi
+          if [ -z "$EXPO_PUBLIC_BTS_API_KEY" ]; then
+            echo "::warning::EXPO_PUBLIC_BTS_API_KEY is not set — BTS lookups via bts.cakson will be skipped"
           fi
 
       - name: Ensure debug keystore exists

@@ -40,7 +40,7 @@ export default ({ config }: ConfigContext): ExpoConfig => {
         ...config,
         name: isDev ? 'HM Mobile [DEV]' : 'Huawei Manager',
         slug: 'hm-mobile',
-        version: '1.1.75',
+        version: '1.1.80',
         orientation: 'portrait',
         icon: './assets/logo.png',
         userInterfaceStyle: 'automatic',
@@ -56,6 +56,62 @@ export default ({ config }: ConfigContext): ExpoConfig => {
                         // Shrink release APKs: R8 code shrinking + resource stripping.
                         enableProguardInReleaseBuilds: true,
                         enableShrinkResourcesInReleaseBuilds: true,
+                        // Keep critical library classes from being stripped by R8.
+                        extraProguardRules: `# React Native core
+-keep class com.facebook.react.** { *; }
+-keep class com.facebook.react.turbomodule.** { *; }
+-keep class com.facebook.react.bridge.** { *; }
+-keep class com.facebook.react.module.annotations.** { *; }
+-keep class * implements com.facebook.react.bridge.NativeModule { *; }
+-keep class * extends com.facebook.react.bridge.ReactContextBaseJavaModule { *; }
+
+# React Native Reanimated
+-keep class com.swmansion.reanimated.** { *; }
+
+# React Native Google Mobile Ads
+-keep class com.google.android.gms.ads.** { *; }
+-keep class com.google.android.gms.common.** { *; }
+-keep class com.google.android.gms.internal.ads.** { *; }
+-keep class com.google.android.** { *; }
+-keep class com.google.ads.** { *; }
+-dontwarn com.google.android.gms.ads.**
+
+# Expo modules
+-keep class expo.modules.** { *; }
+-keep class org.unimodules.** { *; }
+-dontwarn expo.modules.**
+
+# React Native Firebase
+-keep class io.invertase.firebase.** { *; }
+-dontwarn io.invertase.firebase.**
+
+# React Native WebView
+-keep class com.reactnativecommunity.webview.** { *; }
+-keep class com.reactnative.webview.** { *; }
+
+# React Native Android Widget
+-keep class com.reactnativeandroidwidget.** { *; }
+
+# React Native Gesture Handler
+-keep class com.swmansion.gesturehandler.** { *; }
+
+# React Native Screens
+-keep class com.swmansion.rnscreens.** { *; }
+
+# React Native SVG
+-keep class com.horcrux.svg.** { *; }
+
+# Keep enums, annotations, and Kotlin metadata
+-keepattributes *Annotation*
+-keepattributes Signature
+-keepattributes InnerClasses
+-keepattributes EnclosingMethod
+-keep class kotlin.Metadata { *; }
+-dontwarn kotlin.**
+
+# App package
+-keep class com.alrescha79.hmmobile.** { *; }
+`,
                     },
                 },
             ],

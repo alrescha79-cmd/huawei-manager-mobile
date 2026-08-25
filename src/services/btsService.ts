@@ -49,8 +49,14 @@ export interface BtsRateLimit {
     retryAfterSeconds: number;
 }
 
-const BTS_API_BASE = process.env.EXPO_PUBLIC_BTS_API_URL;
-const BTS_API_KEY = process.env.EXPO_PUBLIC_BTS_API_KEY;
+// Read env vars at call-time, not at module load. In production builds,
+// babel-preset-expo inlines EXPO_PUBLIC_* as string literals at build time,
+// so these getters resolve to the inlined value. In development, they read
+// process.env at runtime. Moving to getters (instead of module-scope consts)
+// ensures the values are always fresh and avoids stale-undefined issues if
+// the module is imported before env is populated.
+const getBtsApiBase = (): string => process.env.EXPO_PUBLIC_BTS_API_URL || '';
+const getBtsApiKey = (): string => process.env.EXPO_PUBLIC_BTS_API_KEY || '';
 const ACTIVE_TOWER_URL = 'https://api.frexello.com/api/active-tower';
 const MLS_URL = 'https://location.services.mozilla.com/v1/geolocate';
 const GOOGLE_GEOLOCATION_URL = 'https://www.googleapis.com/geolocation/v1/geolocate';
@@ -98,7 +104,9 @@ const fetchWithTimeout = (url: string, options: RequestInit, timeoutMs: number):
 const apiGet = async <T>(endpoint: string, params: Record<string, string | number | undefined>): Promise<T | null> => {
     // URL comes from env (EXPO_PUBLIC_BTS_API_URL) — without it the backend is
     // unavailable, so skip every bts.cakson call.
+    const BTS_API_BASE = getBtsApiBase();
     if (!BTS_API_BASE) return null;
+    const BTS_API_KEY = getBtsApiKey();
     // Respect the backend 30 req/min/IP limit locally so we stop hammering it
     // once the server told us we're out of quota.
     if (getBtsRateLimit()) return null;
