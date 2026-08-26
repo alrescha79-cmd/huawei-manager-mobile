@@ -22,6 +22,7 @@ export default function SettingsLayout() {
                 <Stack.Screen name="system" />
                 <Stack.Screen name="update" />
                 <Stack.Screen name="notifications" />
+                <Stack.Screen name="feedback" />
             </Stack>
         </View>
     );

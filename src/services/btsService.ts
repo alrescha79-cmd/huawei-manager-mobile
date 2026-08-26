@@ -58,7 +58,6 @@ export interface BtsRateLimit {
 const getBtsApiBase = (): string => process.env.EXPO_PUBLIC_BTS_API_URL || '';
 const getBtsApiKey = (): string => process.env.EXPO_PUBLIC_BTS_API_KEY || '';
 const ACTIVE_TOWER_URL = 'https://api.frexello.com/api/active-tower';
-const MLS_URL = 'https://location.services.mozilla.com/v1/geolocate';
 const GOOGLE_GEOLOCATION_URL = 'https://www.googleapis.com/geolocation/v1/geolocate';
 const RATE_LIMIT_DEFAULT_MS = 60_000;
 
@@ -154,30 +153,8 @@ const parseRateLimitRetryMs = (
 };
 
 /** Mozilla Location Services geolocation from a cell id (free, no key). */
-const scrapeMozilla = async (mcc: string, mnc: string, cellId: number, lac?: number): Promise<BtsCoordinates | null> => {
-    try {
-        const towers: Record<string, unknown> = {
-            radioType: 'lte',
-            mobileCountryCode: parseInt(mcc, 10),
-            mobileNetworkCode: parseInt(mnc, 10),
-            cellId,
-        };
-        if (lac) towers.locationAreaCode = lac;
-        const response = await fetchWithTimeout(
-            MLS_URL,
-            {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ radioType: 'lte', cellTowers: [towers], fallbackToIP: false }),
-            },
-            8000
-        );
-        const data = await response.json();
-        if (data?.location && typeof data.location.lat === 'number' && typeof data.location.lng === 'number') {
-            return { lat: data.location.lat, lon: data.location.lng, source: 'scrape' };
-        }
-    } catch {
-    }
+const scrapeMozilla = async (_mcc: string, _mnc: string, _cellId: number, _lac?: number): Promise<BtsCoordinates | null> => {
+    // Mozilla Location Services (MLS) has been retired in 2024. Return null immediately.
     return null;
 };
 
@@ -220,9 +197,11 @@ const scrapeGoogleGeolocation = async (
     return null;
 };
 
-const scrapeActiveTower = async (mcc: string, mnc: string, cellId: number, lac: number): Promise<BtsCoordinates | null> => {
+const scrapeActiveTower = async (mcc: string, mnc: string, cellId: number, lac?: number): Promise<BtsCoordinates | null> => {
     try {
-        const query = `mcc=${encodeURIComponent(mcc)}&mnc=${encodeURIComponent(mnc)}&lac=${encodeURIComponent(String(lac))}&ci=${encodeURIComponent(String(cellId))}`;
+        const queryParams = [`mcc=${encodeURIComponent(mcc)}`, `mnc=${encodeURIComponent(mnc)}`, `ci=${encodeURIComponent(String(cellId))}`];
+        if (lac) queryParams.push(`lac=${encodeURIComponent(String(lac))}`);
+        const query = queryParams.join('&');
         const response = await fetchWithTimeout(`${ACTIVE_TOWER_URL}?${query}`, { method: 'GET' }, 8000);
         if (!response.ok) return null;
         const data = await response.json();
@@ -326,11 +305,9 @@ export const fetchBtsCoordinates = async (
         }
     }
 
-    // Last resort: frexello active-tower lookup.
-    if (lac) {
-        const activeTower = await scrapeActiveTower(mcc, normMnc, cellId, lac);
-        if (activeTower) return activeTower;
-    }
+    // Fallback: frexello active-tower lookup (works with or without TAC).
+    const activeTower = await scrapeActiveTower(mcc, normMnc, cellId, lac);
+    if (activeTower) return activeTower;
 
     return null;
 };

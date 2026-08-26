@@ -30,12 +30,17 @@ export default function BtsLocatorScreen() {
     const [btsLocation, setBtsLocation] = useState<{ lat: number; lon: number } | null>(null);
     const [btsSource, setBtsSource] = useState<BtsCoordinates['source'] | null>(null);
     const [nearbyTowers, setNearbyTowers] = useState<NearbyTower[]>([]);
+    const [userHeading, setUserHeading] = useState<number | null>(null);
     const [distanceM, setDistanceM] = useState<number | null>(null);
     const [bearing, setBearing] = useState<number | null>(null);
     const [showMore, setShowMore] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [loadingNearby, setLoadingNearby] = useState(false);
     const [errorMsg, setErrorMsg] = useState<TranslationKey | ''>('');
     const [rateLimitSeconds, setRateLimitSeconds] = useState<number | null>(null);
+
+    const isFetchingNearbyRef = useRef(false);
+    const nearbyFetchedLocationRef = useRef<{ lat: number; lon: number } | null>(null);
 
     const cellIds = useMemo(() => parseCellIdString(signalInfo?.cellId), [signalInfo?.cellId]);
     const numeric = networkInfo?.numeric || '';
@@ -43,6 +48,71 @@ export default function BtsLocatorScreen() {
     const mnc = numeric.slice(3);
     const band = signalInfo?.band || estimateLteBand(signalInfo?.cellId, numeric) || '-';
     const operatorName = networkInfo?.networkName || networkInfo?.fullName || networkInfo?.shortName || networkInfo?.spnName || '-';
+
+    // Real-time compass heading tracker
+    useEffect(() => {
+        let sub: Location.LocationSubscription | null = null;
+        let isMounted = true;
+
+        Location.watchHeadingAsync((headingData) => {
+            if (!isMounted) return;
+            const heading = headingData.trueHeading >= 0 ? headingData.trueHeading : headingData.magHeading;
+            if (typeof heading === 'number' && !isNaN(heading)) {
+                setUserHeading(heading);
+            }
+        })
+            .then((subscription) => {
+                sub = subscription;
+            })
+            .catch(() => {
+                // Heading unavailable on device / simulator
+            });
+
+        return () => {
+            isMounted = false;
+            sub?.remove();
+        };
+    }, []);
+
+    const fetchNearby = useCallback(
+        async (centerLat: number, centerLon: number) => {
+            if (isFetchingNearbyRef.current || !mcc) return;
+            if (nearbyFetchedLocationRef.current) {
+                const dist = calculateDistanceKm(
+                    centerLat,
+                    centerLon,
+                    nearbyFetchedLocationRef.current.lat,
+                    nearbyFetchedLocationRef.current.lon
+                );
+                // If user hasn't moved more than 5km from last fetched center, skip refetch
+                if (dist < 5) return;
+            }
+
+            isFetchingNearbyRef.current = true;
+            setLoadingNearby(true);
+            try {
+                const nearby = await fetchNearbyTowers(mcc, centerLat, centerLon, BTS_SEARCH_RADIUS_KM);
+                setNearbyTowers(nearby);
+                nearbyFetchedLocationRef.current = { lat: centerLat, lon: centerLon };
+            } catch {
+                // Ignore background nearby fetch errors
+            } finally {
+                isFetchingNearbyRef.current = false;
+                setLoadingNearby(false);
+            }
+        },
+        [mcc]
+    );
+
+    const handleZoomOut = useCallback(
+        (center: { lat: number; lon: number }, zoom: number) => {
+            // Only load nearby towers when user zooms out to view wider region (zoom <= 13)
+            if (zoom <= 13) {
+                fetchNearby(center.lat, center.lon);
+            }
+        },
+        [fetchNearby]
+    );
 
     const load = useCallback(async () => {
         setLoading(true);
@@ -112,14 +182,9 @@ export default function BtsLocatorScreen() {
                 return;
             }
 
+            // Only fetch the connected BTS coordinate for fast initial render
             const bts = await fetchBtsCoordinates({ mcc, mnc, cellId, tac }, user.lat, user.lon);
-            // Nearby towers render regardless of whether the connected one resolved,
-            // so the map is never empty even when every lookup misses.
-            const nearby = await fetchNearbyTowers(mcc, user.lat, user.lon, BTS_SEARCH_RADIUS_KM);
-            setNearbyTowers(nearby);
 
-            // A 429 hit during the lookups above arms the client-side cooldown —
-            // surface it instead of the misleading "not found" state.
             const rateLimitAfter = getBtsRateLimit();
             if (rateLimitAfter) {
                 setBtsLocation(null);
@@ -146,6 +211,10 @@ export default function BtsLocatorScreen() {
             setBtsSource(bts.source);
             setDistanceM(calculateDistanceKm(user.lat, user.lon, bts.lat, bts.lon) * 1000);
             setBearing(normalizeBearing(calculateBearing(user.lat, user.lon, bts.lat, bts.lon)));
+
+            if (bts.source === 'site') {
+                ToastHelper.warning(tRef.current('bts.estimatedAlertBody'));
+            }
         } catch {
             ToastHelper.error(tRef.current('bts.locationError'));
             setErrorMsg('bts.locationError');
@@ -192,6 +261,8 @@ const formatRetry = (seconds: number): string => {
                         btsLocation={btsLocation}
                         nearbyTowers={nearbyTowers}
                         radiusMeters={BTS_SEARCH_RADIUS_KM * 1000}
+                        userHeading={userHeading}
+                        onZoomOut={handleZoomOut}
                         btsInfo={
                             cellIds
                                 ? {
@@ -213,6 +284,14 @@ const formatRetry = (seconds: number): string => {
                             <Text style={[typography.caption1, { color: colors.textSecondary, marginTop: 8 }]}>
                                 {t('bts.locating')}
                             </Text>
+                        </View>
+                    )}
+                    {!loading && loadingNearby && (
+                        <View style={[styles.nearbyBadge, { backgroundColor: isDark ? 'rgba(20,20,24,0.92)' : 'rgba(255,255,255,0.95)', borderColor: colors.border, borderWidth: 1 }]}>
+                            <Text style={[typography.caption2, { color: colors.text, marginRight: 8, fontWeight: '600' }]}>
+                                {t('bts.loadingNearby')}
+                            </Text>
+                            <BouncingDots size="small" color={colors.primary} />
                         </View>
                     )}
                     {!loading && errorMsg === 'bts.notFound' && (
@@ -337,6 +416,21 @@ const styles = StyleSheet.create({
         borderRadius: 10,
         paddingVertical: 8,
         paddingHorizontal: 10,
+    },
+    nearbyBadge: {
+        position: 'absolute',
+        top: 16,
+        alignSelf: 'center',
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 20,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        elevation: 4,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
     },
     card: {
         marginHorizontal: 16,

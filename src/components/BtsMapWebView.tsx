@@ -37,6 +37,8 @@ interface BtsMapWebViewProps {
     btsInfo?: BtsMapInfo;
     nearbyTowers?: NearbyTowerPoint[];
     radiusMeters?: number;
+    userHeading?: number | null;
+    onZoomOut?: (center: { lat: number; lon: number }, zoom: number) => void;
 }
 
 const esc = (value: unknown): string =>
@@ -89,6 +91,10 @@ const buildHtml = (p: ThemeParams): string => `
   .bts-bars i:nth-child(1){height:5px} .bts-bars i:nth-child(2){height:8px}
   .bts-bars i:nth-child(3){height:11px} .bts-bars i:nth-child(4){height:14px}
   .bts-bars i.on { background: ${p.success}; }
+  .modem-marker-container { position: relative; width: 64px; height: 64px; margin-left: -17px; margin-top: -14px; display: flex; align-items: center; justify-content: center; }
+  .modem-heading-beam { position: absolute; width: 64px; height: 64px; top: 0; left: 0; pointer-events: none; transform-origin: 32px 32px; transition: transform 0.15s ease-out; opacity: 0; }
+  .modem-heading-beam.active { opacity: 1; }
+  .modem-svg { position: relative; z-index: 2; }
   #offline-badge { position: absolute; top: 10px; right: 10px; z-index: 1000;
     background: ${p.isDark ? 'rgba(0,0,0,0.65)' : 'rgba(255,255,255,0.85)'}; color: ${p.warning}; font: 11px/1.4 system-ui, sans-serif;
     padding: 4px 8px; border-radius: 6px; border: 1px solid ${p.warning}40; display: none; }
@@ -111,19 +117,34 @@ const buildHtml = (p: ThemeParams): string => `
   function modemIcon() {
     return L.divIcon({
       className: '', iconSize: [30, 36], iconAnchor: [15, 33],
-      html: '<svg width="30" height="36" viewBox="0 0 30 36" xmlns="http://www.w3.org/2000/svg">' +
-        '<g stroke="${p.textSecondary}" stroke-width="1.8" stroke-linecap="round" fill="none">' +
-        '<path d="M10 11 L7 3.5"/><path d="M20 11 L23 3.5"/></g>' +
-        '<circle cx="7" cy="3" r="1.6" fill="${p.textSecondary}"/>' +
-        '<circle cx="23" cy="3" r="1.6" fill="${p.textSecondary}"/>' +
-        '<rect x="4" y="11" width="22" height="20" rx="3.5" fill="${p.isDark ? '#f6f8fb' : '#ffffff'}" stroke="${p.modemFrameStroke}" stroke-width="1.2"/>' +
-        '<rect x="4" y="11" width="22" height="5.5" rx="3.5" fill="${p.isDark ? '#e8edf3' : '#f1f5f9'}"/>' +
-        '<circle cx="8.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
-        '<circle cx="12.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
-        '<circle cx="16.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
-        '<circle cx="20.5" cy="23.5" r="1.6" fill="${p.warning}"/>' +
-        '<path d="M9 28.5 l1.3 1.3 -1.3 1.3 M12 27 l1.6 1.6 -1.6 1.6" stroke="${p.primary}" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
-      '</svg>',
+      html: '<div class="modem-marker-container">' +
+        '<div id="modem-beam" class="modem-heading-beam">' +
+          '<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">' +
+            '<defs>' +
+              '<linearGradient id="beam-grad" x1="0%" y1="100%" x2="0%" y2="0%">' +
+                '<stop offset="0%" stop-color="${p.primary}" stop-opacity="0.05"/>' +
+                '<stop offset="60%" stop-color="${p.primary}" stop-opacity="0.25"/>' +
+                '<stop offset="100%" stop-color="${p.primary}" stop-opacity="0.75"/>' +
+              '</linearGradient>' +
+            '</defs>' +
+            '<path d="M32 32 L14 4 A 32 32 0 0 1 50 4 Z" fill="url(#beam-grad)"/>' +
+            '<path d="M32 32 L32 2" stroke="${p.primary}" stroke-width="2" stroke-linecap="round" opacity="0.9"/>' +
+          '</svg>' +
+        '</div>' +
+        '<svg class="modem-svg" width="30" height="36" viewBox="0 0 30 36" xmlns="http://www.w3.org/2000/svg">' +
+          '<g stroke="${p.textSecondary}" stroke-width="1.8" stroke-linecap="round" fill="none">' +
+          '<path d="M10 11 L7 3.5"/><path d="M20 11 L23 3.5"/></g>' +
+          '<circle cx="7" cy="3" r="1.6" fill="${p.textSecondary}"/>' +
+          '<circle cx="23" cy="3" r="1.6" fill="${p.textSecondary}"/>' +
+          '<rect x="4" y="11" width="22" height="20" rx="3.5" fill="${p.isDark ? '#f6f8fb' : '#ffffff'}" stroke="${p.modemFrameStroke}" stroke-width="1.2"/>' +
+          '<rect x="4" y="11" width="22" height="5.5" rx="3.5" fill="${p.isDark ? '#e8edf3' : '#f1f5f9'}"/>' +
+          '<circle cx="8.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
+          '<circle cx="12.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
+          '<circle cx="16.5" cy="23.5" r="1.6" fill="${p.success}"/>' +
+          '<circle cx="20.5" cy="23.5" r="1.6" fill="${p.warning}"/>' +
+          '<path d="M9 28.5 l1.3 1.3 -1.3 1.3 M12 27 l1.6 1.6 -1.6 1.6" stroke="${p.primary}" stroke-width="1.1" fill="none" stroke-linecap="round"/>' +
+        '</svg>' +
+      '</div>',
     });
   }
   function towerIcon() {
@@ -180,6 +201,17 @@ const buildHtml = (p: ThemeParams): string => `
     userMarker = L.marker([-6.2, 106.816], { icon: modemIcon() }).addTo(map);
     btsMarker = L.marker([-6.2, 106.816], { icon: towerIcon() }).addTo(map);
     line = L.polyline([], { color: '${p.primary}', dashArray: '6,8', weight: 2, opacity: 0.9 }).addTo(map);
+    map.on('zoomend', function() {
+      var z = map.getZoom();
+      var c = map.getCenter();
+      if (window.ReactNativeWebView) {
+        window.ReactNativeWebView.postMessage(JSON.stringify({
+          type: 'zoom_change',
+          zoom: z,
+          center: { lat: c.lat, lon: c.lng }
+        }));
+      }
+    });
     if (window.ReactNativeWebView) window.ReactNativeWebView.postMessage('ready');
   }
   function ensureRadiusGradient() {
@@ -248,6 +280,16 @@ const buildHtml = (p: ThemeParams): string => `
       }
     }
   }
+  function updateHeading(deg) {
+    var beam = document.getElementById('modem-beam');
+    if (!beam) return;
+    if (typeof deg === 'number' && !isNaN(deg) && deg >= 0) {
+      beam.classList.add('active');
+      beam.style.transform = 'rotate(' + deg + 'deg)';
+    } else {
+      beam.classList.remove('active');
+    }
+  }
   try {
     if (navigator.onLine) initMap();
   } catch (e) {
@@ -265,7 +307,7 @@ const buildHtml = (p: ThemeParams): string => `
 </html>
 `;
 
-export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers, radiusMeters }: BtsMapWebViewProps) {
+export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers, radiusMeters, userHeading, onZoomOut }: BtsMapWebViewProps) {
     const { colors, isDark } = useTheme();
     const webRef = useRef<WebView>(null);
     const [ready, setReady] = useState(false);
@@ -387,6 +429,13 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
         if (ready) push(payload);
     }, [ready, push, payload]);
 
+    useEffect(() => {
+        if (ready) {
+            const deg = typeof userHeading === 'number' && !isNaN(userHeading) ? Math.round(userHeading) : null;
+            webRef.current?.injectJavaScript(`updateHeading(${deg !== null ? deg : 'null'});true;`);
+        }
+    }, [ready, userHeading]);
+
     return (
         <View style={styles.container}>
             <WebView
@@ -402,8 +451,17 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
                 onMessage={(event) => {
                     const data = event.nativeEvent.data;
                     if (data === 'ready') setReady(true);
-                    if (typeof data === 'string' && data.startsWith('error:')) {
+                    else if (typeof data === 'string' && data.startsWith('error:')) {
                         setWebError(data);
+                    } else if (typeof data === 'string' && data.startsWith('{')) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.type === 'zoom_change' && onZoomOut) {
+                                onZoomOut(parsed.center, parsed.zoom);
+                            }
+                        } catch {
+                            // ignore json parse error
+                        }
                     }
                 }}
                 onError={() => setWebError('webview-error')}
