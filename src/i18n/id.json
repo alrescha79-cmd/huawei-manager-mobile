@@ -23,7 +23,7 @@
     "estimatedAlertTitle": "Posisi Perkiraan",
     "estimatedAlertBody": "Lokasi persis menara yang terhubung tidak ditemukan di database online. Titik yang ditampilkan adalah perkiraan posisi menara terdekat.",
     "betaDisclaimer": "Fitur ini masih dalam tahap beta dan belum 100% akurat karena keterbatasan data titik koordinat BTS.",
-    "loadingNearby": "Memuat BTS sekitar...",
+    "loadingNearby": "Memuat BTS sekitar",
     "popupTitle": "Menara Terhubung",
     "nearbyTitle": "Menara BTS",
     "fromYou": "dari Anda",

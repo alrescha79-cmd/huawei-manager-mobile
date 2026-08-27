@@ -1,10 +1,17 @@
 # EN
 
 ## v1.1.80
-- **Android Screen Dimming Fix** Resolved an issue on certain Android devices where screen brightness dropped or dimmed on launch in release builds by automatically clearing stale WindowManager flags upon resume.
-- **BTS Locator API & Quota Optimization** Migrated cell tower coordinate resolution from bundled local CSV to a dedicated remote BTS API mirror with API key authentication, dynamic env configuration, and graceful rate-limit handling (429) with retry cooldowns. Free geolocation sources are prioritized to preserve API quota.
-- **Dynamic Map Theme Integration** BTS Locator and WebView map layers now automatically adapt to light/dark themes and accent color settings in real time.
+- **Native In-App Feedback Form** Replaced external redirect with a native Bug Report & Feature Request screen in Settings, featuring automatic modem model detection, smooth keyboard handling, and direct API submission.
+- **BTS Locator Enhancements & OpenStreetMap**
+  - Switched map tile provider to 100% free and open-source OpenStreetMap (OSM) with seamless dark mode support.
+  - Added real-time device compass heading with an animated directional radar beam cone on the modem marker.
+  - Significantly sped up initial screen loading by fetching only the connected BTS tower first.
+  - Added on-demand lazy loading for nearby towers on map zoom-out (zoom $\le$ 13) with a floating loading indicator.
+  - Added visual warning alerts and debug logging for estimated versus exact cell tower coordinates.
+- **BTS API & Quota Optimization** Migrated cell tower coordinate resolution from bundled local CSV to a dedicated remote BTS API mirror with API key authentication, dynamic environment configuration, and graceful rate-limit handling (429) with retry cooldowns. Free geolocation sources are prioritized to preserve API quota.
+- **Android Screen Dimming & Display Fixes** Resolved release build issues on certain Android devices where screen brightness dropped or dimmed upon launch or modal interactions by automatically resetting WindowManager flags.
 - **Tab Badges & Background Polling** Fixed the WiFi tab badge not appearing upon initial startup by polling connected devices in the background right from the home screen.
+- **Session & Stability Improvements** Stabilized API client session handling, XML parsing, and data hooks for more reliable modem communication.
 - **Mock SMS Testing Mode** Added mock SMS support to facilitate UI and badge testing on modems without native SMS capabilities.
 
 ## v1.1.75
@@ -49,10 +56,17 @@
 # ID
 
 ## v1.1.80
-- **Perbaikan Layar Meredup Android** Mengatasi bug pada beberapa perangkat Android di mana kecerahan layar turun/meredup saat membuka aplikasi hasil build rilis, dengan membersihkan flag WindowManager secara otomatis saat aplikasi dibuka kembali.
-- **Migrasi API BTS & Penghematan Kuota** Mengganti database CSV lokal dengan mirror API BTS jarak jauh berbasis autentikasi API key, konfigurasi URL dinamis melalui env, serta penanganan batas request (rate limit 429) dengan sistem cooldown. Sumber geolokasi gratis diprioritaskan untuk menghemat kuota API.
-- **Pewarnaan Peta Otomatis Mengikuti Tema** Peta BTS Locator dan WebView kini otomatis menyesuaikan mode terang/gelap serta warna aksen aplikasi secara real-time.
+- **Form Feedback & Laporan Bug Dalam Aplikasi** Mengganti tautan web eksternal dengan formulir Laporan Bug & Permintaan Fitur langsung di dalam aplikasi (Pengaturan > Umpan Balik), lengkap dengan deteksi otomatis model modem aktif dan pengiriman langsung via API.
+- **Penyempurnaan BTS Locator & OpenStreetMap**
+  - Mengganti penyedia peta ke OpenStreetMap (OSM) yang 100% gratis dan open-source dengan dukungan tema gelap otomatis.
+  - Menambahkan arah kompas (heading) real-time dengan efek visual radar beam pada penanda modem.
+  - Mempercepat waktu buka awal peta dengan hanya memuat koordinat BTS yang sedang terhubung terlebih dahulu.
+  - Menambahkan pemuatan cerdas (on-demand lazy load) untuk menara BTS sekitar saat peta di-zoom out (zoom $\le$ 13) disertai indikator status melayang.
+  - Menambahkan peringatan visual dan pencatatan log resolusi apakah BTS yang terhubung merupakan koordinat asli (persis/sektor) atau estimasi terdekat.
+- **Optimalisasi API BTS & Penghematan Kuota** Mengganti database CSV lokal dengan mirror API BTS jarak jauh berbasis autentikasi API key, konfigurasi dinamis melalui env, serta penanganan batas request (rate limit 429) dengan sistem cooldown. Sumber geolokasi gratis diprioritaskan untuk menghemat kuota API.
+- **Perbaikan Layar Meredup Android** Mengatasi bug pada beberapa perangkat Android di mana kecerahan layar turun/meredup saat membuka aplikasi atau menutup dialog modal pada build rilis, dengan membersihkan flag WindowManager secara otomatis.
 - **Perbaikan Badge Tab WiFi & Polling Latar Belakang** Memperbaiki badge angka pada tab WiFi yang sebelumnya tidak muncul saat awal buka aplikasi dengan memuat data perangkat terhubung secara berkala dari layar utama.
+- **Peningkatan Sesi & Stabilitas Modem** Menyempurnakan penanganan sesi klien API, parsing respons XML, dan data hooks agar komunikasi dengan modem lebih stabil dan tahan gangguan.
 - **Mode Mock SMS untuk Pengujian** Menambahkan kembali data mock SMS agar antarmuka SMS dan badge pesan belum dibaca dapat diuji pada modem yang tidak mendukung SMS.
 
 ## v1.1.75
