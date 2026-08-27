@@ -78,6 +78,7 @@ const buildHtml = (p: ThemeParams): string => `
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
   html, body, #map { margin: 0; padding: 0; height: 100%; width: 100%; background: ${p.bg}; }
+  ${p.isDark ? '.leaflet-tile-pane { filter: invert(100%) hue-rotate(180deg) brightness(90%) contrast(90%); }' : ''}
   .leaflet-popup-content-wrapper, .leaflet-popup-tip { background: ${p.popupBg}; color: ${p.text}; box-shadow: 0 4px 14px rgba(0,0,0,${p.isDark ? '0.5' : '0.15'}); }
   .leaflet-popup-content { font: 12px/1.5 system-ui, sans-serif; margin: 10px 12px; }
   .leaflet-container { background: ${p.bg}; }
@@ -197,7 +198,10 @@ const buildHtml = (p: ThemeParams): string => `
   function initMap() {
     if (map) return;
     map = L.map('map', { zoomControl: true, attributionControl: false }).setView([-6.2, 106.816], 6);
-    L.tileLayer('${p.tileUrl}', { maxZoom: 19 }).addTo(map);
+    L.tileLayer('${p.tileUrl}', {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
     userMarker = L.marker([-6.2, 106.816], { icon: modemIcon() }).addTo(map);
     btsMarker = L.marker([-6.2, 106.816], { icon: towerIcon() }).addTo(map);
     line = L.polyline([], { color: '${p.primary}', dashArray: '6,8', weight: 2, opacity: 0.9 }).addTo(map);
@@ -325,9 +329,7 @@ export function BtsMapWebView({ userLocation, btsLocation, btsInfo, nearbyTowers
             warning: colors.warning,
             error: colors.error,
             barOff: isDark ? '#3a3a44' : '#cbd5e1',
-            tileUrl: isDark
-                ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
-                : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+            tileUrl: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
             modemFrameStroke: isDark ? '#8a95a5' : '#cbd5e1',
             towerFrameStroke: isDark ? '#ffffff' : '#0f172a',
         }),
