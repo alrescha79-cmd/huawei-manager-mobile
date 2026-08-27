@@ -212,6 +212,16 @@ export default function BtsLocatorScreen() {
             setDistanceM(calculateDistanceKm(user.lat, user.lon, bts.lat, bts.lon) * 1000);
             setBearing(normalizeBearing(calculateBearing(user.lat, user.lon, bts.lat, bts.lon)));
 
+            const statusLabel = bts.source === 'api'
+                ? 'Asli (Exact Cell Match)'
+                : bts.source === 'enodeb'
+                ? 'Asli (Sector eNodeB Match)'
+                : bts.source === 'site'
+                ? 'Estimasi/Terdekat (Near-miss Site Estimate)'
+                : `Sumber Eksternal (${bts.source})`;
+
+            console.log(`[BTS Locator] Koordinat BTS Terhubung: lat=${bts.lat}, lon=${bts.lon} | Status: ${statusLabel} | Source: ${bts.source}`);
+
             if (bts.source === 'site') {
                 ToastHelper.warning(tRef.current('bts.estimatedAlertBody'));
             }
