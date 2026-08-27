@@ -254,10 +254,16 @@ export const fetchBtsCoordinates = async (
     const isIndonesia = mcc === '510';
 
     const google = await scrapeGoogleGeolocation(mcc, normMnc, cellId, lac);
-    if (google) return google;
+    if (google) {
+        console.log(`[BTS Service] Koordinat ditemukan via Google Geolocation (Asli): lat=${google.lat}, lon=${google.lon}`);
+        return google;
+    }
 
     const mozilla = await scrapeMozilla(mcc, normMnc, cellId, lac);
-    if (mozilla) return mozilla;
+    if (mozilla) {
+        console.log(`[BTS Service] Koordinat ditemukan via Mozilla (Asli): lat=${mozilla.lat}, lon=${mozilla.lon}`);
+        return mozilla;
+    }
 
     if (isIndonesia) {
         // Exact lookup if TAC is provided
@@ -269,6 +275,7 @@ export const fetchBtsCoordinates = async (
                 ci: cellId,
             });
             if (tower && typeof tower.tower_lat === 'number' && typeof tower.tower_lon === 'number') {
+                console.log(`[BTS Service] Koordinat ditemukan via Exact Lookup (Asli/CellID Match): lat=${tower.tower_lat}, lon=${tower.tower_lon}`);
                 return { lat: tower.tower_lat, lon: tower.tower_lon, source: 'api' };
             }
         }
@@ -288,18 +295,21 @@ export const fetchBtsCoordinates = async (
             // Exact cell match (closest if duplicate)
             const exact = nearby.find((t) => t.ci === cellId);
             if (exact) {
+                console.log(`[BTS Service] Koordinat ditemukan via Nearby Towers (Asli/CellID Match ${cellId}): lat=${exact.tower_lat}, lon=${exact.tower_lon}`);
                 return { lat: exact.tower_lat, lon: exact.tower_lon, source: 'api' };
             }
 
             // Same eNodeB (sector match)
             const byEnodeB = nearby.find((t) => Math.floor(t.ci / 256) === eNodeB);
             if (byEnodeB) {
+                console.log(`[BTS Service] Koordinat ditemukan via Same eNodeB (Asli/Sector Match eNodeB ${eNodeB}): lat=${byEnodeB.tower_lat}, lon=${byEnodeB.tower_lon}`);
                 return { lat: byEnodeB.tower_lat, lon: byEnodeB.tower_lon, source: 'enodeb' };
             }
 
             // Near-miss eNodeB (|delta| <= 50)
             const site = nearby.find((t) => Math.abs(Math.floor(t.ci / 256) - eNodeB) <= 50);
             if (site) {
+                console.log(`[BTS Service] Koordinat merupakan Estimasi/Terdekat (Near-miss Site eNodeB ${Math.floor(site.ci / 256)} ~ ${eNodeB}): lat=${site.tower_lat}, lon=${site.tower_lon}`);
                 return { lat: site.tower_lat, lon: site.tower_lon, source: 'site' };
             }
         }
@@ -307,8 +317,12 @@ export const fetchBtsCoordinates = async (
 
     // Fallback: frexello active-tower lookup (works with or without TAC).
     const activeTower = await scrapeActiveTower(mcc, normMnc, cellId, lac);
-    if (activeTower) return activeTower;
+    if (activeTower) {
+        console.log(`[BTS Service] Koordinat ditemukan via Active Tower API: lat=${activeTower.lat}, lon=${activeTower.lon}`);
+        return activeTower;
+    }
 
+    console.log(`[BTS Service] BTS tidak ditemukan untuk CellID ${cellId}, MCC ${mcc}, MNC ${normMnc}, TAC ${lac ?? '-'}`);
     return null;
 };
 

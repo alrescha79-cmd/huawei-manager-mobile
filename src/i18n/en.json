@@ -23,7 +23,7 @@
     "estimatedAlertTitle": "Estimated Location",
     "estimatedAlertBody": "Exact coordinates for the connected tower were not found in the database. The marker shown is an estimate from the nearest tower.",
     "betaDisclaimer": "This feature is currently in beta and not 100% accurate due to limited BTS coordinate data.",
-    "loadingNearby": "Loading nearby towers...",
+    "loadingNearby": "Loading nearby towers",
     "popupTitle": "Connected Tower",
     "nearbyTitle": "Nearby Tower",
     "fromYou": "from you",
