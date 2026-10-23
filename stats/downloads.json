@@ -1,7 +1,7 @@
 [
   {
     "tag": "v1.1.80",
-    "total": 1597
+    "total": 1900
   },
   {
     "tag": "test-44",
@@ -29,7 +29,7 @@
   },
   {
     "tag": "v1.1.65",
-    "total": 694
+    "total": 697
   },
   {
     "tag": "v1.1.60",
@@ -49,50 +49,50 @@
   },
   {
     "tag": "v1.1.25",
-    "total": 3160
+    "total": 3161
   },
   {
     "tag": "v1.1.10",
-    "total": 432
+    "total": 433
   },
   {
     "tag": "v1.1.1",
-    "total": 431
+    "total": 432
   },
   {
     "tag": "v1.1.0",
-    "total": 844
+    "total": 845
   },
   {
     "tag": "v1.0.75",
-    "total": 844
+    "total": 845
   },
   {
     "tag": "v1.0.65",
-    "total": 1364
+    "total": 1365
   },
   {
     "tag": "v1.0.50",
-    "total": 1312
+    "total": 1313
   },
   {
     "tag": "v1.0.45",
-    "total": 677
+    "total": 678
   },
   {
     "tag": "v1.0.30",
-    "total": 446
+    "total": 448
   },
   {
     "tag": "v1.0.25",
-    "total": 559
+    "total": 560
   },
   {
     "tag": "v1.0.1",
-    "total": 89
+    "total": 90
   },
   {
     "tag": "v1.0.0",
-    "total": 0
+    "total": 1
   }
 ]
